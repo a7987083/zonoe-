@@ -9,6 +9,7 @@ on:
       - 'testmod/**'
       - 'testmod.xcodeproj/**'
       - 'ZONCore/**'
+      - 'scripts/**'
       - '.github/workflows/ios-dylib-build.yml'
 
 jobs:
@@ -39,10 +40,17 @@ jobs:
           test -x /opt/MonkeyDev/bin/md
           test -d /opt/theos/vendor/include
 
+      - name: Materialize pinned vendor sources
+        run: |
+          set -euxo pipefail
+          bash scripts/bootstrap_vendor.sh
+
       - name: Verify repository layout
         run: |
           set -euxo pipefail
           test -f testmod/Bsphp/main.m
+          test -f testmod/Bsphp/SCLAlertView/SCLAlertView.h
+          test -f testmod/Bsphp/SCLAlertView/UIImage+ImageEffects.m
           test -f testmod/testmod-Prefix.pch
           test -f testmod/ZONCore/ZONModuleABI.h
           test -f testmod/ZONCore/ZONModuleLoader.h
