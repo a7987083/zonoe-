@@ -2,6 +2,7 @@
 
 #import "JHDragView.h"
 #import "JHPP.h"
+#import "NSObject+UI.h"
 
 @interface JHDragView ()
 
@@ -137,7 +138,10 @@ static BOOL MenDeal;
 
 #pragma mark - override
 
-- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event{}
+- (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event{
+    UITouch *touch = [touches anyObject];
+    self.startLocation = [touch locationInView:self.superview];
+}
 
 - (void)touchesMoved:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event{
     UITouch *touch = [touches anyObject];
@@ -146,7 +150,17 @@ static BOOL MenDeal;
 }
 
 - (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event{
+    UITouch *touch = [touches anyObject];
+    CGPoint endLocation = [touch locationInView:self.superview];
+    CGFloat dx = endLocation.x - self.startLocation.x;
+    CGFloat dy = endLocation.y - self.startLocation.y;
+    BOOL isTap = (dx * dx + dy * dy) <= 64.0f;
+
     [self shouldResetFrame];
+
+    if (isTap) {
+        [self vip菜单显示];
+    }
 }
 
 - (void)touchesCancelled:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event{
