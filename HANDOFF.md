@@ -5,6 +5,8 @@
 - Stable branch: main
 - Production branch: dev/zonoemenu-production-v1
 - Stable baseline commit: 68329ee5844f3899d369a778073e5586d8bc4e1f
+- User source-completion commit on main: 89507e1cd2f7c27184931e875adca02b043cfb36
+- Last verified code commit: 095d8d0a3cb960686a30f410bfc6299a914f9ed4
 
 ## Product goal
 Build zonoemenu as a production-grade universal iOS injected dylib menu.
@@ -33,29 +35,54 @@ Build zonoemenu as a production-grade universal iOS injected dylib menu.
 - Speed controls.
 - Authorization/config persistence.
 
+## Production work completed
+- Added versioned C module ABI and bundle-scoped external dylib loader.
+- Added module ABI smoke test and example module.
+- Recovered the physical `testmod/` source layout expected by `project.pbxproj` without deleting root safety copies.
+- Integrated the user's original AFNetworking, MBProgressHUD, SCLAlertView and WX_NongShiFu123.h into `testmod/Bsphp/`.
+- Changed vendor bootstrap to verification-only; checked-in user sources are authoritative.
+- Fixed Xcode 16.4 compilation caused by Theos shadowing Apple's MobileCoreServices umbrella by explicitly importing the public UTI subheaders.
+- CI disables MonkeyDev Release device deployment while preserving the Release dylib build.
+
+## Build verification
+- Workflow: iOS Dylib Build
+- Run: 34270333942
+- Result: success
+- Verified code commit: 095d8d0a3cb960686a30f410bfc6299a914f9ed4
+- Artifact: zonoemenu-testmod-dylib
+- Artifact ID: 10073571157
+- Product: testmod.dylib
+- SHA256: eb3bedb670081760e45a4b8dd1da0222d579e52ebbb96c89b1e616a73e2d0fb6
+- Mach-O: universal dynamic library
+- Architectures: arm64 + arm64e
+- Deployment target used by CI: iOS 12.0
+- Xcode: 16.4
+- iPhoneOS SDK: 18.5
+
+## Important build root causes already resolved
+1. Original Git upload did not match Xcode's `testmod/` physical group path.
+2. Original upload omitted WX_NongShiFu123.h and dependency source trees; user later supplied the authoritative originals.
+3. Theos `vendor/include/MobileCoreServices/MobileCoreServices.h` shadows Apple's SDK umbrella and lacks legacy UTI declarations required by old AFNetworking.
+4. MonkeyDev `md --xcbp` attempts Release package/device installation when `VALIDATE_PRODUCT=YES`; CI now uses `VALIDATE_PRODUCT=NO` and disables install/profile/package flags.
+
 ## Current important files
-- Bsphp/main.m: current dylib +load bootstrap.
-- Bsphp/Config.h: legacy BS/PHP client configuration.
-- Bsphp/WX_NongShiFu123.mm: legacy auth/business logic.
-- 菜单/PopupMenuVC.m: current main menu UI.
-- 工具箱/: hook/memory/runtime tooling.
+- testmod/Bsphp/main.m: current dylib +load bootstrap.
+- testmod/Bsphp/Config.h: legacy BS/PHP client configuration.
+- testmod/Bsphp/WX_NongShiFu123.mm: legacy auth/business logic.
+- testmod/菜单/PopupMenuVC.m: current main menu UI.
+- testmod/工具箱/: hook/memory/runtime tooling.
+- testmod/ZONCore/ZONModuleABI.h: external module ABI.
+- testmod/ZONCore/ZONModuleLoader.h: bundle-local module loader.
+- testmod/testmod-Prefix.pch: common build compatibility imports.
 - testmod.xcodeproj/project.pbxproj: Xcode dylib target.
 
-## Migration strategy
-1. Freeze current main as stable baseline.
-2. Add production documentation and build invariants.
-3. Introduce Core bootstrap/environment/logger without changing feature behavior.
-4. Introduce module registry and external dylib loader.
-5. Wrap legacy BS/PHP behind ZONAuthService-compatible adapter.
-6. Split UI/features gradually; retain old implementations until each replacement is verified.
-7. Add CI build + smoke/static tests.
-8. Remove committed generated/user files only after reproducible build is confirmed.
-
 ## Verification state
-- Source audit: partial, core structure confirmed.
-- Build: not yet run on production branch.
-- Runtime verification: not yet run.
+- Source/dependency recovery: verified by CI.
+- Module ABI smoke: passed.
+- Full production dylib build: passed.
+- Binary arm64 + arm64e verification: passed.
+- Runtime/device verification: not yet run.
 - Regression verification: not yet run.
 
 ## Next Task
-Add the production bootstrap/module ABI with no behavior regression, then wire it into the current load path and build-test the dylib.
+Runtime smoke-test the verified dylib through the IPA-injection path first. After runtime baseline is confirmed, continue production bootstrap, feature registry and BS/PHP service-adapter modularization without changing existing feature behavior.
