@@ -5,4 +5,13 @@
 #ifdef __OBJC__
     #import <Foundation/Foundation.h>
     #import "/opt/theos/Prefix.pch"  //path/to/theos/Prefix.pch
+
+    // Theos ships a private MobileCoreServices umbrella header that shadows
+    // Apple's SDK umbrella header and does not expose the legacy UTI API used
+    // by the checked-in AFNetworking sources. Import the public SDK subheaders
+    // explicitly so iOS 12+ keeps the original AFNetworking runtime behavior.
+    #if TARGET_OS_IOS || TARGET_OS_WATCH || TARGET_OS_TV
+        #import <MobileCoreServices/UTType.h>
+        #import <MobileCoreServices/UTCoreTypes.h>
+    #endif
 #endif
