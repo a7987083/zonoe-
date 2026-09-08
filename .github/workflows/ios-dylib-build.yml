@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - dev/zonoemenu-production-v1
+      - diag/zonoemenu-udid-b1-openurl-popup-v1_p2
     paths:
       - 'VERSION'
       - 'testmod/**'
@@ -29,7 +29,7 @@ jobs:
             *) echo "Invalid VERSION: $VERSION"; exit 1 ;;
           esac
           echo "TESTMOD_VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "TESTMOD_FILENAME=testmod_${VERSION}.dylib" >> "$GITHUB_ENV"
+          echo "TESTMOD_FILENAME=testmod_${VERSION}_B1_openurl_popup.dylib" >> "$GITHUB_ENV"
           echo "Resolved testmod version: $VERSION"
 
       - name: Select Xcode 16.4
@@ -43,14 +43,11 @@ jobs:
         run: |
           set -euxo pipefail
           brew install ldid dpkg || true
-
           sudo rm -rf /opt/MonkeyDev /opt/theos
           sudo mkdir -p /opt/MonkeyDev /opt/theos
           sudo chown -R "$USER":staff /opt/MonkeyDev /opt/theos
-
           git clone --depth=1 https://github.com/AloneMonkey/MonkeyDev.git /opt/MonkeyDev
           git clone --recursive --depth=1 https://github.com/theos/theos.git /opt/theos
-
           test -x /opt/MonkeyDev/bin/md
           test -d /opt/theos/vendor/include
 
@@ -102,10 +99,7 @@ jobs:
           set -euo pipefail
           echo "xcodebuild status: ${XCODEBUILD_STATUS:-unknown}"
           if [[ -f build/xcodebuild.log ]]; then
-            echo "---- first compiler/linker errors ----"
             grep -n -m 20 -E '(^|[[:space:]])(fatal )?error:|Undefined symbols for architecture|ld: ' build/xcodebuild.log || true
-          else
-            echo "build/xcodebuild.log is missing"
           fi
 
       - name: Package versioned dylib
@@ -117,7 +111,6 @@ jobs:
           test -s "$SOURCE"
           cp "$SOURCE" "$TARGET"
           test -s "$TARGET"
-          echo "Versioned artifact: $TARGET"
 
       - name: Verify dylib artifact
         if: env.XCODEBUILD_STATUS == '0'
@@ -134,7 +127,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: testmod-${{ env.TESTMOD_VERSION }}
+          name: testmod-${{ env.TESTMOD_VERSION }}-B1-openurl-popup
           path: |
             build/Release-iphoneos/${{ env.TESTMOD_FILENAME }}
             build/xcodebuild.log
@@ -143,5 +136,4 @@ jobs:
       - name: Propagate xcodebuild failure
         if: env.XCODEBUILD_STATUS != '0'
         run: |
-          echo "xcodebuild failed with status ${XCODEBUILD_STATUS:-unknown}"
           exit "${XCODEBUILD_STATUS:-1}"
