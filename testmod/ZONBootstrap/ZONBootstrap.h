@@ -4,7 +4,6 @@
 #import <Foundation/Foundation.h>
 #import "../视图菜单/NSObject+UI.h"
 #import "../ZONCore/ZONModuleLoader.h"
-#import "../ZONServices/ZONUDIDBridge.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -13,11 +12,10 @@ typedef void (^ZONBootstrapPreflightBlock)(void);
 /// Phase-one production bootstrap.
 ///
 /// The first migration stage intentionally preserves the verified runtime order:
-/// 1. Install passive host callback capture for the zonoe UDID bridge.
-/// 2. Run legacy framework preflight synchronously at the original +load timing.
-/// 3. Hop to the main queue exactly as the legacy bootstrap did.
-/// 4. Install the existing floating entry without changing its implementation.
-/// 5. Load explicitly bundled ZONModules after the floating entry is installed.
+/// 1. Run legacy framework preflight synchronously at the original +load timing.
+/// 2. Hop to the main queue exactly as the legacy bootstrap did.
+/// 3. Install the existing floating entry without changing its implementation.
+/// 4. Load explicitly bundled ZONModules after the floating entry is installed.
 ///
 /// Feature routing, authorization behavior and module ABI semantics are not changed here.
 static inline void ZONBootstrapStart(ZONBootstrapPreflightBlock _Nullable preflight)
@@ -25,10 +23,6 @@ static inline void ZONBootstrapStart(ZONBootstrapPreflightBlock _Nullable prefli
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         ZONCoreLog(ZONLogLevelInfo, "bootstrap", "start");
-
-        // Passive until the host becomes active. Apps not signed with the dedicated
-        // zonoe callback metadata are a no-op and never leave the host application.
-        ZONUDIDBridgeStart();
 
         // Preserve the legacy early-load timing for AppLovin/Unity framework probing.
         if (preflight) {
