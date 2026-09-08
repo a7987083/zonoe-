@@ -6,6 +6,7 @@ on:
     branches:
       - dev/zonoemenu-production-v1
     paths:
+      - 'VERSION'
       - 'testmod/**'
       - 'testmod.xcodeproj/**'
       - 'ZONCore/**'
@@ -17,6 +18,19 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
+
+      - name: Resolve testmod version
+        run: |
+          set -euxo pipefail
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+          test -n "$VERSION"
+          case "$VERSION" in
+            v[0-9]*_p[0-9]*) ;;
+            *) echo "Invalid VERSION: $VERSION"; exit 1 ;;
+          esac
+          echo "TESTMOD_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "TESTMOD_FILENAME=testmod_${VERSION}.dylib" >> "$GITHUB_ENV"
+          echo "Resolved testmod version: $VERSION"
 
       - name: Select Xcode 16.4
         run: |
@@ -48,6 +62,7 @@ jobs:
       - name: Verify repository layout
         run: |
           set -euxo pipefail
+          test -f VERSION
           test -f testmod/Bsphp/main.m
           test -f testmod/Bsphp/SCLAlertView/SCLAlertView.h
           test -f testmod/Bsphp/SCLAlertView/UIImage+ImageEffects.m
@@ -93,23 +108,35 @@ jobs:
             echo "build/xcodebuild.log is missing"
           fi
 
+      - name: Package versioned dylib
+        if: env.XCODEBUILD_STATUS == '0'
+        run: |
+          set -euxo pipefail
+          SOURCE="build/Release-iphoneos/testmod.dylib"
+          TARGET="build/Release-iphoneos/${TESTMOD_FILENAME}"
+          test -s "$SOURCE"
+          cp "$SOURCE" "$TARGET"
+          test -s "$TARGET"
+          echo "Versioned artifact: $TARGET"
+
       - name: Verify dylib artifact
         if: env.XCODEBUILD_STATUS == '0'
         run: |
           set -euxo pipefail
-          DYLIB="build/Release-iphoneos/testmod.dylib"
+          DYLIB="build/Release-iphoneos/${TESTMOD_FILENAME}"
           test -s "$DYLIB"
           file "$DYLIB"
           lipo -info "$DYLIB"
           otool -L "$DYLIB"
+          shasum -a 256 "$DYLIB"
 
       - name: Upload dylib and log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: zonoemenu-testmod-dylib
+          name: testmod-${{ env.TESTMOD_VERSION }}
           path: |
-            build/Release-iphoneos/testmod.dylib
+            build/Release-iphoneos/${{ env.TESTMOD_FILENAME }}
             build/xcodebuild.log
           if-no-files-found: warn
 
