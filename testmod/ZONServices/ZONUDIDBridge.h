@@ -3,18 +3,20 @@
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
-#import <objc/runtime.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <unistd.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 static NSString * const ZONUDIDBridgeValueKey = @"zonoe.udid.bridge.value";
 static NSString * const ZONUDIDBridgeSchemeKey = @"zonoe.udid.bridge.scheme";
 static NSString * const ZONUDIDBridgeRequestTimestampKey = @"zonoe.udid.bridge.requestTimestamp";
+static NSString * const ZONUDIDBridgeRequestNonceKey = @"zonoe.udid.bridge.requestNonce";
 static NSString * const ZONUDIDBridgeDidUpdateNotification = @"zonoe.udid.bridge.didUpdate";
-
-static const void *ZONUDIDBridgeModernOpenURLOriginalKey = &ZONUDIDBridgeModernOpenURLOriginalKey;
-static const void *ZONUDIDBridgeLegacyOpenURLOriginalKey = &ZONUDIDBridgeLegacyOpenURLOriginalKey;
-static const void *ZONUDIDBridgeSceneOpenURLOriginalKey = &ZONUDIDBridgeSceneOpenURLOriginalKey;
+static const uint16_t ZONUDIDBridgePort = 14302;
 
 #pragma mark - Callback metadata
 
@@ -24,11 +26,8 @@ static inline NSString * _Nullable ZONUDIDBridgeCallbackScheme(void)
     NSString *scheme = [info[@"ZonoeUDIDCallbackScheme"] isKindOfClass:NSString.class]
         ? info[@"ZonoeUDIDCallbackScheme"] : nil;
 
-    if (scheme.length > 0) {
-        return scheme;
-    }
+    if (scheme.length > 0) return scheme;
 
-    // Compatibility fallback: locate the URL type written by zonoe signing.
     NSArray *urlTypes = [info[@"CFBundleURLTypes"] isKindOfClass:NSArray.class]
         ? info[@"CFBundleURLTypes"] : nil;
     for (id object in urlTypes) {
@@ -38,9 +37,7 @@ static inline NSString * _Nullable ZONUDIDBridgeCallbackScheme(void)
         NSArray *schemes = [type[@"CFBundleURLSchemes"] isKindOfClass:NSArray.class]
             ? type[@"CFBundleURLSchemes"] : nil;
         for (id value in schemes) {
-            if ([value isKindOfClass:NSString.class] && [value length] > 0) {
-                return value;
-            }
+            if ([value isKindOfClass:NSString.class] && [value length] > 0) return value;
         }
     }
     return nil;
@@ -49,9 +46,7 @@ static inline NSString * _Nullable ZONUDIDBridgeCallbackScheme(void)
 static inline NSString *ZONUDIDBridgeCallbackHost(void)
 {
     id value = NSBundle.mainBundle.infoDictionary[@"ZonoeUDIDCallbackHost"];
-    if ([value isKindOfClass:NSString.class] && [value length] > 0) {
-        return value;
-    }
+    if ([value isKindOfClass:NSString.class] && [value length] > 0) return value;
     return @"udid-callback";
 }
 
@@ -66,18 +61,42 @@ static inline NSURL * _Nullable ZONUDIDBridgeCallbackURL(void)
     return components.URL;
 }
 
-static inline NSURL * _Nullable ZONUDIDBridgeRequestURL(void)
+#pragma mark - Nonce
+
+static inline BOOL ZONUDIDBridgeIsPlausibleNonce(NSString *value)
+{
+    if (![value isKindOfClass:NSString.class]) return NO;
+    if (value.length < 16 || value.length > 128) return NO;
+    NSCharacterSet *allowed = [NSCharacterSet characterSetWithCharactersInString:
+                               @"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"];
+    return [value rangeOfCharacterFromSet:allowed.invertedSet].location == NSNotFound;
+}
+
+static inline NSString *ZONUDIDBridgeNewNonce(void)
+{
+    return [[[NSUUID UUID].UUIDString lowercaseString] stringByReplacingOccurrencesOfString:@"-" withString:@""];
+}
+
+static inline NSURL * _Nullable ZONUDIDBridgeRequestURLForNonce(NSString *nonce)
 {
     NSURL *callbackURL = ZONUDIDBridgeCallbackURL();
-    if (!callbackURL) return nil;
+    if (!callbackURL || !ZONUDIDBridgeIsPlausibleNonce(nonce)) return nil;
 
     NSURLComponents *components = [NSURLComponents new];
     components.scheme = @"zonoe";
     components.host = @"udid";
     components.queryItems = @[
-        [NSURLQueryItem queryItemWithName:@"callback" value:callbackURL.absoluteString]
+        [NSURLQueryItem queryItemWithName:@"callback" value:callbackURL.absoluteString],
+        [NSURLQueryItem queryItemWithName:@"nonce" value:nonce]
     ];
     return components.URL;
+}
+
+static inline NSURL * _Nullable ZONUDIDBridgeRequestURL(void)
+{
+    NSString *nonce = [NSUserDefaults.standardUserDefaults stringForKey:ZONUDIDBridgeRequestNonceKey];
+    if (!ZONUDIDBridgeIsPlausibleNonce(nonce)) nonce = ZONUDIDBridgeNewNonce();
+    return ZONUDIDBridgeRequestURLForNonce(nonce);
 }
 
 #pragma mark - Stored value
@@ -93,8 +112,6 @@ static inline BOOL ZONUDIDBridgeIsPlausibleUDID(NSString *value)
     return [trimmed rangeOfCharacterFromSet:allowed.invertedSet].location == NSNotFound;
 }
 
-/// Returns the UDID captured for this signed build's unique callback scheme.
-/// Example: NSString *udid = ZONUDIDBridgeCurrentUDID();
 static inline NSString * _Nullable ZONUDIDBridgeCurrentUDID(void)
 {
     NSString *currentScheme = ZONUDIDBridgeCallbackScheme();
@@ -112,6 +129,13 @@ static inline NSString * _Nullable ZONUDIDBridgeCurrentUDID(void)
     return storedUDID;
 }
 
+static inline void ZONUDIDBridgeClearPendingRequest(void)
+{
+    NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;
+    [defaults removeObjectForKey:ZONUDIDBridgeRequestTimestampKey];
+    [defaults removeObjectForKey:ZONUDIDBridgeRequestNonceKey];
+}
+
 static inline void ZONUDIDBridgeStoreUDID(NSString *udid)
 {
     NSString *scheme = ZONUDIDBridgeCallbackScheme();
@@ -121,14 +145,14 @@ static inline void ZONUDIDBridgeStoreUDID(NSString *udid)
     NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;
     [defaults setObject:trimmed forKey:ZONUDIDBridgeValueKey];
     [defaults setObject:scheme forKey:ZONUDIDBridgeSchemeKey];
-    [defaults removeObjectForKey:ZONUDIDBridgeRequestTimestampKey];
+    ZONUDIDBridgeClearPendingRequest();
 
     [[NSNotificationCenter defaultCenter] postNotificationName:ZONUDIDBridgeDidUpdateNotification
                                                         object:trimmed];
-    NSLog(@"[zonoemenu][INFO][udid] callback received (%lu chars)", (unsigned long)trimmed.length);
+    NSLog(@"[zonoemenu][INFO][udid] bridge result received (%lu chars)", (unsigned long)trimmed.length);
 }
 
-#pragma mark - URL parsing
+#pragma mark - Callback URL compatibility parser
 
 static inline BOOL ZONUDIDBridgeHandleURL(NSURL *url)
 {
@@ -137,21 +161,29 @@ static inline BOOL ZONUDIDBridgeHandleURL(NSURL *url)
     NSString *expectedScheme = ZONUDIDBridgeCallbackScheme();
     NSString *expectedHost = ZONUDIDBridgeCallbackHost();
     if (expectedScheme.length == 0) return NO;
-
     if ([url.scheme caseInsensitiveCompare:expectedScheme] != NSOrderedSame) return NO;
     if (expectedHost.length > 0 && [url.host caseInsensitiveCompare:expectedHost] != NSOrderedSame) return NO;
 
-    NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
-    NSString *udid = nil;
-    for (NSURLQueryItem *item in components.queryItems ?: @[]) {
-        if ([item.name isEqualToString:@"udid"] && item.value.length > 0) {
-            udid = item.value;
-            break;
-        }
+    NSString *expectedNonce = [NSUserDefaults.standardUserDefaults stringForKey:ZONUDIDBridgeRequestNonceKey];
+    if (!ZONUDIDBridgeIsPlausibleNonce(expectedNonce)) {
+        NSLog(@"[zonoemenu][WARN][udid] callback arrived without an active nonce");
+        return YES;
     }
 
+    NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
+    NSString *udid = nil;
+    NSString *nonce = nil;
+    for (NSURLQueryItem *item in components.queryItems ?: @[]) {
+        if ([item.name isEqualToString:@"udid"] && item.value.length > 0) udid = item.value;
+        if ([item.name isEqualToString:@"nonce"] && item.value.length > 0) nonce = item.value;
+    }
+
+    if (!ZONUDIDBridgeIsPlausibleNonce(nonce) || ![nonce isEqualToString:expectedNonce]) {
+        NSLog(@"[zonoemenu][WARN][udid] callback nonce mismatch");
+        return YES;
+    }
     if (!ZONUDIDBridgeIsPlausibleUDID(udid)) {
-        NSLog(@"[zonoemenu][WARN][udid] callback matched but UDID was missing or invalid");
+        NSLog(@"[zonoemenu][WARN][udid] callback UDID missing or invalid");
         return YES;
     }
 
@@ -159,169 +191,145 @@ static inline BOOL ZONUDIDBridgeHandleURL(NSURL *url)
     return YES;
 }
 
-#pragma mark - Delegate hook helpers
+#pragma mark - Localhost bridge fetch (no AppDelegate/SceneDelegate hooks)
 
-static inline Method _Nullable ZONUDIDBridgeDirectMethod(Class cls, SEL selector)
+static inline NSDictionary * _Nullable ZONUDIDBridgeFetchLocalResultOnce(NSString *nonce)
 {
-    unsigned int count = 0;
-    Method *methods = class_copyMethodList(cls, &count);
-    Method found = NULL;
-    for (unsigned int i = 0; i < count; i++) {
-        if (method_getName(methods[i]) == selector) {
-            found = methods[i];
-            break;
+    if (!ZONUDIDBridgeIsPlausibleNonce(nonce)) return nil;
+
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd < 0) return nil;
+
+    struct timeval timeout;
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 700000;
+    setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+    setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
+
+    struct sockaddr_in address;
+    memset(&address, 0, sizeof(address));
+    address.sin_family = AF_INET;
+    address.sin_port = htons(ZONUDIDBridgePort);
+    inet_pton(AF_INET, "127.0.0.1", &address.sin_addr);
+
+    if (connect(fd, (struct sockaddr *)&address, sizeof(address)) != 0) {
+        close(fd);
+        return nil;
+    }
+
+    NSString *request = [NSString stringWithFormat:
+                         @"GET /bridge/result/%@ HTTP/1.1\r\nHost: 127.0.0.1:%u\r\nConnection: close\r\n\r\n",
+                         nonce, ZONUDIDBridgePort];
+    NSData *requestData = [request dataUsingEncoding:NSUTF8StringEncoding];
+    const uint8_t *bytes = requestData.bytes;
+    NSUInteger remaining = requestData.length;
+    while (remaining > 0) {
+        ssize_t written = send(fd, bytes, remaining, 0);
+        if (written <= 0) {
+            close(fd);
+            return nil;
         }
-    }
-    free(methods);
-    return found;
-}
-
-static inline NSValue *ZONUDIDBridgeIMPValue(IMP imp)
-{
-    return [NSValue value:&imp withObjCType:@encode(IMP)];
-}
-
-static inline IMP _Nullable ZONUDIDBridgeIMPFromValue(NSValue *value)
-{
-    if (!value) return NULL;
-    IMP imp = NULL;
-    [value getValue:&imp];
-    return imp;
-}
-
-static inline IMP _Nullable ZONUDIDBridgeOriginalIMP(id object, const void *key)
-{
-    for (Class cls = object_getClass(object); cls != Nil; cls = class_getSuperclass(cls)) {
-        NSValue *value = objc_getAssociatedObject((id)cls, key);
-        IMP imp = ZONUDIDBridgeIMPFromValue(value);
-        if (imp) return imp;
-    }
-    return NULL;
-}
-
-static inline void ZONUDIDBridgeHookMethod(Class cls,
-                                           SEL selector,
-                                           IMP replacement,
-                                           const char *fallbackTypes,
-                                           const void *originalKey)
-{
-    if (!cls) return;
-
-    Method direct = ZONUDIDBridgeDirectMethod(cls, selector);
-    if (direct && method_getImplementation(direct) == replacement) return;
-
-    Method resolved = class_getInstanceMethod(cls, selector);
-    IMP original = resolved ? method_getImplementation(resolved) : NULL;
-    const char *types = resolved ? method_getTypeEncoding(resolved) : fallbackTypes;
-
-    if (direct) {
-        method_setImplementation(direct, replacement);
-    } else {
-        class_addMethod(cls, selector, replacement, types);
+        bytes += written;
+        remaining -= (NSUInteger)written;
     }
 
-    if (original && original != replacement) {
-        objc_setAssociatedObject((id)cls,
-                                 originalKey,
-                                 ZONUDIDBridgeIMPValue(original),
-                                 OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    NSMutableData *responseData = [NSMutableData data];
+    uint8_t buffer[2048];
+    while (responseData.length < 65536) {
+        ssize_t count = recv(fd, buffer, sizeof(buffer), 0);
+        if (count <= 0) break;
+        [responseData appendBytes:buffer length:(NSUInteger)count];
     }
+    close(fd);
+
+    NSString *response = [[NSString alloc] initWithData:responseData encoding:NSUTF8StringEncoding];
+    if (response.length == 0 ||
+        (![response hasPrefix:@"HTTP/1.1 200"] && ![response hasPrefix:@"HTTP/1.0 200"])) {
+        return nil;
+    }
+
+    NSRange separator = [response rangeOfString:@"\r\n\r\n"];
+    if (separator.location == NSNotFound) return nil;
+    NSString *body = [response substringFromIndex:NSMaxRange(separator)];
+    NSData *bodyData = [body dataUsingEncoding:NSUTF8StringEncoding];
+    id object = [NSJSONSerialization JSONObjectWithData:bodyData options:0 error:nil];
+    return [object isKindOfClass:NSDictionary.class] ? object : nil;
 }
 
-static BOOL ZONUDIDBridgeModernOpenURL(id self,
-                                       SEL _cmd,
-                                       UIApplication *application,
-                                       NSURL *url,
-                                       NSDictionary *options)
+static inline void ZONUDIDBridgeFetchPendingResult(void)
 {
-    if (ZONUDIDBridgeHandleURL(url)) return YES;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        static BOOL inFlight = NO;
+        if (inFlight || ZONUDIDBridgeCurrentUDID().length > 0) return;
 
-    IMP original = ZONUDIDBridgeOriginalIMP(self, ZONUDIDBridgeModernOpenURLOriginalKey);
-    if (!original) return NO;
-    return ((BOOL (*)(id, SEL, UIApplication *, NSURL *, NSDictionary *))original)
-        (self, _cmd, application, url, options);
-}
+        NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;
+        NSString *nonce = [defaults stringForKey:ZONUDIDBridgeRequestNonceKey];
+        NSTimeInterval requestedAt = [defaults doubleForKey:ZONUDIDBridgeRequestTimestampKey];
+        if (!ZONUDIDBridgeIsPlausibleNonce(nonce)) return;
 
-static BOOL ZONUDIDBridgeLegacyOpenURL(id self,
-                                       SEL _cmd,
-                                       UIApplication *application,
-                                       NSURL *url,
-                                       NSString *sourceApplication,
-                                       id annotation)
-{
-    if (ZONUDIDBridgeHandleURL(url)) return YES;
-
-    IMP original = ZONUDIDBridgeOriginalIMP(self, ZONUDIDBridgeLegacyOpenURLOriginalKey);
-    if (!original) return NO;
-    return ((BOOL (*)(id, SEL, UIApplication *, NSURL *, NSString *, id))original)
-        (self, _cmd, application, url, sourceApplication, annotation);
-}
-
-static void ZONUDIDBridgeSceneOpenURLContexts(id self,
-                                              SEL _cmd,
-                                              id scene,
-                                              NSSet *contexts)
-{
-    NSMutableSet *remaining = [NSMutableSet setWithCapacity:contexts.count];
-    for (id context in contexts) {
-        NSURL *url = nil;
-        @try {
-            id value = [context valueForKey:@"URL"];
-            if ([value isKindOfClass:NSURL.class]) url = value;
-        } @catch (__unused NSException *exception) {}
-
-        if (!url || !ZONUDIDBridgeHandleURL(url)) {
-            [remaining addObject:context];
+        NSTimeInterval age = NSDate.date.timeIntervalSince1970 - requestedAt;
+        if (requestedAt <= 0 || age > 90.0) {
+            ZONUDIDBridgeClearPendingRequest();
+            return;
         }
-    }
 
-    if (remaining.count == 0) return;
+        inFlight = YES;
+        dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+            NSDictionary *result = nil;
+            for (NSInteger attempt = 0; attempt < 6 && !result; attempt++) {
+                result = ZONUDIDBridgeFetchLocalResultOnce(nonce);
+                if (!result) usleep(250000);
+            }
 
-    IMP original = ZONUDIDBridgeOriginalIMP(self, ZONUDIDBridgeSceneOpenURLOriginalKey);
-    if (original) {
-        ((void (*)(id, SEL, id, NSSet *))original)(self, _cmd, scene, remaining.copy);
-    }
+            dispatch_async(dispatch_get_main_queue(), ^{
+                inFlight = NO;
+                if (!result) {
+                    NSLog(@"[zonoemenu][WARN][udid] localhost bridge result unavailable");
+                    return;
+                }
+
+                NSString *returnedNonce = [result[@"nonce"] isKindOfClass:NSString.class] ? result[@"nonce"] : nil;
+                NSString *udid = [result[@"udid"] isKindOfClass:NSString.class] ? result[@"udid"] : nil;
+                NSString *currentNonce = [NSUserDefaults.standardUserDefaults stringForKey:ZONUDIDBridgeRequestNonceKey];
+
+                if (!ZONUDIDBridgeIsPlausibleNonce(returnedNonce) ||
+                    ![returnedNonce isEqualToString:nonce] ||
+                    ![returnedNonce isEqualToString:currentNonce]) {
+                    NSLog(@"[zonoemenu][WARN][udid] localhost bridge nonce mismatch");
+                    return;
+                }
+                if (!ZONUDIDBridgeIsPlausibleUDID(udid)) {
+                    NSLog(@"[zonoemenu][WARN][udid] localhost bridge returned invalid UDID");
+                    return;
+                }
+
+                ZONUDIDBridgeStoreUDID(udid);
+            });
+        });
+    });
 }
 
-static inline void ZONUDIDBridgeInstallDelegateHooks(void)
+static inline void ZONUDIDBridgeStart(void)
 {
-    UIApplication *application = UIApplication.sharedApplication;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        NSNotificationCenter *center = NSNotificationCenter.defaultCenter;
+        [center addObserverForName:UIApplicationDidBecomeActiveNotification
+                           object:nil
+                            queue:NSOperationQueue.mainQueue
+                       usingBlock:^(__unused NSNotification *note) {
+            ZONUDIDBridgeFetchPendingResult();
+        }];
 
-    // On scene-based apps, the callback is delivered to the scene delegate. Hook only
-    // that path when one exists; touching both delegate layers increases compatibility
-    // risk in Unity and hybrid hosts that proxy UIApplicationDelegate callbacks.
-    if (@available(iOS 13.0, *)) {
-        BOOL installedSceneHook = NO;
-        for (UIScene *scene in application.connectedScenes) {
-            if (scene.activationState == UISceneActivationStateUnattached) continue;
-            id sceneDelegate = scene.delegate;
-            if (!sceneDelegate) continue;
-
-            ZONUDIDBridgeHookMethod(object_getClass(sceneDelegate),
-                                    NSSelectorFromString(@"scene:openURLContexts:"),
-                                    (IMP)ZONUDIDBridgeSceneOpenURLContexts,
-                                    "v@:@@",
-                                    ZONUDIDBridgeSceneOpenURLOriginalKey);
-            installedSceneHook = YES;
+        if (@available(iOS 13.0, *)) {
+            [center addObserverForName:UISceneDidActivateNotification
+                               object:nil
+                                queue:NSOperationQueue.mainQueue
+                           usingBlock:^(__unused NSNotification *note) {
+                ZONUDIDBridgeFetchPendingResult();
+            }];
         }
-        if (installedSceneHook) return;
-    }
-
-    // iOS 12 and non-scene apps use UIApplicationDelegate URL callbacks.
-    id appDelegate = application.delegate;
-    if (!appDelegate) return;
-
-    Class cls = object_getClass(appDelegate);
-    ZONUDIDBridgeHookMethod(cls,
-                            @selector(application:openURL:options:),
-                            (IMP)ZONUDIDBridgeModernOpenURL,
-                            "B@:@@@",
-                            ZONUDIDBridgeModernOpenURLOriginalKey);
-    ZONUDIDBridgeHookMethod(cls,
-                            @selector(application:openURL:sourceApplication:annotation:),
-                            (IMP)ZONUDIDBridgeLegacyOpenURL,
-                            "B@:@@@@",
-                            ZONUDIDBridgeLegacyOpenURLOriginalKey);
+    });
 }
 
 #pragma mark - Request
@@ -329,50 +337,41 @@ static inline void ZONUDIDBridgeInstallDelegateHooks(void)
 static inline void ZONUDIDBridgeRequestIfNeeded(void)
 {
     if (ZONUDIDBridgeCurrentUDID().length > 0) return;
-
-    NSURL *requestURL = ZONUDIDBridgeRequestURL();
-    if (!requestURL) return; // App was not signed with the zonoe callback option.
+    if (ZONUDIDBridgeCallbackScheme().length == 0) return;
 
     NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;
     NSTimeInterval now = NSDate.date.timeIntervalSince1970;
     NSTimeInterval previous = [defaults doubleForKey:ZONUDIDBridgeRequestTimestampKey];
     if (previous > 0 && now - previous < 10.0) return;
 
-    // Install only when a user interaction is about to launch zonoe. This avoids
-    // altering host lifecycle delegates during dylib +load / early Unity startup.
-    ZONUDIDBridgeInstallDelegateHooks();
+    NSString *nonce = ZONUDIDBridgeNewNonce();
+    NSURL *requestURL = ZONUDIDBridgeRequestURLForNonce(nonce);
+    if (!requestURL) return;
+
+    ZONUDIDBridgeStart();
+    [defaults setObject:nonce forKey:ZONUDIDBridgeRequestNonceKey];
     [defaults setDouble:now forKey:ZONUDIDBridgeRequestTimestampKey];
 
-    NSLog(@"[zonoemenu][INFO][udid] requesting UDID through zonoe callback");
+    NSLog(@"[zonoemenu][INFO][udid] requesting UDID through zonoe callback + nonce");
     [UIApplication.sharedApplication openURL:requestURL
                                      options:@{}
                            completionHandler:^(BOOL success) {
         if (!success) {
-            [NSUserDefaults.standardUserDefaults removeObjectForKey:ZONUDIDBridgeRequestTimestampKey];
+            ZONUDIDBridgeClearPendingRequest();
             NSLog(@"[zonoemenu][WARN][udid] unable to open zonoe://udid");
         }
     }];
 }
 
-/// Clears only the bridge cache and requests a fresh value for the current signed callback scheme.
 static inline void ZONUDIDBridgeForceRefresh(void)
 {
     NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;
     [defaults removeObjectForKey:ZONUDIDBridgeValueKey];
     [defaults removeObjectForKey:ZONUDIDBridgeSchemeKey];
-    [defaults removeObjectForKey:ZONUDIDBridgeRequestTimestampKey];
+    ZONUDIDBridgeClearPendingRequest();
 
     dispatch_async(dispatch_get_main_queue(), ^{
         ZONUDIDBridgeRequestIfNeeded();
-    });
-}
-
-/// Passive compatibility entry. It never opens zonoe automatically.
-/// Normal production flow calls ZONUDIDBridgeRequestIfNeeded() only after explicit menu interaction.
-static inline void ZONUDIDBridgeStart(void)
-{
-    dispatch_async(dispatch_get_main_queue(), ^{
-        ZONUDIDBridgeInstallDelegateHooks();
     });
 }
 
