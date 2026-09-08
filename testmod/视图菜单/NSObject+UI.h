@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 -(void)显示图标;
 -(void)显示图标2;
 -(void)vip菜单显示;
-
+-(void)vipaa;
 
 @end
 
