@@ -51,6 +51,14 @@
         PopupMenuVC *menu = [PopupMenuVC new];
         menu.modalPresentationStyle = UIModalPresentationOverFullScreen;
 
+        // zonoemenu 本身是固定浅色设计。部分宿主游戏会强制 Dark Style，
+        // 未显式设置 textColor 的 UILabel 会继承白色动态 labelColor，
+        // 落在菜单的白色卡片上后看起来像“文字消失”。
+        // 只隔离本菜单的界面风格，不修改宿主 App 的全局 appearance。
+        if (@available(iOS 13.0, *)) {
+            menu.overrideUserInterfaceStyle = UIUserInterfaceStyleLight;
+        }
+
         [topVC presentViewController:menu
                             animated:NO
                           completion:nil];
