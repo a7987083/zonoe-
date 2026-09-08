@@ -1,0 +1,43 @@
+name: Module ABI Smoke
+
+on:
+  push:
+    branches:
+      - dev/zonoemenu-production-v1
+  pull_request:
+    paths:
+      - 'ZONCore/**'
+      - 'Examples/**'
+      - 'Tests/**'
+      - '.github/workflows/module-abi.yml'
+
+jobs:
+  module-abi:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and run ABI smoke test
+        run: |
+          set -euxo pipefail
+          clang -std=c11 -Wall -Wextra -Werror \
+            -I ZONCore \
+            Tests/module_abi_smoke.c Examples/ZONExampleModule.c \
+            -o /tmp/zonoemenu-module-abi-smoke
+          /tmp/zonoemenu-module-abi-smoke
+
+      - name: Build example dylib
+        run: |
+          set -euxo pipefail
+          clang -std=c11 -Wall -Wextra -Werror \
+            -dynamiclib -I ZONCore \
+            Examples/ZONExampleModule.c \
+            -o /tmp/ZONExampleModule.dylib
+          test -s /tmp/ZONExampleModule.dylib
+
+      - name: Verify required exports
+        run: |
+          set -euxo pipefail
+          nm -gU /tmp/ZONExampleModule.dylib | grep '_zonoe_module_abi_version$'
+          nm -gU /tmp/ZONExampleModule.dylib | grep '_zonoe_module_identifier$'
+          nm -gU /tmp/ZONExampleModule.dylib | grep '_zonoe_module_initialize$'
