@@ -1,0 +1,86 @@
+name: iOS Dylib Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev/zonoemenu-production-v1
+    paths:
+      - 'testmod/**'
+      - 'testmod.xcodeproj/**'
+      - 'ZONCore/**'
+      - '.github/workflows/ios-dylib-build.yml'
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode 16.4
+        run: |
+          set -euxo pipefail
+          sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Install legacy build dependencies
+        run: |
+          set -euxo pipefail
+          brew install ldid dpkg || true
+
+          sudo mkdir -p /opt/MonkeyDev /opt/theos
+          sudo chown -R "$USER":staff /opt/MonkeyDev /opt/theos
+          rm -rf /opt/MonkeyDev /opt/theos
+
+          git clone --depth=1 https://github.com/AloneMonkey/MonkeyDev.git /opt/MonkeyDev
+          git clone --recursive --depth=1 https://github.com/theos/theos.git /opt/theos
+
+          test -x /opt/MonkeyDev/bin/md
+          test -d /opt/theos/vendor/include
+
+      - name: Verify repository layout
+        run: |
+          set -euxo pipefail
+          test -f testmod/Bsphp/main.m
+          test -f testmod/testmod-Prefix.pch
+          test -f testmod/ZONCore/ZONModuleABI.h
+          test -f testmod/ZONCore/ZONModuleLoader.h
+          test -f testmod.xcodeproj/project.pbxproj
+
+      - name: Build testmod dylib
+        run: |
+          set -o pipefail
+          mkdir -p build/Release-iphoneos
+          xcodebuild \
+            -project testmod.xcodeproj \
+            -target testmod \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            IPHONEOS_DEPLOYMENT_TARGET=12.0 \
+            ARCHS="arm64 arm64e" \
+            ONLY_ACTIVE_ARCH=NO \
+            MonkeyDevInstallOnAnyBuild=NO \
+            MonkeyDevBuildPackageOnAnyBuild=NO \
+            CONFIGURATION_BUILD_DIR="$PWD/build/Release-iphoneos" \
+            build 2>&1 | tee build/xcodebuild.log
+
+      - name: Verify dylib artifact
+        run: |
+          set -euxo pipefail
+          DYLIB="build/Release-iphoneos/testmod.dylib"
+          test -s "$DYLIB"
+          file "$DYLIB"
+          lipo -info "$DYLIB"
+          otool -L "$DYLIB"
+
+      - name: Upload dylib and log
+        uses: actions/upload-artifact@v4
+        with:
+          name: zonoemenu-testmod-dylib
+          path: |
+            build/Release-iphoneos/testmod.dylib
+            build/xcodebuild.log
+          if-no-files-found: error
