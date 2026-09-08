@@ -57,8 +57,9 @@ jobs:
           test -f testmod.xcodeproj/project.pbxproj
 
       - name: Build testmod dylib
+        id: xcodebuild
         run: |
-          set -o pipefail
+          set +e
           mkdir -p build/Release-iphoneos
           xcodebuild \
             -project testmod.xcodeproj \
@@ -74,8 +75,24 @@ jobs:
             MonkeyDevBuildPackageOnAnyBuild=NO \
             CONFIGURATION_BUILD_DIR="$PWD/build/Release-iphoneos" \
             build 2>&1 | tee build/xcodebuild.log
+          status=${PIPESTATUS[0]}
+          echo "XCODEBUILD_STATUS=$status" >> "$GITHUB_ENV"
+          exit 0
+
+      - name: Report first compiler errors
+        if: always()
+        run: |
+          set -euo pipefail
+          echo "xcodebuild status: ${XCODEBUILD_STATUS:-unknown}"
+          if [[ -f build/xcodebuild.log ]]; then
+            echo "---- first compiler/linker errors ----"
+            grep -n -m 20 -E '(^|[[:space:]])(fatal )?error:|Undefined symbols for architecture|ld: ' build/xcodebuild.log || true
+          else
+            echo "build/xcodebuild.log is missing"
+          fi
 
       - name: Verify dylib artifact
+        if: env.XCODEBUILD_STATUS == '0'
         run: |
           set -euxo pipefail
           DYLIB="build/Release-iphoneos/testmod.dylib"
@@ -85,10 +102,17 @@ jobs:
           otool -L "$DYLIB"
 
       - name: Upload dylib and log
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: zonoemenu-testmod-dylib
           path: |
             build/Release-iphoneos/testmod.dylib
             build/xcodebuild.log
-          if-no-files-found: error
+          if-no-files-found: warn
+
+      - name: Propagate xcodebuild failure
+        if: env.XCODEBUILD_STATUS != '0'
+        run: |
+          echo "xcodebuild failed with status ${XCODEBUILD_STATUS:-unknown}"
+          exit "${XCODEBUILD_STATUS:-1}"
