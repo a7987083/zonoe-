@@ -1,6 +1,7 @@
 #ifndef ZONUDIDDiagUI_h
 #define ZONUDIDDiagUI_h
 
+// v1_p2 B diagnostic: nonce + localhost bridge with explicit success/failure popup.
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import "ZONUDIDBridge.h"
