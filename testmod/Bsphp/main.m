@@ -20,7 +20,7 @@
 #import "JDStatusBarNotification.h"
 #import "NSObject+UI.h"
 #import <dlfcn.h>
-#import "../ZONCore/ZONModuleLoader.h"
+#import "../ZONBootstrap/ZONBootstrap.h"
  
 @implementation NSObject (mian)
 
@@ -79,31 +79,11 @@
 }
 +(void)load
 {
-    // ① 尝试加载 AppLovin SDK（最早时机）
-       [self tryLoadAppLovinSDK];
-    [self UnityFramework];
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0 * NSEC_PER_SEC)),dispatch_get_main_queue(), ^{
-
-//        JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
-//        [presenter presentWithText:@"🎉加载插件中...." dismissAfterDelay:0 includedStyle:JDStatusBarNotificationIncludedStyleLight];
-//         [NSObject previewFile];
-        
-
-//                [[daochucd alloc] backupasd];
-
-//        [[WX_NongShiFu123 alloc] loada];
-//        [self showProgressNotificationAndAnimate];
-                [NSObject 显示图标];
-
-        // Production v1: load only explicitly bundled/signed zonoemenu modules.
-        // If no ZONModules directory exists this is a no-op, preserving legacy behavior.
-        ZONLoadBundledModules();
-         
-
- 
-     });
-
-
+    ZONBootstrapStart(^{
+        // Phase 1 deliberately keeps the verified legacy preflight order and timing.
+        [self tryLoadAppLovinSDK];
+        [self UnityFramework];
+    });
 }
 
 
@@ -121,7 +101,7 @@
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0 * NSEC_PER_SEC)),dispatch_get_main_queue(), ^{
 //        JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
 //
-//            [presenter addStyleNamed:@"downloadProgressStyle" prepare:^JDStatusBarNotificationStyle * _Nonnull style) {
+//            [presenter addStyleNamed:@"downloadProgressStyle" prepare:^JDStatusBarNotificationStyle * _Nonnull(JDStatusBarNotificationStyle * _Nonnull style) {
 //                style.textStyle.font = [UIFont systemFontOfSize:13.0]; //
 //                style.textStyle.textColor = [UIColor whiteColor]; //
 //                style.backgroundStyle.backgroundColor = [UIColor darkGrayColor]; //
