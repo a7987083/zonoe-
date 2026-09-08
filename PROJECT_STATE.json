@@ -1,0 +1,18 @@
+{
+  "project": "zonoemenu",
+  "repository": "a7987083/zonoe-",
+  "stable_branch": "main",
+  "production_branch": "dev/zonoemenu-production-v1",
+  "stable_baseline_commit": "68329ee5844f3899d369a778073e5586d8bc4e1f",
+  "minimum_ios": "12.0",
+  "architectures": ["arm64", "arm64e"],
+  "runtime_priority": ["ipa_injection", "jailbreak_injection"],
+  "auth_strategy": "legacy_bsphp_compat_then_replace",
+  "product_role": "universal_core_menu",
+  "external_module_strategy": "dlopen_dylib_plugins",
+  "preserve_existing_features": true,
+  "build_status": "not_run",
+  "runtime_status": "not_run",
+  "regression_status": "not_run",
+  "next_task": "introduce production bootstrap and module ABI without feature regression"
+}

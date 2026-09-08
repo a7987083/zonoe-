@@ -1,0 +1,22 @@
+# Xcode user state
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+*.xcbkptlist
+
+# Build outputs
+build/
+DerivedData/
+*.dSYM/
+*.dylib
+*.deb
+
+# macOS
+.DS_Store
+
+# Local secrets/config overrides
+*.local.xcconfig
+Secrets.xcconfig
+.env
+.env.*
