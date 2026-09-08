@@ -20,6 +20,7 @@
 #import "JDStatusBarNotification.h"
 #import "NSObject+UI.h"
 #import <dlfcn.h>
+#import "../ZONCore/ZONModuleLoader.h"
  
 @implementation NSObject (mian)
 
@@ -93,6 +94,10 @@
 //        [[WX_NongShiFu123 alloc] loada];
 //        [self showProgressNotificationAndAnimate];
                 [NSObject 显示图标];
+
+        // Production v1: load only explicitly bundled/signed zonoemenu modules.
+        // If no ZONModules directory exists this is a no-op, preserving legacy behavior.
+        ZONLoadBundledModules();
          
 
  
@@ -116,7 +121,7 @@
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0 * NSEC_PER_SEC)),dispatch_get_main_queue(), ^{
 //        JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
 //
-//            [presenter addStyleNamed:@"downloadProgressStyle" prepare:^JDStatusBarNotificationStyle * _Nonnull(JDStatusBarNotificationStyle * _Nonnull style) {
+//            [presenter addStyleNamed:@"downloadProgressStyle" prepare:^JDStatusBarNotificationStyle * _Nonnull style) {
 //                style.textStyle.font = [UIFont systemFontOfSize:13.0]; //
 //                style.textStyle.textColor = [UIColor whiteColor]; //
 //                style.backgroundStyle.backgroundColor = [UIColor darkGrayColor]; //
