@@ -5,7 +5,7 @@
   "production_branch": "dev/zonoemenu-production-v1",
   "stable_baseline_commit": "68329ee5844f3899d369a778073e5586d8bc4e1f",
   "source_completion_commit_main": "89507e1cd2f7c27184931e875adca02b043cfb36",
-  "last_verified_code_commit": "095d8d0a3cb960686a30f410bfc6299a914f9ed4",
+  "last_verified_code_commit": "7120f92f978b99931444903b6f95b2e56a1bd594",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
   "runtime_priority": ["ipa_injection", "jailbreak_injection"],
@@ -14,12 +14,18 @@
   "external_module_strategy": "dlopen_dylib_plugins",
   "preserve_existing_features": true,
   "build_status": "success",
-  "build_workflow_run": 34270333942,
+  "build_workflow_run": 34271970872,
   "build_artifact": "zonoemenu-testmod-dylib",
-  "build_artifact_id": 10073571157,
-  "dylib_sha256": "eb3bedb670081760e45a4b8dd1da0222d579e52ebbb96c89b1e616a73e2d0fb6",
+  "build_artifact_id": 10074199433,
+  "dylib_sha256": "c19c792e25f9cf65792992098f15b43621c7e3022a33781daddf5cc102970c71",
   "dylib_architectures": ["arm64", "arm64e"],
-  "runtime_status": "not_run",
-  "regression_status": "not_run",
-  "next_task": "runtime smoke test the verified dylib, then continue bootstrap/service modularization without feature regression"
+  "runtime_status": "success",
+  "runtime_checks": [
+    "ipa_injection_launch_no_crash",
+    "floating_icon_visible",
+    "floating_icon_tap_opens_menu",
+    "floating_icon_drag_works_without_false_menu_open"
+  ],
+  "regression_status": "partial_pass",
+  "next_task": "continue production bootstrap, feature registry and legacy BS/PHP service-adapter modularization while preserving the verified floating-menu runtime baseline"
 }
