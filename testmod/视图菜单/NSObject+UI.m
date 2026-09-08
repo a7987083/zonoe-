@@ -37,22 +37,30 @@
     });
 }
 
-#pragma mark - 打开新菜单
+#pragma mark - 打开菜单
 
-- (void)vipaa
+- (void)vip菜单显示
 {
     dispatch_async(dispatch_get_main_queue(), ^{
 
         UIViewController *topVC = [self topViewController];
+        if (!topVC || [topVC isKindOfClass:[PopupMenuVC class]]) {
+            return;
+        }
 
         PopupMenuVC *menu = [PopupMenuVC new];
-
         menu.modalPresentationStyle = UIModalPresentationOverFullScreen;
 
         [topVC presentViewController:menu
                             animated:NO
                           completion:nil];
     });
+}
+
+// 兼容旧调用名，统一走 vip菜单显示。
+- (void)vipaa
+{
+    [self vip菜单显示];
 }
 
 #pragma mark - 获取顶部控制器
