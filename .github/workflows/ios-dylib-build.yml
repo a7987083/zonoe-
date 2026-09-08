@@ -29,9 +29,9 @@ jobs:
           set -euxo pipefail
           brew install ldid dpkg || true
 
+          sudo rm -rf /opt/MonkeyDev /opt/theos
           sudo mkdir -p /opt/MonkeyDev /opt/theos
           sudo chown -R "$USER":staff /opt/MonkeyDev /opt/theos
-          rm -rf /opt/MonkeyDev /opt/theos
 
           git clone --depth=1 https://github.com/AloneMonkey/MonkeyDev.git /opt/MonkeyDev
           git clone --recursive --depth=1 https://github.com/theos/theos.git /opt/theos
