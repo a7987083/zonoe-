@@ -286,32 +286,42 @@ static void ZONUDIDBridgeSceneOpenURLContexts(id self,
 static inline void ZONUDIDBridgeInstallDelegateHooks(void)
 {
     UIApplication *application = UIApplication.sharedApplication;
-    id appDelegate = application.delegate;
-    if (appDelegate) {
-        Class cls = object_getClass(appDelegate);
-        ZONUDIDBridgeHookMethod(cls,
-                                @selector(application:openURL:options:),
-                                (IMP)ZONUDIDBridgeModernOpenURL,
-                                "B@:@@@",
-                                ZONUDIDBridgeModernOpenURLOriginalKey);
-        ZONUDIDBridgeHookMethod(cls,
-                                @selector(application:openURL:sourceApplication:annotation:),
-                                (IMP)ZONUDIDBridgeLegacyOpenURL,
-                                "B@:@@@@",
-                                ZONUDIDBridgeLegacyOpenURLOriginalKey);
-    }
 
+    // On scene-based apps, the callback is delivered to the scene delegate. Hook only
+    // that path when one exists; touching both delegate layers increases compatibility
+    // risk in Unity and hybrid hosts that proxy UIApplicationDelegate callbacks.
     if (@available(iOS 13.0, *)) {
+        BOOL installedSceneHook = NO;
         for (UIScene *scene in application.connectedScenes) {
+            if (scene.activationState == UISceneActivationStateUnattached) continue;
             id sceneDelegate = scene.delegate;
             if (!sceneDelegate) continue;
+
             ZONUDIDBridgeHookMethod(object_getClass(sceneDelegate),
                                     NSSelectorFromString(@"scene:openURLContexts:"),
                                     (IMP)ZONUDIDBridgeSceneOpenURLContexts,
                                     "v@:@@",
                                     ZONUDIDBridgeSceneOpenURLOriginalKey);
+            installedSceneHook = YES;
         }
+        if (installedSceneHook) return;
     }
+
+    // iOS 12 and non-scene apps use UIApplicationDelegate URL callbacks.
+    id appDelegate = application.delegate;
+    if (!appDelegate) return;
+
+    Class cls = object_getClass(appDelegate);
+    ZONUDIDBridgeHookMethod(cls,
+                            @selector(application:openURL:options:),
+                            (IMP)ZONUDIDBridgeModernOpenURL,
+                            "B@:@@@",
+                            ZONUDIDBridgeModernOpenURLOriginalKey);
+    ZONUDIDBridgeHookMethod(cls,
+                            @selector(application:openURL:sourceApplication:annotation:),
+                            (IMP)ZONUDIDBridgeLegacyOpenURL,
+                            "B@:@@@@",
+                            ZONUDIDBridgeLegacyOpenURLOriginalKey);
 }
 
 #pragma mark - Request
@@ -328,8 +338,10 @@ static inline void ZONUDIDBridgeRequestIfNeeded(void)
     NSTimeInterval previous = [defaults doubleForKey:ZONUDIDBridgeRequestTimestampKey];
     if (previous > 0 && now - previous < 10.0) return;
 
-    [defaults setDouble:now forKey:ZONUDIDBridgeRequestTimestampKey];
+    // Install only when a user interaction is about to launch zonoe. This avoids
+    // altering host lifecycle delegates during dylib +load / early Unity startup.
     ZONUDIDBridgeInstallDelegateHooks();
+    [defaults setDouble:now forKey:ZONUDIDBridgeRequestTimestampKey];
 
     NSLog(@"[zonoemenu][INFO][udid] requesting UDID through zonoe callback");
     [UIApplication.sharedApplication openURL:requestURL
@@ -355,50 +367,12 @@ static inline void ZONUDIDBridgeForceRefresh(void)
     });
 }
 
-/// Installs URL capture hooks early, then auto-requests once when the host app becomes active.
-/// Apps without ZonoeUDIDCallbackScheme are a no-op.
+/// Passive compatibility entry. It never opens zonoe automatically.
+/// Normal production flow calls ZONUDIDBridgeRequestIfNeeded() only after explicit menu interaction.
 static inline void ZONUDIDBridgeStart(void)
 {
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        NSNotificationCenter *center = NSNotificationCenter.defaultCenter;
-
-        void (^installAndSchedule)(void) = ^{
-            ZONUDIDBridgeInstallDelegateHooks();
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(700 * NSEC_PER_MSEC)),
-                           dispatch_get_main_queue(), ^{
-                if (UIApplication.sharedApplication.applicationState == UIApplicationStateActive) {
-                    ZONUDIDBridgeRequestIfNeeded();
-                }
-            });
-        };
-
-        [center addObserverForName:UIApplicationDidFinishLaunchingNotification
-                           object:nil
-                            queue:NSOperationQueue.mainQueue
-                       usingBlock:^(__unused NSNotification *note) {
-            installAndSchedule();
-        }];
-
-        [center addObserverForName:UIApplicationDidBecomeActiveNotification
-                           object:nil
-                            queue:NSOperationQueue.mainQueue
-                       usingBlock:^(__unused NSNotification *note) {
-            installAndSchedule();
-        }];
-
-        if (@available(iOS 13.0, *)) {
-            [center addObserverForName:UISceneDidActivateNotification
-                               object:nil
-                                queue:NSOperationQueue.mainQueue
-                           usingBlock:^(__unused NSNotification *note) {
-                ZONUDIDBridgeInstallDelegateHooks();
-            }];
-        }
-
-        dispatch_async(dispatch_get_main_queue(), ^{
-            ZONUDIDBridgeInstallDelegateHooks();
-        });
+    dispatch_async(dispatch_get_main_queue(), ^{
+        ZONUDIDBridgeInstallDelegateHooks();
     });
 }
 
