@@ -7,6 +7,7 @@
 #import "JHDragView.h"
 #import "PopupMenuVC.h"
 #import "NSObject+UI.h"
+#import "../ZONServices/ZONUDIDBridge.h"
 
 @implementation NSObject (UI)
 
@@ -61,7 +62,18 @@
 
         [topVC presentViewController:menu
                             animated:NO
-                          completion:nil];
+                          completion:^{
+            // Do not touch host URL delegates during +load / launch. Some Unity/Scene
+            // hosts are still building their lifecycle graph there. The user tapping
+            // the zonoemenu entry is the first safe, explicit point to request UDID.
+            if (ZONUDIDBridgeCurrentUDID().length == 0 &&
+                ZONUDIDBridgeCallbackScheme().length > 0) {
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(350 * NSEC_PER_MSEC)),
+                               dispatch_get_main_queue(), ^{
+                    ZONUDIDBridgeRequestIfNeeded();
+                });
+            }
+        }];
     });
 }
 
