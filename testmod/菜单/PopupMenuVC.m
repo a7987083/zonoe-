@@ -597,15 +597,18 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";  // 广告倍速
 #pragma mark - 彩色按钮点击事件（空）
 
 - (void)gridButtonTap:(UIButton *)sender {
+
+    // Phase 3: migrated data actions are dispatched through the registry first.
+    // Returning NO preserves the legacy tag path as a device-validation fallback.
+    if (ZONDispatchMigratedActionForLegacyTag(sender.tag, self)) {
+        return;
+    }
    
-    // ⚠️你以后补功能即可
+    // ⚠️未迁移功能继续保持原 tag 调用链
     // sender.tag = 100,101,102,103
-//    if(sender.tag == 102){
-//          // 自瞄功能
-//      }
     if (sender.tag == 100) {
+        // Compatibility fallback for data.backup-save during device validation.
         [[daochucd alloc]backupasd];
-        // TODO：绘图功能
 
     } else if (sender.tag == 101) {
 
