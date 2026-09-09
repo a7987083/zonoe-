@@ -29,7 +29,9 @@ int main(void)
             @203:@"runtime.placeholder-203",
         };
 
+        NSSet<NSNumber *> *expectedMigratedTags = [NSSet setWithArray:@[@3, @100]];
         __block NSUInteger migratedCount = 0;
+
         [expected enumerateKeysAndObjectsUsingBlock:^(NSNumber *tag, NSString *identifier, BOOL *stop) {
             (void)stop;
             NSDictionary<NSString *, id> *feature = ZONFeatureMetadataForLegacyTag(tag.integerValue);
@@ -40,15 +42,17 @@ int main(void)
             BOOL migrated = [feature[ZONFeatureMigratedKey] boolValue];
             if (migrated) migratedCount++;
 
-            if (tag.integerValue == 3) {
-                require(migrated, @"base.local-files must be the first migrated feature");
+            if ([expectedMigratedTags containsObject:tag]) {
+                require(migrated,
+                        [NSString stringWithFormat:@"%@ must use the migrated path", identifier]);
             } else {
                 require(!migrated,
                         [NSString stringWithFormat:@"%@ must remain on the legacy path", identifier]);
             }
         }];
 
-        require(migratedCount == 1, @"exactly one feature should be migrated in phase 2");
+        require(migratedCount == expectedMigratedTags.count,
+                @"exactly local-files and backup-save should be migrated in phase 3");
         NSLog(@"feature registry smoke passed (%lu features, %lu migrated)",
               (unsigned long)features.count,
               (unsigned long)migratedCount);
