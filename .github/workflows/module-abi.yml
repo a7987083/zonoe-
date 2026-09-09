@@ -7,6 +7,7 @@ on:
   pull_request:
     paths:
       - 'ZONCore/**'
+      - 'testmod/ZONCore/**'
       - 'Examples/**'
       - 'Tests/**'
       - '.github/workflows/module-abi.yml'
@@ -41,3 +42,12 @@ jobs:
           nm -gU /tmp/ZONExampleModule.dylib | grep '_zonoe_module_abi_version$'
           nm -gU /tmp/ZONExampleModule.dylib | grep '_zonoe_module_identifier$'
           nm -gU /tmp/ZONExampleModule.dylib | grep '_zonoe_module_initialize$'
+
+      - name: Build and run feature registry smoke test
+        run: |
+          set -euxo pipefail
+          clang -fobjc-arc -Wall -Wextra -Werror \
+            -framework Foundation \
+            Tests/feature_registry_smoke.m \
+            -o /tmp/zonoemenu-feature-registry-smoke
+          /tmp/zonoemenu-feature-registry-smoke
