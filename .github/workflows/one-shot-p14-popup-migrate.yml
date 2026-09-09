@@ -1,0 +1,93 @@
+name: One-shot p14 Popup Migration
+
+on:
+  push:
+    paths:
+      - '.github/workflows/one-shot-p14-popup-migrate.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch-popup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev/zonoemenu-production-v1
+
+      - name: Route migrated runtime controls through dispatcher
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('testmod/菜单/PopupMenuVC.m')
+          s = p.read_text()
+
+          old_ad = '''- (void)adSwitchChanged:(UISwitch *)sw {
+
+    UIView *box = sw.superview;
+    UISlider *slider = [box viewWithTag:500];
+
+    slider.enabled = sw.isOn;
+
+    [self saveSwitch:sw
+              intKey:kAADDKey
+             boolKey:kAADDEnableKey
+          applyBlock:^(BOOL on) {
+        [ImgTool share].ADSpeed = on;
+    }];
+}'''
+          new_ad = '''- (void)adSwitchChanged:(UISwitch *)sw {
+
+    UIView *box = sw.superview;
+    UISlider *slider = [box viewWithTag:500];
+
+    slider.enabled = sw.isOn;
+
+    // Batch migration: tag 202 is registry/dispatcher owned first.
+    if (ZONDispatchMigratedToggleForLegacyTag(sw.tag, sw.isOn)) {
+        return;
+    }
+
+    // Compatibility fallback while device-validating the migrated path.
+    [self saveSwitch:sw
+              intKey:kAADDKey
+             boolKey:kAADDEnableKey
+          applyBlock:^(BOOL on) {
+        [ImgTool share].ADSpeed = on;
+    }];
+}'''
+          if old_ad not in s:
+              raise SystemExit('adSwitchChanged baseline block not found')
+          s = s.replace(old_ad, new_ad, 1)
+
+          old_switch = '''- (void)switchChanged:(UISwitch *)sw {
+
+    if (sw.tag == 201) { // 内购'''
+          new_switch = '''- (void)switchChanged:(UISwitch *)sw {
+
+    // Batch migration: tags 201/203 are registry/dispatcher owned first.
+    // Returning NO preserves the exact legacy implementation as fallback.
+    if (ZONDispatchMigratedToggleForLegacyTag(sw.tag, sw.isOn)) {
+        return;
+    }
+
+    if (sw.tag == 201) { // 内购'''
+          if old_switch not in s:
+              raise SystemExit('switchChanged baseline block not found')
+          s = s.replace(old_switch, new_switch, 1)
+
+          p.write_text(s)
+          PY
+
+          git diff --check
+          git diff -- testmod/菜单/PopupMenuVC.m
+
+      - name: Commit source migration
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add testmod/菜单/PopupMenuVC.m
+          git commit -m 'feat: route p14 runtime controls through dispatcher'
+          git push origin HEAD:dev/zonoemenu-production-v1
