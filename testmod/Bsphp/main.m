@@ -1,32 +1,57 @@
-
 //static __attribute__((constructor)) void _logosLocalInit(void) {
 //    NSLog(@"load1111111111");
 //    [[WX_NongShiFu123 alloc] BSPHP];
-//    WX_NongShiFu123 *alert = [WX_NongShiFu123 alertControllerWithTitle:nil message:软件公告 preferredStyle:UIAlertControllerStyleAlert];
-//    UIAlertAction *cancelAction = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleCancel handler:^(UIAlertAction * _Nonnull action) {
-//        if (completion) {
-//            completion();
-//        }
-//    }];
-//    [alert addAction:cancelAction];
-//    UIViewController * rootViewController = [[[UIApplication sharedApplication] keyWindow] rootViewController];
-//    [rootViewController presentViewController:alert animated:YES completion:nil];
 //}
 #import "WX_NongShiFu123.h"
 #import <SystemConfiguration/SystemConfiguration.h>
 #import "daochucd.h"
+#import "getKeychain.h"
 
 #import <UIKit/UIKit.h>
 #import "JDStatusBarNotification.h"
 #import "NSObject+UI.h"
 #import <dlfcn.h>
 #import "../ZONBootstrap/ZONBootstrap.h"
+#import "../ZONServices/ZonoeUDIDAPI.h"
+
+#ifndef ZON_BUILD_VARIANT_DEBUG
+#define ZON_BUILD_VARIANT_DEBUG 0
+#endif
+
+static void ZONStartCustomerAuthorization(void)
+{
+    WX_NongShiFu123 *auth = [WX_NongShiFu123 new];
+
+    // Existing valid customer keychain data wins. This avoids unnecessary zonoe jumps
+    // for already activated customers.
+    NSString *existing = [getKeychain getKeychainDataForKey:@"DZUDID"];
+    if (existing.length >= 5) {
+        [auth loada];
+        return;
+    }
+
+    // Reuse the C1/v1_p3 bridge cache when available.
+    NSString *cached = ZonoeCurrentUDID();
+    if (cached.length >= 5) {
+        [getKeychain addKeychainData:cached forKey:@"DZUDID"];
+        [auth loada];
+        return;
+    }
+
+    // First customer activation: authorization is the only owner of UDID acquisition.
+    // No menu/icon action requests UDID anymore.
+    ZonoeSetUDIDCallback(^(NSString *udid) {
+        if (udid.length < 5) return;
+        [getKeychain addKeychainData:udid forKey:@"DZUDID"];
+        [auth loada];
+    });
+    ZonoeRequestUDIDIfNeeded();
+}
  
 @implementation NSObject (mian)
 
 #pragma mark - 强制加载 AppLovin SDK（如果存在）
 
- 
 // 核心通用加载逻辑
 + (void)loadDynamicFrameworkNamed:(NSString *)frameworkName {
     NSString *frameworkPath = nil;
@@ -60,15 +85,12 @@
     }
 
     // 5. 执行后续初始化逻辑
-    // 注意：请确保 [NSObject sdkload] 内部有重入保护，防止多次调用崩溃
     if ([NSObject respondsToSelector:@selector(sdkload)]) {
         [NSObject sdkload];
     }
     
     NSLog(@"[%@] SDK loaded successfully from: %@", frameworkName, frameworkPath);
 }
-
-// --- 对外暴露的接口 ---
 
 + (void)tryLoadAppLovinSDK {
     [self loadDynamicFrameworkNamed:@"AppLovinSDK"];
@@ -77,55 +99,38 @@
 + (void)UnityFramework {
     [self loadDynamicFrameworkNamed:@"UnityFramework"];
 }
+
 +(void)load
 {
     ZONBootstrapStart(^{
-        // Phase 1 deliberately keeps the verified legacy preflight order and timing.
+        // Preserve the verified legacy framework preflight timing/order.
         [self tryLoadAppLovinSDK];
         [self UnityFramework];
+    }, ^{
+#if ZON_BUILD_VARIANT_DEBUG
+        // B_debug: developer entry. No customer authorization and no UDID request.
+        [NSObject 显示图标];
+#else
+        // A_customer: formal customer entry. UDID is acquired only when loada needs it.
+        NSObject *statusHost = [NSObject new];
+        [statusHost showProgressNotificationAndAnimate];
+        ZONStartCustomerAuthorization();
+#endif
     });
 }
 
-
-
 - (void)showProgressNotificationAndAnimate {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0 * NSEC_PER_SEC)),dispatch_get_main_queue(), ^{
- 
-                JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
-                 [presenter presentWithText:@"🎉加载插件中...." dismissAfterDelay:3 includedStyle:JDStatusBarNotificationIncludedStyleLight];
-
-        });
+        JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
+        [presenter presentWithText:@"🎉加载插件中...." dismissAfterDelay:3 includedStyle:JDStatusBarNotificationIncludedStyleLight];
+    });
 }
 
 - (void)sdkload{
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0 * NSEC_PER_SEC)),dispatch_get_main_queue(), ^{
-//        JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
-//
-//            [presenter addStyleNamed:@"downloadProgressStyle" prepare:^JDStatusBarNotificationStyle * _Nonnull(JDStatusBarNotificationStyle * _Nonnull style) {
-//                style.textStyle.font = [UIFont systemFontOfSize:13.0]; //
-//                style.textStyle.textColor = [UIColor whiteColor]; //
-//                style.backgroundStyle.backgroundColor = [UIColor darkGrayColor]; //
-//                style.progressBarStyle.barColor = [UIColor greenColor]; //
-//                style.progressBarStyle.position = JDStatusBarNotificationProgressBarPositionTop; //
-//                style.progressBarStyle.barHeight = 3.0; //
-//                style.canSwipeToDismiss = NO; // 禁止滑动关闭
-//                style.canTapToHold = NO; // 禁止点击保持
-//                style.animationType = JDStatusBarNotificationAnimationTypeMove;
-////                style.hidesStatusBar = NO;
-//                return style;
-//            }];
-//                [presenter presentWithText:@"加载插件中..." customStyle:@"downloadProgressStyle" completion:^(JDStatusBarNotificationPresenter * _Nonnull presenter) {
-//                    NSLog(@"下载通知已显示");
-//                }];
-//
-     
-                JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
-                 [presenter presentWithText:@"🎉检测完成...." dismissAfterDelay:3 includedStyle:JDStatusBarNotificationIncludedStyleLight];
-
-        });
+        JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
+        [presenter presentWithText:@"🎉检测完成...." dismissAfterDelay:3 includedStyle:JDStatusBarNotificationIncludedStyleLight];
+    });
 }
 
-
-
 @end
-
