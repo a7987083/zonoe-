@@ -16,6 +16,17 @@ on:
 jobs:
   build:
     runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: A_customer
+            debug_macro: 0
+            cloud_testmode: NO
+          - variant: B_debug
+            debug_macro: 1
+            cloud_testmode: YES
+
     steps:
       - uses: actions/checkout@v4
 
@@ -29,8 +40,9 @@ jobs:
             *) echo "Invalid VERSION: $VERSION"; exit 1 ;;
           esac
           echo "TESTMOD_VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "TESTMOD_FILENAME=testmod_${VERSION}.dylib" >> "$GITHUB_ENV"
-          echo "Resolved testmod version: $VERSION"
+          echo "TESTMOD_VARIANT=${{ matrix.variant }}" >> "$GITHUB_ENV"
+          echo "TESTMOD_FILENAME=testmod_${VERSION}_${{ matrix.variant }}.dylib" >> "$GITHUB_ENV"
+          echo "Resolved: $VERSION / ${{ matrix.variant }}"
 
       - name: Select Xcode 16.4
         run: |
@@ -58,6 +70,22 @@ jobs:
         run: |
           set -euxo pipefail
           bash scripts/bootstrap_vendor.sh
+
+      - name: Configure build variant
+        run: |
+          set -euxo pipefail
+          if [[ "${{ matrix.cloud_testmode }}" == "YES" ]]; then
+            python3 - <<'PY'
+          from pathlib import Path
+          p = Path('testmod/菜单/PubgLoad.mm')
+          s = p.read_text()
+          old = 'BOOL testMode = NO; // NO = 正常验证, YES = 测试模式（绕过验证）'
+          new = 'BOOL testMode = YES; // B_debug: 云存档测试模式（绕过购买验证）'
+          if s.count(old) != 1:
+              raise SystemExit(f'expected exactly one cloud testMode switch, found {s.count(old)}')
+          p.write_text(s.replace(old, new, 1))
+          PY
+          fi
 
       - name: Verify repository layout
         run: |
@@ -90,6 +118,7 @@ jobs:
             MonkeyDevInstallOnAnyBuild=NO \
             MonkeyDevInstallOnProfiling=NO \
             MonkeyDevBuildPackageOnAnyBuild=NO \
+            GCC_PREPROCESSOR_DEFINITIONS='$(inherited) ZON_BUILD_VARIANT_DEBUG=${{ matrix.debug_macro }}' \
             CONFIGURATION_BUILD_DIR="$PWD/build/Release-iphoneos" \
             build 2>&1 | tee build/xcodebuild.log
           status=${PIPESTATUS[0]}
@@ -134,7 +163,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: testmod-${{ env.TESTMOD_VERSION }}
+          name: testmod-${{ env.TESTMOD_VERSION }}-${{ matrix.variant }}
           path: |
             build/Release-iphoneos/${{ env.TESTMOD_FILENAME }}
             build/xcodebuild.log
