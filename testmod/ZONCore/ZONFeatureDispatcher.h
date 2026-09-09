@@ -4,6 +4,7 @@
 #import <UIKit/UIKit.h>
 #import "ZONFeatureRegistry.h"
 #import "SandboxBrowserVC.h"
+#import "daochucd.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -29,6 +30,11 @@ static inline BOOL ZONDispatchMigratedActionForLegacyTag(NSInteger legacyTag,
         }
 
         [hostViewController presentViewController:nav animated:YES completion:nil];
+        return YES;
+    }
+
+    if ([identifier isEqualToString:@"data.backup-save"]) {
+        [[daochucd alloc] backupasd];
         return YES;
     }
 
