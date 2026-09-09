@@ -18,6 +18,40 @@
 #define ZON_BUILD_VARIANT_DEBUG 0
 #endif
 
+static void ZONShowCustomerStatus(NSString *text,
+                                  NSTimeInterval delay,
+                                  JDStatusBarNotificationIncludedStyle style)
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
+        [presenter dismissAnimated:YES];
+        [presenter presentWithText:text
+                 dismissAfterDelay:delay
+                   includedStyle:style];
+    });
+}
+
+static void ZONContinueCustomerAuthorization(WX_NongShiFu123 *auth, NSString *udid)
+{
+    if (udid.length < 5) return;
+
+    [getKeychain addKeychainData:udid forKey:@"DZUDID"];
+    NSString *stored = [getKeychain getKeychainDataForKey:@"DZUDID"];
+
+    if (stored.length >= 5) {
+        ZONShowCustomerStatus(
+            [NSString stringWithFormat:@"UDID 获取成功\n%@\n已写入 DZUDID\n正在继续授权", stored],
+            5.0,
+            JDStatusBarNotificationIncludedStyleSuccess
+        );
+        [auth loada];
+    } else {
+        ZONShowCustomerStatus(@"UDID 写入失败\n请重新打开 App 后重试",
+                              5.0,
+                              JDStatusBarNotificationIncludedStyleError);
+    }
+}
+
 static void ZONStartCustomerAuthorization(void)
 {
     WX_NongShiFu123 *auth = [WX_NongShiFu123 new];
@@ -33,17 +67,18 @@ static void ZONStartCustomerAuthorization(void)
     // Reuse the C1/v1_p3 bridge cache when available.
     NSString *cached = ZonoeCurrentUDID();
     if (cached.length >= 5) {
-        [getKeychain addKeychainData:cached forKey:@"DZUDID"];
-        [auth loada];
+        ZONContinueCustomerAuthorization(auth, cached);
         return;
     }
 
     // First customer activation: authorization is the only owner of UDID acquisition.
     // No menu/icon action requests UDID anymore.
+    ZONShowCustomerStatus(@"正在获取设备 UDID...",
+                          5.0,
+                          JDStatusBarNotificationIncludedStyleLight);
+
     ZonoeSetUDIDCallback(^(NSString *udid) {
-        if (udid.length < 5) return;
-        [getKeychain addKeychainData:udid forKey:@"DZUDID"];
-        [auth loada];
+        ZONContinueCustomerAuthorization(auth, udid);
     });
     ZonoeRequestUDIDIfNeeded();
 }
