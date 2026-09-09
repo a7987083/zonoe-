@@ -29,7 +29,7 @@ int main(void)
             @203:@"runtime.placeholder-203",
         };
 
-        NSSet<NSNumber *> *expectedMigratedTags = [NSSet setWithArray:@[@3, @100]];
+        NSSet<NSNumber *> *expectedMigratedTags = [NSSet setWithArray:@[@1, @3, @100, @101, @201, @202, @203]];
         __block NSUInteger migratedCount = 0;
 
         [expected enumerateKeysAndObjectsUsingBlock:^(NSNumber *tag, NSString *identifier, BOOL *stop) {
@@ -52,7 +52,7 @@ int main(void)
         }];
 
         require(migratedCount == expectedMigratedTags.count,
-                @"exactly local-files and backup-save should be migrated in phase 3");
+                @"batch stages 4-8 must produce exactly seven migrated features");
         NSLog(@"feature registry smoke passed (%lu features, %lu migrated)",
               (unsigned long)features.count,
               (unsigned long)migratedCount);
