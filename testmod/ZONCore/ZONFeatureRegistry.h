@@ -26,13 +26,14 @@ static NSString * const ZONFeatureKindKey = @"kind";
 static NSString * const ZONFeatureRiskKey = @"risk";
 static NSString * const ZONFeatureMigratedKey = @"migrated";
 
-/// Phase 1 registry: metadata only.
+/// Built-in feature metadata used by the staged menu migration.
 ///
-/// Important compatibility rule:
-/// - This registry does NOT dispatch actions.
-/// - PopupMenuVC keeps all existing tag-based handlers unchanged.
-/// - `migrated` remains NO until a feature is explicitly routed through the registry
-///   and verified on device.
+/// Compatibility rule:
+/// - `migrated == YES` means PopupMenuVC may route that feature through
+///   ZONFeatureDispatcher first.
+/// - unmigrated features remain on their existing legacy tag handlers.
+/// - the caller keeps a legacy fallback while a migrated feature is being
+///   validated on device.
 static inline NSArray<NSDictionary<NSString *, id> *> *ZONBuiltInFeatureMetadata(void)
 {
     static NSArray<NSDictionary<NSString *, id> *> *features;
@@ -41,7 +42,7 @@ static inline NSArray<NSDictionary<NSString *, id> *> *ZONBuiltInFeatureMetadata
         features = @[
             @{ ZONFeatureIdentifierKey:@"base.remote-download", ZONFeatureTitleKey:@"远程下载", ZONFeatureSectionKey:@"基础功能", ZONFeatureLegacyTagKey:@1, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskLow), ZONFeatureMigratedKey:@NO },
             @{ ZONFeatureIdentifierKey:@"base.cloud-save", ZONFeatureTitleKey:@"VIP云存档", ZONFeatureSectionKey:@"基础功能", ZONFeatureLegacyTagKey:@2, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskHigh), ZONFeatureMigratedKey:@NO },
-            @{ ZONFeatureIdentifierKey:@"base.local-files", ZONFeatureTitleKey:@"浏览本地文件", ZONFeatureSectionKey:@"基础功能", ZONFeatureLegacyTagKey:@3, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskLow), ZONFeatureMigratedKey:@NO },
+            @{ ZONFeatureIdentifierKey:@"base.local-files", ZONFeatureTitleKey:@"浏览本地文件", ZONFeatureSectionKey:@"基础功能", ZONFeatureLegacyTagKey:@3, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskLow), ZONFeatureMigratedKey:@YES },
 
             @{ ZONFeatureIdentifierKey:@"data.backup-save", ZONFeatureTitleKey:@"备份存档", ZONFeatureSectionKey:@"数据功能", ZONFeatureLegacyTagKey:@100, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskLow), ZONFeatureMigratedKey:@NO },
             @{ ZONFeatureIdentifierKey:@"data.restore-save", ZONFeatureTitleKey:@"恢复存档", ZONFeatureSectionKey:@"数据功能", ZONFeatureLegacyTagKey:@101, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskLow), ZONFeatureMigratedKey:@NO },
