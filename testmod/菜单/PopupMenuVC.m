@@ -7,6 +7,7 @@
 #import "ImgTool.h"
 #import "SandboxBrowserVC.h"
 #import "SVProgressHUD.h"
+#import "../ZONCore/ZONFeatureDispatcher.h"
 
 @interface PopupMenuVC () <UIGestureRecognizerDelegate>
 
@@ -536,15 +537,13 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";  // 广告倍速
 
 - (void)cardButtonTap:(UIButton *)sender {
 
-    // ⚠️你以后在这里补功能即可
-    // sender.tag 对应 cardItems 里的 tag
-
-    /*
-    if(sender.tag == 1){
-         打开绘图
+    // Phase 2: migrated features are dispatched through the registry first.
+    // Returning NO preserves the legacy path as a device-validation fallback.
+    if (ZONDispatchMigratedActionForLegacyTag(sender.tag, self)) {
+        return;
     }
-    */
-    
+
+    // ⚠️未迁移功能继续保持原 tag 调用链
     if (sender.tag == 1) {
         [[PubgLoad alloc] yuanchengdwon];
         // TODO：绘图功能
@@ -558,6 +557,8 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";  // 广告倍速
         [[PubgLoad alloc] checkCloudSaveStatus];
 
     } else if (sender.tag == 3) {
+        // Compatibility fallback for the first migrated feature. Once the
+        // registry path is device-confirmed this duplicate can be removed.
         SandboxBrowserVC *vc = [[SandboxBrowserVC alloc] init];
         UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
 
