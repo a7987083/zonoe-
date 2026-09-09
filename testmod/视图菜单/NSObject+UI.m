@@ -8,6 +8,85 @@
 #import "PopupMenuVC.h"
 #import "NSObject+UI.h"
 #import "../ZONServices/ZONUDIDBridge.h"
+#import "../ZONServices/ZonoeUDIDAPI.h"
+
+#pragma mark - Stable public UDID API
+
+static ZonoeUDIDCallback gZonoeUDIDCallback = nil;
+static id gZonoeUDIDObserverToken = nil;
+
+static void ZonoeDeliverUDIDIfNeeded(NSString *udid)
+{
+    if (!ZONUDIDBridgeIsPlausibleUDID(udid)) return;
+    if (!gZonoeUDIDCallback) return;
+
+    ZonoeUDIDCallback callback = [gZonoeUDIDCallback copy];
+    gZonoeUDIDCallback = nil;
+    callback(udid);
+}
+
+static void ZonoeEnsureUDIDObserver(void)
+{
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        gZonoeUDIDObserverToken =
+            [NSNotificationCenter.defaultCenter
+                addObserverForName:ZONUDIDBridgeDidUpdateNotification
+                            object:nil
+                             queue:NSOperationQueue.mainQueue
+                        usingBlock:^(NSNotification *note) {
+            NSString *udid = [note.object isKindOfClass:NSString.class] ? note.object : nil;
+            ZonoeDeliverUDIDIfNeeded(udid);
+        }];
+    });
+}
+
+NSString * _Nullable ZonoeCurrentUDID(void)
+{
+    return ZONUDIDBridgeCurrentUDID();
+}
+
+void ZonoeSetUDIDCallback(ZonoeUDIDCallback callback)
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        ZonoeEnsureUDIDObserver();
+        gZonoeUDIDCallback = [callback copy];
+
+        NSString *current = ZONUDIDBridgeCurrentUDID();
+        if (current.length > 0) {
+            ZonoeDeliverUDIDIfNeeded(current);
+        }
+    });
+}
+
+void ZonoeRequestUDIDIfNeeded(void)
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        ZonoeEnsureUDIDObserver();
+
+        NSString *current = ZONUDIDBridgeCurrentUDID();
+        if (current.length > 0) {
+            ZonoeDeliverUDIDIfNeeded(current);
+            return;
+        }
+
+        ZONUDIDBridgeRequestIfNeeded();
+    });
+}
+
+void ZonoeRequestUDID(void)
+{
+    // 正式版默认不重复获取。已有有效 UDID 时直接复用缓存。
+    ZonoeRequestUDIDIfNeeded();
+}
+
+void ZonoeForceRefreshUDID(void)
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        ZonoeEnsureUDIDObserver();
+        ZONUDIDBridgeForceRefresh();
+    });
+}
 
 @implementation NSObject (UI)
 
@@ -63,14 +142,13 @@
         [topVC presentViewController:menu
                             animated:NO
                           completion:^{
-            // Do not touch host URL delegates during +load / launch. Some Unity/Scene
-            // hosts are still building their lifecycle graph there. The user tapping
-            // the zonoemenu entry is the first safe, explicit point to request UDID.
-            if (ZONUDIDBridgeCurrentUDID().length == 0 &&
+            // C1 真机验证后的稳定路径：不 Hook AppDelegate / SceneDelegate。
+            // 已经成功缓存过 UDID 时这里不会再次打开 zonoe。
+            if (ZonoeCurrentUDID().length == 0 &&
                 ZONUDIDBridgeCallbackScheme().length > 0) {
                 dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(350 * NSEC_PER_MSEC)),
                                dispatch_get_main_queue(), ^{
-                    ZONUDIDBridgeRequestIfNeeded();
+                    ZonoeRequestUDIDIfNeeded();
                 });
             }
         }];
