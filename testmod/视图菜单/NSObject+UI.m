@@ -76,7 +76,6 @@ void ZonoeRequestUDIDIfNeeded(void)
 
 void ZonoeRequestUDID(void)
 {
-    // 正式版默认不重复获取。已有有效 UDID 时直接复用缓存。
     ZonoeRequestUDIDIfNeeded();
 }
 
@@ -111,7 +110,6 @@ void ZonoeForceRefreshUDID(void)
             )];
 
             view.tag = 100;
-
             [parentView addSubview:view];
         }
     });
@@ -131,31 +129,17 @@ void ZonoeForceRefreshUDID(void)
         PopupMenuVC *menu = [PopupMenuVC new];
         menu.modalPresentationStyle = UIModalPresentationOverFullScreen;
 
-        // zonoemenu 本身是固定浅色设计。部分宿主游戏会强制 Dark Style，
-        // 未显式设置 textColor 的 UILabel 会继承白色动态 labelColor，
-        // 落在菜单的白色卡片上后看起来像“文字消失”。
-        // 只隔离本菜单的界面风格，不修改宿主 App 的全局 appearance。
         if (@available(iOS 13.0, *)) {
             menu.overrideUserInterfaceStyle = UIUserInterfaceStyleLight;
         }
 
-        [topVC presentViewController:menu
-                            animated:NO
-                          completion:^{
-            // C1 真机验证后的稳定路径：不 Hook AppDelegate / SceneDelegate。
-            // 已经成功缓存过 UDID 时这里不会再次打开 zonoe。
-            if (ZonoeCurrentUDID().length == 0 &&
-                ZONUDIDBridgeCallbackScheme().length > 0) {
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(350 * NSEC_PER_MSEC)),
-                               dispatch_get_main_queue(), ^{
-                    ZonoeRequestUDIDIfNeeded();
-                });
-            }
-        }];
+        // Menu presentation is intentionally UDID-agnostic.
+        // A_customer owns UDID acquisition in the loada authorization path.
+        // B_debug never requests UDID automatically.
+        [topVC presentViewController:menu animated:NO completion:nil];
     });
 }
 
-// 兼容旧调用名，统一走 vip菜单显示。
 - (void)vipaa
 {
     [self vip菜单显示];
