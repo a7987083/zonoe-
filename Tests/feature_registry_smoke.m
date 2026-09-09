@@ -29,17 +29,29 @@ int main(void)
             @203:@"runtime.placeholder-203",
         };
 
+        __block NSUInteger migratedCount = 0;
         [expected enumerateKeysAndObjectsUsingBlock:^(NSNumber *tag, NSString *identifier, BOOL *stop) {
             (void)stop;
             NSDictionary<NSString *, id> *feature = ZONFeatureMetadataForLegacyTag(tag.integerValue);
             require(feature != nil, [NSString stringWithFormat:@"missing legacy tag %@", tag]);
             require([feature[ZONFeatureIdentifierKey] isEqualToString:identifier],
                     [NSString stringWithFormat:@"legacy tag %@ mapped to wrong identifier", tag]);
-            require(![feature[ZONFeatureMigratedKey] boolValue],
-                    [NSString stringWithFormat:@"%@ must remain passive in phase 1", identifier]);
+
+            BOOL migrated = [feature[ZONFeatureMigratedKey] boolValue];
+            if (migrated) migratedCount++;
+
+            if (tag.integerValue == 3) {
+                require(migrated, @"base.local-files must be the first migrated feature");
+            } else {
+                require(!migrated,
+                        [NSString stringWithFormat:@"%@ must remain on the legacy path", identifier]);
+            }
         }];
 
-        NSLog(@"feature registry smoke passed (%lu features)", (unsigned long)features.count);
+        require(migratedCount == 1, @"exactly one feature should be migrated in phase 2");
+        NSLog(@"feature registry smoke passed (%lu features, %lu migrated)",
+              (unsigned long)features.count,
+              (unsigned long)migratedCount);
     }
     return 0;
 }
