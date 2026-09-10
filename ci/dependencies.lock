@@ -1,0 +1,4 @@
+# External legacy build dependencies pinned to the upstream HEADs available
+# at the successful v1_p25 baseline build (GitHub Actions Run 34510143380).
+MONKEYDEV_SHA=c37b5cc5e9a4184d80eb18fb9ae8c48bb8689442
+THEOS_SHA=5280bd038207e14f8bd76f5417aa2fe641c03228
