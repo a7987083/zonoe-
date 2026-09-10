@@ -4,6 +4,7 @@
 #import "../ZONCore/ZONFeatureDispatcher.h"
 #import "../ZONCore/ZONSectionRenderer.h"
 #import "../ZONCore/ZONMenuChromeRenderer.h"
+#import "../ZONCore/ZONMenuPanelController.h"
 
 @interface PopupMenuVC () <UIGestureRecognizerDelegate>
 @property(nonatomic,strong) UIView *panel;
@@ -27,24 +28,8 @@ static NSString * const kADSpeedKey = @"AADDssppeedd";
     tap.cancelsTouchesInView = NO;
     [self.view addGestureRecognizer:tap];
 
-    [self setupPanel];
+    self.panel = ZONCreateMenuPanel(self.view, &_scroll);
     [self buildUI];
-}
-
-- (void)setupPanel {
-    CGFloat screenW = self.view.bounds.size.width;
-    CGFloat screenH = self.view.bounds.size.height;
-    CGFloat panelHeight = screenH * 0.85;
-
-    self.panel = [[UIView alloc] initWithFrame:CGRectMake(20, screenH, screenW - 40, panelHeight)];
-    self.panel.backgroundColor = [UIColor colorWithWhite:0.96 alpha:1];
-    self.panel.layer.cornerRadius = 25;
-    self.panel.clipsToBounds = YES;
-    [self.view addSubview:self.panel];
-
-    self.scroll = [[UIScrollView alloc] initWithFrame:self.panel.bounds];
-    self.scroll.showsVerticalScrollIndicator = NO;
-    [self.panel addSubview:self.scroll];
 }
 
 - (void)relayoutSections {
@@ -108,44 +93,25 @@ static NSString * const kADSpeedKey = @"AADDssppeedd";
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     [self syncSettingsToRuntime];
-    [self showPanel];
-}
-
-- (void)showPanel {
-    CGFloat screenH = self.view.bounds.size.height;
-    [UIView animateWithDuration:0.25 animations:^{
-        CGRect f = self.panel.frame;
-        f.origin.y = screenH - f.size.height - 20;
-        self.panel.frame = f;
-    }];
+    ZONShowMenuPanel(self.view, self.panel);
 }
 
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
-    CGFloat screenW = self.view.bounds.size.width;
-    CGFloat screenH = self.view.bounds.size.height;
-    CGFloat panelHeight = screenH * 0.85;
-    self.panel.frame = CGRectMake(20, screenH - panelHeight - 20, screenW - 40, panelHeight);
-    self.scroll.frame = self.panel.bounds;
+    ZONLayoutVisibleMenuPanel(self.view, self.panel, self.scroll);
     [self relayoutSections];
 }
 
 - (void)close {
-    CGFloat screenH = self.view.bounds.size.height;
-    [UIView animateWithDuration:0.25 animations:^{
-        CGRect f = self.panel.frame;
-        f.origin.y = screenH;
-        self.panel.frame = f;
-    } completion:^(BOOL finished) {
-        (void)finished;
-        [self dismissViewControllerAnimated:NO completion:nil];
-    }];
+    __weak typeof(self) weakSelf = self;
+    ZONHideMenuPanel(self.view, self.panel, ^{
+        [weakSelf dismissViewControllerAnimated:NO completion:nil];
+    });
 }
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
     (void)gestureRecognizer;
-    CGPoint point = [touch locationInView:self.view];
-    return !CGRectContainsPoint(self.panel.frame, point);
+    return !ZONMenuPanelContainsTouch(self.view, self.panel, touch);
 }
 
 @end
