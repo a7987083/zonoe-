@@ -27,6 +27,11 @@ static inline BOOL ZONDispatchMigratedActionForLegacyTag(NSInteger legacyTag,
         return YES;
     }
 
+    if ([identifier isEqualToString:@"base.cloud-save"]) {
+        [[PubgLoad alloc] checkCloudSaveStatus];
+        return YES;
+    }
+
     if ([identifier isEqualToString:@"base.local-files"]) {
         SandboxBrowserVC *vc = [[SandboxBrowserVC alloc] init];
         UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
