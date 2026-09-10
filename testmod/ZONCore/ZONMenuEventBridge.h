@@ -3,7 +3,7 @@
 
 #import <UIKit/UIKit.h>
 #import "ZONFeatureDispatcher.h"
-#import "../工具箱/ImgTool.h"
+#import "ImgTool.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
