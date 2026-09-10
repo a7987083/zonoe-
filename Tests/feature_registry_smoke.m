@@ -29,7 +29,7 @@ int main(void)
             @203:@"runtime.placeholder-203",
         };
 
-        NSSet<NSNumber *> *expectedMigratedTags = [NSSet setWithArray:@[@1, @2, @3, @100, @101, @102, @201, @202, @203]];
+        NSSet<NSNumber *> *expectedMigratedTags = [NSSet setWithArray:@[@1, @2, @3, @100, @101, @102, @103, @201, @202, @203]];
         __block NSUInteger migratedCount = 0;
 
         [expected enumerateKeysAndObjectsUsingBlock:^(NSNumber *tag, NSString *identifier, BOOL *stop) {
@@ -52,7 +52,7 @@ int main(void)
         }];
 
         require(migratedCount == expectedMigratedTags.count,
-                @"v1_p16 must produce exactly nine migrated features");
+                @"v1_p17 must migrate all ten legacy-visible features");
         NSLog(@"feature registry smoke passed (%lu features, %lu migrated)",
               (unsigned long)features.count,
               (unsigned long)migratedCount);
