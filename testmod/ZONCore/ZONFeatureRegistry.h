@@ -27,13 +27,6 @@ static NSString * const ZONFeatureRiskKey = @"risk";
 static NSString * const ZONFeatureMigratedKey = @"migrated";
 
 /// Built-in feature metadata used by the staged menu migration.
-///
-/// Compatibility rule:
-/// - `migrated == YES` means PopupMenuVC may route that feature through
-///   ZONFeatureDispatcher first.
-/// - unmigrated features remain on their existing legacy tag handlers.
-/// - the caller keeps a legacy fallback while a migrated feature is being
-///   validated on device.
 static inline NSArray<NSDictionary<NSString *, id> *> *ZONBuiltInFeatureMetadata(void)
 {
     static NSArray<NSDictionary<NSString *, id> *> *features;
@@ -63,6 +56,20 @@ static inline NSDictionary<NSString *, id> * _Nullable ZONFeatureMetadataForLega
         if ([feature[ZONFeatureLegacyTagKey] integerValue] == legacyTag) return feature;
     }
     return nil;
+}
+
+/// Returns registry entries for one menu section in their canonical UI order.
+static inline NSArray<NSDictionary<NSString *, id> *> *ZONFeatureMetadataForSection(NSString *section)
+{
+    if (section.length == 0) return @[];
+
+    NSMutableArray<NSDictionary<NSString *, id> *> *matches = [NSMutableArray array];
+    for (NSDictionary<NSString *, id> *feature in ZONBuiltInFeatureMetadata()) {
+        if ([feature[ZONFeatureSectionKey] isEqualToString:section]) {
+            [matches addObject:feature];
+        }
+    }
+    return [matches copy];
 }
 
 static inline BOOL ZONFeatureRegistryHasUniqueIdentifiersAndTags(void)
