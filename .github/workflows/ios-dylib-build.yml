@@ -101,7 +101,8 @@ jobs:
             local url="$2"
             local sha="$3"
             sudo rm -rf "$dir"
-            mkdir -p "$dir"
+            sudo mkdir -p "$dir"
+            sudo chown "$USER":staff "$dir"
             git -C "$dir" init -q
             git -C "$dir" remote add origin "$url"
             git -C "$dir" fetch --depth=1 origin "$sha"
