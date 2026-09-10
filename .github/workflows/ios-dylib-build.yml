@@ -11,6 +11,7 @@ on:
       - 'testmod.xcodeproj/**'
       - 'ZONCore/**'
       - 'scripts/**'
+      - 'ci/dependencies.lock'
       - '.github/workflows/ios-dylib-build.yml'
 
 jobs:
@@ -51,20 +52,94 @@ jobs:
           xcodebuild -version
           xcrun --sdk iphoneos --show-sdk-version
 
-      - name: Install legacy build dependencies
+      - name: Prepare dependency cache destinations
         run: |
           set -euxo pipefail
-          brew install ldid dpkg || true
-
-          sudo rm -rf /opt/MonkeyDev /opt/theos
           sudo mkdir -p /opt/MonkeyDev /opt/theos
           sudo chown -R "$USER":staff /opt/MonkeyDev /opt/theos
 
-          git clone --depth=1 https://github.com/AloneMonkey/MonkeyDev.git /opt/MonkeyDev
-          git clone --recursive --depth=1 https://github.com/theos/theos.git /opt/theos
+      - name: Restore legacy build dependency cache
+        id: builddeps-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            /opt/MonkeyDev
+            /opt/theos
+          key: zonoe-builddeps-${{ runner.os }}-macos15-xcode16.4-${{ hashFiles('ci/dependencies.lock') }}
+
+      - name: Install legacy build dependencies
+        run: |
+          set -euxo pipefail
+          DEP_START="$(date +%s)"
+
+          brew install ldid dpkg || true
+
+          source ci/dependencies.lock
+          test -n "${MONKEYDEV_SHA:-}"
+          test -n "${THEOS_SHA:-}"
+
+          repo_at_sha() {
+            local dir="$1"
+            local sha="$2"
+            local required="$3"
+            [[ -d "$dir/.git" ]] || return 1
+            [[ "$(git -C "$dir" rev-parse HEAD 2>/dev/null || true)" == "$sha" ]] || return 1
+            [[ -e "$dir/$required" ]] || return 1
+          }
+
+          theos_at_sha() {
+            repo_at_sha /opt/theos "$THEOS_SHA" vendor/include || return 1
+            local state
+            state="$(git -C /opt/theos submodule status --recursive 2>/dev/null)" || return 1
+            if printf '%s\n' "$state" | grep -Eq '^[+-U]'; then
+              return 1
+            fi
+          }
+
+          install_pinned_repo() {
+            local dir="$1"
+            local url="$2"
+            local sha="$3"
+            sudo rm -rf "$dir"
+            mkdir -p "$dir"
+            git -C "$dir" init -q
+            git -C "$dir" remote add origin "$url"
+            git -C "$dir" fetch --depth=1 origin "$sha"
+            git -C "$dir" checkout --detach FETCH_HEAD
+          }
+
+          if repo_at_sha /opt/MonkeyDev "$MONKEYDEV_SHA" bin/md; then
+            echo "MonkeyDev cache valid: $MONKEYDEV_SHA"
+          else
+            echo "MonkeyDev cache missing or invalid; restoring pinned revision"
+            install_pinned_repo /opt/MonkeyDev https://github.com/AloneMonkey/MonkeyDev.git "$MONKEYDEV_SHA"
+          fi
+
+          if theos_at_sha; then
+            echo "Theos cache valid: $THEOS_SHA"
+          else
+            echo "Theos cache missing or invalid; restoring pinned revision"
+            install_pinned_repo /opt/theos https://github.com/theos/theos.git "$THEOS_SHA"
+            git -C /opt/theos submodule sync --recursive
+            git -C /opt/theos submodule update --init --recursive
+          fi
 
           test -x /opt/MonkeyDev/bin/md
           test -d /opt/theos/vendor/include
+          test "$(git -C /opt/MonkeyDev rev-parse HEAD)" = "$MONKEYDEV_SHA"
+          test "$(git -C /opt/theos rev-parse HEAD)" = "$THEOS_SHA"
+          ! git -C /opt/theos submodule status --recursive | grep -Eq '^[+-U]'
+
+          DEP_END="$(date +%s)"
+          DEP_SECONDS="$((DEP_END - DEP_START))"
+          echo "DEPENDENCY_PREP_SECONDS=$DEP_SECONDS" >> "$GITHUB_ENV"
+          {
+            echo "### Dependency timing (${{ matrix.variant }})"
+            echo "- cache exact hit: \`${{ steps.builddeps-cache.outputs.cache-hit }}\`"
+            echo "- dependency prepare: ${DEP_SECONDS}s"
+            echo "- MonkeyDev: \`${MONKEYDEV_SHA}\`"
+            echo "- Theos: \`${THEOS_SHA}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Materialize pinned vendor sources
         run: |
@@ -103,6 +178,7 @@ jobs:
         id: xcodebuild
         run: |
           set +e
+          BUILD_START="$(date +%s)"
           mkdir -p build/Release-iphoneos
           xcodebuild \
             -project testmod.xcodeproj \
@@ -122,7 +198,15 @@ jobs:
             CONFIGURATION_BUILD_DIR="$PWD/build/Release-iphoneos" \
             build 2>&1 | tee build/xcodebuild.log
           status=${PIPESTATUS[0]}
+          BUILD_END="$(date +%s)"
+          BUILD_SECONDS="$((BUILD_END - BUILD_START))"
           echo "XCODEBUILD_STATUS=$status" >> "$GITHUB_ENV"
+          echo "XCODEBUILD_SECONDS=$BUILD_SECONDS" >> "$GITHUB_ENV"
+          {
+            echo "### Build timing (${{ matrix.variant }})"
+            echo "- xcodebuild: ${BUILD_SECONDS}s"
+            echo "- status: ${status}"
+          } >> "$GITHUB_STEP_SUMMARY"
           exit 0
 
       - name: Report first compiler errors
