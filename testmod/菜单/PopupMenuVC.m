@@ -300,17 +300,7 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";  // 广告倍速
     UIView *box = sw.superview;
     UISlider *slider = [box viewWithTag:500];
     slider.enabled = sw.isOn;
-
-    if (ZONDispatchMigratedToggleForLegacyTag(sw.tag, sw.isOn)) {
-        return;
-    }
-
-    [self saveSwitch:sw
-              intKey:kAADDKey
-             boolKey:kAADDEnableKey
-          applyBlock:^(BOOL on) {
-        [ImgTool share].ADSpeed = on;
-    }];
+    (void)ZONDispatchMigratedToggleForLegacyTag(sw.tag, sw.isOn);
 }
 
 #pragma mark - 广告加速滑条事件
@@ -407,62 +397,13 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";  // 广告倍速
 #pragma mark - 卡片按钮点击事件
 
 - (void)cardButtonTap:(UIButton *)sender {
-    if (ZONDispatchMigratedActionForLegacyTag(sender.tag, self)) {
-        return;
-    }
-
-    if (sender.tag == 1) {
-        [[PubgLoad alloc] yuanchengdwon];
-
-    } else if (sender.tag == 2) {
-        [[PubgLoad alloc] checkCloudSaveStatus];
-
-    } else if (sender.tag == 3) {
-        SandboxBrowserVC *vc = [[SandboxBrowserVC alloc] init];
-        UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
-
-        if (@available(iOS 13.0, *)) {
-            nav.modalPresentationStyle = UIModalPresentationPageSheet;
-        } else {
-            nav.modalPresentationStyle = UIModalPresentationFullScreen;
-        }
-
-        [self presentViewController:nav animated:YES completion:nil];
-    }
+    (void)ZONDispatchMigratedActionForLegacyTag(sender.tag, self);
 }
 
 #pragma mark - 彩色按钮点击事件
 
 - (void)gridButtonTap:(UIButton *)sender {
-    if (ZONDispatchMigratedActionForLegacyTag(sender.tag, self)) {
-        return;
-    }
-
-    if (sender.tag == 100) {
-        [[daochucd alloc] backupasd];
-
-    } else if (sender.tag == 101) {
-        [[YYYPicker alloc] addBtnAction];
-
-    } else if (sender.tag == 102) {
-        [self showConfirmAlert:@"清除游戏数据"
-                         message:@"此操作会清除本地游戏数据，且不可恢复。\n确定要继续吗？"
-                      onConfirm:^{
-            [SVProgressHUD showWithStatus:@"处理中..."];
-            [self qcshuju];
-        }];
-
-    } else if (sender.tag == 103) {
-        [self showConfirmAlert:@"清除授权记录"
-                         message:@"此操作会删除授权信息，删除后需要重新授权。\n确定继续吗？"
-                      onConfirm:^{
-            [[WX_NongShiFu123 alloc] deletekm];
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)),
-                           dispatch_get_main_queue(), ^{
-                exit(0);
-            });
-        }];
-    }
+    (void)ZONDispatchMigratedActionForLegacyTag(sender.tag, self);
 }
 
 #pragma mark - 二次确认弹窗（防误触）
@@ -533,29 +474,7 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";  // 广告倍速
 }
 
 - (void)switchChanged:(UISwitch *)sw {
-    if (ZONDispatchMigratedToggleForLegacyTag(sw.tag, sw.isOn)) {
-        return;
-    }
-
-    if (sw.tag == 201) {
-        [self saveSwitch:sw
-                  intKey:kNNGGKey
-                 boolKey:kNNGGEnableKey
-              applyBlock:^(BOOL on) {
-            [ImgTool share].NeiGou = on;
-        }];
-    }
-    else if (sw.tag == 202) {
-        [self saveSwitch:sw
-                  intKey:kAADDKey
-                 boolKey:kAADDEnableKey
-              applyBlock:^(BOOL on) {
-            [ImgTool share].ADSpeed = on;
-        }];
-    }
-    else if (sw.tag == 203) {
-        NSLog(@"人物血量");
-    }
+    (void)ZONDispatchMigratedToggleForLegacyTag(sw.tag, sw.isOn);
 }
 
 #pragma mark - 同步设置到 ImgTool
