@@ -52,7 +52,7 @@ int main(void)
         }];
 
         require(migratedCount == expectedMigratedTags.count,
-                @"v1_p17 must migrate all ten legacy-visible features");
+                @"v1_p18 must keep all ten features registry-owned after fallback cleanup");
         NSLog(@"feature registry smoke passed (%lu features, %lu migrated)",
               (unsigned long)features.count,
               (unsigned long)migratedCount);
