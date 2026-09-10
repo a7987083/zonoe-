@@ -4,54 +4,37 @@
 #import "../ZONCore/ZONFeatureDispatcher.h"
 
 @interface PopupMenuVC () <UIGestureRecognizerDelegate>
-
 @property(nonatomic,strong) UIView *panel;
 @property(nonatomic,strong) UIScrollView *scroll;
 @property(nonatomic,strong) NSMutableArray<FoldSectionView *> *sections;
 @property(nonatomic, assign) BOOL didBuildUI;
-@property(nonatomic,strong) NSArray<NSDictionary<NSString *, id> *> *cardItems;
-
 @end
-
-#pragma mark - UserDefaults Keys（统一管理）
 
 static NSString * const kNNGGEnableKey = @"NNGGNNGG";
 static NSString * const kAADDEnableKey = @"AADDAADD";
-static NSString * const kADSpeedKey    = @"AADDssppeedd";
+static NSString * const kADSpeedKey = @"AADDssppeedd";
 
 @implementation PopupMenuVC
 
-#pragma mark - 生命周期
-
 - (void)viewDidLoad {
     [super viewDidLoad];
-
     self.view.backgroundColor = [[UIColor blackColor] colorWithAlphaComponent:0.35];
 
-    UITapGestureRecognizer *tap =
-    [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(close)];
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(close)];
     tap.delegate = self;
     tap.cancelsTouchesInView = NO;
     [self.view addGestureRecognizer:tap];
 
-    // v1_p19: visible menu item title/tag/order now come from Feature Registry.
-    self.cardItems = ZONFeatureMetadataForSection(@"基础功能");
-
     [self setupPanel];
     [self buildUI];
 }
-
-#pragma mark - 创建Panel
 
 - (void)setupPanel {
     CGFloat screenW = self.view.bounds.size.width;
     CGFloat screenH = self.view.bounds.size.height;
     CGFloat panelHeight = screenH * 0.85;
 
-    self.panel = [[UIView alloc] initWithFrame:CGRectMake(20,
-                                                           screenH,
-                                                           screenW - 40,
-                                                           panelHeight)];
+    self.panel = [[UIView alloc] initWithFrame:CGRectMake(20, screenH, screenW - 40, panelHeight)];
     self.panel.backgroundColor = [UIColor colorWithWhite:0.96 alpha:1];
     self.panel.layer.cornerRadius = 25;
     self.panel.clipsToBounds = YES;
@@ -62,49 +45,36 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";
     [self.panel addSubview:self.scroll];
 }
 
-#pragma mark - 折叠后重新排列所有 section
-
 - (void)relayoutSections {
     CGFloat sectionW = self.panel.bounds.size.width - 30;
     CGFloat y = 110;
-
     for (FoldSectionView *sec in self.sections) {
         CGFloat h = [sec layoutAndGetHeight];
         sec.frame = CGRectMake(15, y, sectionW, h);
         y += h + 15;
     }
-
     self.scroll.contentSize = CGSizeMake(self.panel.bounds.size.width, y + 20);
 }
-
-#pragma mark - 构建UI
 
 - (void)buildUI {
     if (self.didBuildUI) return;
     self.didBuildUI = YES;
 
-    NSString *jsm = [[NSUserDefaults standardUserDefaults] objectForKey:@"解锁码到期时间"];
-    NSString *yjy = [[NSUserDefaults standardUserDefaults] objectForKey:@"到期时间"];
-    NSString *fwqbbh = [[NSUserDefaults standardUserDefaults] objectForKey:@"服务器版本号"];
-    NSString *yymc = [[NSUserDefaults standardUserDefaults] objectForKey:@"应用名称"];
-    NSDictionary *infoDic = [[NSBundle mainBundle] infoDictionary];
-    NSString *appVersion = [infoDic objectForKey:@"CFBundleShortVersionString"];
-
+    NSUserDefaults *ud = NSUserDefaults.standardUserDefaults;
+    NSString *jsm = [ud objectForKey:@"解锁码到期时间"];
+    NSString *yjy = [ud objectForKey:@"到期时间"];
+    NSString *fwqbbh = [ud objectForKey:@"服务器版本号"];
+    NSString *yymc = [ud objectForKey:@"应用名称"];
+    NSString *appVersion = NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"];
     if (!yymc) yymc = @"未知应用";
     if (!fwqbbh) fwqbbh = @"未知版本";
     if (!appVersion) appVersion = @"0.0.0";
     if (!jsm || jsm.length == 0) jsm = yjy;
 
-    NSArray<NSDictionary<NSString *, id> *> *dataItems = ZONFeatureMetadataForSection(@"数据功能");
-    NSArray<NSDictionary<NSString *, id> *> *runtimeItems = ZONFeatureMetadataForSection(@"其他功能");
-
     CGFloat width = self.panel.bounds.size.width;
     if (!self.sections) self.sections = [NSMutableArray array];
     [self.sections removeAllObjects];
-
-    for (UIView *v in self.scroll.subviews) {
-        [v removeFromSuperview];
-    }
+    for (UIView *v in self.scroll.subviews) [v removeFromSuperview];
     self.scroll.showsVerticalScrollIndicator = YES;
 
     CGFloat left = 20;
@@ -117,7 +87,6 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";
     title.textColor = UIColor.blackColor;
     title.numberOfLines = 0;
     [self.panel addSubview:title];
-
     CGSize s1 = [title sizeThatFits:CGSizeMake(maxW, CGFLOAT_MAX)];
     title.frame = CGRectMake(left, top, maxW, s1.height);
     CGFloat curY = top + s1.height + 6;
@@ -126,9 +95,7 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";
     line2.text = [NSString stringWithFormat:@"当前版本：%@", appVersion];
     line2.font = [UIFont systemFontOfSize:14];
     line2.textColor = UIColor.grayColor;
-    line2.numberOfLines = 1;
     [self.panel addSubview:line2];
-
     CGSize s2 = [line2 sizeThatFits:CGSizeMake(maxW, CGFLOAT_MAX)];
     line2.frame = CGRectMake(left, curY, maxW, s2.height);
     curY += s2.height + 2;
@@ -137,9 +104,7 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";
     line3.text = [NSString stringWithFormat:@"App Store版本：%@", fwqbbh];
     line3.font = [UIFont systemFontOfSize:14];
     line3.textColor = UIColor.grayColor;
-    line3.numberOfLines = 1;
     [self.panel addSubview:line3];
-
     CGSize s3 = [line3 sizeThatFits:CGSizeMake(maxW, CGFLOAT_MAX)];
     line3.frame = CGRectMake(left, curY, maxW, s3.height);
     curY += s3.height + 12;
@@ -150,29 +115,62 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";
 
     CGFloat y = 0;
     CGFloat sectionW = width - 30;
-    CGFloat gap = 65;
     __weak typeof(self) weakSelf = self;
 
-    FoldSectionView *secBase = [[FoldSectionView alloc] initWithTitle:@"基础功能"
-                                                              detail:@"远程下载 / 云存档"
-                                                              status:[NSString stringWithFormat:@"%lu项", (unsigned long)self.cardItems.count]];
-    secBase.stateKey = @"fold_base";
-    secBase.frame = CGRectMake(15, y, sectionW, 70);
-    [self.scroll addSubview:secBase];
-    [self.sections addObject:secBase];
+    for (NSDictionary<NSString *, id> *sectionMeta in ZONBuiltInSectionMetadata()) {
+        NSString *sectionTitle = sectionMeta[ZONSectionTitleKey];
+        NSString *detail = sectionMeta[ZONSectionDetailKey];
+        NSString *stateKey = sectionMeta[ZONSectionStateKey];
+        NSString *renderer = sectionMeta[ZONSectionRendererKey];
+        NSArray<NSDictionary<NSString *, id> *> *features = ZONFeatureMetadataForSection(sectionTitle);
 
-    for (NSInteger i = 0; i < self.cardItems.count; i++) {
-        NSDictionary<NSString *, id> *feature = self.cardItems[i];
-        NSString *cardTitle = feature[ZONFeatureTitleKey];
-        NSInteger tag = [feature[ZONFeatureLegacyTagKey] integerValue];
+        FoldSectionView *section = [[FoldSectionView alloc] initWithTitle:sectionTitle
+                                                                   detail:detail
+                                                                   status:[NSString stringWithFormat:@"%lu项", (unsigned long)features.count]];
+        section.stateKey = stateKey;
+        section.frame = CGRectMake(15, y, sectionW, 70);
+        [self.scroll addSubview:section];
+        [self.sections addObject:section];
 
+        if ([renderer isEqualToString:@"cards"]) {
+            [self addCardFeatures:features toSection:section.contentView sectionWidth:sectionW];
+        } else if ([renderer isEqualToString:@"grid"]) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [weakSelf addGridButtonsForFeatures:features toSection:section.contentView y:10];
+                [weakSelf relayoutSections];
+            });
+        } else if ([renderer isEqualToString:@"runtime"]) {
+            [self addRuntimeFeatures:features toSection:section.contentView];
+        }
+
+        section.onToggle = ^(BOOL expanded){
+            (void)expanded;
+            [UIView animateWithDuration:0.25 animations:^{
+                [weakSelf relayoutSections];
+            }];
+        };
+
+        CGFloat h = [section layoutAndGetHeight];
+        section.frame = CGRectMake(15, y, sectionW, h);
+        y += h + 15;
+    }
+
+    self.scroll.contentSize = CGSizeMake(width, y);
+}
+
+- (void)addCardFeatures:(NSArray<NSDictionary<NSString *, id> *> *)features
+              toSection:(UIView *)contentView
+           sectionWidth:(CGFloat)sectionW {
+    CGFloat gap = 65;
+    for (NSInteger i = 0; i < features.count; i++) {
+        NSDictionary<NSString *, id> *feature = features[i];
         UIView *card = [[UIView alloc] initWithFrame:CGRectMake(15, 10 + i * gap, sectionW - 30, 55)];
         card.backgroundColor = UIColor.whiteColor;
         card.layer.cornerRadius = 16;
-        [secBase.contentView addSubview:card];
+        [contentView addSubview:card];
 
         UILabel *lab = [[UILabel alloc] initWithFrame:CGRectMake(15, 0, 160, 55)];
-        lab.text = cardTitle;
+        lab.text = feature[ZONFeatureTitleKey];
         lab.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
         [card addSubview:lab];
 
@@ -182,76 +180,17 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";
         btn.layer.cornerRadius = 16;
         [btn setTitle:@"打开" forState:UIControlStateNormal];
         [btn setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];
-        btn.tag = tag;
+        btn.tag = [feature[ZONFeatureLegacyTagKey] integerValue];
         [btn addTarget:self action:@selector(cardButtonTap:) forControlEvents:UIControlEventTouchUpInside];
         [card addSubview:btn];
     }
-
-    secBase.onToggle = ^(BOOL expanded){
-        (void)expanded;
-        [UIView animateWithDuration:0.25 animations:^{
-            [weakSelf relayoutSections];
-        }];
-    };
-    CGFloat hBase = [secBase layoutAndGetHeight];
-    secBase.frame = CGRectMake(15, y, sectionW, hBase);
-    y += hBase + 15;
-
-    FoldSectionView *secDraw = [[FoldSectionView alloc] initWithTitle:@"数据功能"
-                                                              detail:@"备份存档 /恢复存档 / 清理配置和授权"
-                                                              status:[NSString stringWithFormat:@"%lu项", (unsigned long)dataItems.count]];
-    secDraw.stateKey = @"fold_draw";
-    secDraw.frame = CGRectMake(15, y, sectionW, 70);
-    [self.scroll addSubview:secDraw];
-    [self.sections addObject:secDraw];
-
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [self addGridButtonsForFeatures:dataItems toSection:secDraw.contentView y:10];
-        [self relayoutSections];
-    });
-
-    secDraw.onToggle = ^(BOOL expanded){
-        (void)expanded;
-        [UIView animateWithDuration:0.25 animations:^{
-            [weakSelf relayoutSections];
-        }];
-    };
-    CGFloat hDraw = [secDraw layoutAndGetHeight];
-    secDraw.frame = CGRectMake(15, y, sectionW, hDraw);
-    y += hDraw + 15;
-
-    FoldSectionView *secRole = [[FoldSectionView alloc] initWithTitle:@"其他功能"
-                                                              detail:@"1 / 2 / 3"
-                                                              status:[NSString stringWithFormat:@"%lu项", (unsigned long)runtimeItems.count]];
-    secRole.stateKey = @"fold_role";
-    secRole.frame = CGRectMake(15, y, sectionW, 70);
-    [self.scroll addSubview:secRole];
-    [self.sections addObject:secRole];
-
-    if (runtimeItems.count > 0) {
-        [secRole.contentView addSubview:[self switchRowForFeature:runtimeItems[0] y:10]];
-    }
-    if (runtimeItems.count > 1) {
-        [secRole.contentView addSubview:[self adSpeedRowForFeature:runtimeItems[1] y:80]];
-    }
-    if (runtimeItems.count > 2) {
-        [secRole.contentView addSubview:[self switchRowForFeature:runtimeItems[2] y:200]];
-    }
-
-    secRole.onToggle = ^(BOOL expanded){
-        (void)expanded;
-        [UIView animateWithDuration:0.25 animations:^{
-            [weakSelf relayoutSections];
-        }];
-    };
-    CGFloat hRole = [secRole layoutAndGetHeight];
-    secRole.frame = CGRectMake(15, y, sectionW, hRole);
-    y += hRole + 15;
-
-    self.scroll.contentSize = CGSizeMake(width, y);
 }
 
-#pragma mark - 广告加速开关事件
+- (void)addRuntimeFeatures:(NSArray<NSDictionary<NSString *, id> *> *)features toSection:(UIView *)contentView {
+    if (features.count > 0) [contentView addSubview:[self switchRowForFeature:features[0] y:10]];
+    if (features.count > 1) [contentView addSubview:[self adSpeedRowForFeature:features[1] y:80]];
+    if (features.count > 2) [contentView addSubview:[self switchRowForFeature:features[2] y:200]];
+}
 
 - (void)adSwitchChanged:(UISwitch *)sw {
     UIView *box = sw.superview;
@@ -260,21 +199,16 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";
     (void)ZONDispatchMigratedToggleForLegacyTag(sw.tag, sw.isOn);
 }
 
-#pragma mark - 广告加速滑条事件
-
 - (void)adSliderChanged:(UISlider *)slider {
     UIView *box = slider.superview;
     UILabel *valueLab = [box viewWithTag:600];
     valueLab.text = [NSString stringWithFormat:@"%.0f", slider.value];
-    [[NSUserDefaults standardUserDefaults] setFloat:slider.value forKey:kADSpeedKey];
+    [NSUserDefaults.standardUserDefaults setFloat:slider.value forKey:kADSpeedKey];
     NSLog(@"广告倍速设置：%.0f", slider.value);
 }
 
-#pragma mark - 广告加速组合行（开关 + 滑条）
-
 - (UIView *)adSpeedRowForFeature:(NSDictionary<NSString *, id> *)feature y:(CGFloat)y {
     CGFloat w = self.panel.bounds.size.width - 30;
-
     UIView *box = [[UIView alloc] initWithFrame:CGRectMake(15, y, w, 110)];
     box.backgroundColor = UIColor.whiteColor;
     box.layer.cornerRadius = 18;
@@ -286,8 +220,7 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";
 
     UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectZero];
     sw.tag = [feature[ZONFeatureLegacyTagKey] integerValue];
-
-    BOOL enabled = [[NSUserDefaults standardUserDefaults] boolForKey:kAADDEnableKey];
+    BOOL enabled = [NSUserDefaults.standardUserDefaults boolForKey:kAADDEnableKey];
     sw.on = enabled;
     sw.center = CGPointMake(w - 50, 27);
     [sw addTarget:self action:@selector(adSwitchChanged:) forControlEvents:UIControlEventValueChanged];
@@ -296,8 +229,7 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";
     UISlider *slider = [[UISlider alloc] initWithFrame:CGRectMake(15, 65, w - 110, 30)];
     slider.minimumValue = 1;
     slider.maximumValue = 100;
-
-    float savedValue = [[NSUserDefaults standardUserDefaults] floatForKey:kADSpeedKey];
+    float savedValue = [NSUserDefaults.standardUserDefaults floatForKey:kADSpeedKey];
     if (savedValue <= 0) savedValue = 50;
     slider.value = savedValue;
     slider.enabled = enabled;
@@ -312,11 +244,8 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";
     valueLab.text = [NSString stringWithFormat:@"%.0f", slider.value];
     valueLab.tag = 600;
     [box addSubview:valueLab];
-
     return box;
 }
-
-#pragma mark - 数据功能按钮
 
 - (void)addGridButtonsForFeatures:(NSArray<NSDictionary<NSString *, id> *> *)features
                         toSection:(UIView *)contentView
@@ -328,13 +257,7 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";
     int colCount = 2;
     CGFloat btnW = (contentW - leftMargin * 2 - spacingX) / colCount;
     CGFloat btnH = 70;
-
-    NSArray<UIColor *> *colors = @[
-        UIColor.systemPurpleColor,
-        UIColor.systemOrangeColor,
-        UIColor.systemBlueColor,
-        UIColor.systemPinkColor
-    ];
+    NSArray<UIColor *> *colors = @[UIColor.systemPurpleColor, UIColor.systemOrangeColor, UIColor.systemBlueColor, UIColor.systemPinkColor];
 
     for (NSInteger i = 0; i < features.count; i++) {
         NSDictionary<NSString *, id> *feature = features[i];
@@ -355,33 +278,18 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";
     }
 }
 
-#pragma mark - 功能入口
-
-- (void)cardButtonTap:(UIButton *)sender {
-    (void)ZONDispatchMigratedActionForLegacyTag(sender.tag, self);
-}
-
-- (void)gridButtonTap:(UIButton *)sender {
-    (void)ZONDispatchMigratedActionForLegacyTag(sender.tag, self);
-}
-
-- (void)switchChanged:(UISwitch *)sw {
-    (void)ZONDispatchMigratedToggleForLegacyTag(sw.tag, sw.isOn);
-}
-
-#pragma mark - 同步设置到 ImgTool
+- (void)cardButtonTap:(UIButton *)sender { (void)ZONDispatchMigratedActionForLegacyTag(sender.tag, self); }
+- (void)gridButtonTap:(UIButton *)sender { (void)ZONDispatchMigratedActionForLegacyTag(sender.tag, self); }
+- (void)switchChanged:(UISwitch *)sw { (void)ZONDispatchMigratedToggleForLegacyTag(sw.tag, sw.isOn); }
 
 - (void)syncSettingsToRuntime {
     NSUserDefaults *ud = NSUserDefaults.standardUserDefaults;
     [ImgTool share].NeiGou = [ud boolForKey:kNNGGEnableKey];
     [ImgTool share].ADSpeed = [ud boolForKey:kAADDEnableKey];
-
     NSInteger speed = [ud integerForKey:kADSpeedKey];
     if (speed <= 0) speed = 1;
     [ImgTool share].ADBiansu = speed;
 }
-
-#pragma mark - 弹出动画
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
@@ -398,25 +306,15 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";
     }];
 }
 
-#pragma mark - 横竖屏旋转适配
-
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
-
     CGFloat screenW = self.view.bounds.size.width;
     CGFloat screenH = self.view.bounds.size.height;
     CGFloat panelHeight = screenH * 0.85;
-
-    self.panel.frame = CGRectMake(20,
-                                  screenH - panelHeight - 20,
-                                  screenW - 40,
-                                  panelHeight);
-
+    self.panel.frame = CGRectMake(20, screenH - panelHeight - 20, screenW - 40, panelHeight);
     self.scroll.frame = self.panel.bounds;
     [self relayoutSections];
 }
-
-#pragma mark - 关闭弹窗
 
 - (void)close {
     CGFloat screenH = self.view.bounds.size.height;
@@ -430,16 +328,10 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";
     }];
 }
 
-#pragma mark - 点击外部关闭（面板内部不关闭）
-
-- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer
-       shouldReceiveTouch:(UITouch *)touch {
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
     (void)gestureRecognizer;
     CGPoint point = [touch locationInView:self.view];
-    if (CGRectContainsPoint(self.panel.frame, point)) {
-        return NO;
-    }
-    return YES;
+    return !CGRectContainsPoint(self.panel.frame, point);
 }
 
 - (UIView *)switchRowForFeature:(NSDictionary<NSString *, id> *)feature y:(CGFloat)y {
@@ -456,15 +348,9 @@ static NSString * const kADSpeedKey    = @"AADDssppeedd";
     NSInteger tag = [feature[ZONFeatureLegacyTagKey] integerValue];
     UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectZero];
     sw.tag = tag;
-
     NSString *identifier = feature[ZONFeatureIdentifierKey];
-    if ([identifier isEqualToString:@"runtime.iap-noads"]) {
-        sw.on = [[NSUserDefaults standardUserDefaults] boolForKey:kNNGGEnableKey];
-    }
-    else if ([identifier isEqualToString:@"runtime.ad-speed"]) {
-        sw.on = [[NSUserDefaults standardUserDefaults] boolForKey:kAADDEnableKey];
-    }
-
+    if ([identifier isEqualToString:@"runtime.iap-noads"]) sw.on = [NSUserDefaults.standardUserDefaults boolForKey:kNNGGEnableKey];
+    else if ([identifier isEqualToString:@"runtime.ad-speed"]) sw.on = [NSUserDefaults.standardUserDefaults boolForKey:kAADDEnableKey];
     sw.center = CGPointMake(w - 50, 30);
     [sw addTarget:self action:@selector(switchChanged:) forControlEvents:UIControlEventValueChanged];
     [row addSubview:sw];
