@@ -2,6 +2,7 @@
 #import "FoldSectionView.h"
 #import "ImgTool.h"
 #import "../ZONCore/ZONFeatureDispatcher.h"
+#import "../ZONCore/ZONFeatureRenderer.h"
 
 @interface PopupMenuVC () <UIGestureRecognizerDelegate>
 @property(nonatomic,strong) UIView *panel;
@@ -133,14 +134,20 @@ static NSString * const kADSpeedKey = @"AADDssppeedd";
         [self.sections addObject:section];
 
         if ([renderer isEqualToString:@"cards"]) {
-            [self addCardFeatures:features toSection:section.contentView sectionWidth:sectionW];
+            ZONRenderCardFeatures(features, section.contentView, sectionW, self, @selector(cardButtonTap:));
         } else if ([renderer isEqualToString:@"grid"]) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                [weakSelf addGridButtonsForFeatures:features toSection:section.contentView y:10];
+                ZONRenderGridFeatures(features, section.contentView, 10, weakSelf, @selector(gridButtonTap:));
                 [weakSelf relayoutSections];
             });
         } else if ([renderer isEqualToString:@"runtime"]) {
-            [self addRuntimeFeatures:features toSection:section.contentView];
+            ZONRenderRuntimeFeatures(features,
+                                     section.contentView,
+                                     self.panel.bounds.size.width,
+                                     self,
+                                     @selector(switchChanged:),
+                                     @selector(adSwitchChanged:),
+                                     @selector(adSliderChanged:));
         }
 
         section.onToggle = ^(BOOL expanded){
@@ -158,40 +165,6 @@ static NSString * const kADSpeedKey = @"AADDssppeedd";
     self.scroll.contentSize = CGSizeMake(width, y);
 }
 
-- (void)addCardFeatures:(NSArray<NSDictionary<NSString *, id> *> *)features
-              toSection:(UIView *)contentView
-           sectionWidth:(CGFloat)sectionW {
-    CGFloat gap = 65;
-    for (NSInteger i = 0; i < features.count; i++) {
-        NSDictionary<NSString *, id> *feature = features[i];
-        UIView *card = [[UIView alloc] initWithFrame:CGRectMake(15, 10 + i * gap, sectionW - 30, 55)];
-        card.backgroundColor = UIColor.whiteColor;
-        card.layer.cornerRadius = 16;
-        [contentView addSubview:card];
-
-        UILabel *lab = [[UILabel alloc] initWithFrame:CGRectMake(15, 0, 160, 55)];
-        lab.text = feature[ZONFeatureTitleKey];
-        lab.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
-        [card addSubview:lab];
-
-        UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
-        btn.frame = CGRectMake(card.bounds.size.width - 80, 12, 65, 32);
-        btn.backgroundColor = UIColor.systemBlueColor;
-        btn.layer.cornerRadius = 16;
-        [btn setTitle:@"打开" forState:UIControlStateNormal];
-        [btn setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];
-        btn.tag = [feature[ZONFeatureLegacyTagKey] integerValue];
-        [btn addTarget:self action:@selector(cardButtonTap:) forControlEvents:UIControlEventTouchUpInside];
-        [card addSubview:btn];
-    }
-}
-
-- (void)addRuntimeFeatures:(NSArray<NSDictionary<NSString *, id> *> *)features toSection:(UIView *)contentView {
-    if (features.count > 0) [contentView addSubview:[self switchRowForFeature:features[0] y:10]];
-    if (features.count > 1) [contentView addSubview:[self adSpeedRowForFeature:features[1] y:80]];
-    if (features.count > 2) [contentView addSubview:[self switchRowForFeature:features[2] y:200]];
-}
-
 - (void)adSwitchChanged:(UISwitch *)sw {
     UIView *box = sw.superview;
     UISlider *slider = [box viewWithTag:500];
@@ -205,77 +178,6 @@ static NSString * const kADSpeedKey = @"AADDssppeedd";
     valueLab.text = [NSString stringWithFormat:@"%.0f", slider.value];
     [NSUserDefaults.standardUserDefaults setFloat:slider.value forKey:kADSpeedKey];
     NSLog(@"广告倍速设置：%.0f", slider.value);
-}
-
-- (UIView *)adSpeedRowForFeature:(NSDictionary<NSString *, id> *)feature y:(CGFloat)y {
-    CGFloat w = self.panel.bounds.size.width - 30;
-    UIView *box = [[UIView alloc] initWithFrame:CGRectMake(15, y, w, 110)];
-    box.backgroundColor = UIColor.whiteColor;
-    box.layer.cornerRadius = 18;
-
-    UILabel *titleLab = [[UILabel alloc] initWithFrame:CGRectMake(15, 0, 200, 55)];
-    titleLab.text = feature[ZONFeatureTitleKey];
-    titleLab.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
-    [box addSubview:titleLab];
-
-    UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectZero];
-    sw.tag = [feature[ZONFeatureLegacyTagKey] integerValue];
-    BOOL enabled = [NSUserDefaults.standardUserDefaults boolForKey:kAADDEnableKey];
-    sw.on = enabled;
-    sw.center = CGPointMake(w - 50, 27);
-    [sw addTarget:self action:@selector(adSwitchChanged:) forControlEvents:UIControlEventValueChanged];
-    [box addSubview:sw];
-
-    UISlider *slider = [[UISlider alloc] initWithFrame:CGRectMake(15, 65, w - 110, 30)];
-    slider.minimumValue = 1;
-    slider.maximumValue = 100;
-    float savedValue = [NSUserDefaults.standardUserDefaults floatForKey:kADSpeedKey];
-    if (savedValue <= 0) savedValue = 50;
-    slider.value = savedValue;
-    slider.enabled = enabled;
-    [slider addTarget:self action:@selector(adSliderChanged:) forControlEvents:UIControlEventValueChanged];
-    slider.tag = 500;
-    [box addSubview:slider];
-
-    UILabel *valueLab = [[UILabel alloc] initWithFrame:CGRectMake(w - 80, 55, 70, 50)];
-    valueLab.textAlignment = NSTextAlignmentCenter;
-    valueLab.font = [UIFont systemFontOfSize:13];
-    valueLab.textColor = UIColor.grayColor;
-    valueLab.text = [NSString stringWithFormat:@"%.0f", slider.value];
-    valueLab.tag = 600;
-    [box addSubview:valueLab];
-    return box;
-}
-
-- (void)addGridButtonsForFeatures:(NSArray<NSDictionary<NSString *, id> *> *)features
-                        toSection:(UIView *)contentView
-                                y:(CGFloat)y {
-    CGFloat contentW = contentView.bounds.size.width;
-    CGFloat leftMargin = 15;
-    CGFloat spacingX = 15;
-    CGFloat spacingY = 15;
-    int colCount = 2;
-    CGFloat btnW = (contentW - leftMargin * 2 - spacingX) / colCount;
-    CGFloat btnH = 70;
-    NSArray<UIColor *> *colors = @[UIColor.systemPurpleColor, UIColor.systemOrangeColor, UIColor.systemBlueColor, UIColor.systemPinkColor];
-
-    for (NSInteger i = 0; i < features.count; i++) {
-        NSDictionary<NSString *, id> *feature = features[i];
-        int row = (int)i / 2;
-        int col = (int)i % 2;
-        CGFloat x = leftMargin + col * (btnW + spacingX);
-        CGFloat yy = y + row * (btnH + spacingY);
-
-        UIButton *btn = [[UIButton alloc] initWithFrame:CGRectMake(x, yy, btnW, btnH)];
-        btn.backgroundColor = colors[(NSUInteger)i % colors.count];
-        btn.layer.cornerRadius = 18;
-        btn.tag = [feature[ZONFeatureLegacyTagKey] integerValue];
-        [btn setTitle:feature[ZONFeatureTitleKey] forState:UIControlStateNormal];
-        [btn setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];
-        btn.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightSemibold];
-        [btn addTarget:self action:@selector(gridButtonTap:) forControlEvents:UIControlEventTouchUpInside];
-        [contentView addSubview:btn];
-    }
 }
 
 - (void)cardButtonTap:(UIButton *)sender { (void)ZONDispatchMigratedActionForLegacyTag(sender.tag, self); }
@@ -332,29 +234,6 @@ static NSString * const kADSpeedKey = @"AADDssppeedd";
     (void)gestureRecognizer;
     CGPoint point = [touch locationInView:self.view];
     return !CGRectContainsPoint(self.panel.frame, point);
-}
-
-- (UIView *)switchRowForFeature:(NSDictionary<NSString *, id> *)feature y:(CGFloat)y {
-    CGFloat w = self.panel.bounds.size.width - 30;
-    UIView *row = [[UIView alloc] initWithFrame:CGRectMake(15, y, w, 60)];
-    row.backgroundColor = UIColor.whiteColor;
-    row.layer.cornerRadius = 18;
-
-    UILabel *lab = [[UILabel alloc] initWithFrame:CGRectMake(15, 0, 220, 60)];
-    lab.text = feature[ZONFeatureTitleKey];
-    lab.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
-    [row addSubview:lab];
-
-    NSInteger tag = [feature[ZONFeatureLegacyTagKey] integerValue];
-    UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectZero];
-    sw.tag = tag;
-    NSString *identifier = feature[ZONFeatureIdentifierKey];
-    if ([identifier isEqualToString:@"runtime.iap-noads"]) sw.on = [NSUserDefaults.standardUserDefaults boolForKey:kNNGGEnableKey];
-    else if ([identifier isEqualToString:@"runtime.ad-speed"]) sw.on = [NSUserDefaults.standardUserDefaults boolForKey:kAADDEnableKey];
-    sw.center = CGPointMake(w - 50, 30);
-    [sw addTarget:self action:@selector(switchChanged:) forControlEvents:UIControlEventValueChanged];
-    [row addSubview:sw];
-    return row;
 }
 
 @end
