@@ -26,7 +26,28 @@ static NSString * const ZONFeatureKindKey = @"kind";
 static NSString * const ZONFeatureRiskKey = @"risk";
 static NSString * const ZONFeatureMigratedKey = @"migrated";
 
-/// Built-in feature metadata used by the staged menu migration.
+static NSString * const ZONSectionIdentifierKey = @"identifier";
+static NSString * const ZONSectionTitleKey = @"title";
+static NSString * const ZONSectionDetailKey = @"detail";
+static NSString * const ZONSectionStateKey = @"stateKey";
+static NSString * const ZONSectionRendererKey = @"renderer";
+
+/// Canonical menu section metadata. Ordering here is the visible section order.
+static inline NSArray<NSDictionary<NSString *, id> *> *ZONBuiltInSectionMetadata(void)
+{
+    static NSArray<NSDictionary<NSString *, id> *> *sections;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        sections = @[
+            @{ ZONSectionIdentifierKey:@"base", ZONSectionTitleKey:@"基础功能", ZONSectionDetailKey:@"远程下载 / 云存档", ZONSectionStateKey:@"fold_base", ZONSectionRendererKey:@"cards" },
+            @{ ZONSectionIdentifierKey:@"data", ZONSectionTitleKey:@"数据功能", ZONSectionDetailKey:@"备份存档 /恢复存档 / 清理配置和授权", ZONSectionStateKey:@"fold_draw", ZONSectionRendererKey:@"grid" },
+            @{ ZONSectionIdentifierKey:@"runtime", ZONSectionTitleKey:@"其他功能", ZONSectionDetailKey:@"1 / 2 / 3", ZONSectionStateKey:@"fold_role", ZONSectionRendererKey:@"runtime" },
+        ];
+    });
+    return sections;
+}
+
+/// Built-in feature metadata used by the menu renderer and dispatcher.
 static inline NSArray<NSDictionary<NSString *, id> *> *ZONBuiltInFeatureMetadata(void)
 {
     static NSArray<NSDictionary<NSString *, id> *> *features;
@@ -58,7 +79,6 @@ static inline NSDictionary<NSString *, id> * _Nullable ZONFeatureMetadataForLega
     return nil;
 }
 
-/// Returns registry entries for one menu section in their canonical UI order.
 static inline NSArray<NSDictionary<NSString *, id> *> *ZONFeatureMetadataForSection(NSString *section)
 {
     if (section.length == 0) return @[];
@@ -84,6 +104,24 @@ static inline BOOL ZONFeatureRegistryHasUniqueIdentifiersAndTags(void)
         if ([identifiers containsObject:identifier] || [tags containsObject:tag]) return NO;
         [identifiers addObject:identifier];
         [tags addObject:tag];
+    }
+    return YES;
+}
+
+static inline BOOL ZONSectionRegistryIsValid(void)
+{
+    NSMutableSet<NSString *> *identifiers = [NSMutableSet set];
+    NSMutableSet<NSString *> *titles = [NSMutableSet set];
+    for (NSDictionary<NSString *, id> *section in ZONBuiltInSectionMetadata()) {
+        NSString *identifier = section[ZONSectionIdentifierKey];
+        NSString *title = section[ZONSectionTitleKey];
+        NSString *stateKey = section[ZONSectionStateKey];
+        NSString *renderer = section[ZONSectionRendererKey];
+        if (identifier.length == 0 || title.length == 0 || stateKey.length == 0 || renderer.length == 0) return NO;
+        if ([identifiers containsObject:identifier] || [titles containsObject:title]) return NO;
+        if (ZONFeatureMetadataForSection(title).count == 0) return NO;
+        [identifiers addObject:identifier];
+        [titles addObject:title];
     }
     return YES;
 }
