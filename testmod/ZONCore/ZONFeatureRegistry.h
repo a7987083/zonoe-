@@ -46,7 +46,7 @@ static inline NSArray<NSDictionary<NSString *, id> *> *ZONBuiltInFeatureMetadata
 
             @{ ZONFeatureIdentifierKey:@"data.backup-save", ZONFeatureTitleKey:@"备份存档", ZONFeatureSectionKey:@"数据功能", ZONFeatureLegacyTagKey:@100, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskLow), ZONFeatureMigratedKey:@YES },
             @{ ZONFeatureIdentifierKey:@"data.restore-save", ZONFeatureTitleKey:@"恢复存档", ZONFeatureSectionKey:@"数据功能", ZONFeatureLegacyTagKey:@101, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskLow), ZONFeatureMigratedKey:@YES },
-            @{ ZONFeatureIdentifierKey:@"data.clear-game-data", ZONFeatureTitleKey:@"清除游戏数据", ZONFeatureSectionKey:@"数据功能", ZONFeatureLegacyTagKey:@102, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskHigh), ZONFeatureMigratedKey:@NO },
+            @{ ZONFeatureIdentifierKey:@"data.clear-game-data", ZONFeatureTitleKey:@"清除游戏数据", ZONFeatureSectionKey:@"数据功能", ZONFeatureLegacyTagKey:@102, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskHigh), ZONFeatureMigratedKey:@YES },
             @{ ZONFeatureIdentifierKey:@"auth.clear-records", ZONFeatureTitleKey:@"清除授权记录", ZONFeatureSectionKey:@"数据功能", ZONFeatureLegacyTagKey:@103, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskHigh), ZONFeatureMigratedKey:@NO },
 
             @{ ZONFeatureIdentifierKey:@"runtime.iap-noads", ZONFeatureTitleKey:@"内购破解+ iGameGod去广告", ZONFeatureSectionKey:@"其他功能", ZONFeatureLegacyTagKey:@201, ZONFeatureKindKey:@(ZONFeatureKindToggle), ZONFeatureRiskKey:@(ZONFeatureRiskMedium), ZONFeatureMigratedKey:@YES },
