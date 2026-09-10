@@ -148,9 +148,8 @@ static inline void ZONPresentClearAuthorizationConfirmation(UIViewController *ho
     [hostViewController presentViewController:alert animated:YES completion:nil];
 }
 
-/// Routes only features whose registry metadata explicitly marks them as migrated.
-/// Returns YES when the migrated path handled the action; NO lets the caller fall
-/// back to the legacy tag handler during the staged migration period.
+/// Routes registry-owned actions. All ten built-in features have completed staged
+/// migration, so PopupMenuVC no longer carries per-tag compatibility fallbacks.
 static inline BOOL ZONDispatchMigratedActionForLegacyTag(NSInteger legacyTag,
                                                           UIViewController *hostViewController)
 {
@@ -205,13 +204,11 @@ static inline BOOL ZONDispatchMigratedActionForLegacyTag(NSInteger legacyTag,
         return YES;
     }
 
-    // A registry entry should never silently swallow a legacy action. Until each
-    // feature has an explicit handler, return NO so PopupMenuVC can use the old path.
     return NO;
 }
 
-/// Toggle/placeholder dispatch for migrated runtime controls. This preserves the
-/// exact legacy UserDefaults keys and ImgTool side effects used by PopupMenuVC.
+/// Toggle/placeholder dispatch for registry-owned runtime controls. This preserves
+/// the exact UserDefaults keys and ImgTool side effects previously used by PopupMenuVC.
 static inline BOOL ZONDispatchMigratedToggleForLegacyTag(NSInteger legacyTag, BOOL on)
 {
     NSDictionary<NSString *, id> *feature = ZONFeatureMetadataForLegacyTag(legacyTag);
