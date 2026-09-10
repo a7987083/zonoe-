@@ -2,7 +2,7 @@
 #import "FoldSectionView.h"
 #import "ImgTool.h"
 #import "../ZONCore/ZONFeatureDispatcher.h"
-#import "../ZONCore/ZONFeatureRenderer.h"
+#import "../ZONCore/ZONSectionRenderer.h"
 
 @interface PopupMenuVC () <UIGestureRecognizerDelegate>
 @property(nonatomic,strong) UIView *panel;
@@ -114,55 +114,19 @@ static NSString * const kADSpeedKey = @"AADDssppeedd";
     self.scroll.frame = CGRectMake(0, scrollTop, width, self.panel.bounds.size.height - scrollTop);
     [self.panel addSubview:self.scroll];
 
-    CGFloat y = 0;
-    CGFloat sectionW = width - 30;
     __weak typeof(self) weakSelf = self;
-
-    for (NSDictionary<NSString *, id> *sectionMeta in ZONBuiltInSectionMetadata()) {
-        NSString *sectionTitle = sectionMeta[ZONSectionTitleKey];
-        NSString *detail = sectionMeta[ZONSectionDetailKey];
-        NSString *stateKey = sectionMeta[ZONSectionStateKey];
-        NSString *renderer = sectionMeta[ZONSectionRendererKey];
-        NSArray<NSDictionary<NSString *, id> *> *features = ZONFeatureMetadataForSection(sectionTitle);
-
-        FoldSectionView *section = [[FoldSectionView alloc] initWithTitle:sectionTitle
-                                                                   detail:detail
-                                                                   status:[NSString stringWithFormat:@"%lu项", (unsigned long)features.count]];
-        section.stateKey = stateKey;
-        section.frame = CGRectMake(15, y, sectionW, 70);
-        [self.scroll addSubview:section];
-        [self.sections addObject:section];
-
-        if ([renderer isEqualToString:@"cards"]) {
-            ZONRenderCardFeatures(features, section.contentView, sectionW, self, @selector(cardButtonTap:));
-        } else if ([renderer isEqualToString:@"grid"]) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                ZONRenderGridFeatures(features, section.contentView, 10, weakSelf, @selector(gridButtonTap:));
-                [weakSelf relayoutSections];
-            });
-        } else if ([renderer isEqualToString:@"runtime"]) {
-            ZONRenderRuntimeFeatures(features,
-                                     section.contentView,
-                                     self.panel.bounds.size.width,
-                                     self,
-                                     @selector(switchChanged:),
-                                     @selector(adSwitchChanged:),
-                                     @selector(adSliderChanged:));
-        }
-
-        section.onToggle = ^(BOOL expanded){
-            (void)expanded;
-            [UIView animateWithDuration:0.25 animations:^{
-                [weakSelf relayoutSections];
-            }];
-        };
-
-        CGFloat h = [section layoutAndGetHeight];
-        section.frame = CGRectMake(15, y, sectionW, h);
-        y += h + 15;
-    }
-
-    self.scroll.contentSize = CGSizeMake(width, y);
+    NSArray<FoldSectionView *> *rendered = ZONRenderRegisteredSections(self.scroll,
+                                                                       width,
+                                                                       self,
+                                                                       @selector(cardButtonTap:),
+                                                                       @selector(gridButtonTap:),
+                                                                       @selector(switchChanged:),
+                                                                       @selector(adSwitchChanged:),
+                                                                       @selector(adSliderChanged:),
+                                                                       ^{
+        [weakSelf relayoutSections];
+    });
+    [self.sections addObjectsFromArray:rendered];
 }
 
 - (void)adSwitchChanged:(UISwitch *)sw {
