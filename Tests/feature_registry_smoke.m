@@ -9,6 +9,20 @@ static void require(BOOL condition, NSString *message)
     }
 }
 
+static void requireSection(NSString *section, NSArray<NSNumber *> *expectedTags)
+{
+    NSArray<NSDictionary<NSString *, id> *> *features = ZONFeatureMetadataForSection(section);
+    require(features.count == expectedTags.count,
+            [NSString stringWithFormat:@"%@ count mismatch", section]);
+
+    [expectedTags enumerateObjectsUsingBlock:^(NSNumber *tag, NSUInteger idx, BOOL *stop) {
+        (void)stop;
+        NSDictionary<NSString *, id> *feature = features[idx];
+        require([feature[ZONFeatureLegacyTagKey] isEqualToNumber:tag],
+                [NSString stringWithFormat:@"%@ order mismatch at %lu", section, (unsigned long)idx]);
+    }];
+}
+
 int main(void)
 {
     @autoreleasepool {
@@ -41,19 +55,20 @@ int main(void)
 
             BOOL migrated = [feature[ZONFeatureMigratedKey] boolValue];
             if (migrated) migratedCount++;
-
-            if ([expectedMigratedTags containsObject:tag]) {
-                require(migrated,
-                        [NSString stringWithFormat:@"%@ must use the migrated path", identifier]);
-            } else {
-                require(!migrated,
-                        [NSString stringWithFormat:@"%@ must remain on the legacy path", identifier]);
-            }
+            require([expectedMigratedTags containsObject:tag] == migrated,
+                    [NSString stringWithFormat:@"%@ migration ownership mismatch", identifier]);
         }];
 
         require(migratedCount == expectedMigratedTags.count,
-                @"v1_p18 must keep all ten features registry-owned after fallback cleanup");
-        NSLog(@"feature registry smoke passed (%lu features, %lu migrated)",
+                @"v1_p19 must keep all ten features registry-owned");
+
+        requireSection(@"基础功能", @[@1, @2, @3]);
+        requireSection(@"数据功能", @[@100, @101, @102, @103]);
+        requireSection(@"其他功能", @[@201, @202, @203]);
+        require(ZONFeatureMetadataForSection(@"不存在").count == 0,
+                @"unknown section must be empty");
+
+        NSLog(@"feature registry smoke passed (%lu features, %lu migrated, section UI order verified)",
               (unsigned long)features.count,
               (unsigned long)migratedCount);
     }
