@@ -1,10 +1,9 @@
 #import "PopupMenuVC.h"
 #import "FoldSectionView.h"
-#import "ImgTool.h"
-#import "../ZONCore/ZONFeatureDispatcher.h"
 #import "../ZONCore/ZONSectionRenderer.h"
 #import "../ZONCore/ZONMenuChromeRenderer.h"
 #import "../ZONCore/ZONMenuPanelController.h"
+#import "../ZONCore/ZONMenuEventBridge.h"
 
 @interface PopupMenuVC () <UIGestureRecognizerDelegate>
 @property(nonatomic,strong) UIView *panel;
@@ -12,10 +11,6 @@
 @property(nonatomic,strong) NSMutableArray<FoldSectionView *> *sections;
 @property(nonatomic, assign) BOOL didBuildUI;
 @end
-
-static NSString * const kNNGGEnableKey = @"NNGGNNGG";
-static NSString * const kAADDEnableKey = @"AADDAADD";
-static NSString * const kADSpeedKey = @"AADDssppeedd";
 
 @implementation PopupMenuVC
 
@@ -63,36 +58,28 @@ static NSString * const kADSpeedKey = @"AADDssppeedd";
 }
 
 - (void)adSwitchChanged:(UISwitch *)sw {
-    UIView *box = sw.superview;
-    UISlider *slider = [box viewWithTag:500];
-    slider.enabled = sw.isOn;
-    (void)ZONDispatchMigratedToggleForLegacyTag(sw.tag, sw.isOn);
+    ZONMenuHandleAdSwitch(sw);
 }
 
 - (void)adSliderChanged:(UISlider *)slider {
-    UIView *box = slider.superview;
-    UILabel *valueLab = [box viewWithTag:600];
-    valueLab.text = [NSString stringWithFormat:@"%.0f", slider.value];
-    [NSUserDefaults.standardUserDefaults setFloat:slider.value forKey:kADSpeedKey];
-    NSLog(@"广告倍速设置：%.0f", slider.value);
+    ZONMenuHandleAdSlider(slider);
 }
 
-- (void)cardButtonTap:(UIButton *)sender { (void)ZONDispatchMigratedActionForLegacyTag(sender.tag, self); }
-- (void)gridButtonTap:(UIButton *)sender { (void)ZONDispatchMigratedActionForLegacyTag(sender.tag, self); }
-- (void)switchChanged:(UISwitch *)sw { (void)ZONDispatchMigratedToggleForLegacyTag(sw.tag, sw.isOn); }
+- (void)cardButtonTap:(UIButton *)sender {
+    ZONMenuHandleAction(sender.tag, self);
+}
 
-- (void)syncSettingsToRuntime {
-    NSUserDefaults *ud = NSUserDefaults.standardUserDefaults;
-    [ImgTool share].NeiGou = [ud boolForKey:kNNGGEnableKey];
-    [ImgTool share].ADSpeed = [ud boolForKey:kAADDEnableKey];
-    NSInteger speed = [ud integerForKey:kADSpeedKey];
-    if (speed <= 0) speed = 1;
-    [ImgTool share].ADBiansu = speed;
+- (void)gridButtonTap:(UIButton *)sender {
+    ZONMenuHandleAction(sender.tag, self);
+}
+
+- (void)switchChanged:(UISwitch *)sw {
+    ZONMenuHandleToggle(sw.tag, sw.isOn);
 }
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
-    [self syncSettingsToRuntime];
+    ZONMenuSyncSettingsToRuntime();
     ZONShowMenuPanel(self.view, self.panel);
 }
 
