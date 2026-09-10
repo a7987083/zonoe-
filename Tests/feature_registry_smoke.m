@@ -48,7 +48,7 @@ int main(void)
                     [NSString stringWithFormat:@"%@ must remain registry-owned", identifier]);
             migratedCount++;
         }];
-        require(migratedCount == 10, @"v1_p22 must keep all ten features registry-owned");
+        require(migratedCount == 10, @"v1_p23 must keep all ten features registry-owned");
 
         requireSection(@"基础功能", @[@1, @2, @3]);
         requireSection(@"数据功能", @[@100, @101, @102, @103]);
@@ -70,7 +70,7 @@ int main(void)
             require([section[ZONSectionDetailKey] length] > 0, @"section detail must be non-empty");
         }];
 
-        NSLog(@"feature registry smoke passed (v1_p22, 10 features, 3 registry-driven sections)");
+        NSLog(@"feature registry smoke passed (v1_p23, 10 features, 3 registry-driven sections)");
     }
     return 0;
 }
