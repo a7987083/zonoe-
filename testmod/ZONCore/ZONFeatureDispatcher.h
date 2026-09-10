@@ -9,6 +9,7 @@
 #import "PubgLoad.h"
 #import "ImgTool.h"
 #import "SVProgressHUD.h"
+#import "WX_NongShiFu123.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -119,6 +120,34 @@ static inline void ZONPresentClearGameDataConfirmation(UIViewController *hostVie
     [hostViewController presentViewController:alert animated:YES completion:nil];
 }
 
+static inline void ZONPresentClearAuthorizationConfirmation(UIViewController *hostViewController)
+{
+    UIAlertController *alert =
+    [UIAlertController alertControllerWithTitle:@"清除授权记录"
+                                        message:@"此操作会删除授权信息，删除后需要重新授权。\n确定继续吗？"
+                                 preferredStyle:UIAlertControllerStyleAlert];
+
+    UIAlertAction *cancel =
+    [UIAlertAction actionWithTitle:@"取消"
+                             style:UIAlertActionStyleCancel
+                           handler:nil];
+
+    UIAlertAction *confirm =
+    [UIAlertAction actionWithTitle:@"确定"
+                             style:UIAlertActionStyleDestructive
+                           handler:^(__unused UIAlertAction *action) {
+        [[WX_NongShiFu123 alloc] deletekm];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)),
+                       dispatch_get_main_queue(), ^{
+            exit(0);
+        });
+    }];
+
+    [alert addAction:cancel];
+    [alert addAction:confirm];
+    [hostViewController presentViewController:alert animated:YES completion:nil];
+}
+
 /// Routes only features whose registry metadata explicitly marks them as migrated.
 /// Returns YES when the migrated path handled the action; NO lets the caller fall
 /// back to the legacy tag handler during the staged migration period.
@@ -168,6 +197,11 @@ static inline BOOL ZONDispatchMigratedActionForLegacyTag(NSInteger legacyTag,
 
     if ([identifier isEqualToString:@"data.clear-game-data"]) {
         ZONPresentClearGameDataConfirmation(hostViewController);
+        return YES;
+    }
+
+    if ([identifier isEqualToString:@"auth.clear-records"]) {
+        ZONPresentClearAuthorizationConfirmation(hostViewController);
         return YES;
     }
 
