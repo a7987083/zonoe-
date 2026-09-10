@@ -3,6 +3,7 @@
 #import "ImgTool.h"
 #import "../ZONCore/ZONFeatureDispatcher.h"
 #import "../ZONCore/ZONSectionRenderer.h"
+#import "../ZONCore/ZONMenuChromeRenderer.h"
 
 @interface PopupMenuVC () <UIGestureRecognizerDelegate>
 @property(nonatomic,strong) UIView *panel;
@@ -47,76 +48,23 @@ static NSString * const kADSpeedKey = @"AADDssppeedd";
 }
 
 - (void)relayoutSections {
-    CGFloat sectionW = self.panel.bounds.size.width - 30;
-    CGFloat y = 110;
-    for (FoldSectionView *sec in self.sections) {
-        CGFloat h = [sec layoutAndGetHeight];
-        sec.frame = CGRectMake(15, y, sectionW, h);
-        y += h + 15;
-    }
-    self.scroll.contentSize = CGSizeMake(self.panel.bounds.size.width, y + 20);
+    ZONRelayoutMenuSections(self.panel, self.scroll, self.sections);
 }
 
 - (void)buildUI {
     if (self.didBuildUI) return;
     self.didBuildUI = YES;
 
-    NSUserDefaults *ud = NSUserDefaults.standardUserDefaults;
-    NSString *jsm = [ud objectForKey:@"解锁码到期时间"];
-    NSString *yjy = [ud objectForKey:@"到期时间"];
-    NSString *fwqbbh = [ud objectForKey:@"服务器版本号"];
-    NSString *yymc = [ud objectForKey:@"应用名称"];
-    NSString *appVersion = NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"];
-    if (!yymc) yymc = @"未知应用";
-    if (!fwqbbh) fwqbbh = @"未知版本";
-    if (!appVersion) appVersion = @"0.0.0";
-    if (!jsm || jsm.length == 0) jsm = yjy;
-
-    CGFloat width = self.panel.bounds.size.width;
     if (!self.sections) self.sections = [NSMutableArray array];
     [self.sections removeAllObjects];
     for (UIView *v in self.scroll.subviews) [v removeFromSuperview];
     self.scroll.showsVerticalScrollIndicator = YES;
 
-    CGFloat left = 20;
-    CGFloat top = 10;
-    CGFloat maxW = width - 40;
-
-    UILabel *title = [[UILabel alloc] initWithFrame:CGRectZero];
-    title.text = [NSString stringWithFormat:@"zonoe源++ %@ 解锁码到期：%@", yymc, jsm];
-    title.font = [UIFont systemFontOfSize:18 weight:UIFontWeightBold];
-    title.textColor = UIColor.blackColor;
-    title.numberOfLines = 0;
-    [self.panel addSubview:title];
-    CGSize s1 = [title sizeThatFits:CGSizeMake(maxW, CGFLOAT_MAX)];
-    title.frame = CGRectMake(left, top, maxW, s1.height);
-    CGFloat curY = top + s1.height + 6;
-
-    UILabel *line2 = [[UILabel alloc] initWithFrame:CGRectZero];
-    line2.text = [NSString stringWithFormat:@"当前版本：%@", appVersion];
-    line2.font = [UIFont systemFontOfSize:14];
-    line2.textColor = UIColor.grayColor;
-    [self.panel addSubview:line2];
-    CGSize s2 = [line2 sizeThatFits:CGSizeMake(maxW, CGFLOAT_MAX)];
-    line2.frame = CGRectMake(left, curY, maxW, s2.height);
-    curY += s2.height + 2;
-
-    UILabel *line3 = [[UILabel alloc] initWithFrame:CGRectZero];
-    line3.text = [NSString stringWithFormat:@"App Store版本：%@", fwqbbh];
-    line3.font = [UIFont systemFontOfSize:14];
-    line3.textColor = UIColor.grayColor;
-    [self.panel addSubview:line3];
-    CGSize s3 = [line3 sizeThatFits:CGSizeMake(maxW, CGFLOAT_MAX)];
-    line3.frame = CGRectMake(left, curY, maxW, s3.height);
-    curY += s3.height + 12;
-
-    CGFloat scrollTop = curY;
-    self.scroll.frame = CGRectMake(0, scrollTop, width, self.panel.bounds.size.height - scrollTop);
-    [self.panel addSubview:self.scroll];
+    ZONRenderMenuHeader(self.panel, self.scroll);
 
     __weak typeof(self) weakSelf = self;
     NSArray<FoldSectionView *> *rendered = ZONRenderRegisteredSections(self.scroll,
-                                                                       width,
+                                                                       self.panel.bounds.size.width,
                                                                        self,
                                                                        @selector(cardButtonTap:),
                                                                        @selector(gridButtonTap:),
