@@ -172,6 +172,7 @@
 		7ECBD41B2EEB433E00C56F1C /* csj.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECBD41A2EEB433E00C56F1C /* csj.h */; };
 		7ECBD41D2EFC0B1700C56F1C /* Network.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7ECBD41C2EFC0B1700C56F1C /* Network.framework */; };
 		7ECBD41F2F29099200C56F1C /* PopupMenuVC.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD41E2F29099200C56F1C /* PopupMenuVC.m */; };
+		7ECBD42B2F3A614000C56F1C /* ZONMenuCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD42A2F3A614000C56F1C /* ZONMenuCoordinator.m */; };
 		7ECBD4212F29099D00C56F1C /* PopupMenuVC.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECBD4202F29099D00C56F1C /* PopupMenuVC.h */; };
 		7ECBD4232F30EF6100C56F1C /* FoldSectionView.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECBD4222F30EF6100C56F1C /* FoldSectionView.h */; };
 		7ECBD4252F30EF6C00C56F1C /* FoldSectionView.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4242F30EF6C00C56F1C /* FoldSectionView.m */; };
@@ -377,6 +378,7 @@
 		7ECBD41A2EEB433E00C56F1C /* csj.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = csj.h; sourceTree = "<group>"; };
 		7ECBD41C2EFC0B1700C56F1C /* Network.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Network.framework; path = System/Library/Frameworks/Network.framework; sourceTree = SDKROOT; };
 		7ECBD41E2F29099200C56F1C /* PopupMenuVC.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PopupMenuVC.m; sourceTree = "<group>"; };
+		7ECBD42A2F3A614000C56F1C /* ZONMenuCoordinator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONMenuCoordinator.m"; sourceTree = SOURCE_ROOT; };
 		7ECBD4202F29099D00C56F1C /* PopupMenuVC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PopupMenuVC.h; sourceTree = "<group>"; };
 		7ECBD4222F30EF6100C56F1C /* FoldSectionView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FoldSectionView.h; sourceTree = "<group>"; };
 		7ECBD4242F30EF6C00C56F1C /* FoldSectionView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FoldSectionView.m; sourceTree = "<group>"; };
@@ -1161,6 +1163,7 @@
 				7E8A57DD2B8E4A9C00676FE2 /* MBProgressHUD+NJ.m in Sources */,
 				7E8A583D2B8E4A9C00676FE2 /* ioapi.c in Sources */,
 				7ECBD41F2F29099200C56F1C /* PopupMenuVC.m in Sources */,
+				7ECBD42B2F3A614000C56F1C /* ZONMenuCoordinator.m in Sources */,
 				7E6F45522E1A8C4E00D4A46E /* JDSBNotificationViewController.m in Sources */,
 				7E8A57FA2B8E4A9C00676FE2 /* SCLSwitchView.m in Sources */,
 				7E8A57D92B8E4A9C00676FE2 /* AFNetworkReachabilityManager.m in Sources */,

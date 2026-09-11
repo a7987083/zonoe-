@@ -1,11 +1,6 @@
 #import "PopupMenuVC.h"
 #import "../ZONCore/ZONMenuCoordinator.h"
 
-// ZONCore is still a header-only group from the legacy target's perspective.
-// Compile the coordinator implementation exactly once through this compatibility shell
-// until ZONCore source files are explicitly represented by project.pbxproj.
-#import "../ZONCore/ZONMenuCoordinator.m"
-
 @interface PopupMenuVC ()
 @property(nonatomic,strong) ZONMenuCoordinator *menuCoordinator;
 @end
