@@ -6,17 +6,12 @@
 - Target type: dynamic library
 - MonkeyDev path: `/opt/MonkeyDev`
 - Theos path: `/opt/theos`
-- Jailbreak package install path: `/Library/MobileSubstrate/DynamicLibraries`
+- Primary runtime: IPA injection
+- Secondary runtime: jailbreak injection
+- Minimum deployment target: iOS 12.0
+- Architectures: arm64 + arm64e
 
-## Production requirements
-- Minimum deployment target: iOS 12.0.
-- Architectures: arm64 + arm64e.
-- Primary artifact must be usable for IPA injection.
-- Secondary packaging path may produce jailbreak MobileSubstrate/ElleKit-compatible package.
-
-## Build command
-Verified CI uses Xcode 16.4 / iPhoneOS SDK 18.5 and the existing target/dependency set:
-
+## Verified CI command
 ```bash
 xcodebuild \
   -project testmod.xcodeproj \
@@ -36,17 +31,15 @@ xcodebuild \
   build
 ```
 
-`VALIDATE_PRODUCT=NO` is intentional in CI: MonkeyDev otherwise treats a Release build as a packaging/install path and attempts SSH deployment. CI here verifies compilation/artifacts, not device deployment.
+`VALIDATE_PRODUCT=NO` prevents MonkeyDev Release CI from attempting device deployment. CI verifies compilation/artifacts only.
 
-## Latest v1_p26 Menu Coordinator CI verification
-p26 source commit: `b1f3eb25b1ea170c3dddadf746fe07ca9654ea80`.
-
-An isolated validation branch `test/zonoemenu-v1-p26-build` was created from that source. Its only additional change was enabling that branch as a workflow push trigger; the p26 work branch workflow/source was not modified for the validation run.
-
+## Latest v1_p27 CI verification
+- Source commit: `314dace8ebb8cf3b1ffaeec19bf0a2cf7fe7c311`
+- Isolated validation branch: `test/zonoemenu-v1-p27-build`
+- Test-only validation commit: `b5b8d8c20da0fd1cb358956036ff4e532216339e`
 - Workflow: `iOS Dylib Build`
-- Run number: `96`
-- Run ID: `34653448146`
-- Validation commit: `a09b1fd35950c65386be3b4e70e689ae2c804d10`
+- Run number: `97`
+- Run ID: `34656320290`
 - Result: success
 - Xcode: 16.4
 - iPhoneOS SDK: 18.5
@@ -54,40 +47,32 @@ An isolated validation branch `test/zonoemenu-v1-p26-build` was created from tha
 - Mach-O architectures: arm64 + arm64e
 
 ### A_customer
-- Job result: success
-- Artifact: `testmod-v1_p26-A_customer`
-- Artifact ID: `10198416330`
-- Artifact ZIP SHA256: `0a071bbe62248e38a70763ea12ceacde29b3b5d0467ed6377c80b85c0fea8e00`
+- Result: success
+- Artifact: `testmod-v1_p27-A_customer`
+- Artifact ID: `10286251100`
+- Artifact ZIP SHA256: `2af95debe4ee769a03642bd5d7d31330dacbb8bfb1b8264e7ff3164663b08a05`
 
 ### B_debug
-- Job result: success
-- Artifact: `testmod-v1_p26-B_debug`
-- Artifact ID: `10198366721`
-- Artifact ZIP SHA256: `102ae95930ef5e1b6aca7789dd10a744ba13e128f0de3b69760807804442de79`
+- Result: success
+- Artifact: `testmod-v1_p27-B_debug`
+- Artifact ID: `10286565630`
+- Artifact ZIP SHA256: `f50b96bc3fb6e0b7e5a358a544888409c135c99bea488df95ae36b21ff82b683`
 
-Both variants passed compilation, linking, versioned dylib packaging, `file`, `lipo -info`, `otool -L` verification and artifact upload.
+Both variants passed dependency/layout verification, compilation, linking, versioned dylib packaging, `file`, `lipo -info`, `otool -L` and artifact upload. Artifact ZIP digests are not per-dylib SHA256 values.
 
-The listed SHA256 values are the GitHub Actions ZIP artifact digests, not the internal dylib hashes. The workflow also runs `shasum -a 256` on each dylib, but the log/artifact download endpoint returned 404 when this handoff was updated, so the internal dylib hashes are deliberately left unrecorded rather than inferred.
+## Device-verified baseline
+- Version: `v1_p26`
+- Verified source commit: `b1f3eb25b1ea170c3dddadf746fe07ca9654ea80`
+- Runtime regression: passed by user on device.
 
-## Last device-verified build baseline
-The device/runtime baseline remains the earlier verified build until p26 is tested on hardware:
-- Workflow run: `34271970872`
-- Verified code commit: `7120f92f978b99931444903b6f95b2e56a1bd594`
-- Artifact: `zonoemenu-testmod-dylib`
-- Artifact ID: `10074199433`
-- Product SHA256: `c19c792e25f9cf65792992098f15b43621c7e3022a33781daddf5cc102970c71`
-- Format: Mach-O universal dynamically linked shared library
-- Architectures: arm64 + arm64e
+`v1_p27` is not yet device-verified; CI success does not promote the runtime baseline.
 
-## Dependency policy
-- The user's checked-in legacy dependency sources are authoritative.
-- `scripts/bootstrap_vendor.sh` verifies them; it does not replace them from upstream.
-- Current checked-in sets include AFNetworking, MBProgressHUD and SCLAlertView.
-- Theos shadows the SDK `MobileCoreServices` umbrella; `testmod-Prefix.pch` explicitly imports the public UTI subheaders required by legacy AFNetworking.
+## ZONCore compilation note
+The legacy `testmod.xcodeproj/project.pbxproj` does not currently enumerate the p19-p27 `ZONCore` source files. p27 therefore keeps a narrow compatibility bridge: `PopupMenuVC.m` imports `ZONMenuCoordinator.m` exactly once. Public code imports only `ZONMenuCoordinator.h`, which is now interface-only. Explicitly integrating ZONCore `.m` files into the target should be a separate, carefully verified cleanup rather than hidden inside p27.
 
-## Build policy
-- Reuse the current target and dependency set first.
-- Do not replace compiler/toolchain solely to modernize.
+## Dependency/build policy
+- Checked-in legacy dependency sources are authoritative.
+- `scripts/bootstrap_vendor.sh` verifies rather than replaces them.
+- Reuse the current target/toolchain before modernization.
 - First real compiler/linker error is the source of truth.
-- CI build success is not runtime/device verification.
-- Runtime and regression state must be recorded separately in `PROJECT_STATE.json`.
+- Record CI and device/runtime verification separately.
