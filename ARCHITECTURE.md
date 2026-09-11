@@ -28,68 +28,38 @@ Host App
 - Xcode dylib target with current MonkeyDev/Theos integration.
 - arm64 + arm64e; production minimum iOS 12.0+.
 - Existing fishhook/CaptainHook/runtime facilities remain behind feature boundaries.
-- Legacy AFNetworking is retained for compatibility.
 
-## Menu ownership after v1_p26
-`PopupMenuVC` is the public/legacy UIKit compatibility controller, not the menu implementation owner.
-
-Responsibilities:
+## Menu ownership
 - `PopupMenuVC`: UIKit lifecycle boundary and legacy selector passthrough.
-- `ZONMenuCoordinator`: menu orchestration/lifecycle, panel/scroll ownership, build/relayout, show/hide/close and event forwarding.
-- `ZONMenuPanelController`: panel construction, geometry, visible layout and animations.
+- `ZONMenuCoordinator`: orchestration/lifecycle, panel/scroll ownership, build/relayout, show/hide/close and event forwarding.
+- `ZONMenuPanelController`: panel construction/layout/animation.
 - `ZONMenuChromeRenderer`: header/chrome rendering.
-- `ZONSectionRenderer`: registered section rendering and relayout.
+- `ZONSectionRenderer`: section rendering/relayout.
 - `ZONFeatureRegistry`: feature/section data source.
-- `ZONMenuEventBridge`: preserves existing action/toggle/runtime dispatch behavior.
+- `ZONMenuEventBridge`: action/toggle/runtime bridge to existing business handlers.
 
-p26 changed ownership structure, not feature semantics or visual appearance, and has passed device/runtime regression.
-
-## p27 compilation-boundary cleanup
-p27 does not change the runtime ownership graph. It changes source organization only:
-
+## Compilation boundary after v1_p28
 ```text
-ZONMenuCoordinator.h
-  -> public interface only
-
-ZONMenuCoordinator.m
-  -> private ZONCore dependencies
-  -> private properties
-  -> existing implementation
-
 PopupMenuVC.m
-  -> imports ZONMenuCoordinator.h
-  -> legacy single compilation bridge imports ZONMenuCoordinator.m once
+  -> #import ZONMenuCoordinator.h
+
+Xcode target: testmod
+  -> compiles PopupMenuVC.m
+  -> compiles ZONMenuCoordinator.m independently
 ```
 
-Why the bridge exists: `testmod.xcodeproj/project.pbxproj` is an older explicit-file target and does not currently enumerate the p19-p27 ZONCore source files. Adding a new `.m` file to disk alone would not make it a target source. p27 avoids broad project-file churn while removing the risk of exposing an `@implementation` from a public header. Explicit PBX integration can be handled as a separate verified cleanup later.
-
-## UI flow
-```text
-Floating Entry
-  -> PopupMenuVC
-     -> ZONMenuCoordinator
-        -> Header/Chrome
-        -> Registered Feature Sections
-        -> Diagnostics/About sections
-        -> Event Bridge -> Existing business/runtime handlers
-```
+p27 removed `@implementation` from the public coordinator header but temporarily compiled the `.m` through `PopupMenuVC.m`. p28 removes that bridge and registers `ZONMenuCoordinator.m` directly in the target Sources phase. The coordinator implementation itself is unchanged.
 
 ## Bootstrap rules
 - Keep `+load`/constructor minimal.
 - UI work must execute on the main queue after UIApplication is usable.
-- Optional host framework/module failures must be non-fatal to core startup.
-- No game-specific address, symbol, class or offset belongs in the core layer.
+- Optional module/framework failures must be non-fatal to core startup.
+- Game-specific offsets/symbols/classes do not belong in core.
 
-## External module ABI v1
-A loadable module should expose a small versioned C ABI rather than require the core to know Objective-C class names. Planned symbols include:
-- `zonoe_module_abi_version()`
-- `zonoe_module_identifier()`
-- `zonoe_module_initialize(const ZONHostAPI *host)`
-- `zonoe_module_shutdown()`
-
-Remote module delivery must eventually include manifest/hash/signature validation.
+## External module ABI
+External dylibs should use a small versioned C ABI and eventually require manifest/hash/signature validation before production remote delivery.
 
 ## Security invariants
-- Treat all client-side secrets as recoverable.
+- Treat client-side secrets as recoverable.
 - Do not rely on embedded symmetric secrets as the long-term trust root.
 - Privileged remote configuration should eventually be signed/verifiable.

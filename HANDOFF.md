@@ -4,101 +4,96 @@
 - Repository: `a7987083/zonoe-`
 - Stable branch: `main`
 - Production branch: `dev/zonoemenu-production-v1`
-- Current work branch: `work/zonoemenu-v1-p27-cleanup`
-- Current version: `v1_p27`
-- p25 structural baseline: `ec8176f60e4ebf13df22a8e7b354990095b68f80`
-- p26 source commit / current device-verified baseline: `b1f3eb25b1ea170c3dddadf746fe07ca9654ea80`
-- p26 documentation closure commit: `11af85a8d276d6e4a824d8bcd5a1f9ebda65cac4`
-- p27 source commit: `314dace8ebb8cf3b1ffaeec19bf0a2cf7fe7c311`
+- Current work branch: `work/zonoemenu-v1-p28-build-integration`
+- Current version: `v1_p28`
 - Stable baseline commit: `68329ee5844f3899d369a778073e5586d8bc4e1f`
 - User source-completion commit on main: `89507e1cd2f7c27184931e875adca02b043cfb36`
+- p26 source commit: `b1f3eb25b1ea170c3dddadf746fe07ca9654ea80`
+- p27 source commit / current device-verified baseline: `314dace8ebb8cf3b1ffaeec19bf0a2cf7fe7c311`
+- p28 source commit: `350a46deb089a05fc599e641bd1eeb419c36c0d5`
 
-## Device-verified baseline — v1_p26
-The user completed p26 device/runtime regression and reported no issues. p26 is now the current device-verified structural baseline.
+## Device-verified baseline — v1_p27
+The user completed p27 device/runtime regression and reported no issues. p27 is now the current device-verified structural/runtime baseline.
 
-Verified behavior includes the p26 regression scope:
-- App launch without crash.
-- Floating icon behavior remains correct.
-- Menu opens/closes normally, including outside-tap close.
-- Sections render/fold/relayout correctly.
-- Layout/rotation behavior shows no reported regression.
-- Existing card/grid actions, switches, ad switch and slider dispatch correctly.
-- Authorization, UDID, VIP cloud save, clear-game-data and existing business behavior show no reported regression.
+Verified scope includes launch, floating entry, menu open/close, section rendering/relayout, action/switch dispatch and protected business paths. The previously suspected keyboard/presentation issue remains closed as a test/user-side mistake; no code fix is required.
 
-The previously suspected keyboard/presentation issue was a test/user-side mistake, not a project defect. It is closed and must not be used as a reason to modify presentation or keyboard logic.
+## Current phase — v1_p28 ZONCore Build Integration
+p28 closes the remaining temporary build bridge introduced in p27. Runtime behavior and coordinator implementation are intentionally unchanged.
 
-## Current phase — v1_p27 Post-Refactor Cleanup
-p27 is a minimal-risk cleanup after the p19-p26 structural split. It does not change menu behavior or business semantics.
+Source commit `350a46deb089a05fc599e641bd1eeb419c36c0d5` changes exactly three files:
+1. `VERSION`: `v1_p27` -> `v1_p28`.
+2. `testmod.xcodeproj/project.pbxproj`: adds one `PBXFileReference`, one `PBXBuildFile`, and one `PBXSourcesBuildPhase` entry for `testmod/ZONCore/ZONMenuCoordinator.m`.
+3. `testmod/菜单/PopupMenuVC.m`: removes the temporary direct `#import "../ZONCore/ZONMenuCoordinator.m"` bridge and its explanatory comments.
 
-Completed in p27 source commit `314dace8ebb8cf3b1ffaeec19bf0a2cf7fe7c311`:
-- Bumped `VERSION` from `v1_p26` to `v1_p27`.
-- Converted `testmod/ZONCore/ZONMenuCoordinator.h` into a public interface-only header.
-- Moved private dependencies, private properties and the existing coordinator method bodies into new `testmod/ZONCore/ZONMenuCoordinator.m` without intended behavioral changes.
-- Kept `PopupMenuVC` lifecycle forwarding and legacy selector passthrough intact.
-- Because the legacy Xcode project does not enumerate `ZONCore` source files, `PopupMenuVC.m` imports `ZONMenuCoordinator.m` exactly once as a bounded compilation bridge. This avoids broad `project.pbxproj` churn in p27 while removing the public-header duplicate-implementation risk.
+No method body in `ZONMenuCoordinator.m` changed in p28.
 
-p27 source diff against the p26 work-branch head is limited to:
-1. `VERSION`
-2. `testmod/ZONCore/ZONMenuCoordinator.h`
-3. `testmod/ZONCore/ZONMenuCoordinator.m`
-4. `testmod/菜单/PopupMenuVC.m`
-
-## Protected scope for p27
-Do not change as part of this cleanup:
+## Protected scope for p28
+Do not change:
 - authorization / BS-PHP behavior
-- UDID behavior
+- UDID
 - VIP cloud save
-- clear-game-data behavior
+- clear-game-data
 - `WX_NongShiFu123.mm`
 - `main.m`
 - AppDelegate / SceneDelegate
 - Feature Registry data
 - Dispatcher business handlers
-- UI style, dimensions, colors, text or spacing
+- UI style/dimensions/colors/text/spacing
 - keyboard/presentation logic
 
-## v1_p27 isolated CI verification
-To keep the work branch workflow unchanged, CI validation runs from isolated branch `test/zonoemenu-v1-p27-build`.
+## v1_p28 isolated CI verification
+Validation was run from isolated branch `test/zonoemenu-v1-p28-build`; the temporary integration workflow is not part of the p28 work branch.
 
-- Workflow: `iOS Dylib Build`
-- Run number: `97`
-- Run ID: `34656320290`
-- Test-only validation commit: `b5b8d8c20da0fd1cb358956036ff4e532216339e`
+- Workflow: `p28 Integrate and Build`
+- Run ID: `34657710034`
+- Result: success
+- Test branch trigger commit: `1fa858be49313e9c37dfb8eb1bd2f32a2325de50`
+- Integrated source commit: `350a46deb089a05fc599e641bd1eeb419c36c0d5`
 - Toolchain: Xcode 16.4 / iPhoneOS SDK 18.5
 - Deployment target: iOS 12.0
 - Architectures: arm64 + arm64e
-- `A_customer`: success; artifact `testmod-v1_p27-A_customer`, ID `10286251100`, artifact ZIP SHA256 `2af95debe4ee769a03642bd5d7d31330dacbb8bfb1b8264e7ff3164663b08a05`
-- `B_debug`: success; artifact `testmod-v1_p27-B_debug`, ID `10286565630`, artifact ZIP SHA256 `f50b96bc3fb6e0b7e5a358a544888409c135c99bea488df95ae36b21ff82b683`
-- Both jobs passed compile, link, versioned dylib packaging, Mach-O verification and artifact upload.
 
-The SHA256 values above are GitHub Actions artifact ZIP digests, not per-dylib hashes.
+### A_customer
+- Result: success
+- Artifact: `testmod-v1_p28-A_customer`
+- Artifact ID: `10286438074`
+- Artifact ZIP SHA256: `86b899de9b04772f02a9a879bdbbf4138a6e3711f890bb0fca503e31877defaf`
+- Dylib SHA256: `2a0bf1f10c490dd4d8a239943365b0d3fe71d35ee2109e968297307a599dfccc`
+
+### B_debug
+- Result: success
+- Artifact: `testmod-v1_p28-B_debug`
+- Artifact ID: `10285962447`
+- Artifact ZIP SHA256: `1a664beb7261164d7dc48a810c9f594d94f0ed80ede1c67a8f04b731fa645149`
+- Dylib SHA256: `720a457df07ea8f5d4ddc6f7460357a193a98907a23d05d1fe50889f74b90437`
+
+Both variants passed source-commit verification, compilation, linking, versioned dylib packaging, `file`, `lipo -info`, `otool -L`, SHA256 generation and artifact upload. No duplicate-symbol regression occurred.
 
 ## Runtime verification state
-- `v1_p26`: device/runtime verified and current stable structural baseline.
-- `v1_p27`: CI/static verified; device/runtime regression is still pending.
-- CI success must not be treated as device verification.
+- `v1_p27`: device/runtime verified; current baseline.
+- `v1_p28`: source/static/CI verified; device/runtime regression pending.
+- CI success alone does not promote the device baseline.
 
-## Current architecture
+## Current build relationship
 ```text
-Floating Entry
-  -> PopupMenuVC compatibility shell
-     -> ZONMenuCoordinator
-        -> ZONMenuPanelController
-        -> ZONMenuChromeRenderer
-        -> ZONSectionRenderer
-           -> ZONFeatureRegistry
-        -> ZONMenuEventBridge
-           -> existing dispatcher/business handlers
+PopupMenuVC.m
+  -> imports ZONMenuCoordinator.h only
+
+Xcode target Sources
+  -> PopupMenuVC.m
+  -> ZONMenuCoordinator.m
 ```
 
+The p27 direct implementation import is removed. `ZONMenuCoordinator.m` is now an independent Objective-C translation unit owned by the target.
+
 ## Next task
-Device-regression-test the `v1_p27` A_customer build against the p26 device-verified baseline. Focus on proving behavior is unchanged; do not add more cleanup in the same test cycle.
+Device-regression-test `v1_p28` A_customer against device-verified `v1_p27`.
 
 Required checks:
-1. Launch/floating icon/tap/drag.
-2. Menu open/close/outside-tap close.
-3. Section render/fold/relayout and layout refresh.
+1. Launch / floating icon / tap / drag.
+2. Menu open/close and outside-tap close.
+3. Section render/fold/relayout/layout refresh.
 4. Card/grid/switch/ad switch/slider dispatch.
-5. Authorization, UDID, VIP cloud save and clear-game-data show no regression.
+5. Authorization, UDID, cloud save and clear-game-data show no regression.
 
-If p27 passes, promote source commit `314dace8ebb8cf3b1ffaeec19bf0a2cf7fe7c311` as the next device-verified baseline. If it fails, compare directly with p26 source commit `b1f3eb25b1ea170c3dddadf746fe07ca9654ea80` and fix only the proven regression.
+If all checks pass, promote source commit `350a46deb089a05fc599e641bd1eeb419c36c0d5` as the next device-verified baseline.

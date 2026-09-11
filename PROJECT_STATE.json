@@ -3,41 +3,38 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p27-cleanup",
-  "current_version": "v1_p27",
-  "current_phase": "post_refactor_cleanup_stabilization",
-  "p25_baseline_commit": "ec8176f60e4ebf13df22a8e7b354990095b68f80",
+  "current_work_branch": "work/zonoemenu-v1-p28-build-integration",
+  "current_version": "v1_p28",
+  "current_phase": "zoncore_build_integration",
   "p26_source_commit": "b1f3eb25b1ea170c3dddadf746fe07ca9654ea80",
-  "p26_docs_commit": "11af85a8d276d6e4a824d8bcd5a1f9ebda65cac4",
   "p27_source_commit": "314dace8ebb8cf3b1ffaeec19bf0a2cf7fe7c311",
-  "stable_baseline_commit": "68329ee5844f3899d369a778073e5586d8bc4e1f",
-  "source_completion_commit_main": "89507e1cd2f7c27184931e875adca02b043cfb36",
-  "last_device_verified_code_commit": "b1f3eb25b1ea170c3dddadf746fe07ca9654ea80",
-  "last_device_verified_version": "v1_p26",
+  "p28_source_commit": "350a46deb089a05fc599e641bd1eeb419c36c0d5",
+  "last_device_verified_code_commit": "314dace8ebb8cf3b1ffaeec19bf0a2cf7fe7c311",
+  "last_device_verified_version": "v1_p27",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
   "runtime_priority": ["ipa_injection", "jailbreak_injection"],
-  "auth_strategy": "legacy_bsphp_compat_then_replace",
-  "product_role": "universal_core_menu",
-  "external_module_strategy": "dlopen_dylib_plugins",
   "preserve_existing_features": true,
-  "p26_structure_status": "complete",
-  "p26_runtime_status": "device_verified_success",
-  "p26_regression_status": "passed",
-  "p27_cleanup_status": "source_complete_ci_pass_runtime_pending",
-  "p27_changes": [
-    "public_coordinator_header_is_interface_only",
-    "coordinator_implementation_moved_to_ZONMenuCoordinator_m",
-    "legacy_single_compilation_bridge_retained_in_PopupMenuVC_m",
+  "p27_runtime_status": "device_verified_success",
+  "p27_regression_status": "passed",
+  "p28_source_diff": [
+    "VERSION",
+    "testmod.xcodeproj/project.pbxproj",
+    "testmod/菜单/PopupMenuVC.m"
+  ],
+  "p28_changes": [
+    "register_ZONMenuCoordinator_m_as_target_source",
+    "remove_direct_m_import_from_PopupMenuVC",
+    "no_coordinator_method_body_change",
     "no_business_or_ui_behavior_change_intended"
   ],
-  "p27_ci": {
+  "p28_ci": {
     "status": "success",
-    "workflow": "iOS Dylib Build",
-    "run_number": 97,
-    "run_id": 34656320290,
-    "validation_branch": "test/zonoemenu-v1-p27-build",
-    "validation_commit": "b5b8d8c20da0fd1cb358956036ff4e532216339e",
+    "workflow": "p28 Integrate and Build",
+    "run_id": 34657710034,
+    "validation_branch": "test/zonoemenu-v1-p28-build",
+    "validation_trigger_commit": "1fa858be49313e9c37dfb8eb1bd2f32a2325de50",
+    "source_commit": "350a46deb089a05fc599e641bd1eeb419c36c0d5",
     "xcode": "16.4",
     "iphoneos_sdk": "18.5",
     "deployment_target": "12.0",
@@ -45,27 +42,26 @@
     "variants": {
       "A_customer": {
         "status": "success",
-        "artifact": "testmod-v1_p27-A_customer",
-        "artifact_id": 10286251100,
-        "artifact_zip_sha256": "2af95debe4ee769a03642bd5d7d31330dacbb8bfb1b8264e7ff3164663b08a05",
-        "dylib_sha256": null
+        "artifact": "testmod-v1_p28-A_customer",
+        "artifact_id": 10286438074,
+        "artifact_zip_sha256": "86b899de9b04772f02a9a879bdbbf4138a6e3711f890bb0fca503e31877defaf",
+        "dylib_sha256": "2a0bf1f10c490dd4d8a239943365b0d3fe71d35ee2109e968297307a599dfccc"
       },
       "B_debug": {
         "status": "success",
-        "artifact": "testmod-v1_p27-B_debug",
-        "artifact_id": 10286565630,
-        "artifact_zip_sha256": "f50b96bc3fb6e0b7e5a358a544888409c135c99bea488df95ae36b21ff82b683",
-        "dylib_sha256": null
+        "artifact": "testmod-v1_p28-B_debug",
+        "artifact_id": 10285962447,
+        "artifact_zip_sha256": "1a664beb7261164d7dc48a810c9f594d94f0ed80ede1c67a8f04b731fa645149",
+        "dylib_sha256": "720a457df07ea8f5d4ddc6f7460357a193a98907a23d05d1fe50889f74b90437"
       }
     }
   },
-  "p27_runtime_status": "pending_device_verification",
+  "p28_runtime_status": "pending_device_verification",
   "keyboard_presentation_issue": {
     "status": "closed_not_project_defect",
-    "reason": "user_confirmed_test_mistake",
     "code_change_required": false
   },
-  "protected_p27_scope": [
+  "protected_p28_scope": [
     "authorization",
     "udid",
     "vip_cloud_save",
@@ -78,5 +74,5 @@
     "ui_style_dimensions_colors_text_spacing",
     "keyboard_presentation_logic"
   ],
-  "next_task": "device regression test v1_p27 A_customer against device-verified v1_p26; promote p27 only after runtime checks pass"
+  "next_task": "device regression test v1_p28 A_customer against device-verified v1_p27"
 }
