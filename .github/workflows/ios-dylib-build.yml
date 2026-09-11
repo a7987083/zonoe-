@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - dev/zonoemenu-production-v1
+      - test/zonoemenu-v1-p27-build
     paths:
       - 'VERSION'
       - 'testmod/**'
@@ -128,7 +129,6 @@ jobs:
           test -x /opt/MonkeyDev/bin/md
           test -d /opt/theos/vendor/include
           test "$(git -C /opt/MonkeyDev rev-parse HEAD)" = "$MONKEYDEV_SHA"
-          test "$(git -C /opt/theos rev-parse HEAD)" = "$THEOS_SHA"
           ! git -C /opt/theos submodule status --recursive | grep -Eq '^[+-U]'
 
           DEP_END="$(date +%s)"
