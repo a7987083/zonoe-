@@ -24,9 +24,6 @@ jobs:
           - variant: A_customer
             debug_macro: 0
             cloud_testmode: NO
-          - variant: B_debug
-            debug_macro: 1
-            cloud_testmode: YES
 
     steps:
       - uses: actions/checkout@v4

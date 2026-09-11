@@ -35,6 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property(nonatomic, strong) UIScrollView *scroll;
 @property(nonatomic, strong) NSMutableArray<FoldSectionView *> *sections;
 @property(nonatomic, assign) BOOL didBuildUI;
+- (void)dispatchActionForSender:(UIButton *)sender;
 @end
 
 @implementation ZONMenuCoordinator
@@ -43,6 +44,7 @@ NS_ASSUME_NONNULL_BEGIN
     self = [super init];
     if (self) {
         _presenter = presenter;
+        _sections = [NSMutableArray array];
     }
     return self;
 }
@@ -66,7 +68,6 @@ NS_ASSUME_NONNULL_BEGIN
     if (self.didBuildUI) return;
     self.didBuildUI = YES;
 
-    if (!self.sections) self.sections = [NSMutableArray array];
     [self.sections removeAllObjects];
     for (UIView *v in self.scroll.subviews) [v removeFromSuperview];
     self.scroll.showsVerticalScrollIndicator = YES;
@@ -126,16 +127,18 @@ NS_ASSUME_NONNULL_BEGIN
     ZONMenuHandleAdSlider(slider);
 }
 
-- (void)cardButtonTap:(UIButton *)sender {
+- (void)dispatchActionForSender:(UIButton *)sender {
     UIViewController *presenter = self.presenter;
     if (!presenter) return;
     ZONMenuHandleAction(sender.tag, presenter);
 }
 
+- (void)cardButtonTap:(UIButton *)sender {
+    [self dispatchActionForSender:sender];
+}
+
 - (void)gridButtonTap:(UIButton *)sender {
-    UIViewController *presenter = self.presenter;
-    if (!presenter) return;
-    ZONMenuHandleAction(sender.tag, presenter);
+    [self dispatchActionForSender:sender];
 }
 
 - (void)switchChanged:(UISwitch *)sw {
