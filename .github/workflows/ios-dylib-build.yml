@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - dev/zonoemenu-production-v1
+      - test/zonoemenu-v1-p26-build
     paths:
       - 'VERSION'
       - 'testmod/**'
