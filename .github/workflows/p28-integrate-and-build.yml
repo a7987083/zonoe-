@@ -1,0 +1,273 @@
+name: p28 Integrate and Build
+
+on:
+  push:
+    branches:
+      - test/zonoemenu-v1-p28-build
+    paths:
+      - '.github/workflows/p28-integrate-and-build.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    outputs:
+      source_sha: ${{ steps.commit.outputs.source_sha }}
+    steps:
+      - name: Checkout p28 work branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/zonoemenu-v1-p28-build-integration
+          fetch-depth: 0
+
+      - name: Integrate ZONMenuCoordinator.m into Xcode target
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          version = Path('VERSION')
+          if version.read_text() != 'v1_p27\n':
+              raise SystemExit(f'unexpected VERSION: {version.read_text()!r}')
+          version.write_text('v1_p28\n')
+
+          popup = Path('testmod/菜单/PopupMenuVC.m')
+          popup_text = popup.read_text()
+          bridge = '''// ZONCore is still a header-only group from the legacy target's perspective.\n// Compile the coordinator implementation exactly once through this compatibility shell\n// until ZONCore source files are explicitly represented by project.pbxproj.\n#import "../ZONCore/ZONMenuCoordinator.m"\n\n'''
+          if popup_text.count(bridge) != 1:
+              raise SystemExit(f'expected one coordinator implementation bridge, found {popup_text.count(bridge)}')
+          popup.write_text(popup_text.replace(bridge, '', 1))
+
+          pbx = Path('testmod.xcodeproj/project.pbxproj')
+          text = pbx.read_text()
+
+          build_anchor = '\t\t7ECBD41F2F29099200C56F1C /* PopupMenuVC.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD41E2F29099200C56F1C /* PopupMenuVC.m */; };\n'
+          build_entry = '\t\t7ECBD42B2F3A614000C56F1C /* ZONMenuCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD42A2F3A614000C56F1C /* ZONMenuCoordinator.m */; };\n'
+          ref_anchor = '\t\t7ECBD41E2F29099200C56F1C /* PopupMenuVC.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PopupMenuVC.m; sourceTree = "<group>"; };\n'
+          ref_entry = '\t\t7ECBD42A2F3A614000C56F1C /* ZONMenuCoordinator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONMenuCoordinator.m"; sourceTree = SOURCE_ROOT; };\n'
+          source_anchor = '\t\t\t\t7ECBD41F2F29099200C56F1C /* PopupMenuVC.m in Sources */,\n'
+          source_entry = '\t\t\t\t7ECBD42B2F3A614000C56F1C /* ZONMenuCoordinator.m in Sources */,\n'
+
+          for label, anchor in [('build anchor', build_anchor), ('file reference anchor', ref_anchor), ('sources anchor', source_anchor)]:
+              count = text.count(anchor)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected 1 occurrence, found {count}')
+
+          if '7ECBD42A2F3A614000C56F1C' in text or '7ECBD42B2F3A614000C56F1C' in text:
+              raise SystemExit('p28 PBX IDs already present before integration')
+
+          text = text.replace(build_anchor, build_anchor + build_entry, 1)
+          text = text.replace(ref_anchor, ref_anchor + ref_entry, 1)
+          text = text.replace(source_anchor, source_anchor + source_entry, 1)
+          pbx.write_text(text)
+
+          final = pbx.read_text()
+          checks = {
+              'PBXBuildFile': build_entry,
+              'PBXFileReference': ref_entry,
+              'PBXSourcesBuildPhase': source_entry,
+          }
+          for label, needle in checks.items():
+              count = final.count(needle)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected exactly one p28 coordinator entry, found {count}')
+
+          if '#import "../ZONCore/ZONMenuCoordinator.m"' in popup.read_text():
+              raise SystemExit('PopupMenuVC still directly imports coordinator implementation')
+          PY
+
+          git diff --check
+          git diff -- VERSION testmod/菜单/PopupMenuVC.m testmod.xcodeproj/project.pbxproj
+
+      - name: Commit p28 source integration
+        id: commit
+        run: |
+          set -euxo pipefail
+          git config user.name 'a7987083'
+          git config user.email '85878547+a7987083@users.noreply.github.com'
+          git add VERSION testmod/菜单/PopupMenuVC.m testmod.xcodeproj/project.pbxproj
+          git commit -m 'build: integrate ZONMenuCoordinator source for v1_p28'
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          git push origin HEAD:refs/heads/work/zonoemenu-v1-p28-build-integration
+          echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+          echo "p28 source commit: $SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    needs: integrate
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: A_customer
+            debug_macro: 0
+            cloud_testmode: NO
+          - variant: B_debug
+            debug_macro: 1
+            cloud_testmode: YES
+    steps:
+      - name: Checkout integrated p28 source
+        uses: actions/checkout@v4
+        with:
+          ref: work/zonoemenu-v1-p28-build-integration
+
+      - name: Verify source commit
+        run: |
+          set -euxo pipefail
+          test "$(git rev-parse HEAD)" = "${{ needs.integrate.outputs.source_sha }}"
+          test "$(tr -d '[:space:]' < VERSION)" = 'v1_p28'
+          ! grep -F '#import "../ZONCore/ZONMenuCoordinator.m"' testmod/菜单/PopupMenuVC.m
+          grep -F 'ZONMenuCoordinator.m in Sources' testmod.xcodeproj/project.pbxproj
+          test "$(grep -c '7ECBD42B2F3A614000C56F1C /\* ZONMenuCoordinator.m in Sources \*/' testmod.xcodeproj/project.pbxproj)" -eq 2
+
+      - name: Resolve testmod version
+        run: |
+          set -euxo pipefail
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+          echo "TESTMOD_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "TESTMOD_FILENAME=testmod_${VERSION}_${{ matrix.variant }}.dylib" >> "$GITHUB_ENV"
+
+      - name: Select Xcode 16.4
+        run: |
+          set -euxo pipefail
+          sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Prepare dependency cache destinations
+        run: |
+          set -euxo pipefail
+          sudo mkdir -p /opt/MonkeyDev /opt/theos
+          sudo chown -R "$USER":staff /opt/MonkeyDev /opt/theos
+
+      - name: Restore legacy build dependency cache
+        id: builddeps-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            /opt/MonkeyDev
+            /opt/theos
+          key: zonoe-builddeps-${{ runner.os }}-macos15-xcode16.4-${{ hashFiles('ci/dependencies.lock') }}
+
+      - name: Install legacy build dependencies
+        run: |
+          set -euxo pipefail
+          brew install ldid dpkg || true
+          source ci/dependencies.lock
+          test -n "${MONKEYDEV_SHA:-}"
+          test -n "${THEOS_SHA:-}"
+
+          repo_at_sha() {
+            local dir="$1" sha="$2" required="$3"
+            [[ -d "$dir/.git" ]] || return 1
+            [[ "$(git -C "$dir" rev-parse HEAD 2>/dev/null || true)" == "$sha" ]] || return 1
+            [[ -e "$dir/$required" ]] || return 1
+          }
+          theos_at_sha() {
+            repo_at_sha /opt/theos "$THEOS_SHA" vendor/include || return 1
+            local state
+            state="$(git -C /opt/theos submodule status --recursive 2>/dev/null)" || return 1
+            ! printf '%s\n' "$state" | grep -Eq '^[+-U]'
+          }
+          install_pinned_repo() {
+            local dir="$1" url="$2" sha="$3"
+            sudo rm -rf "$dir"
+            sudo mkdir -p "$dir"
+            sudo chown "$USER":staff "$dir"
+            git -C "$dir" init -q
+            git -C "$dir" remote add origin "$url"
+            git -C "$dir" fetch --depth=1 origin "$sha"
+            git -C "$dir" checkout --detach FETCH_HEAD
+          }
+
+          repo_at_sha /opt/MonkeyDev "$MONKEYDEV_SHA" bin/md || install_pinned_repo /opt/MonkeyDev https://github.com/AloneMonkey/MonkeyDev.git "$MONKEYDEV_SHA"
+          if ! theos_at_sha; then
+            install_pinned_repo /opt/theos https://github.com/theos/theos.git "$THEOS_SHA"
+            git -C /opt/theos submodule sync --recursive
+            git -C /opt/theos submodule update --init --recursive
+          fi
+          test -x /opt/MonkeyDev/bin/md
+          test -d /opt/theos/vendor/include
+
+      - name: Materialize pinned vendor sources
+        run: |
+          set -euxo pipefail
+          bash scripts/bootstrap_vendor.sh
+
+      - name: Configure build variant
+        run: |
+          set -euxo pipefail
+          if [[ "${{ matrix.cloud_testmode }}" == 'YES' ]]; then
+            python3 - <<'PY'
+          from pathlib import Path
+          p = Path('testmod/菜单/PubgLoad.mm')
+          s = p.read_text()
+          old = 'BOOL testMode = NO; // NO = 正常验证, YES = 测试模式（绕过验证）'
+          new = 'BOOL testMode = YES; // B_debug: 云存档测试模式（绕过购买验证）'
+          if s.count(old) != 1:
+              raise SystemExit(f'expected exactly one cloud testMode switch, found {s.count(old)}')
+          p.write_text(s.replace(old, new, 1))
+          PY
+          fi
+
+      - name: Build testmod dylib
+        id: xcodebuild
+        run: |
+          set +e
+          mkdir -p build/Release-iphoneos
+          xcodebuild \
+            -project testmod.xcodeproj \
+            -target testmod \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY='' \
+            IPHONEOS_DEPLOYMENT_TARGET=12.0 \
+            ARCHS='arm64 arm64e' \
+            ONLY_ACTIVE_ARCH=NO \
+            VALIDATE_PRODUCT=NO \
+            MonkeyDevInstallOnAnyBuild=NO \
+            MonkeyDevInstallOnProfiling=NO \
+            MonkeyDevBuildPackageOnAnyBuild=NO \
+            GCC_PREPROCESSOR_DEFINITIONS='$(inherited) ZON_BUILD_VARIANT_DEBUG=${{ matrix.debug_macro }}' \
+            CONFIGURATION_BUILD_DIR="$PWD/build/Release-iphoneos" \
+            build 2>&1 | tee build/xcodebuild.log
+          status=${PIPESTATUS[0]}
+          echo "XCODEBUILD_STATUS=$status" >> "$GITHUB_ENV"
+          exit 0
+
+      - name: Report first compiler errors
+        if: always()
+        run: |
+          set -euo pipefail
+          grep -n -m 20 -E '(^|[[:space:]])(fatal )?error:|Undefined symbols for architecture|duplicate symbol|ld: ' build/xcodebuild.log || true
+
+      - name: Package and verify dylib
+        if: env.XCODEBUILD_STATUS == '0'
+        run: |
+          set -euxo pipefail
+          SOURCE='build/Release-iphoneos/testmod.dylib'
+          TARGET="build/Release-iphoneos/${TESTMOD_FILENAME}"
+          test -s "$SOURCE"
+          cp "$SOURCE" "$TARGET"
+          file "$TARGET"
+          lipo -info "$TARGET"
+          otool -L "$TARGET"
+          shasum -a 256 "$TARGET" | tee "build/${{ matrix.variant }}.sha256"
+
+      - name: Upload dylib and log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testmod-${{ env.TESTMOD_VERSION }}-${{ matrix.variant }}
+          path: |
+            build/Release-iphoneos/${{ env.TESTMOD_FILENAME }}
+            build/xcodebuild.log
+            build/${{ matrix.variant }}.sha256
+          if-no-files-found: warn
+
+      - name: Propagate xcodebuild failure
+        if: env.XCODEBUILD_STATUS != '0'
+        run: exit "${XCODEBUILD_STATUS:-1}"
