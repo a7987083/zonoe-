@@ -3,9 +3,14 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
+  "current_work_branch": "work/zonoemenu-v1-p26-coordinator",
+  "current_version": "v1_p26",
+  "current_phase": "menu_coordinator_structural_closure",
+  "p25_baseline_commit": "ec8176f60e4ebf13df22a8e7b354990095b68f80",
+  "p26_source_commit": "b1f3eb25b1ea170c3dddadf746fe07ca9654ea80",
   "stable_baseline_commit": "68329ee5844f3899d369a778073e5586d8bc4e1f",
   "source_completion_commit_main": "89507e1cd2f7c27184931e875adca02b043cfb36",
-  "last_verified_code_commit": "7120f92f978b99931444903b6f95b2e56a1bd594",
+  "last_device_verified_code_commit": "7120f92f978b99931444903b6f95b2e56a1bd594",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
   "runtime_priority": ["ipa_injection", "jailbreak_injection"],
@@ -13,19 +18,56 @@
   "product_role": "universal_core_menu",
   "external_module_strategy": "dlopen_dylib_plugins",
   "preserve_existing_features": true,
-  "build_status": "success",
-  "build_workflow_run": 34271970872,
-  "build_artifact": "zonoemenu-testmod-dylib",
-  "build_artifact_id": 10074199433,
-  "dylib_sha256": "c19c792e25f9cf65792992098f15b43621c7e3022a33781daddf5cc102970c71",
-  "dylib_architectures": ["arm64", "arm64e"],
-  "runtime_status": "success",
-  "runtime_checks": [
+  "p26_structure_status": "complete",
+  "p26_ci": {
+    "status": "success",
+    "workflow": "iOS Dylib Build",
+    "run_number": 96,
+    "run_id": 34653448146,
+    "validation_branch": "test/zonoemenu-v1-p26-build",
+    "validation_commit": "a09b1fd35950c65386be3b4e70e689ae2c804d10",
+    "xcode": "16.4",
+    "iphoneos_sdk": "18.5",
+    "deployment_target": "12.0",
+    "architectures": ["arm64", "arm64e"],
+    "variants": {
+      "A_customer": {
+        "status": "success",
+        "artifact": "testmod-v1_p26-A_customer",
+        "artifact_id": 10198416330,
+        "artifact_zip_sha256": "0a071bbe62248e38a70763ea12ceacde29b3b5d0467ed6377c80b85c0fea8e00",
+        "dylib_sha256": null
+      },
+      "B_debug": {
+        "status": "success",
+        "artifact": "testmod-v1_p26-B_debug",
+        "artifact_id": 10198366721,
+        "artifact_zip_sha256": "102ae95930ef5e1b6aca7789dd10a744ba13e128f0de3b69760807804442de79",
+        "dylib_sha256": null
+      }
+    }
+  },
+  "p26_runtime_status": "pending_device_verification",
+  "last_device_verified_runtime_status": "success",
+  "last_device_verified_checks": [
     "ipa_injection_launch_no_crash",
     "floating_icon_visible",
     "floating_icon_tap_opens_menu",
     "floating_icon_drag_works_without_false_menu_open"
   ],
-  "regression_status": "partial_pass",
-  "next_task": "continue production bootstrap, feature registry and legacy BS/PHP service-adapter modularization while preserving the verified floating-menu runtime baseline"
+  "regression_status": "p26_ci_pass_runtime_pending",
+  "protected_p26_scope": [
+    "authorization",
+    "udid",
+    "vip_cloud_save",
+    "clear_game_data",
+    "WX_NongShiFu123.mm",
+    "main.m",
+    "app_delegate_scene_delegate",
+    "feature_registry_data",
+    "dispatcher_business_handlers",
+    "ui_style_dimensions_colors_text_spacing",
+    "keyboard_logic"
+  ],
+  "next_task": "device regression test v1_p26 Menu Coordinator; promote p26 only after runtime checks pass"
 }

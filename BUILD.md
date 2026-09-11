@@ -14,8 +14,8 @@
 - Primary artifact must be usable for IPA injection.
 - Secondary packaging path may produce jailbreak MobileSubstrate/ElleKit-compatible package.
 
-## Verified CI build
-Verified on GitHub Actions with Xcode 16.4 / iPhoneOS SDK 18.5:
+## Build command
+Verified CI uses Xcode 16.4 / iPhoneOS SDK 18.5 and the existing target/dependency set:
 
 ```bash
 xcodebuild \
@@ -36,17 +36,48 @@ xcodebuild \
   build
 ```
 
-Why `VALIDATE_PRODUCT=NO` is required in CI: MonkeyDev's `md --xcbp` treats a Release build with `VALIDATE_PRODUCT=YES` as a packaging/install path and attempts SSH deployment to the configured/default device. CI is compile/artifact verification only, so device deployment is explicitly disabled.
+`VALIDATE_PRODUCT=NO` is intentional in CI: MonkeyDev otherwise treats a Release build as a packaging/install path and attempts SSH deployment. CI here verifies compilation/artifacts, not device deployment.
 
-## Verified result
-- Workflow run: `34270333942`
-- Verified code commit: `095d8d0a3cb960686a30f410bfc6299a914f9ed4`
+## Latest v1_p26 Menu Coordinator CI verification
+p26 source commit: `b1f3eb25b1ea170c3dddadf746fe07ca9654ea80`.
+
+An isolated validation branch `test/zonoemenu-v1-p26-build` was created from that source. Its only additional change was enabling that branch as a workflow push trigger; the p26 work branch workflow/source was not modified for the validation run.
+
+- Workflow: `iOS Dylib Build`
+- Run number: `96`
+- Run ID: `34653448146`
+- Validation commit: `a09b1fd35950c65386be3b4e70e689ae2c804d10`
+- Result: success
+- Xcode: 16.4
+- iPhoneOS SDK: 18.5
+- Deployment target: iOS 12.0
+- Mach-O architectures: arm64 + arm64e
+
+### A_customer
+- Job result: success
+- Artifact: `testmod-v1_p26-A_customer`
+- Artifact ID: `10198416330`
+- Artifact ZIP SHA256: `0a071bbe62248e38a70763ea12ceacde29b3b5d0467ed6377c80b85c0fea8e00`
+
+### B_debug
+- Job result: success
+- Artifact: `testmod-v1_p26-B_debug`
+- Artifact ID: `10198366721`
+- Artifact ZIP SHA256: `102ae95930ef5e1b6aca7789dd10a744ba13e128f0de3b69760807804442de79`
+
+Both variants passed compilation, linking, versioned dylib packaging, `file`, `lipo -info`, `otool -L` verification and artifact upload.
+
+The listed SHA256 values are the GitHub Actions ZIP artifact digests, not the internal dylib hashes. The workflow also runs `shasum -a 256` on each dylib, but the log/artifact download endpoint returned 404 when this handoff was updated, so the internal dylib hashes are deliberately left unrecorded rather than inferred.
+
+## Last device-verified build baseline
+The device/runtime baseline remains the earlier verified build until p26 is tested on hardware:
+- Workflow run: `34271970872`
+- Verified code commit: `7120f92f978b99931444903b6f95b2e56a1bd594`
 - Artifact: `zonoemenu-testmod-dylib`
-- Artifact ID: `10073571157`
-- Product SHA256: `eb3bedb670081760e45a4b8dd1da0222d579e52ebbb96c89b1e616a73e2d0fb6`
+- Artifact ID: `10074199433`
+- Product SHA256: `c19c792e25f9cf65792992098f15b43621c7e3022a33781daddf5cc102970c71`
 - Format: Mach-O universal dynamically linked shared library
-- Architectures: `arm64`, `arm64e`
-- `xcodebuild`: `BUILD SUCCEEDED`
+- Architectures: arm64 + arm64e
 
 ## Dependency policy
 - The user's checked-in legacy dependency sources are authoritative.
@@ -56,7 +87,7 @@ Why `VALIDATE_PRODUCT=NO` is required in CI: MonkeyDev's `md --xcbp` treats a Re
 
 ## Build policy
 - Reuse the current target and dependency set first.
-- Do not replace the compiler/toolchain solely to modernize.
+- Do not replace compiler/toolchain solely to modernize.
 - First real compiler/linker error is the source of truth.
 - CI build success is not runtime/device verification.
 - Runtime and regression state must be recorded separately in `PROJECT_STATE.json`.

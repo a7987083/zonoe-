@@ -6,13 +6,21 @@
 Host App
   -> zonoemenu bootstrap
      -> environment/runtime probe
-     -> floating entry + menu shell
+     -> floating entry
+        -> PopupMenuVC compatibility shell
+           -> ZONMenuCoordinator
+              -> ZONMenuPanelController
+              -> ZONMenuChromeRenderer
+              -> ZONSectionRenderer
+                 -> ZONFeatureRegistry
+              -> ZONMenuEventBridge
+                 -> existing dispatcher/business handlers
      -> service layer
         -> legacy BS/PHP auth adapter
         -> storage/config/update/download services
-     -> feature registry
-        -> built-in legacy features
-        -> external dylib modules loaded with dlopen()
+     -> external module layer
+        -> versioned module ABI
+        -> bundle-local dylib loader
 ```
 
 ## Technology
@@ -25,11 +33,36 @@ Host App
 - Legacy AFNetworking retained for compatibility, with new networking isolated behind a service interface.
 
 ## Bootstrap rules
-- +load/constructor must remain minimal.
+- `+load`/constructor must remain minimal.
 - UI work must execute on main queue only after UIApplication is usable.
 - Optional host frameworks are discovered before dlopen and failures must be non-fatal.
 - External modules are opt-in and isolated: one module failure must not prevent core menu startup.
 - No game-specific address, symbol, class, or offset belongs in the core layer.
+
+## Menu ownership after v1_p26
+`PopupMenuVC` remains the public/legacy compatibility controller but is no longer the menu implementation owner.
+
+Responsibilities:
+- `PopupMenuVC`: UIKit lifecycle boundary and legacy selector passthrough only.
+- `ZONMenuCoordinator`: orchestration/lifecycle, panel/scroll ownership, build/relayout, show/hide/close and event forwarding.
+- `ZONMenuPanelController`: panel construction, geometry, visible layout and animations.
+- `ZONMenuChromeRenderer`: header/chrome rendering.
+- `ZONSectionRenderer`: renders registered sections and performs section relayout.
+- `ZONFeatureRegistry`: feature/section data source.
+- `ZONMenuEventBridge`: preserves existing action/toggle/runtime dispatch behavior.
+
+p26 intentionally changes ownership structure, not feature semantics or menu appearance.
+
+## UI flow
+```text
+Floating Entry
+  -> PopupMenuVC
+     -> ZONMenuCoordinator
+        -> Header/Chrome
+        -> Registered Feature Sections
+        -> Diagnostics/About sections
+        -> Event Bridge -> Existing business/runtime handlers
+```
 
 ## External module ABI v1
 A loadable module should expose a small C ABI rather than requiring the core to know Objective-C class names.
@@ -42,19 +75,6 @@ Planned exported symbols:
 
 The host API will provide versioned callbacks for logging, preference storage, UI feature registration and runtime/environment information. ABI structs use an explicit size/version field for forward compatibility.
 
-## UI structure
-```text
-Floating Entry
-  -> Main Menu Shell
-     -> Status/Header
-     -> Built-in Feature Sections
-     -> External Module Sections
-     -> Diagnostics
-     -> About/Version
-```
-
-Existing PopupMenuVC remains the compatibility UI during v1 migration. New registration APIs feed into it incrementally rather than replacing it in one change.
-
 ## Backend transition
 Phase 1: `LegacyBSAuthAdapter` reproduces current behavior exactly.
 Phase 2: new backend issues short-lived sessions and signed remote configuration.
@@ -66,19 +86,6 @@ Proposed future API:
 - GET /v1/config
 - GET /v1/releases/latest
 - GET /v1/announcements
-
-## Proposed future database
-- applications
-- devices
-- licenses
-- license_devices
-- sessions
-- configs
-- releases
-- announcements
-- audit_logs
-
-No database migration is required for the initial compatibility MVP.
 
 ## Security invariants
 - Treat all dylib/client-side secrets as recoverable.
