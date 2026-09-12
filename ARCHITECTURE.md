@@ -43,4 +43,4 @@ Still header-based / intentionally not converted:
 - No actual `testmod/Bsphp/main.m` change.
 
 ## Runtime baseline
-`v1_p28` source commit `350a46deb089a05fc599e641bd1eeb419c36c0d5` remains the device-verified baseline. `v1_p29`, `v1_p30` and `v1_p31` are CI-verified but require cumulative hardware regression before p31 can be promoted.
+`v1_p31` source commit `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f` is the current device-verified baseline. The user reported the cumulative p29 + p30 + p31 real-device regression passed with no issues, so the pending p29/p30 hardware gates are closed by that same regression.

@@ -2,13 +2,6 @@
 
 ## Current
 
-### v1_p31 cumulative device regression pending
-- Severity: validation gate, not a known defect.
-- `v1_p31` passed Registry data-equivalence checks, Registry smoke, Module ABI smoke, A/B CI and universal Mach-O verification.
-- `v1_p29` and `v1_p30` were also CI-verified but were not explicitly hardware-confirmed before p31 development continued.
-- Therefore the p31 real-device checklist intentionally includes the pending p29 Renderer/Panel and p30 EventBridge regression scope.
-- Until the user explicitly reports the cumulative p31 checklist passed, `v1_p28` / `350a46deb089a05fc599e641bd1eeb419c36c0d5` remains the device-verified fallback baseline.
-
 ### Remaining business-heavy header boundary
 - `ZONFeatureDispatcher.h` remains header-based.
 - It directly owns protected business paths including cloud save, clear-game-data and clear-authorization.
@@ -20,6 +13,11 @@
 - This is a maintenance/dead-path issue, not a current runtime defect. Do not force an inactive Loader implementation into the product target solely for structural symmetry.
 
 ## Closed
+
+### v1_p31 cumulative device regression
+- Closed by real-device verification: user reported the cumulative p29 + p30 + p31 checklist passed with no issues.
+- `v1_p31` / `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f` is now the device-verified baseline.
+- The same cumulative regression closes the pending p29 Renderer/Panel and p30 EventBridge hardware gates.
 
 ### p31 Registry data-change risk
 - Closed by CI: p30 Registry dictionary rows and key name/value definitions were compared against p31 before smoke/build jobs.

@@ -5,9 +5,9 @@
   "production_branch": "dev/zonoemenu-production-v1",
   "current_work_branch": "work/zonoemenu-v1-p31-registry-boundary",
   "current_version": "v1_p31",
-  "current_phase": "feature_registry_boundary_cleanup",
-  "last_device_verified_code_commit": "350a46deb089a05fc599e641bd1eeb419c36c0d5",
-  "last_device_verified_version": "v1_p28",
+  "current_phase": "v1_p31_device_verified",
+  "last_device_verified_code_commit": "5c0e5afddfecc9e9ed4b89f7ad42780cd652847f",
+  "last_device_verified_version": "v1_p31",
   "device_test_policy_document": "DEVICE_TEST_MATRIX.md",
   "device_test_policy": {
     "required_for_every_version": true,
@@ -18,9 +18,9 @@
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
   "p29_source_commit": "506a22c01a2b46dbea0d4299418fcb702b6cb80e",
-  "p29_runtime_status": "pending_device_verification",
+  "p29_runtime_status": "passed_via_v1_p31_cumulative_regression",
   "p30_source_commit": "8e88b63611d19af6c42d9172c0f5741b34f51809",
-  "p30_runtime_status": "pending_device_verification",
+  "p30_runtime_status": "passed_via_v1_p31_cumulative_regression",
   "p31_source_split_commit": "b6e43f11103f00381a90fe4ef42110a595d41bce",
   "p31_constants_commit": "0f4f8fab9131bd5e73f7fcf15919fb5ece44e6b7",
   "p31_source_commit": "5c0e5afddfecc9e9ed4b89f7ad42780cd652847f",
@@ -82,32 +82,16 @@
       }
     }
   },
-  "p31_device_test_required": {
-    "inherits_full_p29_and_p30_checklists": true,
-    "common": [
-      "app_launch_and_floating_entry",
-      "menu_open_close_and_outside_tap",
-      "section_fold_unfold_and_relayout",
-      "no_freeze_or_crash"
-    ],
-    "registry_specific": [
-      "three_section_order_base_data_runtime",
-      "section_titles_details_and_fold_behavior_unchanged",
-      "base_features_order_remote_cloud_local",
-      "data_features_order_backup_restore_clear_game_clear_auth",
-      "runtime_features_order_iap_noads_ad_speed_placeholder",
-      "control_kinds_and_placement_unchanged",
-      "remote_cloud_local_backup_restore_routes",
-      "clear_game_data_confirmation_only",
-      "clear_authorization_confirmation_only"
-    ],
-    "inherited_eventbridge_and_rendering": [
-      "p29_panel_header_geometry_and_visual_regression",
-      "p30_switch_slider_persistence_and_runtime_sync"
-    ]
+  "p31_device_verification": {
+    "status": "passed",
+    "reported_by_user": true,
+    "date": "2026-09-12",
+    "cumulative_p29_p30_p31": true,
+    "reported_result": "no_issues"
   },
-  "p31_runtime_status": "pending_device_verification",
-  "p31_regression_status": "pending",
-  "promotion_rule": "passing the full p31 cumulative checklist promotes p31 and implicitly closes p29/p30 device validation",
-  "next_task": "device regression test v1_p31 A_customer using DEVICE_TEST_MATRIX.md"
+  "p31_runtime_status": "passed_device_verification",
+  "p31_regression_status": "passed",
+  "promotion_rule_result": "v1_p31 promoted; p29 and p30 hardware gates closed by cumulative p31 regression",
+  "next_phase_candidate": "v1_p32_dispatcher_boundary_audit",
+  "next_task": "audit active ZONFeatureDispatcher boundary and define protected-path CI/device regression before any source split"
 }

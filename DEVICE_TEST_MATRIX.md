@@ -37,11 +37,11 @@ Required device validation:
 - Card/grid/switch/ad switch/slider event dispatch.
 - Authorization, UDID, VIP cloud save and clear-game-data paths show no regression.
 
-Result: user reported no issues; p28 is the current device-verified fallback baseline.
+Result: user reported no issues; p28 was the device-verified fallback baseline until p31 promotion.
 
 ## v1_p29 — Rendering Boundary Cleanup
 Source commit: `506a22c01a2b46dbea0d4299418fcb702b6cb80e`
-Status: `pending`
+Status: `passed`
 
 Changed boundary:
 - `ZONMenuPanelController`
@@ -60,18 +60,16 @@ Required device validation:
 - Rotate/layout-refresh path, if applicable on the test host, does not break panel/section geometry.
 - No visual regression in existing style, spacing, colors, text or control placement.
 
-Promotion rule: do not promote p29 alone unless this checklist is explicitly reported passed. A later version built on p29 may implicitly cover it if that later device test exercises all items above.
+Result: covered and passed by the cumulative v1_p31 hardware regression reported by the user.
 
 ## v1_p30 — EventBridge Boundary Cleanup
 Source commit: `8e88b63611d19af6c42d9172c0f5741b34f51809`
-Status: `pending`
+Status: `passed`
 
 Changed boundary:
 - `ZONMenuEventBridge.h` declarations only
 - new independent `ZONMenuEventBridge.m`
 - Dispatcher implementation remains unchanged
-
-Because p30 is built on top of unverified p29, the p30 device test must cover the full p29 checklist plus the EventBridge-specific checks below.
 
 Required EventBridge-specific validation:
 - Card action path reaches the same target as before.
@@ -89,19 +87,17 @@ Required EventBridge-specific validation:
 - Clear-authorization route reaches the same confirmation dialog; do not confirm deletion unless intentionally testing it.
 - No crash/freeze while repeatedly switching controls, moving the slider, opening actions, closing and reopening the menu.
 
-Promotion rule: if the full p29 + p30 checklist passes on hardware, p30 can become the new device-verified baseline and p29 is considered implicitly covered by that same regression.
+Result: covered and passed by the cumulative v1_p31 hardware regression reported by the user.
 
 ## v1_p31 — Feature Registry Boundary Cleanup
 Source commit: `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f`
-Status: `pending`
+Status: `passed`
 
 Changed boundary:
 - `ZONFeatureRegistry.h` is declaration-only for registry functions.
 - Added independent `ZONFeatureRegistry.m` and registered it in the Xcode target.
 - Registry key constants use `FOUNDATION_EXPORT` declarations with one definition in `.m`.
 - The 10 feature records, 3 section records, tags, identifiers, titles, risk values, migrated flags, state keys and renderer values are unchanged.
-
-Because p31 is built on top of unverified p29 and p30, the p31 hardware test must cover the full p29 + p30 checklist plus the Registry-specific checks below.
 
 Required Registry-specific validation:
 - Common device smoke test.
@@ -118,7 +114,7 @@ Required Registry-specific validation:
 - Repeatedly open/close the menu and fold/unfold every section; no missing feature, duplicate feature, stale section, crash or freeze.
 - p29 panel/header/layout/animation behavior remains unchanged.
 
-Promotion rule: if the full cumulative p29 + p30 + p31 checklist passes on hardware, `v1_p31` / `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f` becomes the new device-verified baseline. The same successful regression implicitly closes p29 and p30 device validation.
+Result: user reported the full cumulative p29 + p30 + p31 real-device regression passed with no issues. `v1_p31` / `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f` is promoted to the device-verified baseline; p29 and p30 are implicitly closed by the same regression.
 
 ## Template for the next version
 Add a section before handing out a new A_customer dylib:

@@ -1,7 +1,7 @@
 # CHANGELOG_DEV
 
 ## 2026-09-12 — v1_p31 Feature Registry Boundary Cleanup
-- Development base: p30 source `8e88b63611d19af6c42d9172c0f5741b34f51809`; device fallback remains p28 because p29/p30 hardware verification was not explicitly confirmed.
+- Development base: p30 source `8e88b63611d19af6c42d9172c0f5741b34f51809`; device fallback was p28 while p29/p30 hardware verification remained unconfirmed.
 - Bumped `VERSION` to `v1_p31`.
 - Converted `ZONFeatureRegistry` from header-only implementation to declaration header + independent `.m` translation unit.
 - Converted Registry string keys from per-translation-unit `static` definitions to `FOUNDATION_EXPORT` declarations with one `.m` definition; names and values are unchanged.
@@ -15,20 +15,23 @@
 - CI run `34673034214`: Registry data equivalence, Registry smoke, Module ABI smoke, A_customer and B_debug all passed.
 - A dylib SHA256: `579d721b6f2cfcb89b711ad676632851c84173d65f872259d26553bf180b6b68`.
 - B dylib SHA256: `ffe787f48c0ed5e6e3862692ccf279879831257ccdd7a8946af239d405927743`.
-- Device/runtime regression is pending; the p31 hardware checklist cumulatively covers p29+p30+p31.
+- Device/runtime regression: **passed**. User reported the cumulative p29 + p30 + p31 hardware checklist has no issues.
+- `v1_p31` / `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f` is now the device-verified baseline; the same regression implicitly closes the pending p29 and p30 hardware gates.
 - ModuleLoader was audited but is not used by the actual target runtime path, so no inactive Loader implementation was forced into the product target.
 
 ## 2026-09-12 — v1_p30 EventBridge Boundary Cleanup
 - Converted `ZONMenuEventBridge` to declaration header + independent `.m` translation unit.
 - Source commit: `8e88b63611d19af6c42d9172c0f5741b34f51809`.
-- A/B CI passed; explicit hardware confirmation is pending.
+- A/B CI passed.
+- Hardware status: covered and passed by the cumulative `v1_p31` real-device regression.
 
 ## 2026-09-12 — v1_p29 Rendering Boundary Cleanup
 - Converted Panel/Chrome/FeatureRenderer/SectionRenderer helpers to independent `.m` translation units.
 - Source commit: `506a22c01a2b46dbea0d4299418fcb702b6cb80e`.
-- A/B CI passed; explicit hardware confirmation is pending.
+- A/B CI passed.
+- Hardware status: covered and passed by the cumulative `v1_p31` real-device regression.
 
 ## 2026-09-12 — v1_p28 ZONCore Build Integration
 - Registered `ZONMenuCoordinator.m` as a normal Xcode target source and removed the temporary direct `.m` import bridge.
 - Source commit: `350a46deb089a05fc599e641bd1eeb419c36c0d5`.
-- A/B CI and hardware regression passed; p28 remains the current device-verified baseline.
+- A/B CI and hardware regression passed; p28 was the device-verified baseline until superseded by the successful p31 cumulative regression.
