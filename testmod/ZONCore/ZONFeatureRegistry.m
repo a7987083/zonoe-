@@ -1,5 +1,19 @@
 #import "ZONFeatureRegistry.h"
 
+NSString * const ZONFeatureIdentifierKey = @"identifier";
+NSString * const ZONFeatureTitleKey = @"title";
+NSString * const ZONFeatureSectionKey = @"section";
+NSString * const ZONFeatureLegacyTagKey = @"legacyTag";
+NSString * const ZONFeatureKindKey = @"kind";
+NSString * const ZONFeatureRiskKey = @"risk";
+NSString * const ZONFeatureMigratedKey = @"migrated";
+
+NSString * const ZONSectionIdentifierKey = @"identifier";
+NSString * const ZONSectionTitleKey = @"title";
+NSString * const ZONSectionDetailKey = @"detail";
+NSString * const ZONSectionStateKey = @"stateKey";
+NSString * const ZONSectionRendererKey = @"renderer";
+
 NSArray<NSDictionary<NSString *, id> *> *ZONBuiltInSectionMetadata(void)
 {
     static NSArray<NSDictionary<NSString *, id> *> *sections;

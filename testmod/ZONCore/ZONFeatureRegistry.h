@@ -18,19 +18,19 @@ typedef NS_ENUM(NSInteger, ZONFeatureRisk) {
     ZONFeatureRiskHigh = 2,
 };
 
-static NSString * const ZONFeatureIdentifierKey = @"identifier";
-static NSString * const ZONFeatureTitleKey = @"title";
-static NSString * const ZONFeatureSectionKey = @"section";
-static NSString * const ZONFeatureLegacyTagKey = @"legacyTag";
-static NSString * const ZONFeatureKindKey = @"kind";
-static NSString * const ZONFeatureRiskKey = @"risk";
-static NSString * const ZONFeatureMigratedKey = @"migrated";
+FOUNDATION_EXPORT NSString * const ZONFeatureIdentifierKey;
+FOUNDATION_EXPORT NSString * const ZONFeatureTitleKey;
+FOUNDATION_EXPORT NSString * const ZONFeatureSectionKey;
+FOUNDATION_EXPORT NSString * const ZONFeatureLegacyTagKey;
+FOUNDATION_EXPORT NSString * const ZONFeatureKindKey;
+FOUNDATION_EXPORT NSString * const ZONFeatureRiskKey;
+FOUNDATION_EXPORT NSString * const ZONFeatureMigratedKey;
 
-static NSString * const ZONSectionIdentifierKey = @"identifier";
-static NSString * const ZONSectionTitleKey = @"title";
-static NSString * const ZONSectionDetailKey = @"detail";
-static NSString * const ZONSectionStateKey = @"stateKey";
-static NSString * const ZONSectionRendererKey = @"renderer";
+FOUNDATION_EXPORT NSString * const ZONSectionIdentifierKey;
+FOUNDATION_EXPORT NSString * const ZONSectionTitleKey;
+FOUNDATION_EXPORT NSString * const ZONSectionDetailKey;
+FOUNDATION_EXPORT NSString * const ZONSectionStateKey;
+FOUNDATION_EXPORT NSString * const ZONSectionRendererKey;
 
 NSArray<NSDictionary<NSString *, id> *> *ZONBuiltInSectionMetadata(void);
 NSArray<NSDictionary<NSString *, id> *> *ZONBuiltInFeatureMetadata(void);
