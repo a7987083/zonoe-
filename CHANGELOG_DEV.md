@@ -1,45 +1,33 @@
 # CHANGELOG_DEV
 
+## 2026-09-12 — v1_p32-B Dispatcher Source Split
+- Bumped `VERSION` to `v1_p32`.
+- Converted `testmod/ZONCore/ZONFeatureDispatcher.h` from header-owned inline implementation to declarations-only functions; existing imports were intentionally retained to minimize unrelated compile-surface change.
+- Added `testmod/ZONCore/ZONFeatureDispatcher.m` with the seven audited function bodies moved mechanically from the p31 header.
+- No intended changes to action identifiers, selectors, confirmation text, delay timings, tmp preservation, persistence keys or `ImgTool` side effects.
+- Added `Tests/dispatcher_contract_smoke.py` and wired it into permanent `module-abi.yml`.
+- Added the p32 real-device checklist to `DEVICE_TEST_MATRIX.md` before artifact handoff.
+- PBX registration and A/B CI are pending at this source commit.
+
 ## 2026-09-12 — v1_p32-A Dispatcher Boundary Audit
-- Created branch `work/zonoemenu-v1-p32-dispatcher-audit` from the p31 post-device-verification state.
-- Audited the active `testmod/ZONCore/ZONFeatureDispatcher.h` and confirmed it is header-only and compiled through `ZONMenuEventBridge.m`; there is no `ZONFeatureDispatcher.m` in the active Xcode target.
-- Recorded seven inline Dispatcher functions, seven action routes and three toggle routes in `DISPATCHER_AUDIT.md`.
-- Added `Tests/dispatcher_boundary_audit.py` to lock active compilation ownership, action/toggle route identifiers, protected destructive markers, persistence keys and `ImgTool` side effects.
-- Added `.github/workflows/p32-dispatcher-audit.yml`; it proves the audit phase has no product-source diff from the device-verified p31 source commit and reruns Registry/Module ABI smokes.
 - Audit commit: `e7dddfbb5bb9cd597f6a194d9bee06e0cbba7988`.
-- CI Run `34703403975`: **success**.
-- Product/runtime source was not modified in p32-A; `v1_p31` remains the device-verified runtime baseline.
-- Audit conclusion: active Dispatcher boundary is eligible for an isolated mechanical `.h` -> `.h + .m` split.
+- Workflow Run `34703403975`: **success**.
+- Confirmed active Dispatcher ownership and locked seven action / three toggle routes without changing product source.
+- Approved an isolated mechanical Dispatcher `.h` -> `.h + .m` split.
 
 ## 2026-09-12 — v1_p31 Feature Registry Boundary Cleanup
-- Development base: p30 source `8e88b63611d19af6c42d9172c0f5741b34f51809`; device fallback was p28 while p29/p30 hardware verification remained unconfirmed.
-- Bumped `VERSION` to `v1_p31`.
-- Converted `ZONFeatureRegistry` from header-only implementation to declaration header + independent `.m` translation unit.
-- Converted Registry string keys from per-translation-unit `static` definitions to `FOUNDATION_EXPORT` declarations with one `.m` definition; names and values are unchanged.
-- Registered `ZONFeatureRegistry.m` in the Xcode target Sources phase.
-- Updated permanent `module-abi.yml` so `feature_registry_smoke.m` explicitly links `ZONFeatureRegistry.m`.
-- Did not modify the 10 feature records or 3 section records: tags, identifiers, titles, kind/risk/migrated values, section order, feature order, state keys and renderer values remain unchanged.
-- Did not modify Dispatcher/EventBridge business behavior, authorization, UDID, cloud save, clear-game-data, `WX_NongShiFu123.mm`, actual `testmod/Bsphp/main.m`, UI behavior, or keyboard/presentation logic.
-- Registry split commit: `b6e43f11103f00381a90fe4ef42110a595d41bce`.
-- Registry constants commit: `0f4f8fab9131bd5e73f7fcf15919fb5ece44e6b7`.
-- Integrated p31 source commit: `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f`.
-- CI run `34673034214`: Registry data equivalence, Registry smoke, Module ABI smoke, A_customer and B_debug all passed.
-- A dylib SHA256: `579d721b6f2cfcb89b711ad676632851c84173d65f872259d26553bf180b6b68`.
-- B dylib SHA256: `ffe787f48c0ed5e6e3862692ccf279879831257ccdd7a8946af239d405927743`.
-- Device/runtime regression: **passed**. User reported the cumulative p29 + p30 + p31 hardware checklist has no issues.
-- `v1_p31` / `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f` is now the device-verified baseline; the same regression implicitly closes the pending p29 and p30 hardware gates.
+- Integrated source commit: `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f`.
+- CI Run `34673034214`: A/B, Registry equivalence/smoke and Module ABI passed.
+- User reported cumulative p29+p30+p31 real-device regression passed; p31 is the current device-verified baseline.
 
 ## 2026-09-12 — v1_p30 EventBridge Boundary Cleanup
-- Converted `ZONMenuEventBridge` to declaration header + independent `.m` translation unit.
 - Source commit: `8e88b63611d19af6c42d9172c0f5741b34f51809`.
-- A/B CI passed; hardware status passed via cumulative p31 regression.
+- A/B CI passed; hardware covered by p31 cumulative regression.
 
 ## 2026-09-12 — v1_p29 Rendering Boundary Cleanup
-- Converted Panel/Chrome/FeatureRenderer/SectionRenderer helpers to independent `.m` translation units.
 - Source commit: `506a22c01a2b46dbea0d4299418fcb702b6cb80e`.
-- A/B CI passed; hardware status passed via cumulative p31 regression.
+- A/B CI passed; hardware covered by p31 cumulative regression.
 
 ## 2026-09-12 — v1_p28 ZONCore Build Integration
-- Registered `ZONMenuCoordinator.m` as a normal Xcode target source and removed the temporary direct `.m` import bridge.
 - Source commit: `350a46deb089a05fc599e641bd1eeb419c36c0d5`.
-- A/B CI and hardware regression passed; p28 was superseded by p31.
+- A/B CI and hardware regression passed.

@@ -3,38 +3,34 @@
 ## Current baseline
 - Device-verified version: `v1_p31`.
 - Source commit: `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f`.
-- Validation workflow: `p31 Registry Boundary Build` / Run `34673034214` / success.
-- `v1_p29` Rendering and `v1_p30` EventBridge hardware gates were closed by the cumulative `v1_p31` real-device regression.
+- p31 CI: Run `34673034214` / success.
 
 ## Completed phases
 - `v1_p28` — ZONCore Build Integration.
 - `v1_p29` — Rendering Boundary Cleanup.
 - `v1_p30` — EventBridge Boundary Cleanup.
 - `v1_p31` — Feature Registry Boundary Cleanup + cumulative hardware regression.
-- `v1_p32-A` — Dispatcher Boundary Audit; Run `34703403975` passed with no p31 product-source changes.
+- `v1_p32-A` — Dispatcher Boundary Audit / Run `34703403975` / success.
 
 ## Current phase — v1_p32-B Dispatcher Source Split
-Status: `ready_to_implement`.
+Status: `source_split_implemented_ci_pending`.
 
 ### Goal
-Move the seven active Dispatcher function bodies from `ZONFeatureDispatcher.h` into an independent Objective-C implementation while preserving every route, persistence key, destructive confirmation boundary and runtime side effect.
+Move the seven audited Dispatcher bodies into `ZONFeatureDispatcher.m` without changing business behavior.
 
-### Scope
-- Change `VERSION` to `v1_p32` when the split source lands.
-- Keep only public Dispatcher declarations in `ZONFeatureDispatcher.h`.
-- Add `ZONFeatureDispatcher.m` with the audited function bodies.
-- Register `ZONFeatureDispatcher.m` in the Xcode target Sources phase.
-- Prove route/protected-marker equivalence against p31 before build.
-- Rerun Registry and Module ABI smokes.
-- Build both `A_customer` and `B_debug` for arm64 + arm64e on iOS 12 target.
-- Define the p32 real-device regression before A_customer promotion.
+### Implemented source scope
+- `VERSION`: `v1_p31` -> `v1_p32`.
+- `ZONFeatureDispatcher.h`: declarations only; existing imports intentionally retained to minimize transitive-include risk.
+- Added `ZONFeatureDispatcher.m` containing the seven audited bodies.
+- Added permanent `dispatcher_contract_smoke.py` and wired it into `module-abi.yml`.
+- Defined the p32 real-device checklist before artifact handoff.
 
-### Out of scope
-- No business-handler cleanup or rewrite.
-- No Registry/EventBridge semantic change.
-- No authorization/UDID/cloud-save protocol change.
-- No destructive-action semantic change.
-- No UI/layout/animation/keyboard change.
+### CI plan
+1. Prove only Dispatcher header/implementation + VERSION changed under product source before PBX integration.
+2. Compare p32 `.m` implementation text against normalized p31 inline bodies.
+3. Register `ZONFeatureDispatcher.m` in PBX and commit that integration to the work branch.
+4. Run Dispatcher contract, Registry smoke and Module ABI smoke.
+5. Build/package `A_customer` and `B_debug` for arm64 + arm64e / iOS 12.
 
 ## Next Task
-Implement the mechanical Dispatcher source split on an isolated p32-B work branch, then run source-equivalence and full A/B build CI.
+Run p32 isolated build CI. If both variants succeed, record the final source head/artifact hashes and hand A_customer to the user for the p32 device checklist.

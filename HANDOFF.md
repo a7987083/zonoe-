@@ -4,44 +4,34 @@
 - Repository: `a7987083/zonoe-`
 - Stable branch: `main`
 - Production branch: `dev/zonoemenu-production-v1`
-- Current audit branch: `work/zonoemenu-v1-p32-dispatcher-audit`
-- Runtime version/baseline: `v1_p31` / `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f` (device verified)
-- Current development phase: `v1_p32-B Dispatcher Source Split`.
+- Current work branch: `work/zonoemenu-v1-p32-dispatcher-split`
+- Current source version: `v1_p32` (CI pending).
+- Device-verified baseline remains `v1_p31` / `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f`.
 
-## p32-A audit result
+## p32-A audit
 - Audit commit: `e7dddfbb5bb9cd597f6a194d9bee06e0cbba7988`.
-- Workflow: `p32 Dispatcher Boundary Audit`.
-- Run: `34703403975`.
-- Result: `success`.
-- Product source difference from p31 during audit: none.
-- Registry smoke: passed.
-- Module ABI smoke: passed.
+- Run: `34703403975` / success.
+- Detailed contract: `DISPATCHER_AUDIT.md`.
 
-## Active Dispatcher ownership before p32-B
-- Xcode target compiles `testmod/ZONCore/ZONMenuEventBridge.m`.
-- `ZONMenuEventBridge.m` imports `ZONFeatureDispatcher.h`.
-- Xcode target does not register `ZONFeatureDispatcher.m` yet.
-- All seven `static inline` Dispatcher bodies are therefore compiled into EventBridge.
+## p32-B implementation
+- `ZONFeatureDispatcher.h` now declares the seven Dispatcher functions and no longer contains inline bodies.
+- `ZONFeatureDispatcher.m` contains the mechanically moved bodies.
+- Existing header imports are retained intentionally for this phase to avoid transitive-include cleanup being mixed with the source split.
+- `ZONMenuEventBridge.m` remains behaviorally unchanged and still imports `ZONFeatureDispatcher.h`.
+- `dispatcher_contract_smoke.py` locks route identifiers, handler calls, protected destructive markers, persistence keys and runtime-sync ownership.
+- PBX registration is intentionally delegated to isolated build CI and must become part of the final p32 source head before the build is considered valid.
 
-Detailed invariants are in `DISPATCHER_AUDIT.md`.
+## Protected behavior
+Do not change cloud-save tmp self-heal, clear-game-data confirmation/cleanup/delayed exit, clear-authorization confirmation/deletekm/delayed exit, legacy persistence keys, local-files presentation, or `ImgTool` runtime side effects during this phase.
 
-## Dispatcher-owned behavior that must not drift
-- Actions: remote download, cloud save, local files, backup, restore, clear game data, clear authorization.
-- Toggles: IAP/no-ads, ad-speed enable, placeholder 203.
-- Persistent keys: `NNGG`, `NNGGNNGG`, `AADD`, `AADDAADD`.
-- EventBridge numeric speed key remains `AADDssppeedd`.
-- Runtime side effects remain `ImgTool.NeiGou`, `ImgTool.ADSpeed`, `ImgTool.ADBiansu`.
-- Cloud save must self-heal sandbox `tmp` before status handling.
-- Destructive routes must retain confirmation boundaries and delayed exit behavior.
-
-## p32-B implementation rule
-Do a mechanical source split only. Move bodies without rewriting conditions, selectors, strings, timing or side effects. Register the new `.m` in PBX and verify the complete target. Do not mix business cleanup/refactoring into this phase.
-
-## Verification policy
-- Source/route equivalence against p31 is required before build.
-- Registry and Module ABI smokes remain required.
-- A_customer and B_debug must both compile/link/package as arm64 + arm64e with iOS 12 deployment target.
-- CI success does not promote p32. Real-device protected-path regression and explicit user pass are still required.
+## Verification gates
+- p31 -> p32 implementation equivalence.
+- Dispatcher PBX registration.
+- Dispatcher contract smoke.
+- Registry smoke.
+- Module ABI smoke.
+- A_customer and B_debug full Xcode build/package for arm64 + arm64e / iOS 12.
+- Real-device p32 checklist and explicit user pass before promotion.
 
 ## Next task
-Create the p32-B source branch, split `ZONFeatureDispatcher`, register its `.m`, run A/B CI, then provide A_customer for hardware regression.
+Run isolated p32 build CI, let CI commit PBX integration back to this work branch, record final source commit/artifacts, then hand A_customer out for device regression.

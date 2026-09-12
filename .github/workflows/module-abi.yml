@@ -51,3 +51,8 @@ jobs:
             Tests/feature_registry_smoke.m testmod/ZONCore/ZONFeatureRegistry.m \
             -o /tmp/zonoemenu-feature-registry-smoke
           /tmp/zonoemenu-feature-registry-smoke
+
+      - name: Verify Dispatcher contract
+        run: |
+          set -euxo pipefail
+          python3 Tests/dispatcher_contract_smoke.py
