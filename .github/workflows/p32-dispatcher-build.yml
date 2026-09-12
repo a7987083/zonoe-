@@ -8,29 +8,30 @@ on:
       - '.github/workflows/p32-dispatcher-build.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   integrate:
     runs-on: ubuntu-latest
     outputs:
-      source_sha: ${{ steps.commit.outputs.source_sha }}
+      source_sha: ${{ steps.source.outputs.source_sha }}
     steps:
-      - name: Checkout p32 work branch
+      - name: Checkout integrated p32 work branch
         uses: actions/checkout@v4
         with:
           ref: work/zonoemenu-v1-p32-dispatcher-split
           fetch-depth: 0
 
-      - name: Verify p32 pre-integration source scope
+      - name: Verify p32 integrated source scope
         run: |
           set -euxo pipefail
           test "$(tr -d '[:space:]' < VERSION)" = 'v1_p32'
           test -s testmod/ZONCore/ZONFeatureDispatcher.m
           ! grep -F 'static inline' testmod/ZONCore/ZONFeatureDispatcher.h
-          ! grep -F 'ZONFeatureDispatcher.m in Sources' testmod.xcodeproj/project.pbxproj
+          test "$(grep -c 'ZONFeatureDispatcher.m in Sources' testmod.xcodeproj/project.pbxproj)" -eq 2
           expected="$(printf '%s\n' \
             VERSION \
+            testmod.xcodeproj/project.pbxproj \
             testmod/ZONCore/ZONFeatureDispatcher.h \
             testmod/ZONCore/ZONFeatureDispatcher.m | sort)"
           actual="$(git diff --name-only 5c0e5afddfecc9e9ed4b89f7ad42780cd652847f -- \
@@ -72,53 +73,19 @@ jobs:
           print('Dispatcher body equivalence: PASS')
           PY
 
-      - name: Register Dispatcher source in Xcode target
+      - name: Verify Dispatcher PBX registration
         run: |
           set -euxo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          pbx = Path('testmod.xcodeproj/project.pbxproj')
-          text = pbx.read_text()
-
-          build_anchor = '\t\t7ECBD4372F3A614600C56F1C /* ZONFeatureRegistry.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4362F3A614600C56F1C /* ZONFeatureRegistry.m */; };\n'
-          build_entry = '\t\t7ECBD4392F3A614700C56F1C /* ZONFeatureDispatcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4382F3A614700C56F1C /* ZONFeatureDispatcher.m */; };\n'
-          ref_anchor = '\t\t7ECBD4362F3A614600C56F1C /* ZONFeatureRegistry.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONFeatureRegistry.m"; sourceTree = SOURCE_ROOT; };\n'
-          ref_entry = '\t\t7ECBD4382F3A614700C56F1C /* ZONFeatureDispatcher.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONFeatureDispatcher.m"; sourceTree = SOURCE_ROOT; };\n'
-          source_anchor = '\t\t\t\t7ECBD4372F3A614600C56F1C /* ZONFeatureRegistry.m in Sources */,\n'
-          source_entry = '\t\t\t\t7ECBD4392F3A614700C56F1C /* ZONFeatureDispatcher.m in Sources */,\n'
-
-          if '7ECBD4382F3A614700C56F1C' not in text and '7ECBD4392F3A614700C56F1C' not in text:
-              for label, anchor in [('build', build_anchor), ('ref', ref_anchor), ('source', source_anchor)]:
-                  if text.count(anchor) != 1:
-                      raise SystemExit(f'{label} anchor count={text.count(anchor)}')
-              text = text.replace(build_anchor, build_anchor + build_entry, 1)
-              text = text.replace(ref_anchor, ref_anchor + ref_entry, 1)
-              text = text.replace(source_anchor, source_anchor + source_entry, 1)
-              pbx.write_text(text)
-
-          final = pbx.read_text()
-          if final.count('ZONFeatureDispatcher.m in Sources') != 2:
-              raise SystemExit('expected exactly two Dispatcher Sources mentions')
-          if final.count('7ECBD4382F3A614700C56F1C') != 2:
-              raise SystemExit('unexpected Dispatcher fileRef count')
-          if final.count('7ECBD4392F3A614700C56F1C') != 2:
-              raise SystemExit('unexpected Dispatcher buildFile count')
-          PY
+          PBX='testmod.xcodeproj/project.pbxproj'
+          test "$(grep -c 'ZONFeatureDispatcher.m in Sources' "$PBX")" -eq 2
+          test "$(grep -c '7ECBD4382F3A614700C56F1C' "$PBX")" -eq 2
+          test "$(grep -c '7ECBD4392F3A614700C56F1C' "$PBX")" -eq 2
           git diff --check
-          changed="$(git diff --name-only)"
-          test "$changed" = 'testmod.xcodeproj/project.pbxproj'
 
-      - name: Commit p32 PBX integration
-        id: commit
+      - name: Resolve p32 source head
+        id: source
         run: |
           set -euxo pipefail
-          git config user.name 'a7987083'
-          git config user.email '85878547+a7987083@users.noreply.github.com'
-          if ! git diff --quiet; then
-            git add testmod.xcodeproj/project.pbxproj
-            git commit -m 'build: register v1_p32 dispatcher source'
-            git push origin HEAD:refs/heads/work/zonoemenu-v1-p32-dispatcher-split
-          fi
           SOURCE_SHA="$(git rev-parse HEAD)"
           echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
           echo "p32 source commit: $SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
@@ -364,4 +331,4 @@ jobs:
 
       - name: Fail if Xcode build failed
         if: env.XCODEBUILD_STATUS != '0'
-        run: exit "$XCODEBUILD_STATUS"
+        run: exit "${XCODEBUILD_STATUS:-1}"
