@@ -3,95 +3,44 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p31-registry-boundary",
+  "current_work_branch": "work/zonoemenu-v1-p32-dispatcher-audit",
   "current_version": "v1_p31",
-  "current_phase": "v1_p31_device_verified",
+  "current_phase": "v1_p32_dispatcher_boundary_audit",
+  "phase_status": "implementation_complete_ci_pending",
   "last_device_verified_code_commit": "5c0e5afddfecc9e9ed4b89f7ad42780cd652847f",
   "last_device_verified_version": "v1_p31",
   "device_test_policy_document": "DEVICE_TEST_MATRIX.md",
-  "device_test_policy": {
-    "required_for_every_version": true,
-    "ci_success_is_not_device_verification": true,
-    "promotion_requires_explicit_user_pass": true,
-    "later_version_may_close_pending_ancestors_only_with_cumulative_checklist": true
-  },
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
-  "p29_source_commit": "506a22c01a2b46dbea0d4299418fcb702b6cb80e",
   "p29_runtime_status": "passed_via_v1_p31_cumulative_regression",
-  "p30_source_commit": "8e88b63611d19af6c42d9172c0f5741b34f51809",
   "p30_runtime_status": "passed_via_v1_p31_cumulative_regression",
-  "p31_source_split_commit": "b6e43f11103f00381a90fe4ef42110a595d41bce",
-  "p31_constants_commit": "0f4f8fab9131bd5e73f7fcf15919fb5ece44e6b7",
   "p31_source_commit": "5c0e5afddfecc9e9ed4b89f7ad42780cd652847f",
-  "p31_changes": [
-    "split_ZONFeatureRegistry_header_implementation",
-    "centralize_registry_keys_with_FOUNDATION_EXPORT",
-    "register_ZONFeatureRegistry_m_in_xcode_sources",
-    "update_feature_registry_smoke_to_link_registry_m"
-  ],
-  "p31_registry_invariants": {
-    "feature_count": 10,
-    "section_count": 3,
-    "dictionary_rows_unchanged_vs_p30": true,
-    "string_key_names_and_values_unchanged_vs_p30": true,
-    "legacy_tag_identifier_mapping_unchanged": true,
-    "section_order_unchanged": true,
-    "feature_order_unchanged": true,
-    "state_keys_and_renderers_unchanged": true
-  },
-  "p31_untouched": [
-    "ZONFeatureDispatcher_business_handlers",
-    "ZONMenuEventBridge_behavior",
-    "authorization",
-    "udid",
-    "vip_cloud_save",
-    "clear_game_data",
-    "WX_NongShiFu123.mm",
-    "testmod/Bsphp/main.m",
-    "AppDelegate_SceneDelegate",
-    "ui_style_dimensions_colors_text_spacing",
-    "keyboard_presentation_logic"
-  ],
+  "p31_runtime_status": "passed_device_verification",
   "p31_ci": {
     "status": "success",
     "workflow": "p31 Registry Boundary Build",
-    "run_id": 34673034214,
-    "validation_branch": "test/zonoemenu-v1-p31-registry-build",
-    "validation_workflow_commit": "57dbc4eca5131f9c0496806a9bd68d2d5f3eb716",
-    "xcode": "16.4",
-    "deployment_target": "12.0",
-    "architectures": ["arm64", "arm64e"],
-    "registry_data_equivalence": "success",
-    "feature_registry_smoke": "success",
-    "module_abi_smoke": "success",
-    "variants": {
-      "A_customer": {
-        "status": "success",
-        "artifact": "testmod-v1_p31-A_customer",
-        "artifact_id": 10291681640,
-        "artifact_zip_sha256": "5f1e106ef2d8a861b75ecaa7e7d44ca83b2c992122aa03e681ec399cc6ae9602",
-        "dylib_sha256": "579d721b6f2cfcb89b711ad676632851c84173d65f872259d26553bf180b6b68"
-      },
-      "B_debug": {
-        "status": "success",
-        "artifact": "testmod-v1_p31-B_debug",
-        "artifact_id": 10291566984,
-        "artifact_zip_sha256": "c2b8b9b15d8dc732bf208f7d06d1edec1c74f5811ca8426305568ed2d3b312d6",
-        "dylib_sha256": "ffe787f48c0ed5e6e3862692ccf279879831257ccdd7a8946af239d405927743"
-      }
-    }
+    "run_id": 34673034214
   },
-  "p31_device_verification": {
-    "status": "passed",
-    "reported_by_user": true,
-    "date": "2026-09-12",
-    "cumulative_p29_p30_p31": true,
-    "reported_result": "no_issues"
+  "p32_audit": {
+    "branch": "work/zonoemenu-v1-p32-dispatcher-audit",
+    "product_source_changed": false,
+    "dispatcher_path": "testmod/ZONCore/ZONFeatureDispatcher.h",
+    "active_owner_translation_unit": "testmod/ZONCore/ZONMenuEventBridge.m",
+    "dispatcher_m_registered": false,
+    "inline_function_count": 7,
+    "action_route_count": 7,
+    "toggle_route_count": 3,
+    "protected_destructive_routes": [
+      "data.clear-game-data",
+      "auth.clear-records"
+    ],
+    "audit_document": "DISPATCHER_AUDIT.md",
+    "audit_test": "Tests/dispatcher_boundary_audit.py",
+    "workflow": ".github/workflows/p32-dispatcher-audit.yml",
+    "audit_commit": null,
+    "ci_status": "pending",
+    "run_id": null
   },
-  "p31_runtime_status": "passed_device_verification",
-  "p31_regression_status": "passed",
-  "promotion_rule_result": "v1_p31 promoted; p29 and p30 hardware gates closed by cumulative p31 regression",
-  "next_phase_candidate": "v1_p32_dispatcher_boundary_audit",
-  "next_task": "audit active ZONFeatureDispatcher boundary and define protected-path CI/device regression before any source split"
+  "p32_split_decision": "eligible_after_audit_ci_pass",
+  "next_task": "verify p32 Dispatcher Boundary Audit CI; if green start isolated Dispatcher header-to-m implementation split"
 }

@@ -1,5 +1,15 @@
 # CHANGELOG_DEV
 
+## 2026-09-12 — v1_p32-A Dispatcher Boundary Audit
+- Created branch `work/zonoemenu-v1-p32-dispatcher-audit` from the p31 post-device-verification state.
+- Audited the active `testmod/ZONCore/ZONFeatureDispatcher.h` and confirmed it is header-only and compiled through `ZONMenuEventBridge.m`; there is no `ZONFeatureDispatcher.m` in the active Xcode target.
+- Recorded seven inline Dispatcher functions, seven action routes and three toggle routes in `DISPATCHER_AUDIT.md`.
+- Added `Tests/dispatcher_boundary_audit.py` to lock active compilation ownership, action/toggle route identifiers, protected destructive markers, persistence keys and `ImgTool` side effects.
+- Added `.github/workflows/p32-dispatcher-audit.yml`; it fails if `testmod/`, `testmod.xcodeproj/project.pbxproj` or `VERSION` differ from the device-verified p31 source commit during the audit-only phase.
+- The audit workflow also reruns Feature Registry and Module ABI smokes.
+- Product/runtime source has not been modified in p32-A; `v1_p31` remains the device-verified runtime baseline.
+- CI status: pending at this commit.
+
 ## 2026-09-12 — v1_p31 Feature Registry Boundary Cleanup
 - Development base: p30 source `8e88b63611d19af6c42d9172c0f5741b34f51809`; device fallback was p28 while p29/p30 hardware verification remained unconfirmed.
 - Bumped `VERSION` to `v1_p31`.
