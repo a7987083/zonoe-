@@ -179,6 +179,7 @@
 		7ECBD4332F3A614400C56F1C /* ZONSectionRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4322F3A614400C56F1C /* ZONSectionRenderer.m */; };
 		7ECBD4352F3A614500C56F1C /* ZONMenuEventBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4342F3A614500C56F1C /* ZONMenuEventBridge.m */; };
 		7ECBD4372F3A614600C56F1C /* ZONFeatureRegistry.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4362F3A614600C56F1C /* ZONFeatureRegistry.m */; };
+		7ECBD4392F3A614700C56F1C /* ZONFeatureDispatcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4382F3A614700C56F1C /* ZONFeatureDispatcher.m */; };
 		7ECBD4212F29099D00C56F1C /* PopupMenuVC.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECBD4202F29099D00C56F1C /* PopupMenuVC.h */; };
 		7ECBD4232F30EF6100C56F1C /* FoldSectionView.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECBD4222F30EF6100C56F1C /* FoldSectionView.h */; };
 		7ECBD4252F30EF6C00C56F1C /* FoldSectionView.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4242F30EF6C00C56F1C /* FoldSectionView.m */; };
@@ -391,6 +392,7 @@
 		7ECBD4322F3A614400C56F1C /* ZONSectionRenderer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONSectionRenderer.m"; sourceTree = SOURCE_ROOT; };
 		7ECBD4342F3A614500C56F1C /* ZONMenuEventBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONMenuEventBridge.m"; sourceTree = SOURCE_ROOT; };
 		7ECBD4362F3A614600C56F1C /* ZONFeatureRegistry.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONFeatureRegistry.m"; sourceTree = SOURCE_ROOT; };
+		7ECBD4382F3A614700C56F1C /* ZONFeatureDispatcher.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONFeatureDispatcher.m"; sourceTree = SOURCE_ROOT; };
 		7ECBD4202F29099D00C56F1C /* PopupMenuVC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PopupMenuVC.h; sourceTree = "<group>"; };
 		7ECBD4222F30EF6100C56F1C /* FoldSectionView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FoldSectionView.h; sourceTree = "<group>"; };
 		7ECBD4242F30EF6C00C56F1C /* FoldSectionView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FoldSectionView.m; sourceTree = "<group>"; };
@@ -1182,6 +1184,7 @@
 				7ECBD4332F3A614400C56F1C /* ZONSectionRenderer.m in Sources */,
 				7ECBD4352F3A614500C56F1C /* ZONMenuEventBridge.m in Sources */,
 				7ECBD4372F3A614600C56F1C /* ZONFeatureRegistry.m in Sources */,
+				7ECBD4392F3A614700C56F1C /* ZONFeatureDispatcher.m in Sources */,
 				7E6F45522E1A8C4E00D4A46E /* JDSBNotificationViewController.m in Sources */,
 				7E8A57FA2B8E4A9C00676FE2 /* SCLSwitchView.m in Sources */,
 				7E8A57D92B8E4A9C00676FE2 /* AFNetworkReachabilityManager.m in Sources */,
