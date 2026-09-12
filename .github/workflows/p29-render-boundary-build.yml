@@ -22,582 +22,64 @@ jobs:
           ref: work/zonoemenu-v1-p29-render-boundary
           fetch-depth: 0
 
-      - name: Split render helpers into translation units
+      - name: Register p29 render sources in Xcode target
         run: |
           set -euxo pipefail
+          test "$(tr -d '[:space:]' < VERSION)" = 'v1_p29'
           python3 - <<'PY'
           from pathlib import Path
-
-          version = Path('VERSION')
-          if version.read_text() != 'v1_p28\n':
-              raise SystemExit(f'unexpected VERSION: {version.read_text()!r}')
-          version.write_text('v1_p29\n')
-
-          headers = {
-          'testmod/ZONCore/ZONMenuPanelController.h': r'''#ifndef ZONMenuPanelController_h
-#define ZONMenuPanelController_h
-
-#import <UIKit/UIKit.h>
-
-NS_ASSUME_NONNULL_BEGIN
-
-typedef void (^ZONMenuPanelCompletionBlock)(void);
-
-UIView *ZONCreateMenuPanel(UIView *hostView,
-                           UIScrollView * __strong _Nullable * _Nullable outScrollView);
-void ZONLayoutVisibleMenuPanel(UIView *hostView, UIView *panel, UIScrollView *scroll);
-void ZONShowMenuPanel(UIView *hostView, UIView *panel);
-void ZONHideMenuPanel(UIView *hostView,
-                      UIView *panel,
-                      ZONMenuPanelCompletionBlock _Nullable completion);
-BOOL ZONMenuPanelContainsTouch(UIView *hostView, UIView *panel, UITouch *touch);
-
-NS_ASSUME_NONNULL_END
-
-#endif /* ZONMenuPanelController_h */
-''',
-          'testmod/ZONCore/ZONMenuChromeRenderer.h': r'''#ifndef ZONMenuChromeRenderer_h
-#define ZONMenuChromeRenderer_h
-
-#import <UIKit/UIKit.h>
-
-@class FoldSectionView;
-
-NS_ASSUME_NONNULL_BEGIN
-
-CGFloat ZONRenderMenuHeader(UIView *panel, UIScrollView *scroll);
-void ZONRelayoutMenuSections(UIView *panel,
-                             UIScrollView *scroll,
-                             NSArray<FoldSectionView *> *sections);
-
-NS_ASSUME_NONNULL_END
-
-#endif /* ZONMenuChromeRenderer_h */
-''',
-          'testmod/ZONCore/ZONFeatureRenderer.h': r'''#ifndef ZONFeatureRenderer_h
-#define ZONFeatureRenderer_h
-
-#import <UIKit/UIKit.h>
-
-NS_ASSUME_NONNULL_BEGIN
-
-void ZONRenderCardFeatures(NSArray<NSDictionary<NSString *, id> *> *features,
-                           UIView *contentView,
-                           CGFloat sectionWidth,
-                           id target,
-                           SEL action);
-void ZONRenderGridFeatures(NSArray<NSDictionary<NSString *, id> *> *features,
-                           UIView *contentView,
-                           CGFloat y,
-                           id target,
-                           SEL action);
-UIView *ZONRenderSwitchRow(NSDictionary<NSString *, id> *feature,
-                           CGFloat y,
-                           CGFloat panelWidth,
-                           id target,
-                           SEL action);
-UIView *ZONRenderAdSpeedRow(NSDictionary<NSString *, id> *feature,
-                            CGFloat y,
-                            CGFloat panelWidth,
-                            id target,
-                            SEL switchAction,
-                            SEL sliderAction);
-void ZONRenderRuntimeFeatures(NSArray<NSDictionary<NSString *, id> *> *features,
-                              UIView *contentView,
-                              CGFloat panelWidth,
-                              id target,
-                              SEL switchAction,
-                              SEL adSwitchAction,
-                              SEL adSliderAction);
-
-NS_ASSUME_NONNULL_END
-
-#endif /* ZONFeatureRenderer_h */
-''',
-          'testmod/ZONCore/ZONSectionRenderer.h': r'''#ifndef ZONSectionRenderer_h
-#define ZONSectionRenderer_h
-
-#import <UIKit/UIKit.h>
-
-@class FoldSectionView;
-
-typedef void (^ZONSectionRelayoutBlock)(void);
-
-NS_ASSUME_NONNULL_BEGIN
-
-NSArray<FoldSectionView *> *ZONRenderRegisteredSections(UIScrollView *scrollView,
-                                                         CGFloat panelWidth,
-                                                         id target,
-                                                         SEL cardAction,
-                                                         SEL gridAction,
-                                                         SEL switchAction,
-                                                         SEL adSwitchAction,
-                                                         SEL adSliderAction,
-                                                         ZONSectionRelayoutBlock relayout);
-
-NS_ASSUME_NONNULL_END
-
-#endif /* ZONSectionRenderer_h */
-''',
-          }
-
-          implementations = {
-          'testmod/ZONCore/ZONMenuPanelController.m': r'''#import "ZONMenuPanelController.h"
-
-UIView *ZONCreateMenuPanel(UIView *hostView, UIScrollView * __strong _Nullable * _Nullable outScrollView)
-{
-    CGFloat screenW = hostView.bounds.size.width;
-    CGFloat screenH = hostView.bounds.size.height;
-    CGFloat panelHeight = screenH * 0.85;
-
-    UIView *panel = [[UIView alloc] initWithFrame:CGRectMake(20, screenH, screenW - 40, panelHeight)];
-    panel.backgroundColor = [UIColor colorWithWhite:0.96 alpha:1];
-    panel.layer.cornerRadius = 25;
-    panel.clipsToBounds = YES;
-    [hostView addSubview:panel];
-
-    UIScrollView *scroll = [[UIScrollView alloc] initWithFrame:panel.bounds];
-    scroll.showsVerticalScrollIndicator = NO;
-    [panel addSubview:scroll];
-
-    if (outScrollView) *outScrollView = scroll;
-    return panel;
-}
-
-void ZONLayoutVisibleMenuPanel(UIView *hostView, UIView *panel, UIScrollView *scroll)
-{
-    CGFloat screenW = hostView.bounds.size.width;
-    CGFloat screenH = hostView.bounds.size.height;
-    CGFloat panelHeight = screenH * 0.85;
-
-    panel.frame = CGRectMake(20, screenH - panelHeight - 20, screenW - 40, panelHeight);
-    scroll.frame = panel.bounds;
-}
-
-void ZONShowMenuPanel(UIView *hostView, UIView *panel)
-{
-    CGFloat screenH = hostView.bounds.size.height;
-    [UIView animateWithDuration:0.25 animations:^{
-        CGRect frame = panel.frame;
-        frame.origin.y = screenH - frame.size.height - 20;
-        panel.frame = frame;
-    }];
-}
-
-void ZONHideMenuPanel(UIView *hostView,
-                      UIView *panel,
-                      ZONMenuPanelCompletionBlock _Nullable completion)
-{
-    CGFloat screenH = hostView.bounds.size.height;
-    [UIView animateWithDuration:0.25 animations:^{
-        CGRect frame = panel.frame;
-        frame.origin.y = screenH;
-        panel.frame = frame;
-    } completion:^(BOOL finished) {
-        (void)finished;
-        if (completion) completion();
-    }];
-}
-
-BOOL ZONMenuPanelContainsTouch(UIView *hostView, UIView *panel, UITouch *touch)
-{
-    CGPoint point = [touch locationInView:hostView];
-    return CGRectContainsPoint(panel.frame, point);
-}
-''',
-          'testmod/ZONCore/ZONMenuChromeRenderer.m': r'''#import "ZONMenuChromeRenderer.h"
-#import "../菜单/FoldSectionView.h"
-
-CGFloat ZONRenderMenuHeader(UIView *panel, UIScrollView *scroll)
-{
-    NSUserDefaults *ud = NSUserDefaults.standardUserDefaults;
-    NSString *jsm = [ud objectForKey:@"解锁码到期时间"];
-    NSString *yjy = [ud objectForKey:@"到期时间"];
-    NSString *fwqbbh = [ud objectForKey:@"服务器版本号"];
-    NSString *yymc = [ud objectForKey:@"应用名称"];
-    NSString *appVersion = NSBundle.mainBundle.infoDictionary[@"CFBundleShortVersionString"];
-
-    if (!yymc) yymc = @"未知应用";
-    if (!fwqbbh) fwqbbh = @"未知版本";
-    if (!appVersion) appVersion = @"0.0.0";
-    if (!jsm || jsm.length == 0) jsm = yjy;
-
-    CGFloat width = panel.bounds.size.width;
-    CGFloat left = 20;
-    CGFloat top = 10;
-    CGFloat maxW = width - 40;
-
-    UILabel *title = [[UILabel alloc] initWithFrame:CGRectZero];
-    title.text = [NSString stringWithFormat:@"zonoe源++ %@ 解锁码到期：%@", yymc, jsm];
-    title.font = [UIFont systemFontOfSize:18 weight:UIFontWeightBold];
-    title.textColor = UIColor.blackColor;
-    title.numberOfLines = 0;
-    [panel addSubview:title];
-    CGSize s1 = [title sizeThatFits:CGSizeMake(maxW, CGFLOAT_MAX)];
-    title.frame = CGRectMake(left, top, maxW, s1.height);
-    CGFloat curY = top + s1.height + 6;
-
-    UILabel *line2 = [[UILabel alloc] initWithFrame:CGRectZero];
-    line2.text = [NSString stringWithFormat:@"当前版本：%@", appVersion];
-    line2.font = [UIFont systemFontOfSize:14];
-    line2.textColor = UIColor.grayColor;
-    [panel addSubview:line2];
-    CGSize s2 = [line2 sizeThatFits:CGSizeMake(maxW, CGFLOAT_MAX)];
-    line2.frame = CGRectMake(left, curY, maxW, s2.height);
-    curY += s2.height + 2;
-
-    UILabel *line3 = [[UILabel alloc] initWithFrame:CGRectZero];
-    line3.text = [NSString stringWithFormat:@"App Store版本：%@", fwqbbh];
-    line3.font = [UIFont systemFontOfSize:14];
-    line3.textColor = UIColor.grayColor;
-    [panel addSubview:line3];
-    CGSize s3 = [line3 sizeThatFits:CGSizeMake(maxW, CGFLOAT_MAX)];
-    line3.frame = CGRectMake(left, curY, maxW, s3.height);
-    curY += s3.height + 12;
-
-    scroll.frame = CGRectMake(0, curY, width, panel.bounds.size.height - curY);
-    [panel addSubview:scroll];
-    return curY;
-}
-
-void ZONRelayoutMenuSections(UIView *panel,
-                             UIScrollView *scroll,
-                             NSArray<FoldSectionView *> *sections)
-{
-    CGFloat sectionW = panel.bounds.size.width - 30;
-    CGFloat y = 110;
-    for (FoldSectionView *sec in sections) {
-        CGFloat h = [sec layoutAndGetHeight];
-        sec.frame = CGRectMake(15, y, sectionW, h);
-        y += h + 15;
-    }
-    scroll.contentSize = CGSizeMake(panel.bounds.size.width, y + 20);
-}
-''',
-          'testmod/ZONCore/ZONFeatureRenderer.m': r'''#import "ZONFeatureRenderer.h"
-#import "ZONFeatureRegistry.h"
-
-static NSString * const ZONRendererNNGGEnableKey = @"NNGGNNGG";
-static NSString * const ZONRendererAADDEnableKey = @"AADDAADD";
-static NSString * const ZONRendererADSpeedKey = @"AADDssppeedd";
-
-void ZONRenderCardFeatures(NSArray<NSDictionary<NSString *, id> *> *features,
-                           UIView *contentView,
-                           CGFloat sectionWidth,
-                           id target,
-                           SEL action)
-{
-    CGFloat gap = 65;
-    for (NSInteger i = 0; i < features.count; i++) {
-        NSDictionary<NSString *, id> *feature = features[i];
-        UIView *card = [[UIView alloc] initWithFrame:CGRectMake(15, 10 + i * gap, sectionWidth - 30, 55)];
-        card.backgroundColor = UIColor.whiteColor;
-        card.layer.cornerRadius = 16;
-        [contentView addSubview:card];
-
-        UILabel *lab = [[UILabel alloc] initWithFrame:CGRectMake(15, 0, 160, 55)];
-        lab.text = feature[ZONFeatureTitleKey];
-        lab.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
-        [card addSubview:lab];
-
-        UIButton *btn = [UIButton buttonWithType:UIButtonTypeSystem];
-        btn.frame = CGRectMake(card.bounds.size.width - 80, 12, 65, 32);
-        btn.backgroundColor = UIColor.systemBlueColor;
-        btn.layer.cornerRadius = 16;
-        [btn setTitle:@"打开" forState:UIControlStateNormal];
-        [btn setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];
-        btn.tag = [feature[ZONFeatureLegacyTagKey] integerValue];
-        [btn addTarget:target action:action forControlEvents:UIControlEventTouchUpInside];
-        [card addSubview:btn];
-    }
-}
-
-void ZONRenderGridFeatures(NSArray<NSDictionary<NSString *, id> *> *features,
-                           UIView *contentView,
-                           CGFloat y,
-                           id target,
-                           SEL action)
-{
-    CGFloat contentW = contentView.bounds.size.width;
-    CGFloat leftMargin = 15;
-    CGFloat spacingX = 15;
-    CGFloat spacingY = 15;
-    int colCount = 2;
-    CGFloat btnW = (contentW - leftMargin * 2 - spacingX) / colCount;
-    CGFloat btnH = 70;
-    NSArray<UIColor *> *colors = @[
-        UIColor.systemPurpleColor,
-        UIColor.systemOrangeColor,
-        UIColor.systemBlueColor,
-        UIColor.systemPinkColor
-    ];
-
-    for (NSInteger i = 0; i < features.count; i++) {
-        NSDictionary<NSString *, id> *feature = features[i];
-        int row = (int)i / 2;
-        int col = (int)i % 2;
-        CGFloat x = leftMargin + col * (btnW + spacingX);
-        CGFloat yy = y + row * (btnH + spacingY);
-
-        UIButton *btn = [[UIButton alloc] initWithFrame:CGRectMake(x, yy, btnW, btnH)];
-        btn.backgroundColor = colors[(NSUInteger)i % colors.count];
-        btn.layer.cornerRadius = 18;
-        btn.tag = [feature[ZONFeatureLegacyTagKey] integerValue];
-        [btn setTitle:feature[ZONFeatureTitleKey] forState:UIControlStateNormal];
-        [btn setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];
-        btn.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightSemibold];
-        [btn addTarget:target action:action forControlEvents:UIControlEventTouchUpInside];
-        [contentView addSubview:btn];
-    }
-}
-
-UIView *ZONRenderSwitchRow(NSDictionary<NSString *, id> *feature,
-                           CGFloat y,
-                           CGFloat panelWidth,
-                           id target,
-                           SEL action)
-{
-    CGFloat w = panelWidth - 30;
-    UIView *row = [[UIView alloc] initWithFrame:CGRectMake(15, y, w, 60)];
-    row.backgroundColor = UIColor.whiteColor;
-    row.layer.cornerRadius = 18;
-
-    UILabel *lab = [[UILabel alloc] initWithFrame:CGRectMake(15, 0, 220, 60)];
-    lab.text = feature[ZONFeatureTitleKey];
-    lab.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
-    [row addSubview:lab];
-
-    NSInteger tag = [feature[ZONFeatureLegacyTagKey] integerValue];
-    UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectZero];
-    sw.tag = tag;
-    NSString *identifier = feature[ZONFeatureIdentifierKey];
-    if ([identifier isEqualToString:@"runtime.iap-noads"]) {
-        sw.on = [NSUserDefaults.standardUserDefaults boolForKey:ZONRendererNNGGEnableKey];
-    } else if ([identifier isEqualToString:@"runtime.ad-speed"]) {
-        sw.on = [NSUserDefaults.standardUserDefaults boolForKey:ZONRendererAADDEnableKey];
-    }
-    sw.center = CGPointMake(w - 50, 30);
-    [sw addTarget:target action:action forControlEvents:UIControlEventValueChanged];
-    [row addSubview:sw];
-    return row;
-}
-
-UIView *ZONRenderAdSpeedRow(NSDictionary<NSString *, id> *feature,
-                            CGFloat y,
-                            CGFloat panelWidth,
-                            id target,
-                            SEL switchAction,
-                            SEL sliderAction)
-{
-    CGFloat w = panelWidth - 30;
-    UIView *box = [[UIView alloc] initWithFrame:CGRectMake(15, y, w, 110)];
-    box.backgroundColor = UIColor.whiteColor;
-    box.layer.cornerRadius = 18;
-
-    UILabel *titleLab = [[UILabel alloc] initWithFrame:CGRectMake(15, 0, 200, 55)];
-    titleLab.text = feature[ZONFeatureTitleKey];
-    titleLab.font = [UIFont systemFontOfSize:16 weight:UIFontWeightMedium];
-    [box addSubview:titleLab];
-
-    UISwitch *sw = [[UISwitch alloc] initWithFrame:CGRectZero];
-    sw.tag = [feature[ZONFeatureLegacyTagKey] integerValue];
-    BOOL enabled = [NSUserDefaults.standardUserDefaults boolForKey:ZONRendererAADDEnableKey];
-    sw.on = enabled;
-    sw.center = CGPointMake(w - 50, 27);
-    [sw addTarget:target action:switchAction forControlEvents:UIControlEventValueChanged];
-    [box addSubview:sw];
-
-    UISlider *slider = [[UISlider alloc] initWithFrame:CGRectMake(15, 65, w - 110, 30)];
-    slider.minimumValue = 1;
-    slider.maximumValue = 100;
-    float savedValue = [NSUserDefaults.standardUserDefaults floatForKey:ZONRendererADSpeedKey];
-    if (savedValue <= 0) savedValue = 50;
-    slider.value = savedValue;
-    slider.enabled = enabled;
-    [slider addTarget:target action:sliderAction forControlEvents:UIControlEventValueChanged];
-    slider.tag = 500;
-    [box addSubview:slider];
-
-    UILabel *valueLab = [[UILabel alloc] initWithFrame:CGRectMake(w - 80, 55, 70, 50)];
-    valueLab.textAlignment = NSTextAlignmentCenter;
-    valueLab.font = [UIFont systemFontOfSize:13];
-    valueLab.textColor = UIColor.grayColor;
-    valueLab.text = [NSString stringWithFormat:@"%.0f", slider.value];
-    valueLab.tag = 600;
-    [box addSubview:valueLab];
-    return box;
-}
-
-void ZONRenderRuntimeFeatures(NSArray<NSDictionary<NSString *, id> *> *features,
-                              UIView *contentView,
-                              CGFloat panelWidth,
-                              id target,
-                              SEL switchAction,
-                              SEL adSwitchAction,
-                              SEL adSliderAction)
-{
-    for (NSDictionary<NSString *, id> *feature in features) {
-        NSString *identifier = feature[ZONFeatureIdentifierKey];
-        if ([identifier isEqualToString:@"runtime.iap-noads"]) {
-            [contentView addSubview:ZONRenderSwitchRow(feature, 10, panelWidth, target, switchAction)];
-        } else if ([identifier isEqualToString:@"runtime.ad-speed"]) {
-            [contentView addSubview:ZONRenderAdSpeedRow(feature, 80, panelWidth, target, adSwitchAction, adSliderAction)];
-        } else if ([identifier isEqualToString:@"runtime.placeholder-203"]) {
-            [contentView addSubview:ZONRenderSwitchRow(feature, 200, panelWidth, target, switchAction)];
-        }
-    }
-}
-''',
-          'testmod/ZONCore/ZONSectionRenderer.m': r'''#import "ZONSectionRenderer.h"
-#import "ZONFeatureRegistry.h"
-#import "ZONFeatureRenderer.h"
-#import "../菜单/FoldSectionView.h"
-
-NSArray<FoldSectionView *> *ZONRenderRegisteredSections(UIScrollView *scrollView,
-                                                         CGFloat panelWidth,
-                                                         id target,
-                                                         SEL cardAction,
-                                                         SEL gridAction,
-                                                         SEL switchAction,
-                                                         SEL adSwitchAction,
-                                                         SEL adSliderAction,
-                                                         ZONSectionRelayoutBlock relayout)
-{
-    NSMutableArray<FoldSectionView *> *renderedSections = [NSMutableArray array];
-    CGFloat y = 0;
-    CGFloat sectionW = panelWidth - 30;
-
-    for (NSDictionary<NSString *, id> *sectionMeta in ZONBuiltInSectionMetadata()) {
-        NSString *sectionTitle = sectionMeta[ZONSectionTitleKey];
-        NSString *detail = sectionMeta[ZONSectionDetailKey];
-        NSString *stateKey = sectionMeta[ZONSectionStateKey];
-        NSString *renderer = sectionMeta[ZONSectionRendererKey];
-        NSArray<NSDictionary<NSString *, id> *> *features = ZONFeatureMetadataForSection(sectionTitle);
-
-        FoldSectionView *section = [[FoldSectionView alloc] initWithTitle:sectionTitle
-                                                                   detail:detail
-                                                                   status:[NSString stringWithFormat:@"%lu项", (unsigned long)features.count]];
-        section.stateKey = stateKey;
-        section.frame = CGRectMake(15, y, sectionW, 70);
-        [scrollView addSubview:section];
-        [renderedSections addObject:section];
-
-        if ([renderer isEqualToString:@"cards"]) {
-            ZONRenderCardFeatures(features, section.contentView, sectionW, target, cardAction);
-        } else if ([renderer isEqualToString:@"grid"]) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                ZONRenderGridFeatures(features, section.contentView, 10, target, gridAction);
-                if (relayout) relayout();
-            });
-        } else if ([renderer isEqualToString:@"runtime"]) {
-            ZONRenderRuntimeFeatures(features,
-                                     section.contentView,
-                                     panelWidth,
-                                     target,
-                                     switchAction,
-                                     adSwitchAction,
-                                     adSliderAction);
-        }
-
-        section.onToggle = ^(BOOL expanded){
-            (void)expanded;
-            [UIView animateWithDuration:0.25 animations:^{
-                if (relayout) relayout();
-            }];
-        };
-
-        CGFloat h = [section layoutAndGetHeight];
-        section.frame = CGRectMake(15, y, sectionW, h);
-        y += h + 15;
-    }
-
-    scrollView.contentSize = CGSizeMake(panelWidth, y);
-    return [renderedSections copy];
-}
-''',
-          }
-
-          for path in headers:
-              old = Path(path).read_text()
-              if 'static inline' not in old:
-                  raise SystemExit(f'{path}: expected header-only implementation baseline')
-          for path, content in {**headers, **implementations}.items():
-              Path(path).write_text(content)
-
           pbx = Path('testmod.xcodeproj/project.pbxproj')
           text = pbx.read_text()
           build_anchor = '\t\t7ECBD42B2F3A614000C56F1C /* ZONMenuCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD42A2F3A614000C56F1C /* ZONMenuCoordinator.m */; };\n'
           ref_anchor = '\t\t7ECBD42A2F3A614000C56F1C /* ZONMenuCoordinator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONMenuCoordinator.m"; sourceTree = SOURCE_ROOT; };\n'
           source_anchor = '\t\t\t\t7ECBD42B2F3A614000C56F1C /* ZONMenuCoordinator.m in Sources */,\n'
-
-          build_entries = ''.join([
-              '\t\t7ECBD42D2F3A614100C56F1C /* ZONMenuPanelController.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD42C2F3A614100C56F1C /* ZONMenuPanelController.m */; };\n',
-              '\t\t7ECBD42F2F3A614200C56F1C /* ZONMenuChromeRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD42E2F3A614200C56F1C /* ZONMenuChromeRenderer.m */; };\n',
-              '\t\t7ECBD4312F3A614300C56F1C /* ZONFeatureRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4302F3A614300C56F1C /* ZONFeatureRenderer.m */; };\n',
-              '\t\t7ECBD4332F3A614400C56F1C /* ZONSectionRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4322F3A614400C56F1C /* ZONSectionRenderer.m */; };\n',
-          ])
-          ref_entries = ''.join([
-              '\t\t7ECBD42C2F3A614100C56F1C /* ZONMenuPanelController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONMenuPanelController.m"; sourceTree = SOURCE_ROOT; };\n',
-              '\t\t7ECBD42E2F3A614200C56F1C /* ZONMenuChromeRenderer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONMenuChromeRenderer.m"; sourceTree = SOURCE_ROOT; };\n',
-              '\t\t7ECBD4302F3A614300C56F1C /* ZONFeatureRenderer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONFeatureRenderer.m"; sourceTree = SOURCE_ROOT; };\n',
-              '\t\t7ECBD4322F3A614400C56F1C /* ZONSectionRenderer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONSectionRenderer.m"; sourceTree = SOURCE_ROOT; };\n',
-          ])
-          source_entries = ''.join([
-              '\t\t\t\t7ECBD42D2F3A614100C56F1C /* ZONMenuPanelController.m in Sources */,\n',
-              '\t\t\t\t7ECBD42F2F3A614200C56F1C /* ZONMenuChromeRenderer.m in Sources */,\n',
-              '\t\t\t\t7ECBD4312F3A614300C56F1C /* ZONFeatureRenderer.m in Sources */,\n',
-              '\t\t\t\t7ECBD4332F3A614400C56F1C /* ZONSectionRenderer.m in Sources */,\n',
-          ])
-
-          for label, anchor in [('build anchor', build_anchor), ('ref anchor', ref_anchor), ('sources anchor', source_anchor)]:
+          build_entries = (
+              '\t\t7ECBD42D2F3A614100C56F1C /* ZONMenuPanelController.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD42C2F3A614100C56F1C /* ZONMenuPanelController.m */; };\n'
+              '\t\t7ECBD42F2F3A614200C56F1C /* ZONMenuChromeRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD42E2F3A614200C56F1C /* ZONMenuChromeRenderer.m */; };\n'
+              '\t\t7ECBD4312F3A614300C56F1C /* ZONFeatureRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4302F3A614300C56F1C /* ZONFeatureRenderer.m */; };\n'
+              '\t\t7ECBD4332F3A614400C56F1C /* ZONSectionRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4322F3A614400C56F1C /* ZONSectionRenderer.m */; };\n'
+          )
+          ref_entries = (
+              '\t\t7ECBD42C2F3A614100C56F1C /* ZONMenuPanelController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONMenuPanelController.m"; sourceTree = SOURCE_ROOT; };\n'
+              '\t\t7ECBD42E2F3A614200C56F1C /* ZONMenuChromeRenderer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONMenuChromeRenderer.m"; sourceTree = SOURCE_ROOT; };\n'
+              '\t\t7ECBD4302F3A614300C56F1C /* ZONFeatureRenderer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONFeatureRenderer.m"; sourceTree = SOURCE_ROOT; };\n'
+              '\t\t7ECBD4322F3A614400C56F1C /* ZONSectionRenderer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONSectionRenderer.m"; sourceTree = SOURCE_ROOT; };\n'
+          )
+          source_entries = (
+              '\t\t\t\t7ECBD42D2F3A614100C56F1C /* ZONMenuPanelController.m in Sources */,\n'
+              '\t\t\t\t7ECBD42F2F3A614200C56F1C /* ZONMenuChromeRenderer.m in Sources */,\n'
+              '\t\t\t\t7ECBD4312F3A614300C56F1C /* ZONFeatureRenderer.m in Sources */,\n'
+              '\t\t\t\t7ECBD4332F3A614400C56F1C /* ZONSectionRenderer.m in Sources */,\n'
+          )
+          for label, anchor in [('build', build_anchor), ('ref', ref_anchor), ('source', source_anchor)]:
               if text.count(anchor) != 1:
-                  raise SystemExit(f'{label}: expected exactly one anchor, found {text.count(anchor)}')
-          for pbx_id in ['7ECBD42C2F3A614100C56F1C','7ECBD42D2F3A614100C56F1C','7ECBD42E2F3A614200C56F1C','7ECBD42F2F3A614200C56F1C','7ECBD4302F3A614300C56F1C','7ECBD4312F3A614300C56F1C','7ECBD4322F3A614400C56F1C','7ECBD4332F3A614400C56F1C']:
-              if pbx_id in text:
-                  raise SystemExit(f'PBX ID already present: {pbx_id}')
-
+                  raise SystemExit(f'{label} anchor count={text.count(anchor)}')
+          ids = ['7ECBD42C2F3A614100C56F1C','7ECBD42D2F3A614100C56F1C','7ECBD42E2F3A614200C56F1C','7ECBD42F2F3A614200C56F1C','7ECBD4302F3A614300C56F1C','7ECBD4312F3A614300C56F1C','7ECBD4322F3A614400C56F1C','7ECBD4332F3A614400C56F1C']
+          for value in ids:
+              if value in text:
+                  raise SystemExit(f'PBX ID already present: {value}')
           text = text.replace(build_anchor, build_anchor + build_entries, 1)
           text = text.replace(ref_anchor, ref_anchor + ref_entries, 1)
           text = text.replace(source_anchor, source_anchor + source_entries, 1)
           pbx.write_text(text)
-
-          for path in headers:
-              if 'static inline' in Path(path).read_text():
-                  raise SystemExit(f'{path}: static inline implementation still present')
+          final = pbx.read_text()
           for name in ['ZONMenuPanelController','ZONMenuChromeRenderer','ZONFeatureRenderer','ZONSectionRenderer']:
-              final = pbx.read_text()
               if final.count(f'{name}.m in Sources') != 2:
-                  raise SystemExit(f'{name}: expected build-file + sources entries')
-
-          expected = {
-              'VERSION',
-              'testmod.xcodeproj/project.pbxproj',
-              'testmod/ZONCore/ZONMenuPanelController.h',
-              'testmod/ZONCore/ZONMenuPanelController.m',
-              'testmod/ZONCore/ZONMenuChromeRenderer.h',
-              'testmod/ZONCore/ZONMenuChromeRenderer.m',
-              'testmod/ZONCore/ZONFeatureRenderer.h',
-              'testmod/ZONCore/ZONFeatureRenderer.m',
-              'testmod/ZONCore/ZONSectionRenderer.h',
-              'testmod/ZONCore/ZONSectionRenderer.m',
-          }
-          import subprocess
-          changed = set(subprocess.check_output(['git','diff','--name-only'], text=True).splitlines())
-          if changed != expected:
-              raise SystemExit(f'unexpected diff set: {sorted(changed)}')
+                  raise SystemExit(f'{name}: expected 2 Sources mentions')
           PY
-
           git diff --check
-          git diff --stat
+          test "$(git diff --name-only | wc -l | tr -d ' ')" = '1'
+          test "$(git diff --name-only)" = 'testmod.xcodeproj/project.pbxproj'
+          git diff -- testmod.xcodeproj/project.pbxproj
 
-      - name: Commit p29 source
+      - name: Commit p29 PBX integration
         id: commit
         run: |
           set -euxo pipefail
           git config user.name 'a7987083'
           git config user.email '85878547+a7987083@users.noreply.github.com'
-          git add VERSION testmod.xcodeproj/project.pbxproj testmod/ZONCore/ZONMenuPanelController.h testmod/ZONCore/ZONMenuPanelController.m testmod/ZONCore/ZONMenuChromeRenderer.h testmod/ZONCore/ZONMenuChromeRenderer.m testmod/ZONCore/ZONFeatureRenderer.h testmod/ZONCore/ZONFeatureRenderer.m testmod/ZONCore/ZONSectionRenderer.h testmod/ZONCore/ZONSectionRenderer.m
-          git commit -m 'refactor: split render helpers for v1_p29'
+          git add testmod.xcodeproj/project.pbxproj
+          git commit -m 'build: register v1_p29 render sources'
           SOURCE_SHA="$(git rev-parse HEAD)"
           git push origin HEAD:refs/heads/work/zonoemenu-v1-p29-render-boundary
           echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
