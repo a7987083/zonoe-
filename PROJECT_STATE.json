@@ -5,12 +5,12 @@
   "production_branch": "dev/zonoemenu-production-v1",
   "current_work_branch": "work/zonoemenu-v1-p28-build-integration",
   "current_version": "v1_p28",
-  "current_phase": "zoncore_build_integration",
+  "current_phase": "p28_closed_device_verified",
   "p26_source_commit": "b1f3eb25b1ea170c3dddadf746fe07ca9654ea80",
   "p27_source_commit": "314dace8ebb8cf3b1ffaeec19bf0a2cf7fe7c311",
   "p28_source_commit": "350a46deb089a05fc599e641bd1eeb419c36c0d5",
-  "last_device_verified_code_commit": "314dace8ebb8cf3b1ffaeec19bf0a2cf7fe7c311",
-  "last_device_verified_version": "v1_p27",
+  "last_device_verified_code_commit": "350a46deb089a05fc599e641bd1eeb419c36c0d5",
+  "last_device_verified_version": "v1_p28",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
   "runtime_priority": ["ipa_injection", "jailbreak_injection"],
@@ -56,12 +56,14 @@
       }
     }
   },
-  "p28_runtime_status": "pending_device_verification",
+  "p28_runtime_status": "device_verified_success",
+  "p28_regression_status": "passed",
+  "p28_closure_status": "source_static_ci_device_complete",
   "keyboard_presentation_issue": {
     "status": "closed_not_project_defect",
     "code_change_required": false
   },
-  "protected_p28_scope": [
+  "protected_scope": [
     "authorization",
     "udid",
     "vip_cloud_save",
@@ -74,5 +76,5 @@
     "ui_style_dimensions_colors_text_spacing",
     "keyboard_presentation_logic"
   ],
-  "next_task": "device regression test v1_p28 A_customer against device-verified v1_p27"
+  "next_task": "define v1_p29 from device-verified v1_p28 baseline; audit remaining structural maintenance candidates before modifying source"
 }
