@@ -344,7 +344,10 @@ jobs:
           cp "$SOURCE" "$TARGET"
           file "$TARGET"
           lipo -info "$TARGET"
-          lipo -verify_arch arm64 arm64e "$TARGET"
+          ACTUAL_ARCHS="$(lipo -archs "$TARGET")"
+          printf 'Mach-O architectures: %s\n' "$ACTUAL_ARCHS"
+          printf '%s\n' "$ACTUAL_ARCHS" | tr ' ' '\n' | grep -Fx arm64
+          printf '%s\n' "$ACTUAL_ARCHS" | tr ' ' '\n' | grep -Fx arm64e
           otool -L "$TARGET"
           shasum -a 256 "$TARGET" | tee "build/${{ matrix.variant }}.sha256"
 
