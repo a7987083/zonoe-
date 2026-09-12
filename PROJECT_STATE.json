@@ -8,8 +8,33 @@
   "current_phase": "eventbridge_boundary_cleanup",
   "last_device_verified_code_commit": "350a46deb089a05fc599e641bd1eeb419c36c0d5",
   "last_device_verified_version": "v1_p28",
+  "device_test_policy_document": "DEVICE_TEST_MATRIX.md",
+  "device_test_policy": {
+    "required_for_every_version": true,
+    "ci_success_is_not_device_verification": true,
+    "promotion_requires_explicit_user_pass": true,
+    "required_sections": [
+      "source_commit",
+      "changed_boundary",
+      "common_smoke_tests",
+      "phase_specific_tests",
+      "relevant_protected_path_smoke_tests",
+      "destructive_test_boundary",
+      "final_status"
+    ]
+  },
   "p29_source_commit": "506a22c01a2b46dbea0d4299418fcb702b6cb80e",
   "p29_runtime_status": "pending_device_verification",
+  "p29_device_test_required": [
+    "common_menu_smoke_test",
+    "panel_geometry_and_open_close_animation",
+    "header_rendering",
+    "section_order_content_and_visual_regression",
+    "fold_unfold_relayout_and_content_offset",
+    "card_and_grid_action_controls",
+    "switch_and_ad_speed_control_rendering",
+    "layout_refresh_geometry"
+  ],
   "p30_source_split_commit": "760f03f511005f639f9a7a1de8aaad6f02f85c9a",
   "p30_source_commit": "8e88b63611d19af6c42d9172c0f5741b34f51809",
   "minimum_ios": "12.0",
@@ -61,7 +86,36 @@
       }
     }
   },
+  "p30_device_test_required": {
+    "inherits_full_p29_checklist": true,
+    "common": [
+      "app_launch_and_floating_entry",
+      "menu_open_close",
+      "outside_tap_close",
+      "section_fold_unfold_and_relayout",
+      "card_grid_switch_ad_controls",
+      "no_freeze_or_crash"
+    ],
+    "eventbridge_specific": [
+      "card_action_route",
+      "grid_action_route",
+      "normal_switch_dispatch",
+      "ad_switch_slider_enable_state",
+      "ad_slider_label_update",
+      "ad_speed_UserDefaults_persistence",
+      "menu_reopen_runtime_sync",
+      "ImgTool_NeiGou_sync",
+      "ImgTool_ADSpeed_sync",
+      "ImgTool_ADBiansu_sync",
+      "remote_download_route",
+      "cloud_save_route",
+      "local_files_route",
+      "backup_restore_route",
+      "clear_game_data_confirmation_only",
+      "clear_authorization_confirmation_only"
+    ]
+  },
   "p30_runtime_status": "pending_device_verification",
   "p30_regression_status": "pending",
-  "next_task": "device regression test v1_p30 A_customer covering both p29 render boundaries and p30 EventBridge against device-verified v1_p28"
+  "next_task": "device regression test v1_p30 A_customer using DEVICE_TEST_MATRIX.md; passing it covers both p29 and p30"
 }
