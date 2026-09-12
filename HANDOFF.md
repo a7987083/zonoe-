@@ -9,16 +9,23 @@
 - Stable baseline commit: `68329ee5844f3899d369a778073e5586d8bc4e1f`
 - User source-completion commit on main: `89507e1cd2f7c27184931e875adca02b043cfb36`
 - p26 source commit: `b1f3eb25b1ea170c3dddadf746fe07ca9654ea80`
-- p27 source commit / current device-verified baseline: `314dace8ebb8cf3b1ffaeec19bf0a2cf7fe7c311`
-- p28 source commit: `350a46deb089a05fc599e641bd1eeb419c36c0d5`
+- p27 source commit: `314dace8ebb8cf3b1ffaeec19bf0a2cf7fe7c311`
+- p28 source commit / current device-verified baseline: `350a46deb089a05fc599e641bd1eeb419c36c0d5`
 
-## Device-verified baseline — v1_p27
-The user completed p27 device/runtime regression and reported no issues. p27 is now the current device-verified structural/runtime baseline.
+## Device-verified baseline — v1_p28
+The user completed p28 device/runtime regression and reported no issues. p28 is now the current device-verified structural/runtime baseline.
 
-Verified scope includes launch, floating entry, menu open/close, section rendering/relayout, action/switch dispatch and protected business paths. The previously suspected keyboard/presentation issue remains closed as a test/user-side mistake; no code fix is required.
+Verified scope includes:
+- App launch and floating entry behavior.
+- Menu open/close and outside-tap close.
+- Section rendering/fold/relayout/layout refresh.
+- Existing card/grid/switch/ad switch/slider dispatch.
+- Authorization, UDID, VIP cloud save, clear-game-data and existing protected business behavior show no reported regression.
 
-## Current phase — v1_p28 ZONCore Build Integration
-p28 closes the remaining temporary build bridge introduced in p27. Runtime behavior and coordinator implementation are intentionally unchanged.
+The previously suspected keyboard/presentation issue remains closed as a test/user-side mistake; no code fix is required.
+
+## Closed phase — v1_p28 ZONCore Build Integration
+p28 closed the temporary compilation bridge introduced in p27 without changing coordinator runtime logic.
 
 Source commit `350a46deb089a05fc599e641bd1eeb419c36c0d5` changes exactly three files:
 1. `VERSION`: `v1_p27` -> `v1_p28`.
@@ -27,8 +34,8 @@ Source commit `350a46deb089a05fc599e641bd1eeb419c36c0d5` changes exactly three f
 
 No method body in `ZONMenuCoordinator.m` changed in p28.
 
-## Protected scope for p28
-Do not change:
+## Protected scope
+Do not change without a separate verified task:
 - authorization / BS-PHP behavior
 - UDID
 - VIP cloud save
@@ -41,8 +48,8 @@ Do not change:
 - UI style/dimensions/colors/text/spacing
 - keyboard/presentation logic
 
-## v1_p28 isolated CI verification
-Validation was run from isolated branch `test/zonoemenu-v1-p28-build`; the temporary integration workflow is not part of the p28 work branch.
+## v1_p28 CI verification
+Validation ran from isolated branch `test/zonoemenu-v1-p28-build`; the temporary integration workflow is not part of the p28 work branch.
 
 - Workflow: `p28 Integrate and Build`
 - Run ID: `34657710034`
@@ -70,9 +77,9 @@ Validation was run from isolated branch `test/zonoemenu-v1-p28-build`; the tempo
 Both variants passed source-commit verification, compilation, linking, versioned dylib packaging, `file`, `lipo -info`, `otool -L`, SHA256 generation and artifact upload. No duplicate-symbol regression occurred.
 
 ## Runtime verification state
-- `v1_p27`: device/runtime verified; current baseline.
-- `v1_p28`: source/static/CI verified; device/runtime regression pending.
-- CI success alone does not promote the device baseline.
+- `v1_p27`: historical device-verified baseline.
+- `v1_p28`: device/runtime verified; current baseline.
+- p28 source/static/CI/device verification is fully closed.
 
 ## Current build relationship
 ```text
@@ -87,13 +94,4 @@ Xcode target Sources
 The p27 direct implementation import is removed. `ZONMenuCoordinator.m` is now an independent Objective-C translation unit owned by the target.
 
 ## Next task
-Device-regression-test `v1_p28` A_customer against device-verified `v1_p27`.
-
-Required checks:
-1. Launch / floating icon / tap / drag.
-2. Menu open/close and outside-tap close.
-3. Section render/fold/relayout/layout refresh.
-4. Card/grid/switch/ad switch/slider dispatch.
-5. Authorization, UDID, cloud save and clear-game-data show no regression.
-
-If all checks pass, promote source commit `350a46deb089a05fc599e641bd1eeb419c36c0d5` as the next device-verified baseline.
+No p29 source changes are started yet. Any p29 work should begin from device-verified source commit `350a46deb089a05fc599e641bd1eeb419c36c0d5` and first audit the remaining structural/maintenance candidates before modifying code.
