@@ -10,6 +10,26 @@
 - p29 source commit: `506a22c01a2b46dbea0d4299418fcb702b6cb80e` (device verification still pending)
 - p30 source commit: `8e88b63611d19af6c42d9172c0f5741b34f51809`
 
+## Device-validation policy
+`DEVICE_TEST_MATRIX.md` is now a required phase artifact. Every new version must define its real-device validation checklist before the A_customer build is handed out.
+
+Each version must record:
+- the source commit under test
+- the changed runtime/architecture boundary
+- common smoke tests
+- version-specific tests that directly exercise the changed path
+- relevant protected-path smoke tests
+- destructive operations that should stop at confirmation unless an explicit destructive test is intended
+- final device status: pending / passed / failed
+
+CI success alone does not promote a version to the device-verified baseline. Promotion requires the user to explicitly report the required real-device checklist as passed.
+
+Current required hardware scope:
+- `v1_p29`: Renderer/Panel rendering, fold/relayout, card/grid controls, switch/ad-speed rendering and geometry regression.
+- `v1_p30`: the full p29 checklist plus EventBridge action/toggle routing, ad switch/slider persistence, runtime sync and representative protected action routes.
+
+The authoritative detailed checklist is `DEVICE_TEST_MATRIX.md`.
+
 ## Current phase — v1_p30 EventBridge Boundary Cleanup
 p30 converts `ZONMenuEventBridge` from a header-only `static inline` implementation into a declaration-only header plus an independent Objective-C translation unit.
 
@@ -94,4 +114,4 @@ Xcode target Sources
 ```
 
 ## Next task
-Device-regression-test `v1_p30` A_customer. Focus on menu open/close, section fold/relayout, card/grid actions, switches, ad-speed slider/runtime synchronization, plus protected action paths. If it passes, p30 can become the new device-verified baseline and p29 is implicitly covered by the same test.
+Device-regression-test `v1_p30` A_customer using the checklist in `DEVICE_TEST_MATRIX.md`. If the full p29 + p30 checklist passes, p30 can become the new device-verified baseline and p29 is implicitly covered by the same test.
