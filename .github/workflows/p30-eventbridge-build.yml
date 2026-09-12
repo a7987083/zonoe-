@@ -1,0 +1,248 @@
+name: p30 EventBridge Boundary Build
+
+on:
+  push:
+    branches:
+      - test/zonoemenu-v1-p30-build
+    paths:
+      - '.github/workflows/p30-eventbridge-build.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    outputs:
+      source_sha: ${{ steps.commit.outputs.source_sha }}
+    steps:
+      - name: Checkout p30 work branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/zonoemenu-v1-p30-eventbridge-boundary
+          fetch-depth: 0
+
+      - name: Register EventBridge source in Xcode target
+        run: |
+          set -euxo pipefail
+          test "$(tr -d '[:space:]' < VERSION)" = 'v1_p30'
+          test -s testmod/ZONCore/ZONMenuEventBridge.m
+          ! grep -F 'static inline' testmod/ZONCore/ZONMenuEventBridge.h
+          python3 - <<'PY'
+          from pathlib import Path
+          pbx = Path('testmod.xcodeproj/project.pbxproj')
+          text = pbx.read_text()
+
+          build_anchor = '\t\t7ECBD4332F3A614400C56F1C /* ZONSectionRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4322F3A614400C56F1C /* ZONSectionRenderer.m */; };\n'
+          build_entry = '\t\t7ECBD4352F3A614500C56F1C /* ZONMenuEventBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4342F3A614500C56F1C /* ZONMenuEventBridge.m */; };\n'
+          ref_anchor = '\t\t7ECBD4322F3A614400C56F1C /* ZONSectionRenderer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONSectionRenderer.m"; sourceTree = SOURCE_ROOT; };\n'
+          ref_entry = '\t\t7ECBD4342F3A614500C56F1C /* ZONMenuEventBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONMenuEventBridge.m"; sourceTree = SOURCE_ROOT; };\n'
+          source_anchor = '\t\t\t\t7ECBD4332F3A614400C56F1C /* ZONSectionRenderer.m in Sources */,\n'
+          source_entry = '\t\t\t\t7ECBD4352F3A614500C56F1C /* ZONMenuEventBridge.m in Sources */,\n'
+
+          for label, anchor in [('build', build_anchor), ('ref', ref_anchor), ('source', source_anchor)]:
+              if text.count(anchor) != 1:
+                  raise SystemExit(f'{label} anchor count={text.count(anchor)}')
+          for value in ['7ECBD4342F3A614500C56F1C', '7ECBD4352F3A614500C56F1C']:
+              if value in text:
+                  raise SystemExit(f'PBX ID already present: {value}')
+
+          text = text.replace(build_anchor, build_anchor + build_entry, 1)
+          text = text.replace(ref_anchor, ref_anchor + ref_entry, 1)
+          text = text.replace(source_anchor, source_anchor + source_entry, 1)
+          pbx.write_text(text)
+
+          final = pbx.read_text()
+          if final.count('ZONMenuEventBridge.m in Sources') != 2:
+              raise SystemExit('expected exactly two EventBridge Sources mentions')
+          PY
+          git diff --check
+          test "$(git diff --name-only | wc -l | tr -d ' ')" = '1'
+          test "$(git diff --name-only)" = 'testmod.xcodeproj/project.pbxproj'
+
+      - name: Commit p30 PBX integration
+        id: commit
+        run: |
+          set -euxo pipefail
+          git config user.name 'a7987083'
+          git config user.email '85878547+a7987083@users.noreply.github.com'
+          git add testmod.xcodeproj/project.pbxproj
+          git commit -m 'build: register v1_p30 EventBridge source'
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          git push origin HEAD:refs/heads/work/zonoemenu-v1-p30-eventbridge-boundary
+          echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+          echo "p30 source commit: $SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
+
+  build:
+    needs: integrate
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: A_customer
+            debug_macro: 0
+            cloud_testmode: NO
+          - variant: B_debug
+            debug_macro: 1
+            cloud_testmode: YES
+    steps:
+      - name: Checkout p30 source
+        uses: actions/checkout@v4
+        with:
+          ref: work/zonoemenu-v1-p30-eventbridge-boundary
+
+      - name: Verify source commit
+        run: |
+          set -euxo pipefail
+          test "$(git rev-parse HEAD)" = "${{ needs.integrate.outputs.source_sha }}"
+          test "$(tr -d '[:space:]' < VERSION)" = 'v1_p30'
+          ! grep -F 'static inline' testmod/ZONCore/ZONMenuEventBridge.h
+          test -s testmod/ZONCore/ZONMenuEventBridge.m
+          test "$(grep -c 'ZONMenuEventBridge.m in Sources' testmod.xcodeproj/project.pbxproj)" -eq 2
+          git diff 9eb9731b2fb8dbd52932ca3cf5e3d7fbe2a79295 -- testmod/ZONCore/ZONFeatureDispatcher.h --exit-code
+
+      - name: Resolve testmod version
+        run: |
+          set -euxo pipefail
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+          echo "TESTMOD_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "TESTMOD_FILENAME=testmod_${VERSION}_${{ matrix.variant }}.dylib" >> "$GITHUB_ENV"
+
+      - name: Select Xcode 16.4
+        run: |
+          set -euxo pipefail
+          sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Prepare dependency cache destinations
+        run: |
+          set -euxo pipefail
+          sudo mkdir -p /opt/MonkeyDev /opt/theos
+          sudo chown -R "$USER":staff /opt/MonkeyDev /opt/theos
+
+      - name: Restore legacy build dependency cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            /opt/MonkeyDev
+            /opt/theos
+          key: zonoe-builddeps-${{ runner.os }}-macos15-xcode16.4-${{ hashFiles('ci/dependencies.lock') }}
+
+      - name: Install legacy build dependencies
+        run: |
+          set -euxo pipefail
+          brew install ldid dpkg || true
+          source ci/dependencies.lock
+          repo_at_sha() {
+            local dir="$1" sha="$2" required="$3"
+            [[ -d "$dir/.git" ]] || return 1
+            [[ "$(git -C "$dir" rev-parse HEAD 2>/dev/null || true)" == "$sha" ]] || return 1
+            [[ -e "$dir/$required" ]] || return 1
+          }
+          theos_at_sha() {
+            repo_at_sha /opt/theos "$THEOS_SHA" vendor/include || return 1
+            local state
+            state="$(git -C /opt/theos submodule status --recursive 2>/dev/null)" || return 1
+            ! printf '%s\n' "$state" | grep -Eq '^[+-U]'
+          }
+          install_pinned_repo() {
+            local dir="$1" url="$2" sha="$3"
+            sudo rm -rf "$dir"
+            sudo mkdir -p "$dir"
+            sudo chown "$USER":staff "$dir"
+            git -C "$dir" init -q
+            git -C "$dir" remote add origin "$url"
+            git -C "$dir" fetch --depth=1 origin "$sha"
+            git -C "$dir" checkout --detach FETCH_HEAD
+          }
+          repo_at_sha /opt/MonkeyDev "$MONKEYDEV_SHA" bin/md || install_pinned_repo /opt/MonkeyDev https://github.com/AloneMonkey/MonkeyDev.git "$MONKEYDEV_SHA"
+          if ! theos_at_sha; then
+            install_pinned_repo /opt/theos https://github.com/theos/theos.git "$THEOS_SHA"
+            git -C /opt/theos submodule sync --recursive
+            git -C /opt/theos submodule update --init --recursive
+          fi
+          test -x /opt/MonkeyDev/bin/md
+          test -d /opt/theos/vendor/include
+
+      - name: Materialize pinned vendor sources
+        run: |
+          set -euxo pipefail
+          bash scripts/bootstrap_vendor.sh
+
+      - name: Configure build variant
+        run: |
+          set -euxo pipefail
+          if [[ "${{ matrix.cloud_testmode }}" == 'YES' ]]; then
+            python3 - <<'PY'
+          from pathlib import Path
+          p = Path('testmod/菜单/PubgLoad.mm')
+          s = p.read_text()
+          old = 'BOOL testMode = NO; // NO = 正常验证, YES = 测试模式（绕过验证）'
+          new = 'BOOL testMode = YES; // B_debug: 云存档测试模式（绕过购买验证）'
+          if s.count(old) != 1:
+              raise SystemExit(f'expected exactly one cloud testMode switch, found {s.count(old)}')
+          p.write_text(s.replace(old, new, 1))
+          PY
+          fi
+
+      - name: Build testmod dylib
+        id: xcodebuild
+        run: |
+          set +e
+          mkdir -p build/Release-iphoneos
+          xcodebuild \
+            -project testmod.xcodeproj \
+            -target testmod \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY='' \
+            IPHONEOS_DEPLOYMENT_TARGET=12.0 \
+            ARCHS='arm64 arm64e' \
+            ONLY_ACTIVE_ARCH=NO \
+            VALIDATE_PRODUCT=NO \
+            MonkeyDevInstallOnAnyBuild=NO \
+            MonkeyDevInstallOnProfiling=NO \
+            MonkeyDevBuildPackageOnAnyBuild=NO \
+            GCC_PREPROCESSOR_DEFINITIONS='$(inherited) ZON_BUILD_VARIANT_DEBUG=${{ matrix.debug_macro }}' \
+            CONFIGURATION_BUILD_DIR="$PWD/build/Release-iphoneos" \
+            build 2>&1 | tee build/xcodebuild.log
+          status=${PIPESTATUS[0]}
+          echo "XCODEBUILD_STATUS=$status" >> "$GITHUB_ENV"
+          exit 0
+
+      - name: Report first compiler errors
+        if: always()
+        run: |
+          set -euo pipefail
+          grep -n -m 20 -E '(^|[[:space:]])(fatal )?error:|Undefined symbols for architecture|duplicate symbol|ld: ' build/xcodebuild.log || true
+
+      - name: Package and verify dylib
+        if: env.XCODEBUILD_STATUS == '0'
+        run: |
+          set -euxo pipefail
+          SOURCE='build/Release-iphoneos/testmod.dylib'
+          TARGET="build/Release-iphoneos/${TESTMOD_FILENAME}"
+          test -s "$SOURCE"
+          cp "$SOURCE" "$TARGET"
+          file "$TARGET"
+          lipo -info "$TARGET"
+          otool -L "$TARGET"
+          shasum -a 256 "$TARGET" | tee "build/${{ matrix.variant }}.sha256"
+
+      - name: Upload dylib and log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testmod-${{ env.TESTMOD_VERSION }}-${{ matrix.variant }}
+          path: |
+            build/Release-iphoneos/${{ env.TESTMOD_FILENAME }}
+            build/xcodebuild.log
+            build/${{ matrix.variant }}.sha256
+          if-no-files-found: warn
+
+      - name: Propagate xcodebuild failure
+        if: env.XCODEBUILD_STATUS != '0'
+        run: exit "${XCODEBUILD_STATUS:-1}"
