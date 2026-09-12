@@ -91,6 +91,35 @@ Required EventBridge-specific validation:
 
 Promotion rule: if the full p29 + p30 checklist passes on hardware, p30 can become the new device-verified baseline and p29 is considered implicitly covered by that same regression.
 
+## v1_p31 — Feature Registry Boundary Cleanup
+Source commit: `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f`
+Status: `pending`
+
+Changed boundary:
+- `ZONFeatureRegistry.h` is declaration-only for registry functions.
+- Added independent `ZONFeatureRegistry.m` and registered it in the Xcode target.
+- Registry key constants use `FOUNDATION_EXPORT` declarations with one definition in `.m`.
+- The 10 feature records, 3 section records, tags, identifiers, titles, risk values, migrated flags, state keys and renderer values are unchanged.
+
+Because p31 is built on top of unverified p29 and p30, the p31 hardware test must cover the full p29 + p30 checklist plus the Registry-specific checks below.
+
+Required Registry-specific validation:
+- Common device smoke test.
+- Confirm the three sections appear in the same order: `基础功能` -> `数据功能` -> `其他功能`.
+- Confirm section titles/details and fold behavior remain unchanged.
+- `基础功能` visible feature order remains: `远程下载` -> `VIP云存档` -> `浏览本地文件`.
+- `数据功能` visible feature order remains: `备份存档` -> `恢复存档` -> `清除游戏数据` -> `清除授权记录`.
+- `其他功能` visible feature order remains: `内购破解+ iGameGod去广告` -> `广告加速` -> `暂无`.
+- Card/grid/toggle/placeholder/ad-speed controls still render with the same control type and placement.
+- Remote download, cloud save, local files, backup and restore still route to the same target UI/flow.
+- Clear-game-data reaches the same confirmation dialog; do not confirm deletion unless intentionally testing the destructive operation.
+- Clear-authorization reaches the same confirmation dialog; do not confirm deletion unless intentionally testing it.
+- IAP/no-ads switch, ad-speed switch and slider still operate, persist and synchronize to runtime as required by p30.
+- Repeatedly open/close the menu and fold/unfold every section; no missing feature, duplicate feature, stale section, crash or freeze.
+- p29 panel/header/layout/animation behavior remains unchanged.
+
+Promotion rule: if the full cumulative p29 + p30 + p31 checklist passes on hardware, `v1_p31` / `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f` becomes the new device-verified baseline. The same successful regression implicitly closes p29 and p30 device validation.
+
 ## Template for the next version
 Add a section before handing out a new A_customer dylib:
 

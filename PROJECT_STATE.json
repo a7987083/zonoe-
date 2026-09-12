@@ -3,9 +3,9 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p30-eventbridge-boundary",
-  "current_version": "v1_p30",
-  "current_phase": "eventbridge_boundary_cleanup",
+  "current_work_branch": "work/zonoemenu-v1-p31-registry-boundary",
+  "current_version": "v1_p31",
+  "current_phase": "feature_registry_boundary_cleanup",
   "last_device_verified_code_commit": "350a46deb089a05fc599e641bd1eeb419c36c0d5",
   "last_device_verified_version": "v1_p28",
   "device_test_policy_document": "DEVICE_TEST_MATRIX.md",
@@ -13,109 +13,101 @@
     "required_for_every_version": true,
     "ci_success_is_not_device_verification": true,
     "promotion_requires_explicit_user_pass": true,
-    "required_sections": [
-      "source_commit",
-      "changed_boundary",
-      "common_smoke_tests",
-      "phase_specific_tests",
-      "relevant_protected_path_smoke_tests",
-      "destructive_test_boundary",
-      "final_status"
-    ]
+    "later_version_may_close_pending_ancestors_only_with_cumulative_checklist": true
   },
-  "p29_source_commit": "506a22c01a2b46dbea0d4299418fcb702b6cb80e",
-  "p29_runtime_status": "pending_device_verification",
-  "p29_device_test_required": [
-    "common_menu_smoke_test",
-    "panel_geometry_and_open_close_animation",
-    "header_rendering",
-    "section_order_content_and_visual_regression",
-    "fold_unfold_relayout_and_content_offset",
-    "card_and_grid_action_controls",
-    "switch_and_ad_speed_control_rendering",
-    "layout_refresh_geometry"
-  ],
-  "p30_source_split_commit": "760f03f511005f639f9a7a1de8aaad6f02f85c9a",
-  "p30_source_commit": "8e88b63611d19af6c42d9172c0f5741b34f51809",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
-  "p30_changes": [
-    "split_ZONMenuEventBridge_header_implementation",
-    "move_EventBridge_private_dependencies_to_m",
-    "register_ZONMenuEventBridge_m_in_xcode_sources",
-    "preserve_EventBridge_function_bodies_UserDefaults_keys_and_dispatch_flow"
+  "p29_source_commit": "506a22c01a2b46dbea0d4299418fcb702b6cb80e",
+  "p29_runtime_status": "pending_device_verification",
+  "p30_source_commit": "8e88b63611d19af6c42d9172c0f5741b34f51809",
+  "p30_runtime_status": "pending_device_verification",
+  "p31_source_split_commit": "b6e43f11103f00381a90fe4ef42110a595d41bce",
+  "p31_constants_commit": "0f4f8fab9131bd5e73f7fcf15919fb5ece44e6b7",
+  "p31_source_commit": "5c0e5afddfecc9e9ed4b89f7ad42780cd652847f",
+  "p31_changes": [
+    "split_ZONFeatureRegistry_header_implementation",
+    "centralize_registry_keys_with_FOUNDATION_EXPORT",
+    "register_ZONFeatureRegistry_m_in_xcode_sources",
+    "update_feature_registry_smoke_to_link_registry_m"
   ],
-  "p30_untouched": [
-    "ZONFeatureDispatcher",
-    "ZONFeatureRegistry",
-    "ZONModuleLoader",
+  "p31_registry_invariants": {
+    "feature_count": 10,
+    "section_count": 3,
+    "dictionary_rows_unchanged_vs_p30": true,
+    "string_key_names_and_values_unchanged_vs_p30": true,
+    "legacy_tag_identifier_mapping_unchanged": true,
+    "section_order_unchanged": true,
+    "feature_order_unchanged": true,
+    "state_keys_and_renderers_unchanged": true
+  },
+  "p31_untouched": [
+    "ZONFeatureDispatcher_business_handlers",
+    "ZONMenuEventBridge_behavior",
     "authorization",
     "udid",
     "vip_cloud_save",
     "clear_game_data",
     "WX_NongShiFu123.mm",
-    "main.m",
-    "feature_registry_data",
-    "dispatcher_business_handlers",
+    "testmod/Bsphp/main.m",
+    "AppDelegate_SceneDelegate",
     "ui_style_dimensions_colors_text_spacing",
     "keyboard_presentation_logic"
   ],
-  "p30_ci": {
+  "p31_ci": {
     "status": "success",
-    "workflow": "p30 EventBridge Boundary Build",
-    "run_id": 34672196947,
-    "validation_branch": "test/zonoemenu-v1-p30-build",
-    "validation_workflow_commit": "e1ed9d36adf3bf268ae2cb7f287e607046bf611b",
+    "workflow": "p31 Registry Boundary Build",
+    "run_id": 34673034214,
+    "validation_branch": "test/zonoemenu-v1-p31-registry-build",
+    "validation_workflow_commit": "57dbc4eca5131f9c0496806a9bd68d2d5f3eb716",
     "xcode": "16.4",
     "deployment_target": "12.0",
     "architectures": ["arm64", "arm64e"],
+    "registry_data_equivalence": "success",
+    "feature_registry_smoke": "success",
+    "module_abi_smoke": "success",
     "variants": {
       "A_customer": {
         "status": "success",
-        "artifact": "testmod-v1_p30-A_customer",
-        "artifact_id": 10291256225,
-        "artifact_zip_sha256": "e25fab0249f3a87fc4db849c2199006f6ba89a203ba03c596207a7208b2f755a",
-        "dylib_sha256": "383fdab525bbdb1cdfced50288c1ac5b8acfbfdbe8419802fdc29b735095133a"
+        "artifact": "testmod-v1_p31-A_customer",
+        "artifact_id": 10291681640,
+        "artifact_zip_sha256": "5f1e106ef2d8a861b75ecaa7e7d44ca83b2c992122aa03e681ec399cc6ae9602",
+        "dylib_sha256": "579d721b6f2cfcb89b711ad676632851c84173d65f872259d26553bf180b6b68"
       },
       "B_debug": {
         "status": "success",
-        "artifact": "testmod-v1_p30-B_debug",
-        "artifact_id": 10290359063,
-        "artifact_zip_sha256": "6a245b6aa0bf85468bb14a8c9a049c803dd5ba64649e19c8e94ad18b5ec0a31c",
-        "dylib_sha256": "2eb3c8693b6836feb926dbbf587b54125892b025c17fdb026c6b32c7e371accf"
+        "artifact": "testmod-v1_p31-B_debug",
+        "artifact_id": 10291566984,
+        "artifact_zip_sha256": "c2b8b9b15d8dc732bf208f7d06d1edec1c74f5811ca8426305568ed2d3b312d6",
+        "dylib_sha256": "ffe787f48c0ed5e6e3862692ccf279879831257ccdd7a8946af239d405927743"
       }
     }
   },
-  "p30_device_test_required": {
-    "inherits_full_p29_checklist": true,
+  "p31_device_test_required": {
+    "inherits_full_p29_and_p30_checklists": true,
     "common": [
       "app_launch_and_floating_entry",
-      "menu_open_close",
-      "outside_tap_close",
+      "menu_open_close_and_outside_tap",
       "section_fold_unfold_and_relayout",
-      "card_grid_switch_ad_controls",
       "no_freeze_or_crash"
     ],
-    "eventbridge_specific": [
-      "card_action_route",
-      "grid_action_route",
-      "normal_switch_dispatch",
-      "ad_switch_slider_enable_state",
-      "ad_slider_label_update",
-      "ad_speed_UserDefaults_persistence",
-      "menu_reopen_runtime_sync",
-      "ImgTool_NeiGou_sync",
-      "ImgTool_ADSpeed_sync",
-      "ImgTool_ADBiansu_sync",
-      "remote_download_route",
-      "cloud_save_route",
-      "local_files_route",
-      "backup_restore_route",
+    "registry_specific": [
+      "three_section_order_base_data_runtime",
+      "section_titles_details_and_fold_behavior_unchanged",
+      "base_features_order_remote_cloud_local",
+      "data_features_order_backup_restore_clear_game_clear_auth",
+      "runtime_features_order_iap_noads_ad_speed_placeholder",
+      "control_kinds_and_placement_unchanged",
+      "remote_cloud_local_backup_restore_routes",
       "clear_game_data_confirmation_only",
       "clear_authorization_confirmation_only"
+    ],
+    "inherited_eventbridge_and_rendering": [
+      "p29_panel_header_geometry_and_visual_regression",
+      "p30_switch_slider_persistence_and_runtime_sync"
     ]
   },
-  "p30_runtime_status": "pending_device_verification",
-  "p30_regression_status": "pending",
-  "next_task": "device regression test v1_p30 A_customer using DEVICE_TEST_MATRIX.md; passing it covers both p29 and p30"
+  "p31_runtime_status": "pending_device_verification",
+  "p31_regression_status": "pending",
+  "promotion_rule": "passing the full p31 cumulative checklist promotes p31 and implicitly closes p29/p30 device validation",
+  "next_task": "device regression test v1_p31 A_customer using DEVICE_TEST_MATRIX.md"
 }

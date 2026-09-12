@@ -15,7 +15,7 @@ Floating Entry
               -> existing business handlers
 ```
 
-## Compilation boundary after v1_p30
+## Compilation boundary after v1_p31
 ```text
 Xcode target: testmod
   -> PopupMenuVC.m
@@ -25,21 +25,22 @@ Xcode target: testmod
   -> ZONFeatureRenderer.m
   -> ZONSectionRenderer.m
   -> ZONMenuEventBridge.m
+  -> ZONFeatureRegistry.m
 ```
 
-`ZONMenuEventBridge.h` is now declaration-only. Its implementation/private dependencies (`ZONFeatureDispatcher.h`, `ImgTool.h`, runtime UserDefaults keys) live in `ZONMenuEventBridge.m`.
+`ZONFeatureRegistry.h` now exposes enums, exported key declarations and registry function declarations only. Registry key definitions, 3 section records, 10 feature records and lookup/validation functions live in `ZONFeatureRegistry.m`.
 
-Still header-based by design after p30:
-- `ZONFeatureRegistry.h`
-- `ZONFeatureDispatcher.h`
-- `ZONModuleLoader.h`
+Still header-based / intentionally not converted:
+- `ZONFeatureDispatcher.h`: business-heavy boundary; directly owns protected cloud-save, clear-game-data and clear-authorization routes.
+- `ZONModuleLoader.h`: audited in p31 but not part of the active target runtime; actual `testmod/Bsphp/main.m` does not reference it and `project.pbxproj` has no ModuleLoader source entry. Do not force it into the product target without a real runtime requirement.
 
-## p30 invariants
+## p31 invariants
+- Registry data is unchanged: 10 features and 3 sections with the same tags, identifiers, titles, risk/migrated values, ordering, state keys and renderers.
 - No Dispatcher function-body or protected business-handler change.
-- No Feature Registry data change.
+- No EventBridge behavior change.
 - No UI geometry/color/text/animation change.
-- No authorization, UDID, cloud-save or clear-game-data change.
-- EventBridge action/toggle/slider/runtime-sync behavior and UserDefaults keys are preserved.
+- No authorization, UDID, cloud-save or clear-game-data behavior change.
+- No actual `testmod/Bsphp/main.m` change.
 
 ## Runtime baseline
-`v1_p28` source commit `350a46deb089a05fc599e641bd1eeb419c36c0d5` remains the device-verified baseline. `v1_p29` and `v1_p30` are CI-verified but require current hardware regression before promotion.
+`v1_p28` source commit `350a46deb089a05fc599e641bd1eeb419c36c0d5` remains the device-verified baseline. `v1_p29`, `v1_p30` and `v1_p31` are CI-verified but require cumulative hardware regression before p31 can be promoted.

@@ -4,93 +4,83 @@
 - Repository: `a7987083/zonoe-`
 - Stable branch: `main`
 - Production branch: `dev/zonoemenu-production-v1`
-- Current work branch: `work/zonoemenu-v1-p30-eventbridge-boundary`
-- Current version: `v1_p30`
+- Current work branch: `work/zonoemenu-v1-p31-registry-boundary`
+- Current version: `v1_p31`
 - Current device-verified baseline: `v1_p28` / `350a46deb089a05fc599e641bd1eeb419c36c0d5`
-- p29 source commit: `506a22c01a2b46dbea0d4299418fcb702b6cb80e` (device verification still pending)
-- p30 source commit: `8e88b63611d19af6c42d9172c0f5741b34f51809`
+- p29 source commit: `506a22c01a2b46dbea0d4299418fcb702b6cb80e` (device verification pending)
+- p30 source commit: `8e88b63611d19af6c42d9172c0f5741b34f51809` (device verification pending)
+- p31 source commit: `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f`
 
 ## Device-validation policy
-`DEVICE_TEST_MATRIX.md` is now a required phase artifact. Every new version must define its real-device validation checklist before the A_customer build is handed out.
+`DEVICE_TEST_MATRIX.md` is a required phase artifact. Every version must define its real-device checklist before the A_customer build is handed out. CI success alone does not promote a version; promotion requires the user to explicitly report the required checklist as passed.
 
-Each version must record:
-- the source commit under test
-- the changed runtime/architecture boundary
-- common smoke tests
-- version-specific tests that directly exercise the changed path
-- relevant protected-path smoke tests
-- destructive operations that should stop at confirmation unless an explicit destructive test is intended
-- final device status: pending / passed / failed
+Because p29 and p30 have not been explicitly hardware-verified, the p31 device regression is cumulative: it must cover p29 Renderer/Panel behavior, p30 EventBridge behavior and p31 Registry behavior. If the full p31 checklist passes, p29 and p30 are implicitly covered by the same regression.
 
-CI success alone does not promote a version to the device-verified baseline. Promotion requires the user to explicitly report the required real-device checklist as passed.
-
-Current required hardware scope:
-- `v1_p29`: Renderer/Panel rendering, fold/relayout, card/grid controls, switch/ad-speed rendering and geometry regression.
-- `v1_p30`: the full p29 checklist plus EventBridge action/toggle routing, ad switch/slider persistence, runtime sync and representative protected action routes.
-
-The authoritative detailed checklist is `DEVICE_TEST_MATRIX.md`.
-
-## Current phase — v1_p30 EventBridge Boundary Cleanup
-p30 converts `ZONMenuEventBridge` from a header-only `static inline` implementation into a declaration-only header plus an independent Objective-C translation unit.
+## Current phase — v1_p31 Feature Registry Boundary Cleanup
+p31 converts `ZONFeatureRegistry` from header-only implementation into a declaration header plus independent Objective-C implementation while preserving all registry data.
 
 Changes:
-- `VERSION`: `v1_p29` -> `v1_p30`.
-- `ZONMenuEventBridge.h`: declarations only; no longer imports Dispatcher/ImgTool implementation dependencies.
-- Added `ZONMenuEventBridge.m` with the existing EventBridge function bodies and UserDefaults keys.
-- Registered `ZONMenuEventBridge.m` in the Xcode target Sources phase.
+- `VERSION`: `v1_p30` -> `v1_p31`.
+- `ZONFeatureRegistry.h`: registry functions are declarations; string keys use `FOUNDATION_EXPORT`.
+- Added `ZONFeatureRegistry.m` containing the unchanged key values, 3 section records, 10 feature records and lookup/validation functions.
+- Registered `ZONFeatureRegistry.m` in the Xcode target Sources phase.
+- Updated permanent `module-abi.yml` so `feature_registry_smoke.m` explicitly links `ZONFeatureRegistry.m`.
 
 Intentionally untouched:
-- `ZONFeatureDispatcher.h` and all Dispatcher business handlers.
-- `ZONFeatureRegistry.h` data.
-- `ZONModuleLoader.h`.
+- `ZONFeatureDispatcher.h` and Dispatcher business handlers.
+- `ZONMenuEventBridge.h/.m` behavior.
 - authorization / BS-PHP, UDID, VIP cloud save, clear-game-data.
-- `WX_NongShiFu123.mm`, `main.m`, AppDelegate / SceneDelegate.
-- UI style, dimensions, colors, text and spacing.
+- `WX_NongShiFu123.mm`, actual `testmod/Bsphp/main.m`, AppDelegate / SceneDelegate.
+- UI style, dimensions, colors, text or spacing.
 - keyboard/presentation logic.
 
+## Registry invariants proved by CI
+The isolated p31 CI compares the p30 Registry header with the p31 implementation before compiling:
+- all registry dictionary rows are byte-for-byte line-equivalent after relocation;
+- all 12 string key names and string values are unchanged;
+- `feature_registry_smoke` passes with `-Wall -Wextra -Werror`;
+- 10 feature records remain present and migrated;
+- legacy tag -> identifier mappings remain unchanged;
+- 3 sections, section order, feature order, state keys and renderer names remain unchanged;
+- existing Module ABI smoke also passes.
+
 ## Source commits
-- EventBridge source split: `760f03f511005f639f9a7a1de8aaad6f02f85c9a`.
-- PBX integration / p30 source head: `8e88b63611d19af6c42d9172c0f5741b34f51809`.
+- Registry implementation split: `b6e43f11103f00381a90fe4ef42110a595d41bce`.
+- Registry constants centralized: `0f4f8fab9131bd5e73f7fcf15919fb5ece44e6b7`.
+- PBX integration / p31 source head: `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f`.
 
-p29-docs-head -> p30 source diff is exactly:
-- `VERSION`
-- `testmod.xcodeproj/project.pbxproj`
-- `testmod/ZONCore/ZONMenuEventBridge.h`
-- `testmod/ZONCore/ZONMenuEventBridge.m`
-
-## v1_p30 CI verification
-- Workflow: `p30 EventBridge Boundary Build`
-- Successful Run ID: `34672196947`
-- Validation branch: `test/zonoemenu-v1-p30-build`
-- Validation workflow commit: `e1ed9d36adf3bf268ae2cb7f287e607046bf611b`
+## v1_p31 CI verification
+- Workflow: `p31 Registry Boundary Build`
+- Run ID: `34673034214`
+- Validation branch: `test/zonoemenu-v1-p31-registry-build`
+- Validation workflow commit: `57dbc4eca5131f9c0496806a9bd68d2d5f3eb716`
 - Result: success
 - Xcode: 16.4
 - Deployment target: iOS 12.0
 - Architectures: arm64 + arm64e
 
 ### A_customer
-- Artifact: `testmod-v1_p30-A_customer`
-- Artifact ID: `10291256225`
-- Artifact ZIP SHA256: `e25fab0249f3a87fc4db849c2199006f6ba89a203ba03c596207a7208b2f755a`
-- Dylib SHA256: `383fdab525bbdb1cdfced50288c1ac5b8acfbfdbe8419802fdc29b735095133a`
+- Artifact: `testmod-v1_p31-A_customer`
+- Artifact ID: `10291681640`
+- Artifact ZIP SHA256: `5f1e106ef2d8a861b75ecaa7e7d44ca83b2c992122aa03e681ec399cc6ae9602`
+- Dylib SHA256: `579d721b6f2cfcb89b711ad676632851c84173d65f872259d26553bf180b6b68`
 
 ### B_debug
-- Artifact: `testmod-v1_p30-B_debug`
-- Artifact ID: `10290359063`
-- Artifact ZIP SHA256: `6a245b6aa0bf85468bb14a8c9a049c803dd5ba64649e19c8e94ad18b5ec0a31c`
-- Dylib SHA256: `2eb3c8693b6836feb926dbbf587b54125892b025c17fdb026c6b32c7e371accf`
+- Artifact: `testmod-v1_p31-B_debug`
+- Artifact ID: `10291566984`
+- Artifact ZIP SHA256: `c2b8b9b15d8dc732bf208f7d06d1edec1c74f5811ca8426305568ed2d3b312d6`
+- Dylib SHA256: `ffe787f48c0ed5e6e3862692ccf279879831257ccdd7a8946af239d405927743`
 
-Both variants passed protected-source verification, compile, link, dylib packaging and universal arm64/arm64e Mach-O verification.
+Both variants passed protected-source checks, Registry data equivalence, Registry smoke, Module ABI smoke, compilation, linking, dylib packaging and universal arm64/arm64e Mach-O verification.
 
-## Validation note
-The first p30 CI run failed before compilation because the build checkout was shallow and the protection assertion referenced the p29 commit. The assertion was fixed by using full history and the correct `git diff --exit-code` ordering. No p30 source file changed as part of that CI-only correction.
+## ModuleLoader audit note
+During p31 candidate selection, `ZONModuleLoader` was audited. The repository has legacy/duplicate loader headers, but the actual target compiles `testmod/Bsphp/main.m`, which does not reference `ZONModuleLoader`, and `project.pbxproj` has no ModuleLoader source reference. Therefore no ModuleLoader code was added to the p31 product target; forcing an inactive path into the build would create unnecessary behavior surface.
 
 ## Runtime verification state
 - `v1_p28`: device/runtime verified; current fallback baseline.
-- `v1_p29`: CI verified, hardware regression not explicitly confirmed.
-- `v1_p30`: CI verified, hardware regression pending.
-
-Because p30 is built on top of p29, the next hardware test must cover both the p29 Renderer/Panel boundary changes and the p30 EventBridge boundary change before either is promoted above p28.
+- `v1_p29`: CI verified; device confirmation pending.
+- `v1_p30`: CI verified; device confirmation pending.
+- `v1_p31`: CI/static/smoke verified; device confirmation pending.
 
 ## Current compile relationship
 ```text
@@ -99,6 +89,8 @@ ZONMenuCoordinator.m
   -> ZONMenuChromeRenderer.h
   -> ZONSectionRenderer.h
        -> ZONFeatureRenderer.h
+       -> ZONFeatureRegistry.h
+            -> implemented by ZONFeatureRegistry.m
   -> ZONMenuEventBridge.h
        -> implemented by ZONMenuEventBridge.m
            -> ZONFeatureDispatcher.h
@@ -111,7 +103,8 @@ Xcode target Sources
   -> ZONFeatureRenderer.m
   -> ZONSectionRenderer.m
   -> ZONMenuEventBridge.m
+  -> ZONFeatureRegistry.m
 ```
 
 ## Next task
-Device-regression-test `v1_p30` A_customer using the checklist in `DEVICE_TEST_MATRIX.md`. If the full p29 + p30 checklist passes, p30 can become the new device-verified baseline and p29 is implicitly covered by the same test.
+Device-regression-test `v1_p31` A_customer using the cumulative p29 + p30 + p31 checklist in `DEVICE_TEST_MATRIX.md`. If it passes, promote source commit `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f` as the new device-verified baseline.
