@@ -3,27 +3,26 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p29-render-boundary",
-  "current_version": "v1_p29",
-  "current_phase": "rendering_boundary_cleanup",
+  "current_work_branch": "work/zonoemenu-v1-p30-eventbridge-boundary",
+  "current_version": "v1_p30",
+  "current_phase": "eventbridge_boundary_cleanup",
   "last_device_verified_code_commit": "350a46deb089a05fc599e641bd1eeb419c36c0d5",
   "last_device_verified_version": "v1_p28",
-  "p29_source_split_commit": "aca50911e66b6d91313ab990746a658b28f04066",
   "p29_source_commit": "506a22c01a2b46dbea0d4299418fcb702b6cb80e",
+  "p29_runtime_status": "pending_device_verification",
+  "p30_source_split_commit": "760f03f511005f639f9a7a1de8aaad6f02f85c9a",
+  "p30_source_commit": "8e88b63611d19af6c42d9172c0f5741b34f51809",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
-  "p29_changes": [
-    "split_ZONMenuPanelController_header_implementation",
-    "split_ZONMenuChromeRenderer_header_implementation",
-    "split_ZONFeatureRenderer_header_implementation",
-    "split_ZONSectionRenderer_header_implementation",
-    "register_four_new_m_files_in_xcode_sources",
-    "preserve_function_bodies_and_ui_constants"
+  "p30_changes": [
+    "split_ZONMenuEventBridge_header_implementation",
+    "move_EventBridge_private_dependencies_to_m",
+    "register_ZONMenuEventBridge_m_in_xcode_sources",
+    "preserve_EventBridge_function_bodies_UserDefaults_keys_and_dispatch_flow"
   ],
-  "p29_untouched": [
-    "ZONFeatureRegistry",
+  "p30_untouched": [
     "ZONFeatureDispatcher",
-    "ZONMenuEventBridge",
+    "ZONFeatureRegistry",
     "ZONModuleLoader",
     "authorization",
     "udid",
@@ -36,33 +35,33 @@
     "ui_style_dimensions_colors_text_spacing",
     "keyboard_presentation_logic"
   ],
-  "p29_ci": {
+  "p30_ci": {
     "status": "success",
-    "workflow": "p29 Render Boundary Build",
-    "run_id": 34671336051,
-    "validation_branch": "test/zonoemenu-v1-p29-build-verify",
-    "validation_workflow_commit": "0c346ce3eb4c2dab4fc43a6e48c2c90be9bf0bd9",
+    "workflow": "p30 EventBridge Boundary Build",
+    "run_id": 34672196947,
+    "validation_branch": "test/zonoemenu-v1-p30-build",
+    "validation_workflow_commit": "e1ed9d36adf3bf268ae2cb7f287e607046bf611b",
     "xcode": "16.4",
     "deployment_target": "12.0",
     "architectures": ["arm64", "arm64e"],
     "variants": {
       "A_customer": {
         "status": "success",
-        "artifact": "testmod-v1_p29-A_customer",
-        "artifact_id": 10291080372,
-        "artifact_zip_sha256": "c60f650142890d5ebb51c232b5920b59a46b30fff215751086965f2a1c658315",
-        "dylib_sha256": "3c6a15f17e44a681e0fa8eae6356c42df52fa7a1182dfd748baadb621fcb345a"
+        "artifact": "testmod-v1_p30-A_customer",
+        "artifact_id": 10291256225,
+        "artifact_zip_sha256": "e25fab0249f3a87fc4db849c2199006f6ba89a203ba03c596207a7208b2f755a",
+        "dylib_sha256": "383fdab525bbdb1cdfced50288c1ac5b8acfbfdbe8419802fdc29b735095133a"
       },
       "B_debug": {
         "status": "success",
-        "artifact": "testmod-v1_p29-B_debug",
-        "artifact_id": 10291205155,
-        "artifact_zip_sha256": "aece191a32982d91922b1c266eba44b68c990b8fb67484fd415313824115701d",
-        "dylib_sha256": "b475bf5533daf73dc5aea2a004dda6174b75365b8c3cb732309fbd0160a9eca7"
+        "artifact": "testmod-v1_p30-B_debug",
+        "artifact_id": 10290359063,
+        "artifact_zip_sha256": "6a245b6aa0bf85468bb14a8c9a049c803dd5ba64649e19c8e94ad18b5ec0a31c",
+        "dylib_sha256": "2eb3c8693b6836feb926dbbf587b54125892b025c17fdb026c6b32c7e371accf"
       }
     }
   },
-  "p29_runtime_status": "pending_device_verification",
-  "p29_regression_status": "pending",
-  "next_task": "device regression test v1_p29 A_customer against device-verified v1_p28"
+  "p30_runtime_status": "pending_device_verification",
+  "p30_regression_status": "pending",
+  "next_task": "device regression test v1_p30 A_customer covering both p29 render boundaries and p30 EventBridge against device-verified v1_p28"
 }

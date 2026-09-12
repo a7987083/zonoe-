@@ -4,86 +4,73 @@
 - Repository: `a7987083/zonoe-`
 - Stable branch: `main`
 - Production branch: `dev/zonoemenu-production-v1`
-- Current work branch: `work/zonoemenu-v1-p29-render-boundary`
-- Current version: `v1_p29`
-- p28 source commit / current device-verified baseline: `350a46deb089a05fc599e641bd1eeb419c36c0d5`
-- p29 source commit: `506a22c01a2b46dbea0d4299418fcb702b6cb80e`
+- Current work branch: `work/zonoemenu-v1-p30-eventbridge-boundary`
+- Current version: `v1_p30`
+- Current device-verified baseline: `v1_p28` / `350a46deb089a05fc599e641bd1eeb419c36c0d5`
+- p29 source commit: `506a22c01a2b46dbea0d4299418fcb702b6cb80e` (device verification still pending)
+- p30 source commit: `8e88b63611d19af6c42d9172c0f5741b34f51809`
 
-## Device-verified baseline — v1_p28
-The user completed p28 device/runtime regression with no reported issues. `v1_p28` remains the current device-verified baseline until p29 passes the same hardware regression.
+## Current phase — v1_p30 EventBridge Boundary Cleanup
+p30 converts `ZONMenuEventBridge` from a header-only `static inline` implementation into a declaration-only header plus an independent Objective-C translation unit.
 
-## Current phase — v1_p29 Rendering Boundary Cleanup
-p29 converts four menu/render helpers from header-only `static inline` implementations into normal Objective-C translation units while preserving their existing function signatures, function bodies, UI constants and call flow.
+Changes:
+- `VERSION`: `v1_p29` -> `v1_p30`.
+- `ZONMenuEventBridge.h`: declarations only; no longer imports Dispatcher/ImgTool implementation dependencies.
+- Added `ZONMenuEventBridge.m` with the existing EventBridge function bodies and UserDefaults keys.
+- Registered `ZONMenuEventBridge.m` in the Xcode target Sources phase.
 
-Split modules:
-1. `ZONMenuPanelController.h` + new `ZONMenuPanelController.m`
-2. `ZONMenuChromeRenderer.h` + new `ZONMenuChromeRenderer.m`
-3. `ZONFeatureRenderer.h` + new `ZONFeatureRenderer.m`
-4. `ZONSectionRenderer.h` + new `ZONSectionRenderer.m`
-
-All four `.m` files are registered in `testmod.xcodeproj/project.pbxproj` and compiled independently by target `testmod`.
-
-p29 intentionally does not modify:
-- `ZONFeatureRegistry.h`
-- `ZONFeatureDispatcher.h`
-- `ZONMenuEventBridge.h`
-- `ZONModuleLoader.h`
-- authorization / BS-PHP
-- UDID
-- VIP cloud save
-- clear-game-data
-- `WX_NongShiFu123.mm`
-- `main.m`
-- AppDelegate / SceneDelegate
-- Feature Registry data
-- Dispatcher business handlers
-- UI style, dimensions, colors, text or spacing
-- keyboard/presentation logic
+Intentionally untouched:
+- `ZONFeatureDispatcher.h` and all Dispatcher business handlers.
+- `ZONFeatureRegistry.h` data.
+- `ZONModuleLoader.h`.
+- authorization / BS-PHP, UDID, VIP cloud save, clear-game-data.
+- `WX_NongShiFu123.mm`, `main.m`, AppDelegate / SceneDelegate.
+- UI style, dimensions, colors, text and spacing.
+- keyboard/presentation logic.
 
 ## Source commits
-- Source split: `aca50911e66b6d91313ab990746a658b28f04066`
-- PBX target integration / p29 source head: `506a22c01a2b46dbea0d4299418fcb702b6cb80e`
+- EventBridge source split: `760f03f511005f639f9a7a1de8aaad6f02f85c9a`.
+- PBX integration / p30 source head: `8e88b63611d19af6c42d9172c0f5741b34f51809`.
 
-Source-only p28-docs-head -> p29 source diff is limited to:
+p29-docs-head -> p30 source diff is exactly:
 - `VERSION`
 - `testmod.xcodeproj/project.pbxproj`
-- the four target headers
-- the four new target `.m` files
+- `testmod/ZONCore/ZONMenuEventBridge.h`
+- `testmod/ZONCore/ZONMenuEventBridge.m`
 
-No protected business source file is part of the p29 source diff.
-
-## v1_p29 CI verification
-- Workflow: `p29 Render Boundary Build`
-- Run ID: `34671336051`
-- Validation branch: `test/zonoemenu-v1-p29-build-verify`
-- Validation workflow commit: `0c346ce3eb4c2dab4fc43a6e48c2c90be9bf0bd9`
+## v1_p30 CI verification
+- Workflow: `p30 EventBridge Boundary Build`
+- Successful Run ID: `34672196947`
+- Validation branch: `test/zonoemenu-v1-p30-build`
+- Validation workflow commit: `e1ed9d36adf3bf268ae2cb7f287e607046bf611b`
 - Result: success
 - Xcode: 16.4
 - Deployment target: iOS 12.0
 - Architectures: arm64 + arm64e
 
 ### A_customer
-- Result: success
-- Artifact: `testmod-v1_p29-A_customer`
-- Artifact ID: `10291080372`
-- Artifact ZIP SHA256: `c60f650142890d5ebb51c232b5920b59a46b30fff215751086965f2a1c658315`
-- Dylib SHA256: `3c6a15f17e44a681e0fa8eae6356c42df52fa7a1182dfd748baadb621fcb345a`
+- Artifact: `testmod-v1_p30-A_customer`
+- Artifact ID: `10291256225`
+- Artifact ZIP SHA256: `e25fab0249f3a87fc4db849c2199006f6ba89a203ba03c596207a7208b2f755a`
+- Dylib SHA256: `383fdab525bbdb1cdfced50288c1ac5b8acfbfdbe8419802fdc29b735095133a`
 
 ### B_debug
-- Result: success
-- Artifact: `testmod-v1_p29-B_debug`
-- Artifact ID: `10291205155`
-- Artifact ZIP SHA256: `aece191a32982d91922b1c266eba44b68c990b8fb67484fd415313824115701d`
-- Dylib SHA256: `b475bf5533daf73dc5aea2a004dda6174b75365b8c3cb732309fbd0160a9eca7`
+- Artifact: `testmod-v1_p30-B_debug`
+- Artifact ID: `10290359063`
+- Artifact ZIP SHA256: `6a245b6aa0bf85468bb14a8c9a049c803dd5ba64649e19c8e94ad18b5ec0a31c`
+- Dylib SHA256: `2eb3c8693b6836feb926dbbf587b54125892b025c17fdb026c6b32c7e371accf`
 
-Both variants passed source verification, compile, link, dylib packaging, Mach-O verification and artifact upload. No undefined-symbol or duplicate-symbol regression occurred.
+Both variants passed protected-source verification, compile, link, dylib packaging and universal arm64/arm64e Mach-O verification.
 
-An initial test-only workflow revision failed YAML validation before GitHub created any job. It did not modify the p29 work branch. The workflow was corrected before source integration and build verification.
+## Validation note
+The first p30 CI run failed before compilation because the build checkout was shallow and the protection assertion referenced the p29 commit. The assertion was fixed by using full history and the correct `git diff --exit-code` ordering. No p30 source file changed as part of that CI-only correction.
 
 ## Runtime verification state
-- `v1_p28`: device/runtime verified; current baseline.
-- `v1_p29`: source/static/CI verified; device/runtime regression pending.
-- Do not promote p29 as the device baseline until the user confirms the A_customer build on hardware.
+- `v1_p28`: device/runtime verified; current fallback baseline.
+- `v1_p29`: CI verified, hardware regression not explicitly confirmed.
+- `v1_p30`: CI verified, hardware regression pending.
+
+Because p30 is built on top of p29, the next hardware test must cover both the p29 Renderer/Panel boundary changes and the p30 EventBridge boundary change before either is promoted above p28.
 
 ## Current compile relationship
 ```text
@@ -92,6 +79,10 @@ ZONMenuCoordinator.m
   -> ZONMenuChromeRenderer.h
   -> ZONSectionRenderer.h
        -> ZONFeatureRenderer.h
+  -> ZONMenuEventBridge.h
+       -> implemented by ZONMenuEventBridge.m
+           -> ZONFeatureDispatcher.h
+           -> ImgTool.h
 
 Xcode target Sources
   -> ZONMenuCoordinator.m
@@ -99,7 +90,8 @@ Xcode target Sources
   -> ZONMenuChromeRenderer.m
   -> ZONFeatureRenderer.m
   -> ZONSectionRenderer.m
+  -> ZONMenuEventBridge.m
 ```
 
 ## Next task
-Device-regression-test `v1_p29` A_customer against the device-verified `v1_p28` baseline. Focus on menu open/close, section fold/relayout, card/grid buttons, switches/ad-speed slider, and confirm protected business paths show no regression.
+Device-regression-test `v1_p30` A_customer. Focus on menu open/close, section fold/relayout, card/grid actions, switches, ad-speed slider/runtime synchronization, plus protected action paths. If it passes, p30 can become the new device-verified baseline and p29 is implicitly covered by the same test.

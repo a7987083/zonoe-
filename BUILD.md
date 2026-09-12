@@ -7,36 +7,40 @@
 - Minimum validated deployment target: iOS 12.0
 - Architectures: arm64 + arm64e
 
-## ZONCore target sources after v1_p29
-The target now compiles these ZONCore implementation files independently:
+## ZONCore target sources after v1_p30
+The target independently compiles:
 - `ZONMenuCoordinator.m`
 - `ZONMenuPanelController.m`
 - `ZONMenuChromeRenderer.m`
 - `ZONFeatureRenderer.m`
 - `ZONSectionRenderer.m`
+- `ZONMenuEventBridge.m`
 
-`ZONFeatureRegistry`, `ZONFeatureDispatcher`, `ZONMenuEventBridge` and `ZONModuleLoader` remain header-based and were intentionally excluded from p29.
+Still header-based by design after p30:
+- `ZONFeatureRegistry.h`
+- `ZONFeatureDispatcher.h`
+- `ZONModuleLoader.h`
 
-## Latest v1_p29 verification
-- Source commit: `506a22c01a2b46dbea0d4299418fcb702b6cb80e`
-- Workflow: `p29 Render Boundary Build`
-- Run ID: `34671336051`
-- Validation branch: `test/zonoemenu-v1-p29-build-verify`
+## Latest v1_p30 verification
+- Source commit: `8e88b63611d19af6c42d9172c0f5741b34f51809`
+- Workflow: `p30 EventBridge Boundary Build`
+- Successful Run ID: `34672196947`
+- Validation branch: `test/zonoemenu-v1-p30-build`
 - Result: success
 
 A_customer:
-- Artifact ID: `10291080372`
-- ZIP SHA256: `c60f650142890d5ebb51c232b5920b59a46b30fff215751086965f2a1c658315`
-- dylib SHA256: `3c6a15f17e44a681e0fa8eae6356c42df52fa7a1182dfd748baadb621fcb345a`
+- Artifact ID: `10291256225`
+- ZIP SHA256: `e25fab0249f3a87fc4db849c2199006f6ba89a203ba03c596207a7208b2f755a`
+- dylib SHA256: `383fdab525bbdb1cdfced50288c1ac5b8acfbfdbe8419802fdc29b735095133a`
 
 B_debug:
-- Artifact ID: `10291205155`
-- ZIP SHA256: `aece191a32982d91922b1c266eba44b68c990b8fb67484fd415313824115701d`
-- dylib SHA256: `b475bf5533daf73dc5aea2a004dda6174b75365b8c3cb732309fbd0160a9eca7`
+- Artifact ID: `10290359063`
+- ZIP SHA256: `6a245b6aa0bf85468bb14a8c9a049c803dd5ba64649e19c8e94ad18b5ec0a31c`
+- dylib SHA256: `2eb3c8693b6836feb926dbbf587b54125892b025c17fdb026c6b32c7e371accf`
 
-Both builds passed compilation, linking, dylib packaging and universal arm64/arm64e Mach-O verification.
+Both builds passed source-protection checks, compilation, linking, dylib packaging and universal arm64/arm64e Mach-O verification.
 
 ## Device baseline
 - Current device-verified version: `v1_p28`
 - Device-verified source commit: `350a46deb089a05fc599e641bd1eeb419c36c0d5`
-- `v1_p29` remains runtime-pending until hardware regression is confirmed.
+- `v1_p29` and `v1_p30` are CI-verified but runtime-pending until the current A_customer build is confirmed on hardware.

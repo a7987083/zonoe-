@@ -15,7 +15,7 @@ Floating Entry
               -> existing business handlers
 ```
 
-## Compilation boundary after v1_p29
+## Compilation boundary after v1_p30
 ```text
 Xcode target: testmod
   -> PopupMenuVC.m
@@ -24,22 +24,22 @@ Xcode target: testmod
   -> ZONMenuChromeRenderer.m
   -> ZONFeatureRenderer.m
   -> ZONSectionRenderer.m
+  -> ZONMenuEventBridge.m
 ```
 
-The five listed ZONCore implementation modules are independent Objective-C translation units. Public/use-site headers now carry declarations for the p29 render/panel helpers rather than their complete implementations.
+`ZONMenuEventBridge.h` is now declaration-only. Its implementation/private dependencies (`ZONFeatureDispatcher.h`, `ImgTool.h`, runtime UserDefaults keys) live in `ZONMenuEventBridge.m`.
 
-Still header-based by design after p29:
+Still header-based by design after p30:
 - `ZONFeatureRegistry.h`
 - `ZONFeatureDispatcher.h`
-- `ZONMenuEventBridge.h`
 - `ZONModuleLoader.h`
 
-## p29 invariants
+## p30 invariants
+- No Dispatcher function-body or protected business-handler change.
 - No Feature Registry data change.
-- No Dispatcher/EventBridge business behavior change.
 - No UI geometry/color/text/animation change.
 - No authorization, UDID, cloud-save or clear-game-data change.
-- p29 is a compilation-boundary refactor only.
+- EventBridge action/toggle/slider/runtime-sync behavior and UserDefaults keys are preserved.
 
 ## Runtime baseline
-`v1_p28` source commit `350a46deb089a05fc599e641bd1eeb419c36c0d5` remains the device-verified baseline until p29 device regression passes.
+`v1_p28` source commit `350a46deb089a05fc599e641bd1eeb419c36c0d5` remains the device-verified baseline. `v1_p29` and `v1_p30` are CI-verified but require current hardware regression before promotion.
