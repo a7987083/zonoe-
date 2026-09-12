@@ -1,65 +1,45 @@
-# zonoemenu Architecture
-
-## Client architecture
-```text
-Host App
-  -> zonoemenu bootstrap
-     -> environment/runtime probe
-     -> floating entry
-        -> PopupMenuVC compatibility shell
-           -> ZONMenuCoordinator
-              -> ZONMenuPanelController
-              -> ZONMenuChromeRenderer
-              -> ZONSectionRenderer
-                 -> ZONFeatureRegistry
-              -> ZONMenuEventBridge
-                 -> existing dispatcher/business handlers
-     -> service layer
-        -> legacy BS/PHP auth adapter
-        -> storage/config/update/download services
-     -> external module layer
-        -> versioned module ABI
-        -> bundle-local dylib loader
-```
-
-## Technology / runtime constraints
-- Objective-C / Objective-C++ / C / C++.
-- UIKit; no SwiftUI migration for v1.
-- Xcode dylib target with current MonkeyDev/Theos integration.
-- arm64 + arm64e; production minimum iOS 12.0+.
-- Existing fishhook/CaptainHook/runtime facilities remain behind feature boundaries.
+# ARCHITECTURE
 
 ## Menu ownership
-- `PopupMenuVC`: UIKit lifecycle boundary and legacy selector passthrough.
-- `ZONMenuCoordinator`: orchestration/lifecycle, panel/scroll ownership, build/relayout, show/hide/close and event forwarding.
-- `ZONMenuPanelController`: panel construction/layout/animation.
-- `ZONMenuChromeRenderer`: header/chrome rendering.
-- `ZONSectionRenderer`: section rendering/relayout.
-- `ZONFeatureRegistry`: feature/section data source.
-- `ZONMenuEventBridge`: action/toggle/runtime bridge to existing business handlers.
-
-## Compilation boundary after v1_p28
 ```text
-PopupMenuVC.m
-  -> #import ZONMenuCoordinator.h
-
-Xcode target: testmod
-  -> compiles PopupMenuVC.m
-  -> compiles ZONMenuCoordinator.m independently
+Floating Entry
+  -> PopupMenuVC compatibility shell
+     -> ZONMenuCoordinator
+        -> ZONMenuPanelController
+        -> ZONMenuChromeRenderer
+        -> ZONSectionRenderer
+           -> ZONFeatureRenderer
+           -> ZONFeatureRegistry
+        -> ZONMenuEventBridge
+           -> ZONFeatureDispatcher
+              -> existing business handlers
 ```
 
-p27 removed `@implementation` from the public coordinator header but temporarily compiled the `.m` through `PopupMenuVC.m`. p28 removes that bridge and registers `ZONMenuCoordinator.m` directly in the target Sources phase. The coordinator implementation itself is unchanged.
+## Compilation boundary after v1_p29
+```text
+Xcode target: testmod
+  -> PopupMenuVC.m
+  -> ZONMenuCoordinator.m
+  -> ZONMenuPanelController.m
+  -> ZONMenuChromeRenderer.m
+  -> ZONFeatureRenderer.m
+  -> ZONSectionRenderer.m
+```
 
-## Bootstrap rules
-- Keep `+load`/constructor minimal.
-- UI work must execute on the main queue after UIApplication is usable.
-- Optional module/framework failures must be non-fatal to core startup.
-- Game-specific offsets/symbols/classes do not belong in core.
+The five listed ZONCore implementation modules are independent Objective-C translation units. Public/use-site headers now carry declarations for the p29 render/panel helpers rather than their complete implementations.
 
-## External module ABI
-External dylibs should use a small versioned C ABI and eventually require manifest/hash/signature validation before production remote delivery.
+Still header-based by design after p29:
+- `ZONFeatureRegistry.h`
+- `ZONFeatureDispatcher.h`
+- `ZONMenuEventBridge.h`
+- `ZONModuleLoader.h`
 
-## Security invariants
-- Treat client-side secrets as recoverable.
-- Do not rely on embedded symmetric secrets as the long-term trust root.
-- Privileged remote configuration should eventually be signed/verifiable.
+## p29 invariants
+- No Feature Registry data change.
+- No Dispatcher/EventBridge business behavior change.
+- No UI geometry/color/text/animation change.
+- No authorization, UDID, cloud-save or clear-game-data change.
+- p29 is a compilation-boundary refactor only.
+
+## Runtime baseline
+`v1_p28` source commit `350a46deb089a05fc599e641bd1eeb419c36c0d5` remains the device-verified baseline until p29 device regression passes.

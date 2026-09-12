@@ -4,39 +4,31 @@
 - Repository: `a7987083/zonoe-`
 - Stable branch: `main`
 - Production branch: `dev/zonoemenu-production-v1`
-- Current work branch: `work/zonoemenu-v1-p28-build-integration`
-- Current version: `v1_p28`
-- Stable baseline commit: `68329ee5844f3899d369a778073e5586d8bc4e1f`
-- User source-completion commit on main: `89507e1cd2f7c27184931e875adca02b043cfb36`
-- p26 source commit: `b1f3eb25b1ea170c3dddadf746fe07ca9654ea80`
-- p27 source commit: `314dace8ebb8cf3b1ffaeec19bf0a2cf7fe7c311`
+- Current work branch: `work/zonoemenu-v1-p29-render-boundary`
+- Current version: `v1_p29`
 - p28 source commit / current device-verified baseline: `350a46deb089a05fc599e641bd1eeb419c36c0d5`
+- p29 source commit: `506a22c01a2b46dbea0d4299418fcb702b6cb80e`
 
 ## Device-verified baseline — v1_p28
-The user completed p28 device/runtime regression and reported no issues. p28 is now the current device-verified structural/runtime baseline.
+The user completed p28 device/runtime regression with no reported issues. `v1_p28` remains the current device-verified baseline until p29 passes the same hardware regression.
 
-Verified scope includes:
-- App launch and floating entry behavior.
-- Menu open/close and outside-tap close.
-- Section rendering/fold/relayout/layout refresh.
-- Existing card/grid/switch/ad switch/slider dispatch.
-- Authorization, UDID, VIP cloud save, clear-game-data and existing protected business behavior show no reported regression.
+## Current phase — v1_p29 Rendering Boundary Cleanup
+p29 converts four menu/render helpers from header-only `static inline` implementations into normal Objective-C translation units while preserving their existing function signatures, function bodies, UI constants and call flow.
 
-The previously suspected keyboard/presentation issue remains closed as a test/user-side mistake; no code fix is required.
+Split modules:
+1. `ZONMenuPanelController.h` + new `ZONMenuPanelController.m`
+2. `ZONMenuChromeRenderer.h` + new `ZONMenuChromeRenderer.m`
+3. `ZONFeatureRenderer.h` + new `ZONFeatureRenderer.m`
+4. `ZONSectionRenderer.h` + new `ZONSectionRenderer.m`
 
-## Closed phase — v1_p28 ZONCore Build Integration
-p28 closed the temporary compilation bridge introduced in p27 without changing coordinator runtime logic.
+All four `.m` files are registered in `testmod.xcodeproj/project.pbxproj` and compiled independently by target `testmod`.
 
-Source commit `350a46deb089a05fc599e641bd1eeb419c36c0d5` changes exactly three files:
-1. `VERSION`: `v1_p27` -> `v1_p28`.
-2. `testmod.xcodeproj/project.pbxproj`: adds one `PBXFileReference`, one `PBXBuildFile`, and one `PBXSourcesBuildPhase` entry for `testmod/ZONCore/ZONMenuCoordinator.m`.
-3. `testmod/菜单/PopupMenuVC.m`: removes the temporary direct `#import "../ZONCore/ZONMenuCoordinator.m"` bridge and its explanatory comments.
-
-No method body in `ZONMenuCoordinator.m` changed in p28.
-
-## Protected scope
-Do not change without a separate verified task:
-- authorization / BS-PHP behavior
+p29 intentionally does not modify:
+- `ZONFeatureRegistry.h`
+- `ZONFeatureDispatcher.h`
+- `ZONMenuEventBridge.h`
+- `ZONModuleLoader.h`
+- authorization / BS-PHP
 - UDID
 - VIP cloud save
 - clear-game-data
@@ -45,53 +37,69 @@ Do not change without a separate verified task:
 - AppDelegate / SceneDelegate
 - Feature Registry data
 - Dispatcher business handlers
-- UI style/dimensions/colors/text/spacing
+- UI style, dimensions, colors, text or spacing
 - keyboard/presentation logic
 
-## v1_p28 CI verification
-Validation ran from isolated branch `test/zonoemenu-v1-p28-build`; the temporary integration workflow is not part of the p28 work branch.
+## Source commits
+- Source split: `aca50911e66b6d91313ab990746a658b28f04066`
+- PBX target integration / p29 source head: `506a22c01a2b46dbea0d4299418fcb702b6cb80e`
 
-- Workflow: `p28 Integrate and Build`
-- Run ID: `34657710034`
+Source-only p28-docs-head -> p29 source diff is limited to:
+- `VERSION`
+- `testmod.xcodeproj/project.pbxproj`
+- the four target headers
+- the four new target `.m` files
+
+No protected business source file is part of the p29 source diff.
+
+## v1_p29 CI verification
+- Workflow: `p29 Render Boundary Build`
+- Run ID: `34671336051`
+- Validation branch: `test/zonoemenu-v1-p29-build-verify`
+- Validation workflow commit: `0c346ce3eb4c2dab4fc43a6e48c2c90be9bf0bd9`
 - Result: success
-- Test branch trigger commit: `1fa858be49313e9c37dfb8eb1bd2f32a2325de50`
-- Integrated source commit: `350a46deb089a05fc599e641bd1eeb419c36c0d5`
-- Toolchain: Xcode 16.4 / iPhoneOS SDK 18.5
+- Xcode: 16.4
 - Deployment target: iOS 12.0
 - Architectures: arm64 + arm64e
 
 ### A_customer
 - Result: success
-- Artifact: `testmod-v1_p28-A_customer`
-- Artifact ID: `10286438074`
-- Artifact ZIP SHA256: `86b899de9b04772f02a9a879bdbbf4138a6e3711f890bb0fca503e31877defaf`
-- Dylib SHA256: `2a0bf1f10c490dd4d8a239943365b0d3fe71d35ee2109e968297307a599dfccc`
+- Artifact: `testmod-v1_p29-A_customer`
+- Artifact ID: `10291080372`
+- Artifact ZIP SHA256: `c60f650142890d5ebb51c232b5920b59a46b30fff215751086965f2a1c658315`
+- Dylib SHA256: `3c6a15f17e44a681e0fa8eae6356c42df52fa7a1182dfd748baadb621fcb345a`
 
 ### B_debug
 - Result: success
-- Artifact: `testmod-v1_p28-B_debug`
-- Artifact ID: `10285962447`
-- Artifact ZIP SHA256: `1a664beb7261164d7dc48a810c9f594d94f0ed80ede1c67a8f04b731fa645149`
-- Dylib SHA256: `720a457df07ea8f5d4ddc6f7460357a193a98907a23d05d1fe50889f74b90437`
+- Artifact: `testmod-v1_p29-B_debug`
+- Artifact ID: `10291205155`
+- Artifact ZIP SHA256: `aece191a32982d91922b1c266eba44b68c990b8fb67484fd415313824115701d`
+- Dylib SHA256: `b475bf5533daf73dc5aea2a004dda6174b75365b8c3cb732309fbd0160a9eca7`
 
-Both variants passed source-commit verification, compilation, linking, versioned dylib packaging, `file`, `lipo -info`, `otool -L`, SHA256 generation and artifact upload. No duplicate-symbol regression occurred.
+Both variants passed source verification, compile, link, dylib packaging, Mach-O verification and artifact upload. No undefined-symbol or duplicate-symbol regression occurred.
+
+An initial test-only workflow revision failed YAML validation before GitHub created any job. It did not modify the p29 work branch. The workflow was corrected before source integration and build verification.
 
 ## Runtime verification state
-- `v1_p27`: historical device-verified baseline.
 - `v1_p28`: device/runtime verified; current baseline.
-- p28 source/static/CI/device verification is fully closed.
+- `v1_p29`: source/static/CI verified; device/runtime regression pending.
+- Do not promote p29 as the device baseline until the user confirms the A_customer build on hardware.
 
-## Current build relationship
+## Current compile relationship
 ```text
-PopupMenuVC.m
-  -> imports ZONMenuCoordinator.h only
+ZONMenuCoordinator.m
+  -> ZONMenuPanelController.h
+  -> ZONMenuChromeRenderer.h
+  -> ZONSectionRenderer.h
+       -> ZONFeatureRenderer.h
 
 Xcode target Sources
-  -> PopupMenuVC.m
   -> ZONMenuCoordinator.m
+  -> ZONMenuPanelController.m
+  -> ZONMenuChromeRenderer.m
+  -> ZONFeatureRenderer.m
+  -> ZONSectionRenderer.m
 ```
 
-The p27 direct implementation import is removed. `ZONMenuCoordinator.m` is now an independent Objective-C translation unit owned by the target.
-
 ## Next task
-No p29 source changes are started yet. Any p29 work should begin from device-verified source commit `350a46deb089a05fc599e641bd1eeb419c36c0d5` and first audit the remaining structural/maintenance candidates before modifying code.
+Device-regression-test `v1_p29` A_customer against the device-verified `v1_p28` baseline. Focus on menu open/close, section fold/relayout, card/grid buttons, switches/ad-speed slider, and confirm protected business paths show no regression.

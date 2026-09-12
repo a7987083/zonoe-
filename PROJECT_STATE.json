@@ -3,78 +3,66 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p28-build-integration",
-  "current_version": "v1_p28",
-  "current_phase": "p28_closed_device_verified",
-  "p26_source_commit": "b1f3eb25b1ea170c3dddadf746fe07ca9654ea80",
-  "p27_source_commit": "314dace8ebb8cf3b1ffaeec19bf0a2cf7fe7c311",
-  "p28_source_commit": "350a46deb089a05fc599e641bd1eeb419c36c0d5",
+  "current_work_branch": "work/zonoemenu-v1-p29-render-boundary",
+  "current_version": "v1_p29",
+  "current_phase": "rendering_boundary_cleanup",
   "last_device_verified_code_commit": "350a46deb089a05fc599e641bd1eeb419c36c0d5",
   "last_device_verified_version": "v1_p28",
+  "p29_source_split_commit": "aca50911e66b6d91313ab990746a658b28f04066",
+  "p29_source_commit": "506a22c01a2b46dbea0d4299418fcb702b6cb80e",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
-  "runtime_priority": ["ipa_injection", "jailbreak_injection"],
-  "preserve_existing_features": true,
-  "p27_runtime_status": "device_verified_success",
-  "p27_regression_status": "passed",
-  "p28_source_diff": [
-    "VERSION",
-    "testmod.xcodeproj/project.pbxproj",
-    "testmod/菜单/PopupMenuVC.m"
+  "p29_changes": [
+    "split_ZONMenuPanelController_header_implementation",
+    "split_ZONMenuChromeRenderer_header_implementation",
+    "split_ZONFeatureRenderer_header_implementation",
+    "split_ZONSectionRenderer_header_implementation",
+    "register_four_new_m_files_in_xcode_sources",
+    "preserve_function_bodies_and_ui_constants"
   ],
-  "p28_changes": [
-    "register_ZONMenuCoordinator_m_as_target_source",
-    "remove_direct_m_import_from_PopupMenuVC",
-    "no_coordinator_method_body_change",
-    "no_business_or_ui_behavior_change_intended"
-  ],
-  "p28_ci": {
-    "status": "success",
-    "workflow": "p28 Integrate and Build",
-    "run_id": 34657710034,
-    "validation_branch": "test/zonoemenu-v1-p28-build",
-    "validation_trigger_commit": "1fa858be49313e9c37dfb8eb1bd2f32a2325de50",
-    "source_commit": "350a46deb089a05fc599e641bd1eeb419c36c0d5",
-    "xcode": "16.4",
-    "iphoneos_sdk": "18.5",
-    "deployment_target": "12.0",
-    "architectures": ["arm64", "arm64e"],
-    "variants": {
-      "A_customer": {
-        "status": "success",
-        "artifact": "testmod-v1_p28-A_customer",
-        "artifact_id": 10286438074,
-        "artifact_zip_sha256": "86b899de9b04772f02a9a879bdbbf4138a6e3711f890bb0fca503e31877defaf",
-        "dylib_sha256": "2a0bf1f10c490dd4d8a239943365b0d3fe71d35ee2109e968297307a599dfccc"
-      },
-      "B_debug": {
-        "status": "success",
-        "artifact": "testmod-v1_p28-B_debug",
-        "artifact_id": 10285962447,
-        "artifact_zip_sha256": "1a664beb7261164d7dc48a810c9f594d94f0ed80ede1c67a8f04b731fa645149",
-        "dylib_sha256": "720a457df07ea8f5d4ddc6f7460357a193a98907a23d05d1fe50889f74b90437"
-      }
-    }
-  },
-  "p28_runtime_status": "device_verified_success",
-  "p28_regression_status": "passed",
-  "p28_closure_status": "source_static_ci_device_complete",
-  "keyboard_presentation_issue": {
-    "status": "closed_not_project_defect",
-    "code_change_required": false
-  },
-  "protected_scope": [
+  "p29_untouched": [
+    "ZONFeatureRegistry",
+    "ZONFeatureDispatcher",
+    "ZONMenuEventBridge",
+    "ZONModuleLoader",
     "authorization",
     "udid",
     "vip_cloud_save",
     "clear_game_data",
     "WX_NongShiFu123.mm",
     "main.m",
-    "app_delegate_scene_delegate",
     "feature_registry_data",
     "dispatcher_business_handlers",
     "ui_style_dimensions_colors_text_spacing",
     "keyboard_presentation_logic"
   ],
-  "next_task": "define v1_p29 from device-verified v1_p28 baseline; audit remaining structural maintenance candidates before modifying source"
+  "p29_ci": {
+    "status": "success",
+    "workflow": "p29 Render Boundary Build",
+    "run_id": 34671336051,
+    "validation_branch": "test/zonoemenu-v1-p29-build-verify",
+    "validation_workflow_commit": "0c346ce3eb4c2dab4fc43a6e48c2c90be9bf0bd9",
+    "xcode": "16.4",
+    "deployment_target": "12.0",
+    "architectures": ["arm64", "arm64e"],
+    "variants": {
+      "A_customer": {
+        "status": "success",
+        "artifact": "testmod-v1_p29-A_customer",
+        "artifact_id": 10291080372,
+        "artifact_zip_sha256": "c60f650142890d5ebb51c232b5920b59a46b30fff215751086965f2a1c658315",
+        "dylib_sha256": "3c6a15f17e44a681e0fa8eae6356c42df52fa7a1182dfd748baadb621fcb345a"
+      },
+      "B_debug": {
+        "status": "success",
+        "artifact": "testmod-v1_p29-B_debug",
+        "artifact_id": 10291205155,
+        "artifact_zip_sha256": "aece191a32982d91922b1c266eba44b68c990b8fb67484fd415313824115701d",
+        "dylib_sha256": "b475bf5533daf73dc5aea2a004dda6174b75365b8c3cb732309fbd0160a9eca7"
+      }
+    }
+  },
+  "p29_runtime_status": "pending_device_verification",
+  "p29_regression_status": "pending",
+  "next_task": "device regression test v1_p29 A_customer against device-verified v1_p28"
 }
