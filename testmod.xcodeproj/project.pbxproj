@@ -173,6 +173,10 @@
 		7ECBD41D2EFC0B1700C56F1C /* Network.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7ECBD41C2EFC0B1700C56F1C /* Network.framework */; };
 		7ECBD41F2F29099200C56F1C /* PopupMenuVC.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD41E2F29099200C56F1C /* PopupMenuVC.m */; };
 		7ECBD42B2F3A614000C56F1C /* ZONMenuCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD42A2F3A614000C56F1C /* ZONMenuCoordinator.m */; };
+		7ECBD42D2F3A614100C56F1C /* ZONMenuPanelController.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD42C2F3A614100C56F1C /* ZONMenuPanelController.m */; };
+		7ECBD42F2F3A614200C56F1C /* ZONMenuChromeRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD42E2F3A614200C56F1C /* ZONMenuChromeRenderer.m */; };
+		7ECBD4312F3A614300C56F1C /* ZONFeatureRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4302F3A614300C56F1C /* ZONFeatureRenderer.m */; };
+		7ECBD4332F3A614400C56F1C /* ZONSectionRenderer.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4322F3A614400C56F1C /* ZONSectionRenderer.m */; };
 		7ECBD4212F29099D00C56F1C /* PopupMenuVC.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECBD4202F29099D00C56F1C /* PopupMenuVC.h */; };
 		7ECBD4232F30EF6100C56F1C /* FoldSectionView.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECBD4222F30EF6100C56F1C /* FoldSectionView.h */; };
 		7ECBD4252F30EF6C00C56F1C /* FoldSectionView.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4242F30EF6C00C56F1C /* FoldSectionView.m */; };
@@ -379,6 +383,10 @@
 		7ECBD41C2EFC0B1700C56F1C /* Network.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Network.framework; path = System/Library/Frameworks/Network.framework; sourceTree = SDKROOT; };
 		7ECBD41E2F29099200C56F1C /* PopupMenuVC.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PopupMenuVC.m; sourceTree = "<group>"; };
 		7ECBD42A2F3A614000C56F1C /* ZONMenuCoordinator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONMenuCoordinator.m"; sourceTree = SOURCE_ROOT; };
+		7ECBD42C2F3A614100C56F1C /* ZONMenuPanelController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONMenuPanelController.m"; sourceTree = SOURCE_ROOT; };
+		7ECBD42E2F3A614200C56F1C /* ZONMenuChromeRenderer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONMenuChromeRenderer.m"; sourceTree = SOURCE_ROOT; };
+		7ECBD4302F3A614300C56F1C /* ZONFeatureRenderer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONFeatureRenderer.m"; sourceTree = SOURCE_ROOT; };
+		7ECBD4322F3A614400C56F1C /* ZONSectionRenderer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONSectionRenderer.m"; sourceTree = SOURCE_ROOT; };
 		7ECBD4202F29099D00C56F1C /* PopupMenuVC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PopupMenuVC.h; sourceTree = "<group>"; };
 		7ECBD4222F30EF6100C56F1C /* FoldSectionView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FoldSectionView.h; sourceTree = "<group>"; };
 		7ECBD4242F30EF6C00C56F1C /* FoldSectionView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FoldSectionView.m; sourceTree = "<group>"; };
@@ -1164,6 +1172,10 @@
 				7E8A583D2B8E4A9C00676FE2 /* ioapi.c in Sources */,
 				7ECBD41F2F29099200C56F1C /* PopupMenuVC.m in Sources */,
 				7ECBD42B2F3A614000C56F1C /* ZONMenuCoordinator.m in Sources */,
+				7ECBD42D2F3A614100C56F1C /* ZONMenuPanelController.m in Sources */,
+				7ECBD42F2F3A614200C56F1C /* ZONMenuChromeRenderer.m in Sources */,
+				7ECBD4312F3A614300C56F1C /* ZONFeatureRenderer.m in Sources */,
+				7ECBD4332F3A614400C56F1C /* ZONSectionRenderer.m in Sources */,
 				7E6F45522E1A8C4E00D4A46E /* JDSBNotificationViewController.m in Sources */,
 				7E8A57FA2B8E4A9C00676FE2 /* SCLSwitchView.m in Sources */,
 				7E8A57D92B8E4A9C00676FE2 /* AFNetworkReachabilityManager.m in Sources */,
