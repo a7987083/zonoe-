@@ -48,6 +48,6 @@ jobs:
           set -euxo pipefail
           clang -fobjc-arc -Wall -Wextra -Werror \
             -framework Foundation \
-            Tests/feature_registry_smoke.m \
+            Tests/feature_registry_smoke.m testmod/ZONCore/ZONFeatureRegistry.m \
             -o /tmp/zonoemenu-feature-registry-smoke
           /tmp/zonoemenu-feature-registry-smoke
