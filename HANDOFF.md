@@ -4,59 +4,44 @@
 - Repository: `a7987083/zonoe-`
 - Stable branch: `main`
 - Production branch: `dev/zonoemenu-production-v1`
-- Current work branch: `work/zonoemenu-v1-p32-dispatcher-audit`
+- Current audit branch: `work/zonoemenu-v1-p32-dispatcher-audit`
 - Runtime version/baseline: `v1_p31` / `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f` (device verified)
-- Current development phase: `v1_p32-A Dispatcher Boundary Audit`
+- Current development phase: `v1_p32-B Dispatcher Source Split`.
 
-## Current context
-p31 is fully CI- and device-verified. p32 starts with a non-runtime audit because the remaining `ZONFeatureDispatcher.h` boundary directly owns cloud-save, destructive cleanup, authorization deletion and runtime-toggle side effects.
+## p32-A audit result
+- Audit commit: `e7dddfbb5bb9cd597f6a194d9bee06e0cbba7988`.
+- Workflow: `p32 Dispatcher Boundary Audit`.
+- Run: `34703403975`.
+- Result: `success`.
+- Product source difference from p31 during audit: none.
+- Registry smoke: passed.
+- Module ABI smoke: passed.
 
-The p32-A branch intentionally does not change `testmod/`, `testmod.xcodeproj/project.pbxproj` or `VERSION`. Its purpose is to prove the live call chain and freeze the invariants that a later split must preserve.
-
-## Active Dispatcher ownership
+## Active Dispatcher ownership before p32-B
 - Xcode target compiles `testmod/ZONCore/ZONMenuEventBridge.m`.
 - `ZONMenuEventBridge.m` imports `ZONFeatureDispatcher.h`.
-- Xcode target does not currently register `ZONFeatureDispatcher.m`.
-- Therefore all seven `static inline` Dispatcher bodies are compiled into the EventBridge translation unit.
+- Xcode target does not register `ZONFeatureDispatcher.m` yet.
+- All seven `static inline` Dispatcher bodies are therefore compiled into EventBridge.
 
-Detailed audit: `DISPATCHER_AUDIT.md`.
-Automated audit: `Tests/dispatcher_boundary_audit.py`.
-CI workflow: `.github/workflows/p32-dispatcher-audit.yml`.
+Detailed invariants are in `DISPATCHER_AUDIT.md`.
 
 ## Dispatcher-owned behavior that must not drift
 - Actions: remote download, cloud save, local files, backup, restore, clear game data, clear authorization.
 - Toggles: IAP/no-ads, ad-speed enable, placeholder 203.
 - Persistent keys: `NNGG`, `NNGGNNGG`, `AADD`, `AADDAADD`.
-- EventBridge-owned numeric speed key remains `AADDssppeedd`.
+- EventBridge numeric speed key remains `AADDssppeedd`.
 - Runtime side effects remain `ImgTool.NeiGou`, `ImgTool.ADSpeed`, `ImgTool.ADBiansu`.
 - Cloud save must self-heal sandbox `tmp` before status handling.
 - Destructive routes must retain confirmation boundaries and delayed exit behavior.
 
-## Risk
-`ZONFeatureDispatcher.h` is business-heavy. A mechanical header-to-implementation split is acceptable only if the route strings, call targets, confirmation/destructive flow and runtime side effects remain identical. Do not mix business cleanup/refactoring into the split.
+## p32-B implementation rule
+Do a mechanical source split only. Move bodies without rewriting conditions, selectors, strings, timing or side effects. Register the new `.m` in PBX and verify the complete target. Do not mix business cleanup/refactoring into this phase.
 
 ## Verification policy
-- p32-A: static/topology audit only; product source must remain byte-identical to p31 baseline through the protected product paths.
-- p32-B: source split must get isolated source-equivalence checks plus full A/B Xcode builds.
-- CI success is not device verification. Any p32 A_customer runtime candidate requires a real-device checklist and explicit user pass before baseline promotion.
-
-## Current compile relationship
-```text
-ZONMenuCoordinator.m
-  -> ZONMenuEventBridge.m
-       -> imports ZONFeatureDispatcher.h (7 inline bodies)
-       -> ImgTool runtime sync
-
-Xcode target Sources
-  -> ZONMenuCoordinator.m
-  -> ZONMenuPanelController.m
-  -> ZONMenuChromeRenderer.m
-  -> ZONFeatureRenderer.m
-  -> ZONSectionRenderer.m
-  -> ZONMenuEventBridge.m
-  -> ZONFeatureRegistry.m
-  -> no ZONFeatureDispatcher.m yet
-```
+- Source/route equivalence against p31 is required before build.
+- Registry and Module ABI smokes remain required.
+- A_customer and B_debug must both compile/link/package as arm64 + arm64e with iOS 12 deployment target.
+- CI success does not promote p32. Real-device protected-path regression and explicit user pass are still required.
 
 ## Next task
-Run/verify `p32 Dispatcher Boundary Audit`. If green, start p32-B by moving only the seven Dispatcher bodies into an independent `.m`, registering it in the target, and building A/B variants before any real-device handoff.
+Create the p32-B source branch, split `ZONFeatureDispatcher`, register its `.m`, run A/B CI, then provide A_customer for hardware regression.

@@ -5,10 +5,11 @@
 - Audited the active `testmod/ZONCore/ZONFeatureDispatcher.h` and confirmed it is header-only and compiled through `ZONMenuEventBridge.m`; there is no `ZONFeatureDispatcher.m` in the active Xcode target.
 - Recorded seven inline Dispatcher functions, seven action routes and three toggle routes in `DISPATCHER_AUDIT.md`.
 - Added `Tests/dispatcher_boundary_audit.py` to lock active compilation ownership, action/toggle route identifiers, protected destructive markers, persistence keys and `ImgTool` side effects.
-- Added `.github/workflows/p32-dispatcher-audit.yml`; it fails if `testmod/`, `testmod.xcodeproj/project.pbxproj` or `VERSION` differ from the device-verified p31 source commit during the audit-only phase.
-- The audit workflow also reruns Feature Registry and Module ABI smokes.
-- Product/runtime source has not been modified in p32-A; `v1_p31` remains the device-verified runtime baseline.
-- CI status: pending at this commit.
+- Added `.github/workflows/p32-dispatcher-audit.yml`; it proves the audit phase has no product-source diff from the device-verified p31 source commit and reruns Registry/Module ABI smokes.
+- Audit commit: `e7dddfbb5bb9cd597f6a194d9bee06e0cbba7988`.
+- CI Run `34703403975`: **success**.
+- Product/runtime source was not modified in p32-A; `v1_p31` remains the device-verified runtime baseline.
+- Audit conclusion: active Dispatcher boundary is eligible for an isolated mechanical `.h` -> `.h + .m` split.
 
 ## 2026-09-12 — v1_p31 Feature Registry Boundary Cleanup
 - Development base: p30 source `8e88b63611d19af6c42d9172c0f5741b34f51809`; device fallback was p28 while p29/p30 hardware verification remained unconfirmed.
@@ -27,21 +28,18 @@
 - B dylib SHA256: `ffe787f48c0ed5e6e3862692ccf279879831257ccdd7a8946af239d405927743`.
 - Device/runtime regression: **passed**. User reported the cumulative p29 + p30 + p31 hardware checklist has no issues.
 - `v1_p31` / `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f` is now the device-verified baseline; the same regression implicitly closes the pending p29 and p30 hardware gates.
-- ModuleLoader was audited but is not used by the actual target runtime path, so no inactive Loader implementation was forced into the product target.
 
 ## 2026-09-12 — v1_p30 EventBridge Boundary Cleanup
 - Converted `ZONMenuEventBridge` to declaration header + independent `.m` translation unit.
 - Source commit: `8e88b63611d19af6c42d9172c0f5741b34f51809`.
-- A/B CI passed.
-- Hardware status: covered and passed by the cumulative `v1_p31` real-device regression.
+- A/B CI passed; hardware status passed via cumulative p31 regression.
 
 ## 2026-09-12 — v1_p29 Rendering Boundary Cleanup
 - Converted Panel/Chrome/FeatureRenderer/SectionRenderer helpers to independent `.m` translation units.
 - Source commit: `506a22c01a2b46dbea0d4299418fcb702b6cb80e`.
-- A/B CI passed.
-- Hardware status: covered and passed by the cumulative `v1_p31` real-device regression.
+- A/B CI passed; hardware status passed via cumulative p31 regression.
 
 ## 2026-09-12 — v1_p28 ZONCore Build Integration
 - Registered `ZONMenuCoordinator.m` as a normal Xcode target source and removed the temporary direct `.m` import bridge.
 - Source commit: `350a46deb089a05fc599e641bd1eeb419c36c0d5`.
-- A/B CI and hardware regression passed; p28 was the device-verified baseline until superseded by the successful p31 cumulative regression.
+- A/B CI and hardware regression passed; p28 was superseded by p31.

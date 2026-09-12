@@ -2,13 +2,13 @@
 
 ## Current
 
-### Dispatcher business-heavy boundary — under p32 audit
-- `testmod/ZONCore/ZONFeatureDispatcher.h` remains header-only and owns seven inline function bodies.
-- The active target compiles those bodies through `ZONMenuEventBridge.m`; there is no `ZONFeatureDispatcher.m` target source yet.
+### Dispatcher source-split risk
+- p32-A proved `testmod/ZONCore/ZONFeatureDispatcher.h` is an active header-only boundary compiled through `ZONMenuEventBridge.m`.
+- Audit Run `34703403975` passed and confirmed no product-source change from the p31 device baseline.
+- Remaining risk is the p32-B mechanical move itself: symbol/linkage mistakes or accidental behavior drift while moving seven function bodies to a `.m` file.
 - Protected behavior includes cloud-save tmp self-heal, clear-game-data cleanup, clear-authorization deletion, legacy persistence keys and `ImgTool` runtime side effects.
-- Risk: a header-to-`.m` split can cause behavior drift if it is mixed with cleanup/refactoring.
-- Mitigation added in p32-A: `DISPATCHER_AUDIT.md`, `Tests/dispatcher_boundary_audit.py`, and `p32 Dispatcher Boundary Audit` CI.
-- Status: audit implementation complete; CI pending. Do not start business refactoring during the split.
+- Required mitigation: exact source/route invariant checks, PBX registration check, full A/B build, then real-device protected-path regression.
+- Do not combine business refactoring with the split.
 
 ### ModuleLoader duplicate/dead-path structure
 - The repository contains legacy/duplicate `ZONModuleLoader.h` copies under root `ZONCore/` and `testmod/ZONCore/`.
@@ -17,17 +17,18 @@
 
 ## Closed
 
+### p32 Dispatcher boundary ambiguity
+- Closed by p32-A audit Run `34703403975`.
+- Active ownership is unambiguous: EventBridge imports the header-only Dispatcher; no Dispatcher `.m` is currently in the target.
+
 ### v1_p31 cumulative device regression
-- Closed by real-device verification: user reported the cumulative p29 + p30 + p31 checklist passed with no issues.
-- `v1_p31` / `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f` is the current device-verified baseline.
+- Closed by real-device verification; `v1_p31` / `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f` is the current device-verified baseline.
 
 ### p31 Registry data-change risk
-- Closed by CI: p30 Registry dictionary rows and key name/value definitions were compared against p31 before smoke/build jobs.
-- `feature_registry_smoke` passed with 10 features, 3 sections and unchanged tag/identifier/order/stateKey/renderer behavior.
+- Closed by CI with Registry equivalence and smoke tests.
 
 ### p30 first CI protection-check failure
-- Cause: shallow checkout could not resolve the p29 comparison commit.
-- No p30 source impact; successful rerun ID `34672196947`.
+- Cause: shallow checkout could not resolve the p29 comparison commit; successful rerun ID `34672196947`.
 
 ### p29 initial workflow YAML validation failure
 - Test-only CI definition issue; no p29 source impact.

@@ -5,22 +5,15 @@
   "production_branch": "dev/zonoemenu-production-v1",
   "current_work_branch": "work/zonoemenu-v1-p32-dispatcher-audit",
   "current_version": "v1_p31",
-  "current_phase": "v1_p32_dispatcher_boundary_audit",
-  "phase_status": "implementation_complete_ci_pending",
+  "current_phase": "v1_p32_dispatcher_source_split",
+  "phase_status": "ready_to_implement",
   "last_device_verified_code_commit": "5c0e5afddfecc9e9ed4b89f7ad42780cd652847f",
   "last_device_verified_version": "v1_p31",
   "device_test_policy_document": "DEVICE_TEST_MATRIX.md",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
-  "p29_runtime_status": "passed_via_v1_p31_cumulative_regression",
-  "p30_runtime_status": "passed_via_v1_p31_cumulative_regression",
   "p31_source_commit": "5c0e5afddfecc9e9ed4b89f7ad42780cd652847f",
   "p31_runtime_status": "passed_device_verification",
-  "p31_ci": {
-    "status": "success",
-    "workflow": "p31 Registry Boundary Build",
-    "run_id": 34673034214
-  },
   "p32_audit": {
     "branch": "work/zonoemenu-v1-p32-dispatcher-audit",
     "product_source_changed": false,
@@ -30,17 +23,14 @@
     "inline_function_count": 7,
     "action_route_count": 7,
     "toggle_route_count": 3,
-    "protected_destructive_routes": [
-      "data.clear-game-data",
-      "auth.clear-records"
-    ],
+    "protected_destructive_routes": ["data.clear-game-data", "auth.clear-records"],
     "audit_document": "DISPATCHER_AUDIT.md",
     "audit_test": "Tests/dispatcher_boundary_audit.py",
     "workflow": ".github/workflows/p32-dispatcher-audit.yml",
-    "audit_commit": null,
-    "ci_status": "pending",
-    "run_id": null
+    "audit_commit": "e7dddfbb5bb9cd597f6a194d9bee06e0cbba7988",
+    "ci_status": "success",
+    "run_id": 34703403975
   },
-  "p32_split_decision": "eligible_after_audit_ci_pass",
-  "next_task": "verify p32 Dispatcher Boundary Audit CI; if green start isolated Dispatcher header-to-m implementation split"
+  "p32_split_decision": "approved_mechanical_split",
+  "next_task": "create isolated p32 Dispatcher source-split branch; move seven bodies to ZONFeatureDispatcher.m; register PBX source; run equivalence plus A/B CI"
 }

@@ -4,7 +4,9 @@
 - Device-verified baseline: `v1_p31`.
 - Product source commit: `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f`.
 - Audit branch: `work/zonoemenu-v1-p32-dispatcher-audit`.
-- Audit phase intentionally makes no changes under `testmod/`, `testmod.xcodeproj/project.pbxproj` or `VERSION`.
+- Audit commit: `e7dddfbb5bb9cd597f6a194d9bee06e0cbba7988`.
+- Audit workflow: `p32 Dispatcher Boundary Audit` / Run `34703403975` / `success`.
+- Audit phase made no changes under `testmod/`, `testmod.xcodeproj/project.pbxproj` or `VERSION`.
 
 ## Active compilation ownership
 The active Xcode target compiles `testmod/ZONCore/ZONMenuEventBridge.m` and `testmod/ZONCore/ZONFeatureRegistry.m`. There is no `ZONFeatureDispatcher.m` entry in the target.
@@ -38,7 +40,7 @@ The active Xcode target compiles `testmod/ZONCore/ZONMenuEventBridge.m` and `tes
 `ZONMenuEventBridge.m` remains the owner of ad-speed numeric persistence (`AADDssppeedd`) and runtime synchronization to `ImgTool.NeiGou`, `ImgTool.ADSpeed` and `ImgTool.ADBiansu`.
 
 ## Protected invariants
-A later source split must not change:
+A source split must not change:
 - cloud-save tmp-directory self-heal before cloud status handling;
 - clear-game confirmation text/boundary, tmp preservation, Documents/Library/defaults cleanup or delayed exit behavior;
 - clear-authorization confirmation boundary, `deletekm` handoff or delayed exit behavior;
@@ -48,11 +50,11 @@ A later source split must not change:
 - local-files presentation semantics;
 - EventBridge slider persistence/runtime-sync ownership.
 
-## Automated audit
-`Tests/dispatcher_boundary_audit.py` proves the active target topology, seven-function inventory, seven action routes, three toggle routes and protected markers. `.github/workflows/p32-dispatcher-audit.yml` additionally proves the audit commit has no product-source diff from the p31 device-verified commit.
+## Automated audit result
+`Tests/dispatcher_boundary_audit.py` proved the active target topology, seven-function inventory, seven action routes, three toggle routes and protected markers. `.github/workflows/p32-dispatcher-audit.yml` additionally proved the audit commit had no product-source diff from the p31 device-verified commit. Run `34703403975` completed successfully.
 
 ## Split decision
-The boundary is structurally suitable for a declaration-header + independent `.m` split, but the split must be its own source commit and must be followed by A/B Xcode build verification and real-device protected-path regression. The audit itself does not modify runtime code.
+**Approved for p32-B mechanical split.** The audit found no inactive/duplicate Dispatcher ambiguity. The split must remain behavior-preserving and isolated from business refactoring.
 
 ## Next Task
-After the audit workflow passes, start p32-B: move the seven function bodies into `ZONFeatureDispatcher.m`, leave declarations in `ZONFeatureDispatcher.h`, register the `.m` in the Xcode target, and prove route/source equivalence before producing an A_customer artifact.
+Move the seven function bodies into `ZONFeatureDispatcher.m`, leave declarations in `ZONFeatureDispatcher.h`, register the `.m` in the Xcode target, prove source/route equivalence, build A/B variants, then hand out A_customer for device regression.
