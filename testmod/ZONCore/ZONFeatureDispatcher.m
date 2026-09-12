@@ -138,7 +138,7 @@ void ZONPresentClearAuthorizationConfirmation(UIViewController *hostViewControll
 /// Routes registry-owned actions. All ten built-in features have completed staged
 /// migration, so PopupMenuVC no longer carries per-tag compatibility fallbacks.
 BOOL ZONDispatchMigratedActionForLegacyTag(NSInteger legacyTag,
-                                            UIViewController *hostViewController)
+                                                          UIViewController *hostViewController)
 {
     NSDictionary<NSString *, id> *feature = ZONFeatureMetadataForLegacyTag(legacyTag);
     if (!feature || ![feature[ZONFeatureMigratedKey] boolValue]) return NO;
