@@ -1,0 +1,364 @@
+name: p32 Dispatcher Boundary Build
+
+on:
+  push:
+    branches:
+      - test/zonoemenu-v1-p32-dispatcher-build
+    paths:
+      - '.github/workflows/p32-dispatcher-build.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: ubuntu-latest
+    outputs:
+      source_sha: ${{ steps.commit.outputs.source_sha }}
+    steps:
+      - name: Checkout p32 work branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/zonoemenu-v1-p32-dispatcher-split
+          fetch-depth: 0
+
+      - name: Verify p32 pre-integration source scope
+        run: |
+          set -euxo pipefail
+          test "$(tr -d '[:space:]' < VERSION)" = 'v1_p32'
+          test -s testmod/ZONCore/ZONFeatureDispatcher.m
+          ! grep -F 'static inline' testmod/ZONCore/ZONFeatureDispatcher.h
+          ! grep -F 'ZONFeatureDispatcher.m in Sources' testmod.xcodeproj/project.pbxproj
+          expected="$(printf '%s\n' \
+            VERSION \
+            testmod/ZONCore/ZONFeatureDispatcher.h \
+            testmod/ZONCore/ZONFeatureDispatcher.m | sort)"
+          actual="$(git diff --name-only 5c0e5afddfecc9e9ed4b89f7ad42780cd652847f -- \
+            VERSION testmod testmod.xcodeproj/project.pbxproj | sort)"
+          test "$actual" = "$expected"
+          git diff --exit-code 5c0e5afddfecc9e9ed4b89f7ad42780cd652847f -- \
+            testmod/ZONCore/ZONMenuEventBridge.h \
+            testmod/ZONCore/ZONMenuEventBridge.m \
+            testmod/ZONCore/ZONFeatureRegistry.h \
+            testmod/ZONCore/ZONFeatureRegistry.m \
+            testmod/Bsphp/main.m \
+            testmod/Bsphp/WX_NongShiFu123.mm
+
+      - name: Prove p31 to p32 Dispatcher body equivalence
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import difflib, subprocess
+
+          baseline = subprocess.check_output([
+              'git', 'show',
+              '5c0e5afddfecc9e9ed4b89f7ad42780cd652847f:testmod/ZONCore/ZONFeatureDispatcher.h'
+          ], text=True)
+          start = baseline.index('static inline NSString *ZONTmpDirectoryPath(void)')
+          end = baseline.index('\nNS_ASSUME_NONNULL_END', start)
+          expected = baseline[start:end].replace('static inline ', '').strip()
+
+          current = Path('testmod/ZONCore/ZONFeatureDispatcher.m').read_text()
+          start2 = current.index('NSString *ZONTmpDirectoryPath(void)')
+          actual = current[start2:].strip()
+
+          if expected != actual:
+              diff = ''.join(difflib.unified_diff(
+                  expected.splitlines(True), actual.splitlines(True),
+                  fromfile='p31-inline-normalized', tofile='p32-dispatcher-m'
+              ))
+              raise SystemExit('Dispatcher body equivalence failed:\n' + diff)
+          print('Dispatcher body equivalence: PASS')
+          PY
+
+      - name: Register Dispatcher source in Xcode target
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          pbx = Path('testmod.xcodeproj/project.pbxproj')
+          text = pbx.read_text()
+
+          build_anchor = '\t\t7ECBD4372F3A614600C56F1C /* ZONFeatureRegistry.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4362F3A614600C56F1C /* ZONFeatureRegistry.m */; };\n'
+          build_entry = '\t\t7ECBD4392F3A614700C56F1C /* ZONFeatureDispatcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4382F3A614700C56F1C /* ZONFeatureDispatcher.m */; };\n'
+          ref_anchor = '\t\t7ECBD4362F3A614600C56F1C /* ZONFeatureRegistry.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONFeatureRegistry.m"; sourceTree = SOURCE_ROOT; };\n'
+          ref_entry = '\t\t7ECBD4382F3A614700C56F1C /* ZONFeatureDispatcher.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONFeatureDispatcher.m"; sourceTree = SOURCE_ROOT; };\n'
+          source_anchor = '\t\t\t\t7ECBD4372F3A614600C56F1C /* ZONFeatureRegistry.m in Sources */,\n'
+          source_entry = '\t\t\t\t7ECBD4392F3A614700C56F1C /* ZONFeatureDispatcher.m in Sources */,\n'
+
+          if '7ECBD4382F3A614700C56F1C' not in text and '7ECBD4392F3A614700C56F1C' not in text:
+              for label, anchor in [('build', build_anchor), ('ref', ref_anchor), ('source', source_anchor)]:
+                  if text.count(anchor) != 1:
+                      raise SystemExit(f'{label} anchor count={text.count(anchor)}')
+              text = text.replace(build_anchor, build_anchor + build_entry, 1)
+              text = text.replace(ref_anchor, ref_anchor + ref_entry, 1)
+              text = text.replace(source_anchor, source_anchor + source_entry, 1)
+              pbx.write_text(text)
+
+          final = pbx.read_text()
+          if final.count('ZONFeatureDispatcher.m in Sources') != 2:
+              raise SystemExit('expected exactly two Dispatcher Sources mentions')
+          if final.count('7ECBD4382F3A614700C56F1C') != 2:
+              raise SystemExit('unexpected Dispatcher fileRef count')
+          if final.count('7ECBD4392F3A614700C56F1C') != 2:
+              raise SystemExit('unexpected Dispatcher buildFile count')
+          PY
+          git diff --check
+          changed="$(git diff --name-only)"
+          test "$changed" = 'testmod.xcodeproj/project.pbxproj'
+
+      - name: Commit p32 PBX integration
+        id: commit
+        run: |
+          set -euxo pipefail
+          git config user.name 'a7987083'
+          git config user.email '85878547+a7987083@users.noreply.github.com'
+          if ! git diff --quiet; then
+            git add testmod.xcodeproj/project.pbxproj
+            git commit -m 'build: register v1_p32 dispatcher source'
+            git push origin HEAD:refs/heads/work/zonoemenu-v1-p32-dispatcher-split
+          fi
+          SOURCE_SHA="$(git rev-parse HEAD)"
+          echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+          echo "p32 source commit: $SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
+
+  smoke:
+    needs: integrate
+    runs-on: macos-15
+    steps:
+      - name: Checkout integrated p32 source
+        uses: actions/checkout@v4
+        with:
+          ref: work/zonoemenu-v1-p32-dispatcher-split
+          fetch-depth: 0
+
+      - name: Verify source head and equivalence
+        run: |
+          set -euxo pipefail
+          test "$(git rev-parse HEAD)" = "${{ needs.integrate.outputs.source_sha }}"
+          test "$(tr -d '[:space:]' < VERSION)" = 'v1_p32'
+          test "$(grep -c 'ZONFeatureDispatcher.m in Sources' testmod.xcodeproj/project.pbxproj)" -eq 2
+          python3 - <<'PY'
+          from pathlib import Path
+          import difflib, subprocess
+          baseline = subprocess.check_output(['git','show','5c0e5afddfecc9e9ed4b89f7ad42780cd652847f:testmod/ZONCore/ZONFeatureDispatcher.h'], text=True)
+          start = baseline.index('static inline NSString *ZONTmpDirectoryPath(void)')
+          end = baseline.index('\nNS_ASSUME_NONNULL_END', start)
+          expected = baseline[start:end].replace('static inline ', '').strip()
+          current = Path('testmod/ZONCore/ZONFeatureDispatcher.m').read_text()
+          actual = current[current.index('NSString *ZONTmpDirectoryPath(void)'):].strip()
+          if expected != actual:
+              raise SystemExit('Dispatcher implementation differs from normalized p31 body')
+          print('Dispatcher body equivalence: PASS')
+          PY
+          python3 Tests/dispatcher_contract_smoke.py
+
+      - name: Run feature registry smoke
+        run: |
+          set -euxo pipefail
+          clang -fobjc-arc -Wall -Wextra -Werror \
+            -framework Foundation \
+            Tests/feature_registry_smoke.m testmod/ZONCore/ZONFeatureRegistry.m \
+            -o /tmp/zonoemenu-feature-registry-smoke
+          /tmp/zonoemenu-feature-registry-smoke
+
+      - name: Run module ABI smoke
+        run: |
+          set -euxo pipefail
+          clang -std=c11 -Wall -Wextra -Werror \
+            -I ZONCore \
+            Tests/module_abi_smoke.c Examples/ZONExampleModule.c \
+            -o /tmp/zonoemenu-module-abi-smoke
+          /tmp/zonoemenu-module-abi-smoke
+          clang -std=c11 -Wall -Wextra -Werror \
+            -dynamiclib -I ZONCore \
+            Examples/ZONExampleModule.c \
+            -o /tmp/ZONExampleModule.dylib
+          nm -gU /tmp/ZONExampleModule.dylib | grep '_zonoe_module_abi_version$'
+          nm -gU /tmp/ZONExampleModule.dylib | grep '_zonoe_module_identifier$'
+          nm -gU /tmp/ZONExampleModule.dylib | grep '_zonoe_module_initialize$'
+
+  build:
+    needs: [integrate, smoke]
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: A_customer
+            debug_macro: 0
+            cloud_testmode: NO
+          - variant: B_debug
+            debug_macro: 1
+            cloud_testmode: YES
+    steps:
+      - name: Checkout integrated p32 source
+        uses: actions/checkout@v4
+        with:
+          ref: work/zonoemenu-v1-p32-dispatcher-split
+          fetch-depth: 0
+
+      - name: Verify integrated source scope
+        run: |
+          set -euxo pipefail
+          test "$(git rev-parse HEAD)" = "${{ needs.integrate.outputs.source_sha }}"
+          test "$(tr -d '[:space:]' < VERSION)" = 'v1_p32'
+          test -s testmod/ZONCore/ZONFeatureDispatcher.m
+          ! grep -F 'static inline' testmod/ZONCore/ZONFeatureDispatcher.h
+          test "$(grep -c 'ZONFeatureDispatcher.m in Sources' testmod.xcodeproj/project.pbxproj)" -eq 2
+          expected="$(printf '%s\n' \
+            VERSION \
+            testmod.xcodeproj/project.pbxproj \
+            testmod/ZONCore/ZONFeatureDispatcher.h \
+            testmod/ZONCore/ZONFeatureDispatcher.m | sort)"
+          actual="$(git diff --name-only 5c0e5afddfecc9e9ed4b89f7ad42780cd652847f -- \
+            VERSION testmod testmod.xcodeproj/project.pbxproj | sort)"
+          test "$actual" = "$expected"
+          python3 Tests/dispatcher_contract_smoke.py
+
+      - name: Resolve testmod version
+        run: |
+          set -euxo pipefail
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+          echo "TESTMOD_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "TESTMOD_FILENAME=testmod_${VERSION}_${{ matrix.variant }}.dylib" >> "$GITHUB_ENV"
+
+      - name: Select Xcode 16.4
+        run: |
+          set -euxo pipefail
+          sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Prepare dependency cache destinations
+        run: |
+          set -euxo pipefail
+          sudo mkdir -p /opt/MonkeyDev /opt/theos
+          sudo chown -R "$USER":staff /opt/MonkeyDev /opt/theos
+
+      - name: Restore legacy build dependency cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            /opt/MonkeyDev
+            /opt/theos
+          key: zonoe-builddeps-${{ runner.os }}-macos15-xcode16.4-${{ hashFiles('ci/dependencies.lock') }}
+
+      - name: Install legacy build dependencies
+        run: |
+          set -euxo pipefail
+          brew install ldid dpkg || true
+          source ci/dependencies.lock
+          repo_at_sha() {
+            local dir="$1" sha="$2" required="$3"
+            [[ -d "$dir/.git" ]] || return 1
+            [[ "$(git -C "$dir" rev-parse HEAD 2>/dev/null || true)" == "$sha" ]] || return 1
+            [[ -e "$dir/$required" ]] || return 1
+          }
+          theos_at_sha() {
+            repo_at_sha /opt/theos "$THEOS_SHA" vendor/include || return 1
+            local state
+            state="$(git -C /opt/theos submodule status --recursive 2>/dev/null)" || return 1
+            ! printf '%s\n' "$state" | grep -Eq '^[+-U]'
+          }
+          install_pinned_repo() {
+            local dir="$1" url="$2" sha="$3"
+            sudo rm -rf "$dir"
+            sudo mkdir -p "$dir"
+            sudo chown "$USER":staff "$dir"
+            git -C "$dir" init -q
+            git -C "$dir" remote add origin "$url"
+            git -C "$dir" fetch --depth=1 origin "$sha"
+            git -C "$dir" checkout --detach FETCH_HEAD
+          }
+          repo_at_sha /opt/MonkeyDev "$MONKEYDEV_SHA" bin/md || install_pinned_repo /opt/MonkeyDev https://github.com/AloneMonkey/MonkeyDev.git "$MONKEYDEV_SHA"
+          if ! theos_at_sha; then
+            install_pinned_repo /opt/theos https://github.com/theos/theos.git "$THEOS_SHA"
+            git -C /opt/theos submodule sync --recursive
+            git -C /opt/theos submodule update --init --recursive
+          fi
+          test -x /opt/MonkeyDev/bin/md
+          test -d /opt/theos/vendor/include
+
+      - name: Materialize pinned vendor sources
+        run: |
+          set -euxo pipefail
+          bash scripts/bootstrap_vendor.sh
+
+      - name: Configure build variant
+        run: |
+          set -euxo pipefail
+          if [[ "${{ matrix.cloud_testmode }}" == 'YES' ]]; then
+            python3 - <<'PY'
+          from pathlib import Path
+          p = Path('testmod/菜单/PubgLoad.mm')
+          s = p.read_text()
+          old = 'BOOL testMode = NO; // NO = 正常验证, YES = 测试模式（绕过验证）'
+          new = 'BOOL testMode = YES; // B_debug: 云存档测试模式（绕过购买验证）'
+          if s.count(old) != 1:
+              raise SystemExit(f'expected exactly one cloud testMode switch, found {s.count(old)}')
+          p.write_text(s.replace(old, new, 1))
+          PY
+          fi
+
+      - name: Build testmod dylib
+        id: xcodebuild
+        run: |
+          set +e
+          mkdir -p build/Release-iphoneos
+          xcodebuild \
+            -project testmod.xcodeproj \
+            -target testmod \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY='' \
+            IPHONEOS_DEPLOYMENT_TARGET=12.0 \
+            ARCHS='arm64 arm64e' \
+            ONLY_ACTIVE_ARCH=NO \
+            VALIDATE_PRODUCT=NO \
+            MonkeyDevInstallOnAnyBuild=NO \
+            MonkeyDevInstallOnProfiling=NO \
+            MonkeyDevBuildPackageOnAnyBuild=NO \
+            GCC_PREPROCESSOR_DEFINITIONS='$(inherited) ZON_BUILD_VARIANT_DEBUG=${{ matrix.debug_macro }}' \
+            CONFIGURATION_BUILD_DIR="$PWD/build/Release-iphoneos" \
+            build 2>&1 | tee build/xcodebuild.log
+          status=${PIPESTATUS[0]}
+          echo "XCODEBUILD_STATUS=$status" >> "$GITHUB_ENV"
+          exit 0
+
+      - name: Report first compiler errors
+        if: always()
+        run: |
+          set -euo pipefail
+          grep -n -m 20 -E '(^|[[:space:]])(fatal )?error:|Undefined symbols for architecture|duplicate symbol|ld: ' build/xcodebuild.log || true
+
+      - name: Package and verify dylib
+        if: env.XCODEBUILD_STATUS == '0'
+        run: |
+          set -euxo pipefail
+          SOURCE='build/Release-iphoneos/testmod.dylib'
+          TARGET="build/Release-iphoneos/${TESTMOD_FILENAME}"
+          test -s "$SOURCE"
+          cp "$SOURCE" "$TARGET"
+          file "$TARGET"
+          lipo -info "$TARGET"
+          lipo -verify_arch arm64 arm64e "$TARGET"
+          otool -L "$TARGET"
+          shasum -a 256 "$TARGET" | tee "build/${{ matrix.variant }}.sha256"
+
+      - name: Upload dylib and log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testmod-${{ env.TESTMOD_VERSION }}-${{ matrix.variant }}
+          path: |
+            build/Release-iphoneos/${{ env.TESTMOD_FILENAME }}
+            build/${{ matrix.variant }}.sha256
+            build/xcodebuild.log
+          if-no-files-found: warn
+
+      - name: Fail if Xcode build failed
+        if: env.XCODEBUILD_STATUS != '0'
+        run: exit "$XCODEBUILD_STATUS"
