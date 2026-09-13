@@ -12,12 +12,349 @@
 #import "NSObject+UI.h"
 #import <dlfcn.h>
 #import <objc/runtime.h>
+#import "../category/wyURLProtocol.h"
 #import "../ZONBootstrap/ZONBootstrap.h"
 #import "../ZONServices/ZonoeUDIDAPI.h"
 
 #ifndef ZON_BUILD_VARIANT_DEBUG
 #define ZON_BUILD_VARIANT_DEBUG 0
 #endif
+
+#pragma mark - v1_p33 hot-update URL capture (B_debug only)
+
+static NSString * const ZONHotUpdateHandledKey = @"zonoe.hotupdate.handled";
+static const NSUInteger ZONHotUpdateBodyCaptureLimit = 512 * 1024;
+
+static dispatch_queue_t ZONHotUpdateLogQueue(void)
+{
+    static dispatch_queue_t queue;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        queue = dispatch_queue_create("com.zonoe.hotupdate.capture", DISPATCH_QUEUE_SERIAL);
+    });
+    return queue;
+}
+
+static NSMutableSet<NSString *> *ZONHotUpdateSeenKeys(void)
+{
+    static NSMutableSet<NSString *> *seen;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        seen = [NSMutableSet set];
+    });
+    return seen;
+}
+
+static NSString *ZONHotUpdateLogPath(void)
+{
+    static NSString *path;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        NSString *documents = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
+                                                                   NSUserDomainMask,
+                                                                   YES).firstObject;
+        if (documents.length == 0) {
+            documents = NSTemporaryDirectory();
+        }
+        NSString *directory = [documents stringByAppendingPathComponent:@"ZONHotUpdate"];
+        [[NSFileManager defaultManager] createDirectoryAtPath:directory
+                                  withIntermediateDirectories:YES
+                                                   attributes:nil
+                                                        error:nil];
+        path = [directory stringByAppendingPathComponent:@"urls.log"];
+    });
+    return path;
+}
+
+static BOOL ZONLooksLikeHotUpdateURL(NSURL *url)
+{
+    NSString *value = url.absoluteString.lowercaseString;
+    if (value.length == 0) return NO;
+
+    NSArray<NSString *> *tokens = @[
+        @"hotupdate", @"hot_update", @"res_update", @"update", @"patch",
+        @"version", @"manifest", @"assetbundle", @"bundle", @"bundlesbuild",
+        @"resource", @"/res/", @"cdn", @"download",
+        @".zip", @".json", @".cfg", @".plist", @".bytes", @".dat"
+    ];
+    for (NSString *token in tokens) {
+        if ([value containsString:token]) return YES;
+    }
+    return NO;
+}
+
+static void ZONAppendHotUpdateLine(NSString *line)
+{
+    NSString *path = ZONHotUpdateLogPath();
+    NSData *data = [line dataUsingEncoding:NSUTF8StringEncoding];
+    if (path.length == 0 || data.length == 0) return;
+
+    if (![[NSFileManager defaultManager] fileExistsAtPath:path]) {
+        [data writeToFile:path atomically:YES];
+        return;
+    }
+
+    NSFileHandle *handle = [NSFileHandle fileHandleForWritingAtPath:path];
+    if (!handle) return;
+    [handle seekToEndOfFile];
+    [handle writeData:data];
+    [handle closeFile];
+}
+
+static void ZONRecordHotUpdateURL(NSString *kind, NSURL *url, NSString *extra)
+{
+    NSString *value = url.absoluteString;
+    if (value.length == 0) return;
+
+    BOOL hot = ZONLooksLikeHotUpdateURL(url);
+    NSString *key = [NSString stringWithFormat:@"%@|%@|%@", kind ?: @"", value, extra ?: @""];
+
+    dispatch_async(ZONHotUpdateLogQueue(), ^{
+        NSMutableSet<NSString *> *seen = ZONHotUpdateSeenKeys();
+        if ([seen containsObject:key]) return;
+        [seen addObject:key];
+
+        NSString *tag = hot ? @"HOT" : @"NET";
+        NSString *line = [NSString stringWithFormat:@"%@ [%@] [%@] %@%@%@\n",
+                          [NSDate date],
+                          tag,
+                          kind ?: @"URL",
+                          value,
+                          extra.length ? @" | " : @"",
+                          extra ?: @""];
+        ZONAppendHotUpdateLine(line);
+
+        if (hot || [kind isEqualToString:@"BODY_URL"] || [kind isEqualToString:@"REDIRECT"]) {
+            NSLog(@"[zonoemenu][hotupdate][%@][%@] %@%@%@",
+                  tag,
+                  kind ?: @"URL",
+                  value,
+                  extra.length ? @" | " : @"",
+                  extra ?: @"");
+        }
+    });
+}
+
+static void ZONExtractURLsFromResponseBody(NSData *data)
+{
+    if (data.length == 0) return;
+
+    NSString *text = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    if (text.length == 0) return;
+
+    NSError *error = nil;
+    NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@"https?://[^\\s\\\"'<>]+"
+                                                                           options:NSRegularExpressionCaseInsensitive
+                                                                             error:&error];
+    if (!regex || error) return;
+
+    NSArray<NSTextCheckingResult *> *matches = [regex matchesInString:text
+                                                               options:0
+                                                                 range:NSMakeRange(0, text.length)];
+    NSCharacterSet *trimSet = [NSCharacterSet characterSetWithCharactersInString:@",;)]}>\\\""];
+    for (NSTextCheckingResult *match in matches) {
+        NSString *candidate = [text substringWithRange:match.range];
+        candidate = [candidate stringByTrimmingCharactersInSet:trimSet];
+        NSURL *url = [NSURL URLWithString:candidate];
+        if (url) {
+            ZONRecordHotUpdateURL(@"BODY_URL", url, nil);
+        }
+    }
+}
+
+@interface wyURLProtocol () <NSURLSessionTaskDelegate>
+@property (nonatomic, strong) NSURLSession *session;
+@property (nonatomic, assign) BOOL stopped;
+@end
+
+@implementation wyURLProtocol
+
++ (BOOL)canInitWithRequest:(NSURLRequest *)request
+{
+    if ([NSURLProtocol propertyForKey:ZONHotUpdateHandledKey inRequest:request]) {
+        return NO;
+    }
+
+    NSString *scheme = request.URL.scheme.lowercaseString;
+    return [scheme isEqualToString:@"http"] || [scheme isEqualToString:@"https"];
+}
+
++ (NSURLRequest *)canonicalRequestForRequest:(NSURLRequest *)request
+{
+    return request;
+}
+
+- (void)startLoading
+{
+    self.stopped = NO;
+    self.data = [NSMutableData data];
+
+    NSMutableURLRequest *request = [self.request mutableCopy];
+    [NSURLProtocol setProperty:@YES forKey:ZONHotUpdateHandledKey inRequest:request];
+
+    NSString *method = request.HTTPMethod.length ? request.HTTPMethod : @"GET";
+    ZONRecordHotUpdateURL([NSString stringWithFormat:@"REQ %@", method], request.URL, nil);
+
+    NSURLSessionConfiguration *configuration = [NSURLSessionConfiguration ephemeralSessionConfiguration];
+    // The internal forwarding session must not recurse back through wyURLProtocol.
+    configuration.protocolClasses = @[];
+
+    self.session = [NSURLSession sessionWithConfiguration:configuration
+                                                 delegate:self
+                                            delegateQueue:nil];
+    self.task = [self.session dataTaskWithRequest:request];
+    [self.task resume];
+}
+
+- (void)stopLoading
+{
+    self.stopped = YES;
+    [self.task cancel];
+    [self.session invalidateAndCancel];
+    self.task = nil;
+    self.session = nil;
+}
+
+- (void)URLSession:(NSURLSession *)session
+          dataTask:(NSURLSessionDataTask *)dataTask
+ didReceiveResponse:(NSURLResponse *)response
+ completionHandler:(void (^)(NSURLSessionResponseDisposition disposition))completionHandler
+{
+    if (self.stopped) {
+        completionHandler(NSURLSessionResponseCancel);
+        return;
+    }
+
+    NSString *extra = nil;
+    if ([response isKindOfClass:[NSHTTPURLResponse class]]) {
+        NSInteger status = ((NSHTTPURLResponse *)response).statusCode;
+        extra = [NSString stringWithFormat:@"HTTP %ld", (long)status];
+    }
+    ZONRecordHotUpdateURL(@"RESP", response.URL ?: dataTask.currentRequest.URL, extra);
+
+    [self.client URLProtocol:self
+          didReceiveResponse:response
+          cacheStoragePolicy:NSURLCacheStorageNotAllowed];
+    completionHandler(NSURLSessionResponseAllow);
+}
+
+- (void)URLSession:(NSURLSession *)session
+          dataTask:(NSURLSessionDataTask *)dataTask
+    didReceiveData:(NSData *)data
+{
+    if (self.stopped) return;
+
+    if (self.data.length < ZONHotUpdateBodyCaptureLimit) {
+        NSUInteger remaining = ZONHotUpdateBodyCaptureLimit - self.data.length;
+        if (data.length <= remaining) {
+            [self.data appendData:data];
+        } else if (remaining > 0) {
+            [self.data appendData:[data subdataWithRange:NSMakeRange(0, remaining)]];
+        }
+    }
+
+    [self.client URLProtocol:self didLoadData:data];
+}
+
+- (void)URLSession:(NSURLSession *)session
+              task:(NSURLSessionTask *)task
+willPerformHTTPRedirection:(NSHTTPURLResponse *)response
+        newRequest:(NSURLRequest *)request
+ completionHandler:(void (^)(NSURLRequest * _Nullable))completionHandler
+{
+    NSString *extra = [NSString stringWithFormat:@"HTTP %ld", (long)response.statusCode];
+    ZONRecordHotUpdateURL(@"REDIRECT", request.URL, extra);
+    completionHandler(request);
+}
+
+- (void)URLSession:(NSURLSession *)session
+              task:(NSURLSessionTask *)task
+ didCompleteWithError:(NSError *)error
+{
+    if (self.stopped) return;
+
+    ZONExtractURLsFromResponseBody(self.data);
+
+    if (error) {
+        [self.client URLProtocol:self didFailWithError:error];
+    } else {
+        [self.client URLProtocolDidFinishLoading:self];
+    }
+
+    [self.session finishTasksAndInvalidate];
+    self.task = nil;
+    self.session = nil;
+}
+
+@end
+
+static void ZONInjectHotUpdateProtocol(NSURLSessionConfiguration *configuration)
+{
+    if (!configuration) return;
+
+    NSMutableArray *classes = [configuration.protocolClasses mutableCopy];
+    if (!classes) classes = [NSMutableArray array];
+    if (![classes containsObject:[wyURLProtocol class]]) {
+        [classes insertObject:[wyURLProtocol class] atIndex:0];
+    }
+    configuration.protocolClasses = classes;
+}
+
+@interface NSURLSessionConfiguration (ZONHotUpdateCapture)
++ (NSURLSessionConfiguration *)zon_hot_defaultSessionConfiguration;
++ (NSURLSessionConfiguration *)zon_hot_ephemeralSessionConfiguration;
+@end
+
+@implementation NSURLSessionConfiguration (ZONHotUpdateCapture)
+
++ (NSURLSessionConfiguration *)zon_hot_defaultSessionConfiguration
+{
+    NSURLSessionConfiguration *configuration = [self zon_hot_defaultSessionConfiguration];
+    ZONInjectHotUpdateProtocol(configuration);
+    return configuration;
+}
+
++ (NSURLSessionConfiguration *)zon_hot_ephemeralSessionConfiguration
+{
+    NSURLSessionConfiguration *configuration = [self zon_hot_ephemeralSessionConfiguration];
+    ZONInjectHotUpdateProtocol(configuration);
+    return configuration;
+}
+
+@end
+
+static void ZONInstallHotUpdateCapture(void)
+{
+#if ZON_BUILD_VARIANT_DEBUG
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        [NSURLProtocol registerClass:[wyURLProtocol class]];
+
+        Method defaultOriginal = class_getClassMethod([NSURLSessionConfiguration class],
+                                                      @selector(defaultSessionConfiguration));
+        Method defaultReplacement = class_getClassMethod([NSURLSessionConfiguration class],
+                                                         @selector(zon_hot_defaultSessionConfiguration));
+        if (defaultOriginal && defaultReplacement) {
+            method_exchangeImplementations(defaultOriginal, defaultReplacement);
+        }
+
+        Method ephemeralOriginal = class_getClassMethod([NSURLSessionConfiguration class],
+                                                        @selector(ephemeralSessionConfiguration));
+        Method ephemeralReplacement = class_getClassMethod([NSURLSessionConfiguration class],
+                                                           @selector(zon_hot_ephemeralSessionConfiguration));
+        if (ephemeralOriginal && ephemeralReplacement) {
+            method_exchangeImplementations(ephemeralOriginal, ephemeralReplacement);
+        }
+
+        NSString *path = ZONHotUpdateLogPath();
+        NSLog(@"[zonoemenu][hotupdate] capture enabled; log=%@", path);
+        dispatch_async(ZONHotUpdateLogQueue(), ^{
+            NSString *header = [NSString stringWithFormat:@"\n===== ZON hot-update capture %@ =====\n", [NSDate date]];
+            ZONAppendHotUpdateLine(header);
+        });
+    });
+#endif
+}
 
 #pragma mark - Authorization reset compatibility
 
@@ -188,6 +525,7 @@ static void ZONStartCustomerAuthorization(void)
 +(void)load
 {
     ZONInstallAuthorizationResetExtension();
+    ZONInstallHotUpdateCapture();
 
     ZONBootstrapStart(^{
         // Preserve the verified legacy framework preflight timing/order.
