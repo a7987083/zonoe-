@@ -31,31 +31,33 @@ Result: covered by cumulative p31 hardware regression.
 ## v1_p31 — Feature Registry Boundary Cleanup
 Source commit: `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f`
 Status: `passed`
-Result: user reported full cumulative p29+p30+p31 regression passed; current device-verified baseline.
+Result: cumulative p29+p30+p31 hardware regression passed; superseded by p32.
 
 ## v1_p32 — Dispatcher Source Split
-Source commit: `pending final PBX-integrated p32 source head`
-Status: `pending`
+Source commit: `84f8b3898bee9d95ed4034d12842879cc56280d3`
+CI Run: `34723015809` / `success`
+Status: `passed`
+Result: user explicitly reported the full p32 real-device checklist passed; current device-verified baseline.
 
 Changed boundary:
-- `ZONFeatureDispatcher.h` becomes declarations-only for Dispatcher functions.
-- New `ZONFeatureDispatcher.m` owns the same seven function bodies.
-- New `.m` is registered as a normal Xcode target source.
+- `ZONFeatureDispatcher.h` is declarations-only for Dispatcher functions.
+- `ZONFeatureDispatcher.m` owns the same seven function bodies.
+- The `.m` is registered as a normal Xcode target source.
 - No intended route, persistence, destructive-action, UI or runtime semantic changes.
 
-Required device validation:
+Validated on device:
 - Common device smoke test.
 - Remote download opens the same flow as p31.
-- VIP cloud save opens/checks the same flow; tmp-directory behavior must remain normal.
+- VIP cloud save opens/checks the same flow; tmp-directory behavior remains normal.
 - Local files presents the same browser/navigation UI.
 - Backup and restore open the same target flows.
-- Clear game data reaches the same destructive confirmation dialog; cancel it unless intentionally testing deletion.
-- Clear authorization reaches the same destructive confirmation dialog; cancel it unless intentionally testing deletion.
-- IAP/no-ads switch still persists/restores and reaches `ImgTool.NeiGou`.
-- Ad-speed enable switch still persists/restores and reaches `ImgTool.ADSpeed`.
-- Ad-speed slider still updates its label, persists `AADDssppeedd`, restores after reopen and reaches `ImgTool.ADBiansu`.
+- Clear game data reaches the same destructive confirmation dialog; destructive deletion was not required for promotion.
+- Clear authorization reaches the same destructive confirmation dialog; destructive deletion was not required for promotion.
+- IAP/no-ads switch persists/restores and reaches `ImgTool.NeiGou` behavior.
+- Ad-speed enable switch persists/restores and reaches `ImgTool.ADSpeed` behavior.
+- Ad-speed slider updates its label, persists/restores and reaches `ImgTool.ADBiansu` behavior.
 - Repeated action/toggle/slider use, menu open/close, and section fold/unfold do not crash or freeze.
 - Section/feature order, visual style, dimensions, text and animations remain unchanged from p31.
 
-Promotion rule:
-- Only promote `v1_p32` after A_customer CI succeeds and the user explicitly reports this checklist passed.
+Promotion rule result:
+- `v1_p32` is promoted because A_customer CI succeeded and the user explicitly reported the required device checklist passed.
