@@ -16,48 +16,49 @@ A CI-successful version is not a device-verified baseline until the required che
 ## v1_p28 — ZONCore Build Integration
 Source commit: `350a46deb089a05fc599e641bd1eeb419c36c0d5`
 Status: `passed`
-Result: superseded by p31 baseline.
+Result: superseded by later baselines.
 
 ## v1_p29 — Rendering Boundary Cleanup
 Source commit: `506a22c01a2b46dbea0d4299418fcb702b6cb80e`
 Status: `passed`
-Result: covered by cumulative p31 hardware regression.
 
 ## v1_p30 — EventBridge Boundary Cleanup
 Source commit: `8e88b63611d19af6c42d9172c0f5741b34f51809`
 Status: `passed`
-Result: covered by cumulative p31 hardware regression.
 
 ## v1_p31 — Feature Registry Boundary Cleanup
 Source commit: `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f`
 Status: `passed`
-Result: cumulative p29+p30+p31 hardware regression passed; superseded by p32.
 
 ## v1_p32 — Dispatcher Source Split
 Source commit: `84f8b3898bee9d95ed4034d12842879cc56280d3`
 CI Run: `34723015809` / `success`
 Status: `passed`
-Result: user explicitly reported the full p32 real-device checklist passed; current device-verified baseline.
+Result: current device-verified baseline.
+
+## v1_p33 — Bootstrap / ModuleLoader Boundary
+Source commit: `0f12e4353e8859c585fe2975812964a28b7410d1`
+CI Run: `34733013479` / `success`
+Status: `pending device verification`
 
 Changed boundary:
-- `ZONFeatureDispatcher.h` is declarations-only for Dispatcher functions.
-- `ZONFeatureDispatcher.m` owns the same seven function bodies.
-- The `.m` is registered as a normal Xcode target source.
-- No intended route, persistence, destructive-action, UI or runtime semantic changes.
+- `ZONBootstrap.h` is declarations-only; `ZONBootstrap.m` owns the unchanged bootstrap body.
+- `ZONModuleLoader.h` exposes declarations only; `ZONModuleLoader.m` owns the unchanged loader logic.
+- Both `.m` files are normal Xcode target sources.
+- No intended authorization, UDID, menu, route, persistence, UI, ABI or module-loading semantic changes.
 
-Validated on device:
+Required device validation:
 - Common device smoke test.
-- Remote download opens the same flow as p31.
-- VIP cloud save opens/checks the same flow; tmp-directory behavior remains normal.
-- Local files presents the same browser/navigation UI.
-- Backup and restore open the same target flows.
-- Clear game data reaches the same destructive confirmation dialog; destructive deletion was not required for promotion.
-- Clear authorization reaches the same destructive confirmation dialog; destructive deletion was not required for promotion.
-- IAP/no-ads switch persists/restores and reaches `ImgTool.NeiGou` behavior.
-- Ad-speed enable switch persists/restores and reaches `ImgTool.ADSpeed` behavior.
-- Ad-speed slider updates its label, persists/restores and reaches `ImgTool.ADBiansu` behavior.
-- Repeated action/toggle/slider use, menu open/close, and section fold/unfold do not crash or freeze.
-- Section/feature order, visual style, dimensions, text and animations remain unchanged from p31.
+- A_customer launches normally and reaches the same existing authorization path as p32.
+- Existing valid `DZUDID`/authorization state still avoids an unnecessary new UDID acquisition flow.
+- Do not clear authorization only to exercise first activation unless an intentional destructive/activation test is desired.
+- Legacy framework preflight still behaves normally when AppLovinSDK/UnityFramework are present or absent; no launch crash/freeze.
+- Floating entry/menu appears normally after startup.
+- No duplicate bootstrap behavior or duplicate visible startup action is observed.
+- If no bundled `ZONModules` directory exists, launch continues normally without error UI/crash.
+- Repeated app launches and repeated menu open/close remain stable.
+- P32 menu/runtime smoke remains unchanged.
 
-Promotion rule result:
-- `v1_p32` is promoted because A_customer CI succeeded and the user explicitly reported the required device checklist passed.
+Promotion rule:
+- Promote `v1_p33` only after `A_customer` real-device startup/bootstrap regression is explicitly reported as passed.
+- Until then, `v1_p32` / `84f8b3898bee9d95ed4034d12842879cc56280d3` remains the device-verified baseline.
