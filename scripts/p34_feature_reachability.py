@@ -9,9 +9,10 @@ from pathlib import Path
 def sh(*args: str) -> str:
     return subprocess.check_output(args, text=True).strip()
 
-TRACKED = [p for p in sh('git','ls-files').splitlines() if p]
+TRACKED = [p for p in sh('git','-c','core.quotepath=false','ls-files').splitlines() if p]
 SOURCE_EXTS = {'.h','.m','.mm','.c','.cc','.cpp','.hpp','.pch'}
-TEXT_FILES = [p for p in TRACKED if Path(p).suffix.lower() in SOURCE_EXTS]
+# Reachability for product cleanup should only count the canonical testmod tree.
+PRODUCT_TEXT_FILES = [p for p in TRACKED if p.startswith('testmod/') and Path(p).suffix.lower() in SOURCE_EXTS]
 PBX = Path('testmod.xcodeproj/project.pbxproj').read_text(errors='replace')
 
 GROUPS = {
@@ -42,6 +43,12 @@ AUTO_PATTERNS = {
     'dlopen': r'\bdlopen\s*\(',
 }
 
+COMMON_METHODS = {
+    'init','dealloc','layoutSubviews','addSubview','setValue','initWithFrame','initWithCoder',
+    'viewDidLoad','viewDidAppear','viewWillAppear','viewWillDisappear','viewDidDisappear',
+    'description','copy','mutableCopy','instance','sharedInstance','sharedManager'
+}
+
 
 def read(path: str) -> str:
     try:
@@ -63,12 +70,11 @@ def symbols_for(paths: list[str]) -> set[str]:
             symbols.add(stem)
         for _, cls in re.findall(r'@(interface|implementation|protocol)\s+([A-Za-z_][A-Za-z0-9_]*)', text):
             symbols.add(cls)
-        # exported/simple ObjC selector names and C/C++ function-like definitions
         for name in re.findall(r'(?m)^\s*[-+]\s*\([^\n)]*\)\s*([A-Za-z_][A-Za-z0-9_]*)', text):
-            if len(name) >= 4:
+            if len(name) >= 5 and name not in COMMON_METHODS:
                 symbols.add(name)
         for name in re.findall(r'(?m)^\s*(?:static\s+)?(?:BOOL|void|int|long|float|double|NSString\s*\*|NSArray\s*\*|NSDictionary\s*\*|vector<[^>]+>)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(', text):
-            if len(name) >= 4:
+            if len(name) >= 5:
                 symbols.add(name)
     return symbols
 
@@ -95,10 +101,8 @@ def pbx_sources(paths: list[str]):
 def external_hits(group_paths: list[str], symbols: set[str]):
     group_set = set(group_paths)
     hits = []
-    for path in TEXT_FILES:
+    for path in PRODUCT_TEXT_FILES:
         if path in group_set:
-            continue
-        if path.startswith('testmod.xcodeproj/'):
             continue
         text = read(path)
         matched = []
@@ -118,7 +122,7 @@ def imports_into_group(group_paths: list[str]):
         return []
     group_set = set(group_paths)
     hits = []
-    for path in TEXT_FILES:
+    for path in PRODUCT_TEXT_FILES:
         if path in group_set:
             continue
         text = read(path)
@@ -148,8 +152,8 @@ def main():
         print(f'- files: {len(paths)}')
         print(f'- PBX Sources members: {len(sources)}')
         print(f'- auto-start/hook files: {len(autos)}')
-        print(f'- explicit import/include edges from outside group: {len(imports)}')
-        print(f'- textual symbol references from outside group: {len(refs)}')
+        print(f'- product import/include edges from outside group: {len(imports)}')
+        print(f'- product symbol references from outside group: {len(refs)}')
         if sources:
             print('- sources:')
             for p in sources:
@@ -159,19 +163,19 @@ def main():
             for p, marks in autos:
                 print(f"  - {p}: {', '.join(marks)}")
         if imports:
-            print('- outside imports:')
-            for p, names in imports[:30]:
+            print('- product outside imports:')
+            for p, names in imports[:40]:
                 print(f"  - {p}: {', '.join(names)}")
         if refs:
-            print('- outside symbol refs:')
-            for p, names in refs[:40]:
+            print('- product outside symbol refs:')
+            for p, names in refs[:50]:
                 print(f"  - {p}: {', '.join(names)}")
         print()
 
     print('## Notes')
     print('- PBX membership means code is linked, not necessarily reachable.')
     print('- Any auto-start/hook marker blocks automatic deletion until runtime behavior is explicitly retired.')
-    print('- Zero external imports + zero symbol refs + zero auto markers is a strong removal candidate, subject to successful full A/B rebuild.')
+    print('- Zero product imports + zero product symbol refs + zero auto markers is a strong removal candidate, subject to successful full A/B rebuild.')
 
 
 if __name__ == '__main__':
