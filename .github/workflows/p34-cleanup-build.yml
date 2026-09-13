@@ -1,4 +1,4 @@
-name: p34 Cleanup Integration
+name: p34 Cleanup Build
 
 on:
   push:
@@ -8,28 +8,22 @@ on:
       - '.github/workflows/p34-cleanup-build.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  integrate:
-    runs-on: ubuntu-latest
+  smoke:
+    runs-on: macos-15
     steps:
-      - name: Checkout p34 cleanup branch
+      - name: Checkout cleaned p34 source
         uses: actions/checkout@v4
         with:
           ref: work/zonoemenu-v1-p34-cleanup
           fetch-depth: 0
 
-      - name: Verify cleanup script baseline
+      - name: Verify cleanup source and retired feature absence
         run: |
           set -euxo pipefail
-          test "$(git rev-parse HEAD)" = '4534fa8b3aac38d0070c73ff2fcbf81398f392c9'
-          test -s scripts/p34_apply_cleanup.py
-
-      - name: Apply audited cleanup
-        run: |
-          set -euxo pipefail
-          python3 scripts/p34_apply_cleanup.py
+          test "$(git rev-parse HEAD)" = 'cd9a0ab78158de11f1d51cda7461dbc6dd60f956'
           test "$(tr -d '[:space:]' < VERSION)" = 'v1_p34'
           test -s testmod/ZONCore/ZONFeatureRegistry.m
           test -s testmod/ZONCore/ZONFeatureDispatcher.m
@@ -38,18 +32,257 @@ jobs:
           test -s testmod/工具箱/变速器/ImgTool.m
           test ! -e testmod/工具箱/jianghu.mm
           test ! -e testmod/views/DLGMem.m
+          test ! -e testmod/category/mem.c
+          test ! -e testmod/JRMemory.framework
           test ! -e testmod/菜单/TDAlternateIconCell.m
-          python3 Tests/bootstrap_moduleloader_contract.py
-          python3 Tests/dispatcher_contract_smoke.py
+          test ! -e testmod/视图菜单/WMDragView.m
+          test ! -e testmod/category/TFJGVGLGKFTVCSV.m
+          test ! -e testmod/视图菜单/HeeeNoScreenShotView.m
+          ! grep -q 'DLGMem.m in Sources' testmod.xcodeproj/project.pbxproj
+          ! grep -q 'jianghu.mm in Sources' testmod.xcodeproj/project.pbxproj
+          ! grep -q 'JRMemory.framework' testmod.xcodeproj/project.pbxproj
           git diff --check
 
-      - name: Commit and push cleanup
+      - name: Run p34 post-cleanup inventory
         run: |
           set -euxo pipefail
-          git config user.name 'a7987083'
-          git config user.email '85878547+a7987083@users.noreply.github.com'
-          git add -A
-          git commit -m 'cleanup: remove retired v1_p34 feature stacks'
-          git push origin HEAD:refs/heads/work/zonoemenu-v1-p34-cleanup
-          echo "p34 cleanup source: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
-          git diff --stat 0f12e4353e8859c585fe2975812964a28b7410d1..HEAD >> "$GITHUB_STEP_SUMMARY"
+          python3 scripts/p34_repository_audit.py | tee p34-post-cleanup-audit.log
+          grep 'PBX source entries:' p34-post-cleanup-audit.log
+          grep 'Resolved active source files:' p34-post-cleanup-audit.log
+          cat p34-audit-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify preserved contracts
+        run: |
+          set -euxo pipefail
+          python3 Tests/bootstrap_moduleloader_contract.py
+          python3 Tests/dispatcher_contract_smoke.py
+
+      - name: Compile p33 boundaries independently
+        run: |
+          set -euxo pipefail
+          clang -fobjc-arc -fblocks -Wall -Wextra -Werror \
+            -c testmod/ZONCore/ZONModuleLoader.m \
+            -o /tmp/ZONModuleLoader.o
+          clang -fobjc-arc -fblocks -Wall -Wextra -Werror \
+            -c testmod/ZONBootstrap/ZONBootstrap.m \
+            -o /tmp/ZONBootstrap.o
+          nm -gU /tmp/ZONModuleLoader.o | grep '_ZONCoreLog$'
+          nm -gU /tmp/ZONModuleLoader.o | grep '_ZONGetHostAPI$'
+          nm -gU /tmp/ZONModuleLoader.o | grep '_ZONLoadBundledModules$'
+          nm -gU /tmp/ZONBootstrap.o | grep '_ZONBootstrapStart$'
+
+      - name: Run feature registry smoke
+        run: |
+          set -euxo pipefail
+          clang -fobjc-arc -Wall -Wextra -Werror \
+            -framework Foundation \
+            Tests/feature_registry_smoke.m testmod/ZONCore/ZONFeatureRegistry.m \
+            -o /tmp/zonoemenu-feature-registry-smoke
+          /tmp/zonoemenu-feature-registry-smoke
+
+      - name: Run module ABI smoke
+        run: |
+          set -euxo pipefail
+          clang -std=c11 -Wall -Wextra -Werror \
+            -I ZONCore \
+            Tests/module_abi_smoke.c Examples/ZONExampleModule.c \
+            -o /tmp/zonoemenu-module-abi-smoke
+          /tmp/zonoemenu-module-abi-smoke
+          clang -std=c11 -Wall -Wextra -Werror \
+            -dynamiclib -I ZONCore \
+            Examples/ZONExampleModule.c \
+            -o /tmp/ZONExampleModule.dylib
+          nm -gU /tmp/ZONExampleModule.dylib | grep '_zonoe_module_abi_version$'
+          nm -gU /tmp/ZONExampleModule.dylib | grep '_zonoe_module_identifier$'
+          nm -gU /tmp/ZONExampleModule.dylib | grep '_zonoe_module_initialize$'
+
+      - name: Upload cleanup audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: p34-post-cleanup-audit
+          path: |
+            p34-post-cleanup-audit.log
+            p34-audit-report.md
+            p34-audit-report.json
+          if-no-files-found: error
+
+  build:
+    needs: smoke
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: A_customer
+            debug_macro: 0
+            cloud_testmode: NO
+          - variant: B_debug
+            debug_macro: 1
+            cloud_testmode: YES
+    steps:
+      - name: Checkout cleaned p34 source
+        uses: actions/checkout@v4
+        with:
+          ref: work/zonoemenu-v1-p34-cleanup
+          fetch-depth: 0
+
+      - name: Verify cleaned source head
+        run: |
+          set -euxo pipefail
+          test "$(git rev-parse HEAD)" = 'cd9a0ab78158de11f1d51cda7461dbc6dd60f956'
+          test "$(tr -d '[:space:]' < VERSION)" = 'v1_p34'
+          test -s testmod/工具箱/Hook/JiangHuHook.m
+          test -s testmod/工具箱/变速器/HookClass.m
+          test -s testmod/工具箱/变速器/ImgTool.m
+          test ! -e testmod/工具箱/jianghu.mm
+          test ! -e testmod/views/DLGMem.m
+          python3 Tests/bootstrap_moduleloader_contract.py
+          python3 Tests/dispatcher_contract_smoke.py
+
+      - name: Resolve testmod version
+        run: |
+          set -euxo pipefail
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+          echo "TESTMOD_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "TESTMOD_FILENAME=testmod_${VERSION}_${{ matrix.variant }}.dylib" >> "$GITHUB_ENV"
+
+      - name: Select Xcode 16.4
+        run: |
+          set -euxo pipefail
+          sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Prepare dependency cache destinations
+        run: |
+          set -euxo pipefail
+          sudo mkdir -p /opt/MonkeyDev /opt/theos
+          sudo chown -R "$USER":staff /opt/MonkeyDev /opt/theos
+
+      - name: Restore legacy build dependency cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            /opt/MonkeyDev
+            /opt/theos
+          key: zonoe-builddeps-${{ runner.os }}-macos15-xcode16.4-${{ hashFiles('ci/dependencies.lock') }}
+
+      - name: Install legacy build dependencies
+        run: |
+          set -euxo pipefail
+          brew install ldid dpkg || true
+          source ci/dependencies.lock
+          repo_at_sha() {
+            local dir="$1" sha="$2" required="$3"
+            [[ -d "$dir/.git" ]] || return 1
+            [[ "$(git -C "$dir" rev-parse HEAD 2>/dev/null || true)" == "$sha" ]] || return 1
+            [[ -e "$dir/$required" ]] || return 1
+          }
+          theos_at_sha() {
+            repo_at_sha /opt/theos "$THEOS_SHA" vendor/include || return 1
+            local state
+            state="$(git -C /opt/theos submodule status --recursive 2>/dev/null)" || return 1
+            ! printf '%s\n' "$state" | grep -Eq '^[+-U]'
+          }
+          install_pinned_repo() {
+            local dir="$1" url="$2" sha="$3"
+            sudo rm -rf "$dir"
+            sudo mkdir -p "$dir"
+            sudo chown "$USER":staff "$dir"
+            git -C "$dir" init -q
+            git -C "$dir" remote add origin "$url"
+            git -C "$dir" fetch --depth=1 origin "$sha"
+            git -C "$dir" checkout --detach FETCH_HEAD
+          }
+          repo_at_sha /opt/MonkeyDev "$MONKEYDEV_SHA" bin/md || install_pinned_repo /opt/MonkeyDev https://github.com/AloneMonkey/MonkeyDev.git "$MONKEYDEV_SHA"
+          if ! theos_at_sha; then
+            install_pinned_repo /opt/theos https://github.com/theos/theos.git "$THEOS_SHA"
+            git -C /opt/theos submodule sync --recursive
+            git -C /opt/theos submodule update --init --recursive
+          fi
+          test -x /opt/MonkeyDev/bin/md
+          test -d /opt/theos/vendor/include
+
+      - name: Materialize pinned vendor sources
+        run: |
+          set -euxo pipefail
+          bash scripts/bootstrap_vendor.sh
+
+      - name: Configure build variant
+        run: |
+          set -euxo pipefail
+          if [[ "${{ matrix.cloud_testmode }}" == 'YES' ]]; then
+            python3 - <<'PY'
+          from pathlib import Path
+          p = Path('testmod/菜单/PubgLoad.mm')
+          s = p.read_text()
+          old = 'BOOL testMode = NO; // NO = 正常验证, YES = 测试模式（绕过验证）'
+          new = 'BOOL testMode = YES; // B_debug: 云存档测试模式（绕过购买验证）'
+          if s.count(old) != 1:
+              raise SystemExit(f'expected exactly one cloud testMode switch, found {s.count(old)}')
+          p.write_text(s.replace(old, new, 1))
+          PY
+          fi
+
+      - name: Build testmod dylib
+        run: |
+          set +e
+          mkdir -p build/Release-iphoneos
+          xcodebuild \
+            -project testmod.xcodeproj \
+            -target testmod \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY='' \
+            IPHONEOS_DEPLOYMENT_TARGET=12.0 \
+            ARCHS='arm64 arm64e' \
+            ONLY_ACTIVE_ARCH=NO \
+            VALIDATE_PRODUCT=NO \
+            MonkeyDevInstallOnAnyBuild=NO \
+            MonkeyDevInstallOnProfiling=NO \
+            MonkeyDevBuildPackageOnAnyBuild=NO \
+            GCC_PREPROCESSOR_DEFINITIONS='$(inherited) ZON_BUILD_VARIANT_DEBUG=${{ matrix.debug_macro }}' \
+            CONFIGURATION_BUILD_DIR="$PWD/build/Release-iphoneos" \
+            build 2>&1 | tee build/xcodebuild.log
+          status=${PIPESTATUS[0]}
+          echo "XCODEBUILD_STATUS=$status" >> "$GITHUB_ENV"
+          exit 0
+
+      - name: Report first compiler errors
+        if: always()
+        run: |
+          set -euo pipefail
+          grep -n -m 30 -E '(^|[[:space:]])(fatal )?error:|Undefined symbols for architecture|duplicate symbol|ld: ' build/xcodebuild.log || true
+
+      - name: Package and verify dylib
+        if: env.XCODEBUILD_STATUS == '0'
+        run: |
+          set -euxo pipefail
+          SOURCE='build/Release-iphoneos/testmod.dylib'
+          TARGET="build/Release-iphoneos/${TESTMOD_FILENAME}"
+          test -s "$SOURCE"
+          cp "$SOURCE" "$TARGET"
+          file "$TARGET"
+          lipo -info "$TARGET"
+          ACTUAL_ARCHS="$(lipo -archs "$TARGET")"
+          printf 'Mach-O architectures: %s\n' "$ACTUAL_ARCHS"
+          printf '%s\n' "$ACTUAL_ARCHS" | tr ' ' '\n' | grep -Fx arm64
+          printf '%s\n' "$ACTUAL_ARCHS" | tr ' ' '\n' | grep -Fx arm64e
+          otool -L "$TARGET"
+          shasum -a 256 "$TARGET" | tee "build/${{ matrix.variant }}.sha256"
+
+      - name: Upload dylib and log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: testmod-${{ env.TESTMOD_VERSION }}-${{ matrix.variant }}
+          path: |
+            build/Release-iphoneos/${{ env.TESTMOD_FILENAME }}
+            build/${{ matrix.variant }}.sha256
+            build/xcodebuild.log
+          if-no-files-found: warn
+
+      - name: Fail if Xcode build failed
+        if: env.XCODEBUILD_STATUS != '0'
+        run: exit "${XCODEBUILD_STATUS:-1}"
