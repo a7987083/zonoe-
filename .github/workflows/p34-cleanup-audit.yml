@@ -1,0 +1,43 @@
+name: p34 Cleanup Audit
+
+on:
+  push:
+    branches:
+      - test/zonoemenu-v1-p34-cleanup-audit
+    paths:
+      - '.github/workflows/p34-cleanup-audit.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout p34 audit source
+        uses: actions/checkout@v4
+        with:
+          ref: work/zonoemenu-v1-p34-cleanup-audit
+          fetch-depth: 0
+
+      - name: Verify audit baseline
+        run: |
+          set -euxo pipefail
+          test "$(git rev-parse HEAD)" = '6555ab69ec72bb6b318544bd35e329027e36f2c4'
+          test -s scripts/p34_repository_audit.py
+
+      - name: Run repository cleanup audit
+        run: |
+          set -euxo pipefail
+          python3 scripts/p34_repository_audit.py | tee p34-audit.log
+          cat p34-audit-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload audit evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: p34-cleanup-audit
+          path: |
+            p34-audit-report.md
+            p34-audit-report.json
+            p34-audit.log
+          if-no-files-found: error
