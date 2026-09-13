@@ -8,7 +8,7 @@ on:
       - '.github/workflows/p33-bootstrap-moduleloader-build.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   integrate:
@@ -16,7 +16,7 @@ jobs:
     outputs:
       source_sha: ${{ steps.source.outputs.source_sha }}
     steps:
-      - name: Checkout p33 work branch
+      - name: Checkout integrated p33 work branch
         uses: actions/checkout@v4
         with:
           ref: work/zonoemenu-v1-p33-bootstrap-moduleloader-boundary
@@ -30,22 +30,16 @@ jobs:
           test -s testmod/ZONCore/ZONModuleLoader.m
           ! grep -F 'static inline' testmod/ZONBootstrap/ZONBootstrap.h
           ! grep -F 'static inline' testmod/ZONCore/ZONModuleLoader.h
+          test "$(grep -c 'ZONBootstrap.m in Sources' testmod.xcodeproj/project.pbxproj)" -eq 2
+          test "$(grep -c 'ZONModuleLoader.m in Sources' testmod.xcodeproj/project.pbxproj)" -eq 2
           expected="$(printf '%s\n' \
             VERSION \
+            testmod.xcodeproj/project.pbxproj \
             testmod/ZONBootstrap/ZONBootstrap.h \
             testmod/ZONBootstrap/ZONBootstrap.m \
             testmod/ZONCore/ZONModuleLoader.h \
             testmod/ZONCore/ZONModuleLoader.m | sort)"
           actual="$(git diff --name-only 84f8b3898bee9d95ed4034d12842879cc56280d3 -- VERSION testmod testmod.xcodeproj/project.pbxproj | sort)"
-          if [[ -f testmod.xcodeproj/project.pbxproj ]] && grep -q 'ZONBootstrap.m in Sources' testmod.xcodeproj/project.pbxproj; then
-            expected="$(printf '%s\n' \
-              VERSION \
-              testmod.xcodeproj/project.pbxproj \
-              testmod/ZONBootstrap/ZONBootstrap.h \
-              testmod/ZONBootstrap/ZONBootstrap.m \
-              testmod/ZONCore/ZONModuleLoader.h \
-              testmod/ZONCore/ZONModuleLoader.m | sort)"
-          fi
           test "$actual" = "$expected"
           git diff --exit-code 84f8b3898bee9d95ed4034d12842879cc56280d3 -- \
             testmod/Bsphp/main.m \
@@ -59,71 +53,12 @@ jobs:
             testmod/ZONCore/ZONFeatureDispatcher.h \
             testmod/ZONCore/ZONFeatureDispatcher.m
           python3 Tests/bootstrap_moduleloader_contract.py
-
-      - name: Register p33 sources in Xcode target
-        run: |
-          set -euxo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-
-          pbx = Path('testmod.xcodeproj/project.pbxproj')
-          text = pbx.read_text()
-
-          build_anchor = '\t\t7ECBD4392F3A614700C56F1C /* ZONFeatureDispatcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4382F3A614700C56F1C /* ZONFeatureDispatcher.m */; };\n'
-          build_entries = (
-              '\t\t7ECBD43B2F3A614800C56F1C /* ZONModuleLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD43A2F3A614800C56F1C /* ZONModuleLoader.m */; };\n'
-              '\t\t7ECBD43D2F3A614900C56F1C /* ZONBootstrap.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD43C2F3A614900C56F1C /* ZONBootstrap.m */; };\n'
-          )
-          ref_anchor = '\t\t7ECBD4382F3A614700C56F1C /* ZONFeatureDispatcher.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONFeatureDispatcher.m"; sourceTree = SOURCE_ROOT; };\n'
-          ref_entries = (
-              '\t\t7ECBD43A2F3A614800C56F1C /* ZONModuleLoader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONModuleLoader.m"; sourceTree = SOURCE_ROOT; };\n'
-              '\t\t7ECBD43C2F3A614900C56F1C /* ZONBootstrap.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONBootstrap/ZONBootstrap.m"; sourceTree = SOURCE_ROOT; };\n'
-          )
-          source_anchor = '\t\t\t\t7ECBD4392F3A614700C56F1C /* ZONFeatureDispatcher.m in Sources */,\n'
-          source_entries = (
-              '\t\t\t\t7ECBD43B2F3A614800C56F1C /* ZONModuleLoader.m in Sources */,\n'
-              '\t\t\t\t7ECBD43D2F3A614900C56F1C /* ZONBootstrap.m in Sources */,\n'
-          )
-
-          ids = ['7ECBD43A2F3A614800C56F1C', '7ECBD43B2F3A614800C56F1C',
-                 '7ECBD43C2F3A614900C56F1C', '7ECBD43D2F3A614900C56F1C']
-          if not any(i in text for i in ids):
-              for label, anchor in [('build', build_anchor), ('ref', ref_anchor), ('source', source_anchor)]:
-                  if text.count(anchor) != 1:
-                      raise SystemExit(f'{label} anchor count={text.count(anchor)}')
-              text = text.replace(build_anchor, build_anchor + build_entries, 1)
-              text = text.replace(ref_anchor, ref_anchor + ref_entries, 1)
-              text = text.replace(source_anchor, source_anchor + source_entries, 1)
-              pbx.write_text(text)
-
-          final = pbx.read_text()
-          checks = {
-              'ZONModuleLoader.m in Sources': 2,
-              'ZONBootstrap.m in Sources': 2,
-              '7ECBD43A2F3A614800C56F1C': 2,
-              '7ECBD43B2F3A614800C56F1C': 2,
-              '7ECBD43C2F3A614900C56F1C': 2,
-              '7ECBD43D2F3A614900C56F1C': 2,
-          }
-          for needle, count in checks.items():
-              actual = final.count(needle)
-              if actual != count:
-                  raise SystemExit(f'{needle}: expected {count}, found {actual}')
-          PY
+          PBX='testmod.xcodeproj/project.pbxproj'
+          test "$(grep -c '7ECBD43A2F3A614800C56F1C' "$PBX")" -eq 2
+          test "$(grep -c '7ECBD43B2F3A614800C56F1C' "$PBX")" -eq 2
+          test "$(grep -c '7ECBD43C2F3A614900C56F1C' "$PBX")" -eq 2
+          test "$(grep -c '7ECBD43D2F3A614900C56F1C' "$PBX")" -eq 2
           git diff --check
-
-      - name: Commit PBX integration if needed
-        run: |
-          set -euxo pipefail
-          git config user.name 'a7987083'
-          git config user.email '85878547+a7987083@users.noreply.github.com'
-          if ! git diff --quiet; then
-            changed="$(git diff --name-only)"
-            test "$changed" = 'testmod.xcodeproj/project.pbxproj'
-            git add testmod.xcodeproj/project.pbxproj
-            git commit -m 'build: register v1_p33 bootstrap moduleloader sources'
-            git push origin HEAD:refs/heads/work/zonoemenu-v1-p33-bootstrap-moduleloader-boundary
-          fi
 
       - name: Resolve p33 source head
         id: source
@@ -157,11 +92,9 @@ jobs:
         run: |
           set -euxo pipefail
           clang -fobjc-arc -fblocks -Wall -Wextra -Werror \
-            -framework Foundation \
             -c testmod/ZONCore/ZONModuleLoader.m \
             -o /tmp/ZONModuleLoader.o
           clang -fobjc-arc -fblocks -Wall -Wextra -Werror \
-            -framework Foundation \
             -c testmod/ZONBootstrap/ZONBootstrap.m \
             -o /tmp/ZONBootstrap.o
           nm -gU /tmp/ZONModuleLoader.o | grep '_ZONCoreLog$'
