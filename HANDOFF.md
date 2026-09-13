@@ -1,43 +1,38 @@
 # zonoemenu HANDOFF
 
-## Repository
-- Repository: `a7987083/zonoe-`
-- Stable branch: `main`
-- Production branch: `dev/zonoemenu-production-v1`
-- Current work branch: `work/zonoemenu-v1-p32-dispatcher-split`
-- Current source version: `v1_p32`.
-- Device-verified baseline: `v1_p32` / `84f8b3898bee9d95ed4034d12842879cc56280d3`.
+## Repository / baselines
+- Repository: `a7987083/zonoe-`.
+- Current work branch: `work/zonoemenu-v1-p33-bootstrap-moduleloader-boundary`.
+- Current development version: `v1_p33`.
+- Current p33 source commit: `0f12e4353e8859c585fe2975812964a28b7410d1`.
+- Device-verified baseline remains `v1_p32` / `84f8b3898bee9d95ed4034d12842879cc56280d3` until p33 device regression passes.
 
-## p32-A audit
-- Audit commit: `e7dddfbb5bb9cd597f6a194d9bee06e0cbba7988`.
-- Run: `34703403975` / success.
-- Detailed contract: `DISPATCHER_AUDIT.md`.
+## p33 scope
+P33 is an isolated compilation-ownership refactor of the active startup/module-loader path:
+- `ZONBootstrap.h` -> declaration-only; implementation moved to `ZONBootstrap.m`.
+- `ZONModuleLoader.h` -> declaration-only; implementation moved to `ZONModuleLoader.m`.
+- Both `.m` files are registered in `testmod.xcodeproj`.
+- No intended authorization, UDID, menu, Dispatcher, route, persistence, UI, module ABI or module-loading behavior change.
 
-## p32-B implementation
-- `ZONFeatureDispatcher.h` declares the seven Dispatcher functions and no longer contains inline bodies.
-- `ZONFeatureDispatcher.m` contains the mechanically moved bodies.
-- Existing header imports were retained intentionally to avoid mixing transitive-include cleanup with the source split.
-- `ZONMenuEventBridge.m` remains behaviorally unchanged and still imports `ZONFeatureDispatcher.h`.
-- `dispatcher_contract_smoke.py` locks route identifiers, handler calls, protected destructive markers, persistence keys and runtime-sync ownership.
-- `ZONFeatureDispatcher.m` is registered in the Xcode target in final p32 source commit `84f8b3898bee9d95ed4034d12842879cc56280d3`.
+Important correction: ModuleLoader is active. `main.m` calls `ZONBootstrapStart()`, and Bootstrap calls `ZONLoadBundledModules()`. Older documentation saying it was inactive was based on the absence of an independent `.m` target entry and was incorrect because its implementation was header-owned.
 
-## Verification result
-- p31 -> p32 implementation equivalence: passed.
-- Dispatcher PBX registration: passed.
-- Dispatcher contract smoke: passed.
-- Registry smoke: passed.
-- Module ABI smoke: passed.
-- A_customer and B_debug full Xcode build/package for arm64 + arm64e / iOS 12: passed.
-- Build workflow: `p32 Dispatcher Boundary Build` / Run `34723015809` / success.
-- A_customer artifact: `testmod-v1_p32-A_customer`.
-- B_debug artifact: `testmod-v1_p32-B_debug`.
-- Real-device p32 checklist: passed by explicit user report.
+## Verification
+- Source/body equivalence against p32: passed for Bootstrap and all ModuleLoader functions.
+- Isolated product-source scope: passed.
+- PBX registration: passed.
+- Independent `.m` compilation with warnings-as-errors: passed.
+- Required symbol checks: passed.
+- Dispatcher contract: passed.
+- Feature Registry smoke: passed.
+- Module ABI smoke/example exports: passed.
+- A_customer and B_debug full Xcode build/package, iOS 12 / arm64 + arm64e: passed.
+- Workflow: `p33 Bootstrap ModuleLoader Boundary Build` / Run `34733013479` / success.
+- A artifact: `testmod-v1_p33-A_customer` / ID `10309833185`.
+- B artifact: `testmod-v1_p33-B_debug` / ID `10309663469`.
+- Real-device p33 validation: pending.
 
-## Protected behavior
-The p32 device regression confirmed the Dispatcher split did not introduce observed regression in cloud-save flow, local files, backup/restore, destructive confirmation boundaries, runtime toggles/slider, menu interaction or visual/order behavior.
-
-## Current baseline rule
-`v1_p32` / `84f8b3898bee9d95ed4034d12842879cc56280d3` is the current device-verified runtime baseline. Do not promote a later development version until its CI and required real-device checklist both pass.
+## Architecture review findings
+See `REFACTOR_REVIEW.md`. Highest remaining risks are canonical-source ambiguity between root and `testmod/`, the implementation-heavy active `ZONUDIDBridge.h`, and UDID/auth plumbing living inside `NSObject+UI.m`.
 
 ## Next task
-Plan the next isolated development phase from the p32 device-verified baseline. No p33 runtime source change has been promoted or device-verified yet.
+Run the p33 A_customer real-device startup/bootstrap checklist from `DEVICE_TEST_MATRIX.md`. Do not promote p33 or start an auth/UDID structural refactor until that result is recorded.
