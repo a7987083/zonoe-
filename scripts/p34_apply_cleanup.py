@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import re
 import subprocess
 from pathlib import Path
 
 REMOVE_PATHS = [
-    # Obsolete App Store in-app preview helper; its only remaining calls are commented out.
     'testmod/AppStore/SomeOtherFile.h',
     'testmod/AppStore/SomeOtherFile.m',
-
-    # Empty / dead categories and helpers.
     'testmod/category/LRKeychain.h',
     'testmod/category/LRKeychain.m',
     'testmod/views/AESUtility.h',
@@ -19,8 +15,6 @@ REMOVE_PATHS = [
     'testmod/视图菜单/NSObject+Plist.m',
     'testmod/菜单/菜单UI/NSObject+Menu.h',
     'testmod/菜单/菜单UI/NSObject+Menu.mm',
-
-    # Old UI that has no product imports, runtime hooks or registered feature entry.
     'testmod/菜单/Localize.h',
     'testmod/菜单/Localize.m',
     'testmod/菜单/TDAlternateIconCell.h',
@@ -31,8 +25,6 @@ REMOVE_PATHS = [
     'testmod/category/TFJGVGLGKFTVCSV.m',
     'testmod/视图菜单/HeeeNoScreenShotView.h',
     'testmod/视图菜单/HeeeNoScreenShotView.m',
-
-    # Retired memory editor / memory search feature family.
     'testmod/category/UIWindow+DLGMemUI.h',
     'testmod/category/UIWindow+DLGMemUI.m',
     'testmod/category/lz4.h',
@@ -56,8 +48,6 @@ REMOVE_PATHS = [
     'testmod/工具箱/MemScan.h',
     'testmod/工具箱/jianghu.h',
     'testmod/工具箱/jianghu.mm',
-
-    # Unused linked memory framework. Exact audit found zero product references.
     'testmod/JRMemory.framework',
 ]
 
@@ -90,11 +80,14 @@ def run(*args: str) -> None:
 
 
 def tracked(path: str) -> bool:
-    return subprocess.call(['git','ls-files','--error-unmatch',path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) == 0
+    return subprocess.call(
+        ['git', 'ls-files', '--error-unmatch', path],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ) == 0
 
 
 def main() -> None:
-    # Remove now-useless imports first so compiler proof is meaningful.
     for file_name, removals in IMPORT_EDITS.items():
         p = Path(file_name)
         text = p.read_text()
@@ -104,7 +97,6 @@ def main() -> None:
             text = text.replace(item, '', 1)
         p.write_text(text)
 
-    # Remove obsolete declaration that belonged to the retired memory editor UI.
     fuzhu = Path('testmod/导入导出/fuzhu.h')
     text = fuzhu.read_text()
     old = '- (void)onConsoleButtonTapped;\n'
@@ -112,14 +104,16 @@ def main() -> None:
         raise SystemExit(f'fuzhu.h onConsoleButtonTapped declaration count={text.count(old)}')
     fuzhu.write_text(text.replace(old, '', 1))
 
-    # Prune all Xcode references/build entries for removed source/header/framework names.
+    # Every PBX line that names a retired file is metadata for that file:
+    # PBXBuildFile, PBXFileReference, PBXGroup child, Sources/Headers/Frameworks phase.
+    # Remove all of those lines by the exact PBX comment prefix. This avoids leaving
+    # header-phase entries such as "AESUtility.h in Headers" behind.
     pbx = Path('testmod.xcodeproj/project.pbxproj')
     lines = pbx.read_text().splitlines(True)
     kept = []
     removed_lines = []
     for line in lines:
-        if any(f'/* {name} */' in line or f'/* {name} in Sources */' in line or f'/* {name} in Frameworks */' in line
-               for name in PBX_NAMES):
+        if any(f'/* {name}' in line for name in PBX_NAMES):
             removed_lines.append(line)
         else:
             kept.append(line)
@@ -127,15 +121,12 @@ def main() -> None:
         raise SystemExit('PBX prune removed no lines')
     pbx.write_text(''.join(kept))
 
-    # Remove product files and repository noise from Git.
     for path in REMOVE_PATHS + NOISE_PATHS:
         if Path(path).exists() or tracked(path):
             run('git', 'rm', '-r', '--ignore-unmatch', '--', path)
 
-    # Version this cleanup separately; p33 remains the previous CI-verified source baseline.
     Path('VERSION').write_text('v1_p34\n')
 
-    # Safety assertions: current product features/hook stack must still exist.
     required = [
         'testmod/ZONCore/ZONFeatureRegistry.m',
         'testmod/ZONCore/ZONFeatureDispatcher.m',
@@ -153,22 +144,23 @@ def main() -> None:
         if not Path(path).is_file():
             raise SystemExit(f'required active file missing: {path}')
 
-    # Removed feature names must no longer be compiled or referenced in active product source.
     pbx_text = pbx.read_text()
     for name in PBX_NAMES:
         if name in pbx_text:
             raise SystemExit(f'stale PBX reference: {name}')
 
     active_patterns = [
-        'jianghu.h', 'NSObject+Menu.h', 'SomeOtherFile.h', 'DLGMem', 'TDAlternateIconCell',
-        'WMDragView', 'HeeeNoScreenShotView', 'TFJGVGLGKFTVCSV', 'LRKeychain', 'AESUtility'
+        'jianghu.h', 'NSObject+Menu.h', 'SomeOtherFile.h', 'DLGMem',
+        'TDAlternateIconCell', 'WMDragView', 'HeeeNoScreenShotView',
+        'TFJGVGLGKFTVCSV', 'LRKeychain', 'AESUtility'
     ]
     for pattern in active_patterns:
         proc = subprocess.run(
-            ['git','grep','-n','--',pattern,'--','testmod'], text=True,
-            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL
+            ['git', 'grep', '-n', '--', pattern, '--', 'testmod'],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
         )
-        # Comments may still mention old names in files we keep; only fail on actual import/include lines.
         for line in proc.stdout.splitlines():
             body = line.split(':', 2)[-1].strip()
             if body.startswith('#import') or body.startswith('#include'):
