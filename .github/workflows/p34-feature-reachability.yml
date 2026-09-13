@@ -22,23 +22,27 @@ jobs:
       - name: Run corrected repository audit
         run: |
           set -euxo pipefail
-          git -c core.quotepath=false status --short
           python3 scripts/p34_repository_audit.py | tee p34-audit.log
-          cat p34-audit-report.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run corrected grouped reachability audit
         run: |
           set -euxo pipefail
           python3 scripts/p34_feature_reachability.py | tee p34-feature-reachability.log
-          cat p34-feature-reachability.log >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload corrected audit evidence
+      - name: Trace exact uncommented candidate references
+        run: |
+          set -euxo pipefail
+          python3 scripts/p34_candidate_reference_audit.py | tee p34-candidate-references.log
+          cat p34-candidate-references.log >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload audit evidence
         uses: actions/upload-artifact@v4
         with:
-          name: p34-corrected-audit
+          name: p34-exact-reference-audit
           path: |
             p34-audit-report.md
             p34-audit-report.json
             p34-audit.log
             p34-feature-reachability.log
+            p34-candidate-references.log
           if-no-files-found: error
