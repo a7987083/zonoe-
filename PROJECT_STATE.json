@@ -6,9 +6,9 @@
   "current_work_branch": "work/zonoemenu-v1-p32-dispatcher-split",
   "current_version": "v1_p32",
   "current_phase": "v1_p32_dispatcher_source_split",
-  "phase_status": "source_split_implemented_ci_pending",
-  "last_device_verified_code_commit": "5c0e5afddfecc9e9ed4b89f7ad42780cd652847f",
-  "last_device_verified_version": "v1_p31",
+  "phase_status": "device_verified",
+  "last_device_verified_code_commit": "84f8b3898bee9d95ed4034d12842879cc56280d3",
+  "last_device_verified_version": "v1_p32",
   "device_test_policy_document": "DEVICE_TEST_MATRIX.md",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
@@ -23,12 +23,25 @@
     "implementation": "testmod/ZONCore/ZONFeatureDispatcher.m",
     "function_count": 7,
     "business_behavior_intentionally_changed": false,
-    "pbx_registered": false,
-    "source_commit": null,
-    "ci_status": "pending",
-    "run_id": null,
-    "artifacts": null,
-    "device_status": "pending"
+    "pbx_registered": true,
+    "source_commit": "84f8b3898bee9d95ed4034d12842879cc56280d3",
+    "ci_trigger_branch": "test/zonoemenu-v1-p32-dispatcher-build",
+    "ci_trigger_commit": "ecaf2666c473423c0b031cd3fe48dd958243d851",
+    "ci_status": "success",
+    "run_id": 34723015809,
+    "artifacts": {
+      "A_customer": {
+        "name": "testmod-v1_p32-A_customer",
+        "artifact_id": 10306508987,
+        "digest": "sha256:0dc871eaa0f23ed1067bc2aea3e3332bd67ce64d63e9b972b67a86d2c385938e"
+      },
+      "B_debug": {
+        "name": "testmod-v1_p32-B_debug",
+        "artifact_id": 10306299448,
+        "digest": "sha256:d32aa453d50d0857c9bac084e73135f53faaa46d5232532817112ca2b53dc76d"
+      }
+    },
+    "device_status": "passed"
   },
-  "next_task": "run isolated p32 Dispatcher build CI; integrate PBX; verify equivalence/smokes/A+B artifacts"
+  "next_task": "plan the next isolated development phase from the v1_p32 device-verified baseline; no newer runtime baseline has been promoted"
 }
