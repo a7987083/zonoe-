@@ -16,7 +16,9 @@ def sh(*args: str) -> str:
 
 
 def tracked_files() -> list[str]:
-    return [p for p in sh('git', 'ls-files').splitlines() if p]
+    # Git quotes non-ASCII paths by default. Disable that so Chinese source paths
+    # are audited as real paths instead of escaped strings.
+    return [p for p in sh('git', '-c', 'core.quotepath=false', 'ls-files').splitlines() if p]
 
 
 def file_blob(path: str) -> str:
@@ -53,7 +55,6 @@ def source_inventory(files: list[str]):
         elif len(candidates) > 1:
             ambiguous[name] = candidates
         else:
-            # New ZON sources are absolute SOURCE_ROOT refs and still live under testmod/.
             all_candidates = by_base.get(name, [])
             if len(all_candidates) == 1:
                 resolved.append(all_candidates[0])
@@ -90,8 +91,6 @@ def objc_classes(text: str) -> list[str]:
 
 
 def simple_objc_methods(text: str) -> list[str]:
-    # Conservative: only no-argument selectors. These are useful for spotting old public methods
-    # like loadcaidan/ycdxiaz without pretending to prove absence of dynamic invocation.
     out = set()
     for m in re.finditer(r'(?m)^\s*[-+]\s*\([^\n)]*\)\s*([A-Za-z_][A-Za-z0-9_]*)\s*(?:\{|$)', text):
         out.add(m.group(1))
@@ -136,8 +135,12 @@ def duplicate_roots(files: list[str]):
 
 def suspicious_files(files: list[str]):
     patterns = [
-        r'(^|/)(?:build|DerivedData)(/|$)', r'xcuserdata', r'\.xcuserstate$',
-        r'\.DS_Store$', r'(?:副本|copy|backup|bak)(?:\.|_|$)', r'~$',
+        r'(^|/)(?:build|DerivedData)(/|$)',
+        r'xcuserdata',
+        r'\.xcuserstate$',
+        r'\.DS_Store$',
+        r'(?:副本|copy|backup|bak)(?:\.|_|$)',
+        r'~$',
         r'\.(?:deb|ipa)$',
     ]
     return sorted(p for p in files if any(re.search(pat, p, re.I) for pat in patterns))
@@ -145,7 +148,7 @@ def suspicious_files(files: list[str]):
 
 def feature_group(path: str) -> str | None:
     p = path.lower()
-    if any(x in p for x in ['dlgmem', '/mem.', 'mem_utils', 'search_result', 'jrmemory', 'jianghu']):
+    if any(x in p for x in ['dlgmem', '/mem.', 'mem_utils', 'search_result', 'jrmemory', '/jianghu.']):
         return 'memory/editor legacy stack'
     if any(x in p for x in ['hookclass', 'jianghuhook', '/hook/', 'fishhook', 'imgtool', 'uislider+vdtrackheight']):
         return 'runtime hook / ad-speed stack'
@@ -174,29 +177,19 @@ def main():
         text = active_texts[path]
         refs, classes = count_external_references(path, text, active_texts)
         methods = simple_objc_methods(text)
-        method_refs = {}
+        zero_ref_methods = []
         for method in methods:
-            count = 0
-            hit_files = []
             pat = re.compile(r'\b' + re.escape(method) + r'\b')
-            for other_path, other_text in active_texts.items():
-                if other_path == path:
-                    continue
-                hits = len(pat.findall(other_text))
-                if hits:
-                    count += hits
-                    hit_files.append(other_path)
-            if count == 0:
-                method_refs[method] = []
-            elif count <= 4:
-                method_refs[method] = sorted(set(hit_files))
+            if not any(other_path != path and pat.search(other_text)
+                       for other_path, other_text in active_texts.items()):
+                zero_ref_methods.append(method)
         active_rows.append({
             'path': path,
             'group': feature_group(path),
             'auto_markers': auto_markers(text),
             'classes': classes,
             'external_reference_files': refs,
-            'zero_ref_simple_methods': sorted(k for k, v in method_refs.items() if not v),
+            'zero_ref_simple_methods': sorted(zero_ref_methods),
         })
 
     duplicates = duplicate_roots(files)
@@ -220,6 +213,12 @@ def main():
     lines.append(f"- HEAD: `{data['git_head']}`")
     lines.append(f"- PBX source entries: **{data['source_name_count']}**")
     lines.append(f"- Resolved active source files: **{data['active_source_count']}**")
+    lines.append(f"- Ambiguous PBX source names: **{len(ambiguous)}**")
+    lines.append(f"- Missing PBX source names: **{len(missing)}**")
+    if ambiguous:
+        lines.append(f"- Ambiguous: `{json.dumps(ambiguous, ensure_ascii=False)}`")
+    if missing:
+        lines.append(f"- Missing: `{', '.join(missing)}`")
     lines.append('')
 
     lines.append('## Root/testmod duplicate trees')
@@ -246,7 +245,7 @@ def main():
 
     lines.append('## Active source risk inventory')
     lines.append('')
-    lines.append('| source | group | auto-start/hook | other active files referencing class/stem | zero-ref simple methods |')
+    lines.append('| source | group | auto-start/hook | active files referencing class/stem | zero-ref simple methods |')
     lines.append('|---|---|---|---:|---|')
     for row in active_rows:
         if row['group'] or row['auto_markers'] or not row['external_reference_files'] or row['zero_ref_simple_methods']:
