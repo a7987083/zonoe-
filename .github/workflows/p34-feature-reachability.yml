@@ -1,0 +1,33 @@
+name: p34 Feature Reachability
+
+on:
+  push:
+    branches:
+      - test/zonoemenu-v1-p34-cleanup-audit
+    paths:
+      - '.github/workflows/p34-feature-reachability.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  reachability:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/zonoemenu-v1-p34-cleanup-audit
+          fetch-depth: 0
+
+      - name: Run grouped reachability audit
+        run: |
+          set -euxo pipefail
+          python3 scripts/p34_feature_reachability.py | tee p34-feature-reachability.log
+          cat p34-feature-reachability.log >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload reachability evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: p34-feature-reachability
+          path: p34-feature-reachability.log
+          if-no-files-found: error
