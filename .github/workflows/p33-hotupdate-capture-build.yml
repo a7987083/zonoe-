@@ -20,6 +20,18 @@ jobs:
     steps:
       - name: Checkout p33 source
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Restore verified p32 Xcode source registrations
+        run: |
+          set -euxo pipefail
+          git fetch --depth=1 origin work/zonoemenu-v1-p32-dispatcher-split
+          git show FETCH_HEAD:testmod.xcodeproj/project.pbxproj > testmod.xcodeproj/project.pbxproj
+          test "$(grep -c 'ZONFeatureDispatcher.m in Sources' testmod.xcodeproj/project.pbxproj)" -eq 2
+          test "$(grep -c 'ZONFeatureRegistry.m in Sources' testmod.xcodeproj/project.pbxproj)" -eq 2
+          test "$(grep -c 'ZONFeatureRenderer.m in Sources' testmod.xcodeproj/project.pbxproj)" -eq 2
+          test "$(grep -c 'ZONMenuCoordinator.m in Sources' testmod.xcodeproj/project.pbxproj)" -eq 2
 
       - name: Verify p33 capture source
         run: |
