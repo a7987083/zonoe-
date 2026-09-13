@@ -7,7 +7,6 @@
 //#import <UIKit/UIKit.h>
 #import "MBProgressHUD.h"
 #import "JHDragView.h"
-#import "jianghu.h"
 #import "Config.h"
 #import "JHPP.h"
 #import "JDStatusBarNotification.h"

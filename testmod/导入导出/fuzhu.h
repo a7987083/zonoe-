@@ -11,7 +11,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface NSObject (Menuz)
 - (void)firstButton;//⚠️清除app数据⚠️
-- (void)onConsoleButtonTapped;
 - (void)checkbanben;
 @end
 

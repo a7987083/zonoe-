@@ -20,7 +20,6 @@
 #include <stdio.h>
 #import <string.h>
 
-#import "jianghu.h"
 #import "JHPP.h"
 #import "SVProgressHUD.h"
 
@@ -28,7 +27,6 @@
 #import "PubgLoad.h"
 #import "SFHFKeychainUtils.h"
 #import "NSObject+UI.h"
-#import "NSObject+Menu.h"
 #import "fuzhu.h"
 #import "JDStatusBarNotification.h"
 

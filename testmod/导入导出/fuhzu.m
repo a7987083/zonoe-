@@ -3,7 +3,6 @@
  #import "SSZipArchive.h"
  
 #import "daochucd.h"
-#import "SomeOtherFile.h"
 #import "JHPP.h"
 
 static NSTimer*timer;
