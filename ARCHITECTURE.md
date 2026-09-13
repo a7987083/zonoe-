@@ -1,21 +1,50 @@
 # ARCHITECTURE
 
+## Canonical runtime surface
+The active product runtime is `testmod/` plus `testmod.xcodeproj`. The repository root still contains legacy/duplicate source trees with overlapping names; those copies are not assumed canonical unless PBX/call-chain evidence proves otherwise.
+
+## Startup / authorization
+```text
+dyld loads testmod dylib
+  -> testmod/Bsphp/main.m +load
+     -> authorization-reset compatibility hook
+     -> ZONBootstrapStart(preflight, ready)
+        -> synchronous legacy framework preflight
+        -> main queue variant entry
+           -> B_debug: floating entry
+           -> A_customer: status -> keychain/UDID -> authorization loada
+        -> ZONLoadBundledModules()
+```
+
 ## Menu ownership
 ```text
-Floating Entry
+NSObject+UI floating entry
   -> PopupMenuVC compatibility shell
      -> ZONMenuCoordinator
         -> ZONMenuPanelController
         -> ZONMenuChromeRenderer
         -> ZONSectionRenderer
-           -> ZONFeatureRenderer
            -> ZONFeatureRegistry
+           -> ZONFeatureRenderer
         -> ZONMenuEventBridge
            -> ZONFeatureDispatcher
               -> existing business handlers
 ```
 
-## Compilation boundary after v1_p31
+## Extension module ownership
+```text
+ZONBootstrap.m
+  -> ZONModuleLoader.m
+     -> Frameworks/ZONModules + bundle/ZONModules
+     -> sorted .dylib scan
+     -> path containment check
+     -> dlopen / dlsym ABI checks
+     -> module initialize(ZONHostAPI)
+```
+
+`ZONModuleLoader` is an active runtime boundary: Bootstrap invokes `ZONLoadBundledModules()`. Before p33 its implementation lived in `ZONModuleLoader.h` and was therefore compiled transitively into callers. P33 makes that ownership explicit with an independent `.m` target source.
+
+## Compilation boundary at v1_p33 candidate
 ```text
 Xcode target: testmod
   -> PopupMenuVC.m
@@ -26,21 +55,21 @@ Xcode target: testmod
   -> ZONSectionRenderer.m
   -> ZONMenuEventBridge.m
   -> ZONFeatureRegistry.m
+  -> ZONFeatureDispatcher.m
+  -> ZONModuleLoader.m
+  -> ZONBootstrap.m
+  -> legacy product sources
 ```
 
-`ZONFeatureRegistry.h` now exposes enums, exported key declarations and registry function declarations only. Registry key definitions, 3 section records, 10 feature records and lookup/validation functions live in `ZONFeatureRegistry.m`.
+Declaration-only boundaries now include `ZONFeatureRegistry.h`, `ZONFeatureDispatcher.h`, `ZONModuleLoader.h` and `ZONBootstrap.h`.
 
-Still header-based / intentionally not converted:
-- `ZONFeatureDispatcher.h`: business-heavy boundary; directly owns protected cloud-save, clear-game-data and clear-authorization routes.
-- `ZONModuleLoader.h`: audited in p31 but not part of the active target runtime; actual `testmod/Bsphp/main.m` does not reference it and `project.pbxproj` has no ModuleLoader source entry. Do not force it into the product target without a real runtime requirement.
+## Remaining implementation-heavy boundary
+`testmod/ZONServices/ZONUDIDBridge.h` still contains active callback/nonce/storage/socket/request implementation. The public `ZonoeUDIDAPI` implementation also currently lives inside `NSObject+UI.m`, mixing identity/auth plumbing with UI ownership. This is a future isolated audit/refactor candidate and is intentionally unchanged in p33.
 
-## p31 invariants
-- Registry data is unchanged: 10 features and 3 sections with the same tags, identifiers, titles, risk/migrated values, ordering, state keys and renderers.
-- No Dispatcher function-body or protected business-handler change.
-- No EventBridge behavior change.
-- No UI geometry/color/text/animation change.
-- No authorization, UDID, cloud-save or clear-game-data behavior change.
-- No actual `testmod/Bsphp/main.m` change.
+## Runtime baselines
+- Device-verified: `v1_p32` / `84f8b3898bee9d95ed4034d12842879cc56280d3`.
+- Current CI-verified candidate: `v1_p33` / `0f12e4353e8859c585fe2975812964a28b7410d1`.
+- p33 Run `34733013479`: success.
+- p33 is not promoted until its required real-device regression passes.
 
-## Runtime baseline
-`v1_p31` source commit `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f` is the current device-verified baseline. The user reported the cumulative p29 + p30 + p31 real-device regression passed with no issues, so the pending p29/p30 hardware gates are closed by that same regression.
+See `REFACTOR_REVIEW.md` for the full architecture review, risks and staged refactor plan.
