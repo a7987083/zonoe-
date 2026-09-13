@@ -23,7 +23,7 @@ jobs:
       - name: Verify cleanup script baseline
         run: |
           set -euxo pipefail
-          test "$(git rev-parse HEAD)" = '345d7743d36dff7133e7507ef71a4e5d715736a4'
+          test "$(git rev-parse HEAD)" = '4534fa8b3aac38d0070c73ff2fcbf81398f392c9'
           test -s scripts/p34_apply_cleanup.py
 
       - name: Apply audited cleanup
