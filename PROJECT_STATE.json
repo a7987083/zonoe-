@@ -3,45 +3,54 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p32-dispatcher-split",
-  "current_version": "v1_p32",
-  "current_phase": "v1_p32_dispatcher_source_split",
-  "phase_status": "device_verified",
+  "current_work_branch": "work/zonoemenu-v1-p33-bootstrap-moduleloader-boundary",
+  "current_version": "v1_p33",
+  "current_phase": "v1_p33_bootstrap_moduleloader_boundary",
+  "phase_status": "ci_verified_device_pending",
   "last_device_verified_code_commit": "84f8b3898bee9d95ed4034d12842879cc56280d3",
   "last_device_verified_version": "v1_p32",
   "device_test_policy_document": "DEVICE_TEST_MATRIX.md",
+  "architecture_review_document": "REFACTOR_REVIEW.md",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
-  "p32_audit": {
-    "commit": "e7dddfbb5bb9cd597f6a194d9bee06e0cbba7988",
-    "run_id": 34703403975,
-    "status": "success"
-  },
-  "p32_split": {
-    "branch": "work/zonoemenu-v1-p32-dispatcher-split",
-    "header": "testmod/ZONCore/ZONFeatureDispatcher.h",
-    "implementation": "testmod/ZONCore/ZONFeatureDispatcher.m",
-    "function_count": 7,
-    "business_behavior_intentionally_changed": false,
-    "pbx_registered": true,
+  "p32": {
     "source_commit": "84f8b3898bee9d95ed4034d12842879cc56280d3",
-    "ci_trigger_branch": "test/zonoemenu-v1-p32-dispatcher-build",
-    "ci_trigger_commit": "ecaf2666c473423c0b031cd3fe48dd958243d851",
-    "ci_status": "success",
     "run_id": 34723015809,
-    "artifacts": {
-      "A_customer": {
-        "name": "testmod-v1_p32-A_customer",
-        "artifact_id": 10306508987,
-        "digest": "sha256:0dc871eaa0f23ed1067bc2aea3e3332bd67ce64d63e9b972b67a86d2c385938e"
-      },
-      "B_debug": {
-        "name": "testmod-v1_p32-B_debug",
-        "artifact_id": 10306299448,
-        "digest": "sha256:d32aa453d50d0857c9bac084e73135f53faaa46d5232532817112ca2b53dc76d"
-      }
-    },
+    "ci_status": "success",
     "device_status": "passed"
   },
-  "next_task": "plan the next isolated development phase from the v1_p32 device-verified baseline; no newer runtime baseline has been promoted"
+  "p33": {
+    "baseline_commit": "84f8b3898bee9d95ed4034d12842879cc56280d3",
+    "branch": "work/zonoemenu-v1-p33-bootstrap-moduleloader-boundary",
+    "test_branch": "test/zonoemenu-v1-p33-bootstrap-moduleloader-build",
+    "source_commit": "0f12e4353e8859c585fe2975812964a28b7410d1",
+    "ci_trigger_commit": "12ccca5636c8d85c857a3b43112533948c2827f2",
+    "ci_run_id": 34733013479,
+    "ci_status": "success",
+    "scope": [
+      "testmod/ZONBootstrap/ZONBootstrap.h",
+      "testmod/ZONBootstrap/ZONBootstrap.m",
+      "testmod/ZONCore/ZONModuleLoader.h",
+      "testmod/ZONCore/ZONModuleLoader.m",
+      "testmod.xcodeproj/project.pbxproj",
+      "VERSION"
+    ],
+    "behavior_intentionally_changed": false,
+    "pbx_registered": true,
+    "contract_test": "Tests/bootstrap_moduleloader_contract.py",
+    "artifacts": {
+      "A_customer": {
+        "name": "testmod-v1_p33-A_customer",
+        "artifact_id": 10309833185,
+        "digest": "sha256:f9de22ed5a35ea4c40b27968499ffe1d50bdaa13b3a7511dc4bbeef07aa3a111"
+      },
+      "B_debug": {
+        "name": "testmod-v1_p33-B_debug",
+        "artifact_id": 10309663469,
+        "digest": "sha256:63f77461e5338d07ea2399ca2600c238374414ddcef4c6d096c860aac887207e"
+      }
+    },
+    "device_status": "pending"
+  },
+  "next_task": "run the v1_p33 A_customer real-device startup/bootstrap regression; keep v1_p32 as the promoted baseline until explicit pass"
 }
