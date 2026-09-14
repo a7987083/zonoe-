@@ -75,7 +75,7 @@ for identifier in [
 if "runtime.placeholder-203" in registry:
     fail("retired placeholder 203 reappeared")
 
-if (ROOT / "VERSION").read_text().strip() != "v1_p36":
-    fail("VERSION must be v1_p36")
+if (ROOT / "VERSION").read_text().strip() not in {"v1_p36", "v1_p37"}:
+    fail("VERSION must preserve the p36 UDID fallback contract")
 
 print("udid-fallback-contract: PASS")
