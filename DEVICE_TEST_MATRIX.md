@@ -38,39 +38,35 @@ Source commit: `c85a6a235daf3287b70c13fbe69be455a3aecce2`
 CI Run: `34829714958` / `success`
 Status: `superseded; covered by byte-identical p38 device pass`
 
-Changed boundary:
-- `zonoe://udid` remains the preferred first-launch acquisition path.
-- If the actual `openURL` call cannot open Zonoe, the stable UDID API starts the existing `WX_NongShiFu123 getUDID:` web/profile flow.
-- No `canOpenURL` preflight is used.
-- Legacy HTTP 404/profile behavior remains unchanged: open `udid.php?...`, exit, then on a later launch consume `udid<id>.txt`, store `DZUDID`, and resume authorization.
-
 ## v1_p37 — Canonical Mirror Cleanup
 Source commit: `6a605489a5f3837301c2ed127088146538c4c849`
 CI Run: `34834303080` / `success`
 Status: `superseded; covered by byte-identical p38 device pass`
-Runtime equivalence: `testmod/` and `testmod.xcodeproj` exactly match p36 runtime.
 
 ## v1_p38 — Canonical Product Source Finalization
 Source commit: `43c632d4ce6d04e51f9c8cc033292f9d98b134ff`
-Audit Run: `34840224717` / `success`
 CI Run: `34840451436` / `success`
 Status: `passed`
-Result: current device-verified baseline. User explicitly reported p38 real-device validation passed.
-Runtime equivalence: `testmod/` and `testmod.xcodeproj` exactly match p36 runtime commit `c85a6a235daf3287b70c13fbe69be455a3aecce2`.
-A_customer dylib SHA256: `560165e890968cd5e229e31193c85d76a75ef2620b19bd71dd554e795a7c11c9`, exactly matching p36 and p37.
-
-Repository-only change:
-- Proved all 76 PBX product Sources resolve under `testmod/` and zero root copies are active.
-- Proved the remaining root `Bsphp/`, `菜单/`, `导入导出/`, `视图菜单/` trees contain no root-only file.
-- Removed those four root mirrors and retained the canonical `testmod/...` trees.
-- No product runtime source or Xcode project content changed.
-- All nine active menu features remain unchanged.
-
-Device result:
-- Common smoke/regression reported passed.
-- Inherited P36 first-launch UDID behavior is accepted under the byte-identical P38 runtime lineage.
-- P38 is promoted as the new fallback/device baseline for subsequent cleanup work.
 
 ## v1_p39 — Active Target Slimming
-Status: `planned`
-Required promotion scope will be defined after the P39 audit identifies the exact source/dependency deletion set.
+Source commit: `613882da7068795533c530d45775f7ae5f79ed56`
+CI verification fix commit: `5364d440442474f540d90b8d52f69fabb2b1deb7` (CI/test only; runtime unchanged)
+Fixed verification Run: `34891852090` / `success`
+Status: `passed`
+Result: current device-verified baseline. User explicitly reported p39 real-device validation passed.
+
+Product change:
+- Removed unused `NSString+Tools.m/.h` and corresponding PBX references only.
+- PBX active Sources: **76 → 75**.
+- P38/P39 exported symbol sets are identical.
+- Four unique `NSString(Tools)` selectors are intentionally absent in P39.
+- Nine active product features remain intact.
+
+Device result:
+- App/floating entry/menu behavior reported normal.
+- User reported P39 test normal after CI verification succeeded.
+- P39 promoted as current real-device baseline.
+
+## P39-B — JDStatusBarNotification dependency audit
+Status: `audit only; no deletion approved yet`
+If a removal candidate is proven, define a separate device checklist after exact dependency reachability is known. Until then, P39 remains the fallback baseline.
