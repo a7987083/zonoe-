@@ -1,5 +1,18 @@
 # CHANGELOG_DEV
 
+## 2026-09-15 — P39-B JDStatusBarNotification Dependency Audit
+- Baseline remained device-verified `v1_p39` runtime/source `613882da7068795533c530d45775f7ae5f79ed56`.
+- No product runtime source or PBX membership was changed by the audit.
+- Audit Run `34894434619`: **success**.
+- Audit artifact ID `10368133245`, digest `sha256:5b46890e7594493ba4a2ee89e3c1b1a9e77dd66e09134d33577d49adf9ebf5ef`.
+- Audited the complete `JDStatusBarNotification` dependency unit: 8 PBX-active Objective-C implementations, 11 headers, plus one Swift wrapper with zero PBX hits.
+- Final decision: **KEEP_LIVE_DEPENDENCY**.
+- Direct live uses were proved in `PubgLoad.mm` for save/download status and progress, `main.m` for startup/UDID status, and `WX_NongShiFu123.mm` for authorization/activation status.
+- No external dynamic JDStatus references and no internal `+load`, constructor, swizzle, fishhook/rebind, or `dlopen` automatic entry were found.
+- `PreferenceManager.m` and `JiangHuHook.m` import the umbrella header without JDStatus API use; those two imports are later include-hygiene candidates only.
+- With this decision, all previously uncertain vendor groups in the P39 active-target audit are retained by live evidence. Active-target deletion audit closes at 75 Sources.
+- Next planned phase: v1_p40 source-layout, naming and include/dependency-hygiene audit.
+
 ## 2026-09-15 — v1_p39 Device Verification
 - P39 runtime/source commit: `613882da7068795533c530d45775f7ae5f79ed56`.
 - Fixed verification Run `34891852090`: success.
@@ -8,7 +21,6 @@
 - Active PBX Sources are 75 after removing only `NSString+Tools.m/.h` plus PBX references.
 - P38/P39 exported symbol sets are identical; retired NSString(Tools) unique selectors are absent in P39 as intended.
 - Initial P39 CI failure was validation-only: `grep -q` terminated the pipeline early and `strings` returned SIGPIPE 141 under `pipefail`. CI fix commit `5364d440442474f540d90b8d52f69fabb2b1deb7` did not change runtime/source.
-- Next phase: P39-B complete-unit audit of the 8-source `JDStatusBarNotification` dependency. No deletion is approved yet.
 
 ## 2026-09-14 — v1_p38 Device Verification
 - P38 runtime/source commit: `43c632d4ce6d04e51f9c8cc033292f9d98b134ff`.
