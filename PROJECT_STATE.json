@@ -3,10 +3,10 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p38-divergent-audit",
+  "current_work_branch": "work/zonoemenu-v1-p39-active-target-audit",
   "current_version": "v1_p38",
-  "current_phase": "v1_p38_canonical_source_finalization",
-  "phase_status": "device_verified",
+  "current_phase": "v1_p39_active_target_audit",
+  "phase_status": "audit_complete_cleanup_pending",
   "last_device_verified_code_commit": "43c632d4ce6d04e51f9c8cc033292f9d98b134ff",
   "last_device_verified_version": "v1_p38",
   "device_test_policy_document": "DEVICE_TEST_MATRIX.md",
@@ -63,46 +63,47 @@
     "active_feature_count": 9
   },
   "p38": {
-    "baseline_commit": "5f9d3844bff98314e0af109a6803a4642e685cb7",
-    "runtime_equivalent_commit": "c85a6a235daf3287b70c13fbe69be455a3aecce2",
-    "branch": "work/zonoemenu-v1-p38-divergent-audit",
-    "audit_branch": "test/zonoemenu-v1-p38-divergent-audit",
-    "test_branch": "test/zonoemenu-v1-p38-canonical-source-build",
-    "audit_run_id": 34840224717,
-    "audit_artifact_id": 10345433625,
     "source_commit": "43c632d4ce6d04e51f9c8cc033292f9d98b134ff",
-    "ci_trigger_commit": "a89a0a6f35790d10d2e7aae181ac073b45bb113b",
     "ci_run_id": 34840451436,
     "ci_status": "success",
-    "scope": [
-      "prove all 76 PBX product sources resolve under testmod and zero root copies are active",
-      "prove root Bsphp, 菜单, 导入导出 and 视图菜单 contain no root-only files",
-      "remove all four remaining root source mirrors while preserving their canonical testmod copies",
-      "preserve the complete testmod runtime tree and Xcode project exactly as p36/p37",
-      "require A_customer dylib SHA256 to remain byte-identical to p36/p37"
-    ],
-    "behavior_intentionally_changed": false,
-    "runtime_tree_identical_to_p36": true,
-    "xcode_project_identical_to_p36": true,
+    "device_status": "passed",
+    "device_reported_by_user": true,
     "canonical_product_source_surface": "testmod/",
     "remaining_root_product_mirrors": [],
     "active_feature_count": 9,
-    "artifacts": {
-      "A_customer": {
-        "name": "testmod-v1_p38-A_customer",
-        "artifact_id": 10345384325,
-        "digest": "sha256:e1d1d37af6b0dd8bbb77f17f5bda9bfe95f7a30a321fdff647ae1aa97ce22c38",
-        "dylib_sha256": "560165e890968cd5e229e31193c85d76a75ef2620b19bd71dd554e795a7c11c9"
-      },
-      "B_debug": {
-        "name": "testmod-v1_p38-B_debug",
-        "artifact_id": 10345514011,
-        "digest": "sha256:a934a5c2d81782a27398b72d0a390c3117df7d64d0eb00c45c431d619f81c02a"
-      }
-    },
-    "device_status": "passed",
-    "device_reported_by_user": true,
     "device_pass_covers_runtime_lineage": ["v1_p36", "v1_p37", "v1_p38"]
   },
-  "next_task": "start p39 active-target obsolete-helper and dependency audit inside canonical testmod only; protect Objective-C auto-start/hook paths and the nine verified product features unless explicit dependency proof permits removal"
+  "p39_audit": {
+    "planned_version": "v1_p39",
+    "branch": "work/zonoemenu-v1-p39-active-target-audit",
+    "test_branch": "test/zonoemenu-v1-p39-active-target-audit",
+    "audit_head": "fa9598578394da29e30decfaf71aacebfc2e5a3e",
+    "audit_run_id": 34845492258,
+    "audit_status": "success",
+    "artifact_id": 10347723184,
+    "artifact_digest": "sha256:2c75e6e4d7ec3fb0277a7a5f03b32f14ec2ffb30e1c3cc1a600f96974d45a5bd",
+    "active_source_count": 76,
+    "classification": {
+      "keep_protected": 25,
+      "keep_runtime_entry": 2,
+      "keep_referenced": 16,
+      "audit_vendor_group": 32,
+      "initial_low_risk_candidate": 1
+    },
+    "p39_a_first_cleanup_candidate": [
+      "testmod/category/NSString+Tools.m",
+      "testmod/category/NSString+Tools.h"
+    ],
+    "candidate_assessment": "strong deletion candidate; no product import or category-specific selector use found; daochucd [attr fileSize] is NSDictionary file-attribute usage, not NSString category usage",
+    "vendor_keep_units": [
+      "AFNetworking",
+      "MBProgressHUD",
+      "SCLAlertView",
+      "SSZipArchive/minizip",
+      "SVProgressHUD"
+    ],
+    "p39_b_vendor_audit": "JDStatusBarNotification as a complete 8-source unit",
+    "runtime_changed": false
+  },
+  "next_task": "execute p39-A guarded removal of NSString+Tools.m/.h plus PBX references only; run full contracts, A/B builds and binary metadata diff before any device candidate is produced"
 }
