@@ -2,29 +2,31 @@
 
 ## Repository / baselines
 - Repository: `a7987083/zonoe-`.
-- Current work branch: `work/zonoemenu-v1-p37-canonical-mirrors`.
-- Current development version: `v1_p37`.
-- Current p37 runtime/source commit: `6a605489a5f3837301c2ed127088146538c4c849`.
-- P37 documentation HEAD is newer than the runtime/source commit; do not confuse docs-only commits with the p37 code baseline.
+- Current work branch: `work/zonoemenu-v1-p38-divergent-audit`.
+- Current development version: `v1_p38`.
+- Current p38 runtime/source commit: `43c632d4ce6d04e51f9c8cc033292f9d98b134ff`.
+- Documentation HEAD is newer than the runtime/source commit; do not confuse docs-only commits with the p38 code baseline.
 - Device-verified baseline: `v1_p35` / `def6cb1c51fb0ae174f69ae7c5cebf286d1c4bb9`.
 - P35 real-device regression was explicitly reported passed by the user.
 
 ## Runtime lineage
 ### v1_p36 — UDID fallback fix
 - Preferred path remains `zonoe://udid` with callback + nonce.
-- If the actual `openURL` attempt cannot open Zonoe, the stable UDID API falls back to the existing `WX_NongShiFu123 getUDID:` web/profile acquisition flow.
-- The legacy server/profile protocol was not redesigned: HTTP 404 opens `udid.php?...` and exits; a later app launch checks `udid<id>.txt`, stores `DZUDID`, and resumes the existing authorization flow.
-- P36 runtime commit: `c85a6a235daf3287b70c13fbe69be455a3aecce2`.
-- CI Run `34829714958`: success.
-- Device status: pending.
+- If the actual `openURL` attempt cannot open Zonoe, fall back to the existing `WX_NongShiFu123 getUDID:` web/profile flow.
+- Legacy server/profile protocol remains unchanged: HTTP 404 opens `udid.php?...` and exits; a later launch checks `udid<id>.txt`, stores `DZUDID`, and resumes authorization.
+- Runtime commit: `c85a6a235daf3287b70c13fbe69be455a3aecce2`.
 
-### v1_p37 — canonical mirror cleanup
-- Repository-only cleanup on top of the documented p36 state.
-- Removed root `category/`, `工具箱/`, `SVProgressHUD/`, and `Package/` only after each Git tree SHA exactly matched its `testmod/` counterpart.
-- Kept divergent root trees `Bsphp/`, `菜单/`, `导入导出/`, and `视图菜单/` untouched.
-- The entire p37 `testmod/` tree is identical to p36 runtime commit `c85a6a235daf3287b70c13fbe69be455a3aecce2`.
-- `testmod.xcodeproj` is also identical to p36.
-- P37 A_customer dylib SHA256 `560165e890968cd5e229e31193c85d76a75ef2620b19bd71dd554e795a7c11c9` is exactly the same as p36 A_customer.
+### v1_p37 — identical-root mirror cleanup
+- Removed root `category/`, `工具箱/`, `SVProgressHUD/`, and `Package/` after exact tree-SHA equality proof.
+- Product runtime remained byte-identical to p36.
+
+### v1_p38 — canonical product source finalization
+- Audit Run `34840224717` proved all 76 PBX product Sources resolve under `testmod/`; zero root copies are active.
+- Remaining root `Bsphp/`, `菜单/`, `导入导出/`, and `视图菜单/` contained no root-only files. Their differences were older same-path copies only.
+- Removed all four remaining root source mirrors.
+- `testmod/` is now the unique canonical product source surface.
+- Complete `testmod/` tree and `testmod.xcodeproj` remain identical to p36 runtime.
+- P38 A_customer dylib SHA256 `560165e890968cd5e229e31193c85d76a75ef2620b19bd71dd554e795a7c11c9` exactly matches p36 and p37.
 
 ## Protected active product behavior
 - Remote download.
@@ -38,25 +40,26 @@
 - Zonoe preferred UDID callback path and p36 web/profile fallback.
 
 ## Verification
-- P37 source commit: `6a605489a5f3837301c2ed127088146538c4c849`.
-- Workflow: `p37 Canonical Mirrors Build` / Run `34834303080` / success.
-- Exact mirror SHA proof: passed for all four removed root mirrors.
-- P37 canonical runtime tree equality against p36: passed.
-- P36 UDID fallback behavior contract: passed under p37 inheritance.
+- P38 source commit: `43c632d4ce6d04e51f9c8cc033292f9d98b134ff`.
+- Audit: `p38 Divergent Source Audit` / Run `34840224717` / success / artifact `10345433625`.
+- Build workflow: `p38 Canonical Source Build` / Run `34840451436` / success.
+- Canonical-source contract: passed.
+- Canonical runtime tree equality against p36: passed.
 - Registry smoke: passed with exactly 9 active features and 3 sections.
 - Bootstrap/ModuleLoader contract: passed.
 - Dispatcher contract: passed.
 - Module ABI smoke/example: passed.
 - A_customer iOS 12 arm64 + arm64e full Xcode build/package: passed.
+- A_customer exact SHA equality against p36/p37: passed.
 - B_debug iOS 12 arm64 + arm64e full Xcode build/package: passed.
-- A artifact: `testmod-v1_p37-A_customer` / ID `10343388502` / digest `sha256:6396590bcb450aa8fb018e5c96883253136a629730625a144ca53c96b862a855`.
-- B artifact: `testmod-v1_p37-B_debug` / ID `10343069444` / digest `sha256:efc025b8f3c816a262289a0b45da2c83bbb516cc12cec3aff72c5770f6a1fb52`.
-- Real-device p37 validation: pending.
+- A artifact: `testmod-v1_p38-A_customer` / ID `10345384325` / digest `sha256:e1d1d37af6b0dd8bbb77f17f5bda9bfe95f7a30a321fdff647ae1aa97ce22c38`.
+- B artifact: `testmod-v1_p38-B_debug` / ID `10345514011` / digest `sha256:a934a5c2d81782a27398b72d0a390c3117df7d64d0eb00c45c431d619f81c02a`.
+- Real-device p38 validation: pending.
 
 ## Important cleanup rule
-Do not delete files merely because textual references are zero. Objective-C `+load`, constructors, swizzles, fishhook/rebind and `dlopen` paths can be active without ordinary call sites. Active hook stacks (`JiangHuHook`, `HookClass`, `ImgTool`) and current file/cloud/auth paths are protected until explicit dependency proof says otherwise.
+From p38 onward, product-source audits should operate on canonical `testmod/` only. Do not delete active target files merely because textual references are zero. Objective-C `+load`, constructors, swizzles, fishhook/rebind and `dlopen` paths can be active without ordinary call sites.
 
-Do not mechanically delete the remaining divergent root trees. Audit file-by-file and prove which copy is canonical before any consolidation.
+Active hook stacks (`JiangHuHook`, `HookClass`, `ImgTool`) and current file/cloud/auth paths remain protected until explicit dependency proof says otherwise.
 
 ## Next task
-Run the p37 A_customer device checklist from `DEVICE_TEST_MATRIX.md`. Because p37 runtime is byte-identical to p36, test the first-launch UDID flow with Zonoe installed and without Zonoe installed. A successful p37 device result promotes p37 and covers the inherited p36 runtime at the same time.
+Run the p38 A_customer device checklist from `DEVICE_TEST_MATRIX.md`. Because p38 runtime is byte-identical to p36/p37, test first-launch UDID with Zonoe installed and without Zonoe installed. A successful p38 result promotes p38 and covers the inherited p36-p38 runtime lineage. After promotion, start p39 active-target obsolete-helper audit inside `testmod/` only.
