@@ -3,12 +3,12 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p33-bootstrap-moduleloader-boundary",
-  "current_version": "v1_p33",
-  "current_phase": "v1_p33_bootstrap_moduleloader_boundary",
+  "current_work_branch": "work/zonoemenu-v1-p35-canonical-cleanup",
+  "current_version": "v1_p35",
+  "current_phase": "v1_p35_canonical_cleanup",
   "phase_status": "ci_verified_device_pending",
-  "last_device_verified_code_commit": "84f8b3898bee9d95ed4034d12842879cc56280d3",
-  "last_device_verified_version": "v1_p32",
+  "last_device_verified_code_commit": "cd9a0ab78158de11f1d51cda7461dbc6dd60f956",
+  "last_device_verified_version": "v1_p34",
   "device_test_policy_document": "DEVICE_TEST_MATRIX.md",
   "architecture_review_document": "REFACTOR_REVIEW.md",
   "minimum_ios": "12.0",
@@ -20,37 +20,62 @@
     "device_status": "passed"
   },
   "p33": {
-    "baseline_commit": "84f8b3898bee9d95ed4034d12842879cc56280d3",
-    "branch": "work/zonoemenu-v1-p33-bootstrap-moduleloader-boundary",
-    "test_branch": "test/zonoemenu-v1-p33-bootstrap-moduleloader-build",
     "source_commit": "0f12e4353e8859c585fe2975812964a28b7410d1",
-    "ci_trigger_commit": "12ccca5636c8d85c857a3b43112533948c2827f2",
-    "ci_run_id": 34733013479,
+    "run_id": 34733013479,
     "ci_status": "success",
-    "scope": [
-      "testmod/ZONBootstrap/ZONBootstrap.h",
-      "testmod/ZONBootstrap/ZONBootstrap.m",
-      "testmod/ZONCore/ZONModuleLoader.h",
-      "testmod/ZONCore/ZONModuleLoader.m",
-      "testmod.xcodeproj/project.pbxproj",
-      "VERSION"
-    ],
-    "behavior_intentionally_changed": false,
-    "pbx_registered": true,
-    "contract_test": "Tests/bootstrap_moduleloader_contract.py",
+    "device_status": "superseded_and_covered_by_p34_device_pass"
+  },
+  "p34": {
+    "branch": "work/zonoemenu-v1-p34-cleanup",
+    "source_commit": "cd9a0ab78158de11f1d51cda7461dbc6dd60f956",
+    "ci_run_id": 34758839228,
+    "ci_status": "success",
+    "device_status": "passed",
+    "device_reported_by_user": true,
     "artifacts": {
       "A_customer": {
-        "name": "testmod-v1_p33-A_customer",
-        "artifact_id": 10309833185,
-        "digest": "sha256:f9de22ed5a35ea4c40b27968499ffe1d50bdaa13b3a7511dc4bbeef07aa3a111"
+        "name": "testmod-v1_p34-A_customer",
+        "artifact_id": 10317544187,
+        "digest": "sha256:6498c465b7a2c1f931e483fd90f3a1ee911e3daf4465974d05c3eefc7052e149"
       },
       "B_debug": {
-        "name": "testmod-v1_p33-B_debug",
-        "artifact_id": 10309663469,
-        "digest": "sha256:63f77461e5338d07ea2399ca2600c238374414ddcef4c6d096c860aac887207e"
+        "name": "testmod-v1_p34-B_debug",
+        "artifact_id": 10318421302,
+        "digest": "sha256:bdbf901bfc24ed013b33770c1666718cd1d3671524459b16932e0f5c655b8a53"
+      }
+    }
+  },
+  "p35": {
+    "baseline_commit": "cd9a0ab78158de11f1d51cda7461dbc6dd60f956",
+    "branch": "work/zonoemenu-v1-p35-canonical-cleanup",
+    "test_branch": "test/zonoemenu-v1-p35-canonical-cleanup-build",
+    "source_commit": "def6cb1c51fb0ae174f69ae7c5cebf286d1c4bb9",
+    "ci_trigger_commit": "7de5e4f90cb1202b3d19dae30312a0596228e9b4",
+    "ci_run_id": 34825140580,
+    "ci_status": "success",
+    "scope": [
+      "remove runtime.placeholder-203 from Registry/Renderer/Dispatcher",
+      "remove retired root-only duplicate stacks already removed from canonical testmod in p34",
+      "preserve all nine active product features",
+      "update feature and dispatcher contract tests",
+      "VERSION"
+    ],
+    "behavior_intentionally_changed": true,
+    "intended_behavior_change": "remove the visible tag-203 placeholder control; all nine active product features remain unchanged",
+    "active_feature_count": 9,
+    "artifacts": {
+      "A_customer": {
+        "name": "testmod-v1_p35-A_customer",
+        "artifact_id": 10340495885,
+        "digest": "sha256:df0983e3121db5fed1dc4092d7c6c5f36d781163b21bd2d9620f80b02e8e0735"
+      },
+      "B_debug": {
+        "name": "testmod-v1_p35-B_debug",
+        "artifact_id": 10339941210,
+        "digest": "sha256:099d9560b38949558ecd56cc978f27d40970252683666f91ab5ea1b1fe407c65"
       }
     },
     "device_status": "pending"
   },
-  "next_task": "run the v1_p33 A_customer real-device startup/bootstrap regression; keep v1_p32 as the promoted baseline until explicit pass"
+  "next_task": "run the v1_p35 A_customer real-device regression focused on the nine retained menu features and verify the retired 203 placeholder is absent; keep v1_p34 as the promoted baseline until explicit pass"
 }
