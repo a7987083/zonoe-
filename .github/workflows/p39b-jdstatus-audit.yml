@@ -27,6 +27,7 @@ jobs:
       - name: Run JDStatus group audit
         run: |
           set -euxo pipefail
+          mkdir -p build
           python3 scripts/p39b_jdstatus_audit.py | tee build/p39b-jdstatus-audit.stdout.txt
           python3 - <<'PY'
           import json
@@ -35,12 +36,16 @@ jobs:
           assert d['objective_c_source_count']==8, d
           assert all(v==1 for v in d['pbx_source_hits'].values()), d['pbx_source_hits']
           assert all(v==0 for v in d['swift_pbx_hits'].values()), d['swift_pbx_hits']
-          print('external imports:', d['external_imports'])
-          print('external class refs:', d['external_class_refs_code'])
-          print('external API refs:', d['external_api_refs_code'])
+          assert d['decision']=='KEEP_LIVE_DEPENDENCY', d['decision']
+          assert d['strong_removal_candidate'] is False
+          assert 'testmod/菜单/PubgLoad.mm' in d['live_ref_files']
+          assert 'testmod/Bsphp/main.m' in d['live_ref_files']
+          assert 'testmod/Bsphp/WX_NongShiFu123.mm' in d['live_ref_files']
+          print('decision:', d['decision'])
+          print('live reference files:', d['live_ref_files'])
+          print('stale import candidates:', d['stale_import_candidates'])
           print('external dynamic refs:', d['external_dynamic_refs'])
           print('internal auto/runtime entries:', d['internal_auto_runtime_entries'])
-          print('strong_removal_candidate:', d['strong_removal_candidate'])
           PY
       - name: Upload audit evidence
         uses: actions/upload-artifact@v4
