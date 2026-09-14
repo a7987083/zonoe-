@@ -1,0 +1,30 @@
+name: p38 Divergent Source Audit
+
+on:
+  push:
+    branches:
+      - test/zonoemenu-v1-p38-divergent-audit
+    paths:
+      - '.github/workflows/p38-divergent-audit.yml'
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/zonoemenu-v1-p38-divergent-audit
+          fetch-depth: 0
+      - name: Run divergent tree audit
+        run: |
+          set -euxo pipefail
+          git reset --hard 5f9d3844bff98314e0af109a6803a4642e685cb7
+          git show 96be16e3fe6cf07db01deaea931eda95fe631def:scripts/p38_divergent_tree_audit.py > /tmp/p38_audit.py
+          python3 /tmp/p38_audit.py
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: p38-divergent-audit
+          path: |
+            p38-divergent-audit.md
+            p38-divergent-audit.json
