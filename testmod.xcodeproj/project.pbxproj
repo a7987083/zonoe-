@@ -106,7 +106,6 @@
 		7E8A584B2B8E4A9C00676FE2 /* SFHFKeychainUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E8A57A42B8E4A9B00676FE2 /* SFHFKeychainUtils.h */; };
 		7E8A584C2B8E4A9C00676FE2 /* PubgLoad.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7E8A57A52B8E4A9B00676FE2 /* PubgLoad.mm */; };
 		7E8A584D2B8E4A9C00676FE2 /* JHDragView.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E8A57A62B8E4A9B00676FE2 /* JHDragView.h */; };
-		7E8A58502B8E4A9C00676FE2 /* NSString+Tools.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E8A57AA2B8E4A9B00676FE2 /* NSString+Tools.m */; };
 		7E8A58512B8E4A9C00676FE2 /* NSDictionary+StichingStringkeyValue.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E8A57AB2B8E4A9B00676FE2 /* NSDictionary+StichingStringkeyValue.m */; };
 		7E8A58522B8E4A9C00676FE2 /* MF_Base64Additions.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E8A57AC2B8E4A9B00676FE2 /* MF_Base64Additions.h */; };
 		7E8A58542B8E4A9C00676FE2 /* NetWorkingApiClient.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E8A57AE2B8E4A9B00676FE2 /* NetWorkingApiClient.h */; };
@@ -115,7 +114,6 @@
 		7E8A585C2B8E4A9C00676FE2 /* NSString+URLCode.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E8A57B62B8E4A9B00676FE2 /* NSString+URLCode.m */; };
 		7E8A585D2B8E4A9C00676FE2 /* UIDevice+VKKeychainIDFV.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E8A57B72B8E4A9B00676FE2 /* UIDevice+VKKeychainIDFV.m */; };
 		7E8A585E2B8E4A9C00676FE2 /* getKeychain.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E8A57B82B8E4A9B00676FE2 /* getKeychain.h */; };
-		7E8A585F2B8E4A9C00676FE2 /* NSString+Tools.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E8A57B92B8E4A9B00676FE2 /* NSString+Tools.h */; };
 		7E8A58622B8E4A9C00676FE2 /* wyURLProtocol.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E8A57BC2B8E4A9B00676FE2 /* wyURLProtocol.h */; };
 		7E8A58632B8E4A9C00676FE2 /* MF_Base64Additions.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E8A57BD2B8E4A9B00676FE2 /* MF_Base64Additions.m */; };
 		7E8A58642B8E4A9C00676FE2 /* NSDictionary+StichingStringkeyValue.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E8A57BE2B8E4A9B00676FE2 /* NSDictionary+StichingStringkeyValue.h */; };
@@ -278,7 +276,6 @@
 		7E8A57A42B8E4A9B00676FE2 /* SFHFKeychainUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SFHFKeychainUtils.h; sourceTree = "<group>"; };
 		7E8A57A52B8E4A9B00676FE2 /* PubgLoad.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = PubgLoad.mm; sourceTree = "<group>"; };
 		7E8A57A62B8E4A9B00676FE2 /* JHDragView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JHDragView.h; sourceTree = "<group>"; };
-		7E8A57AA2B8E4A9B00676FE2 /* NSString+Tools.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSString+Tools.m"; sourceTree = "<group>"; };
 		7E8A57AB2B8E4A9B00676FE2 /* NSDictionary+StichingStringkeyValue.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSDictionary+StichingStringkeyValue.m"; sourceTree = "<group>"; };
 		7E8A57AC2B8E4A9B00676FE2 /* MF_Base64Additions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MF_Base64Additions.h; sourceTree = "<group>"; };
 		7E8A57AE2B8E4A9B00676FE2 /* NetWorkingApiClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NetWorkingApiClient.h; sourceTree = "<group>"; };
@@ -287,7 +284,6 @@
 		7E8A57B62B8E4A9B00676FE2 /* NSString+URLCode.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSString+URLCode.m"; sourceTree = "<group>"; };
 		7E8A57B72B8E4A9B00676FE2 /* UIDevice+VKKeychainIDFV.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIDevice+VKKeychainIDFV.m"; sourceTree = "<group>"; };
 		7E8A57B82B8E4A9B00676FE2 /* getKeychain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = getKeychain.h; sourceTree = "<group>"; };
-		7E8A57B92B8E4A9B00676FE2 /* NSString+Tools.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSString+Tools.h"; sourceTree = "<group>"; };
 		7E8A57BC2B8E4A9B00676FE2 /* wyURLProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = wyURLProtocol.h; sourceTree = "<group>"; };
 		7E8A57BD2B8E4A9B00676FE2 /* MF_Base64Additions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MF_Base64Additions.m; sourceTree = "<group>"; };
 		7E8A57BE2B8E4A9B00676FE2 /* NSDictionary+StichingStringkeyValue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSDictionary+StichingStringkeyValue.h"; sourceTree = "<group>"; };
@@ -708,7 +704,6 @@
 		7E8A57A72B8E4A9B00676FE2 /* category */ = {
 			isa = PBXGroup;
 			children = (
-				7E8A57AA2B8E4A9B00676FE2 /* NSString+Tools.m */,
 				7E8A57AB2B8E4A9B00676FE2 /* NSDictionary+StichingStringkeyValue.m */,
 				7E8A57AC2B8E4A9B00676FE2 /* MF_Base64Additions.h */,
 				7E8A57AE2B8E4A9B00676FE2 /* NetWorkingApiClient.h */,
@@ -717,7 +712,6 @@
 				7E8A57B62B8E4A9B00676FE2 /* NSString+URLCode.m */,
 				7E8A57B72B8E4A9B00676FE2 /* UIDevice+VKKeychainIDFV.m */,
 				7E8A57B82B8E4A9B00676FE2 /* getKeychain.h */,
-				7E8A57B92B8E4A9B00676FE2 /* NSString+Tools.h */,
 				7E8A57BC2B8E4A9B00676FE2 /* wyURLProtocol.h */,
 				7E8A57BD2B8E4A9B00676FE2 /* MF_Base64Additions.m */,
 				7E8A57BE2B8E4A9B00676FE2 /* NSDictionary+StichingStringkeyValue.h */,
@@ -846,7 +840,6 @@
 				7E6F45502E1A8C4E00D4A46E /* JDSBNotificationWindow.h in Headers */,
 				7E8A585E2B8E4A9C00676FE2 /* getKeychain.h in Headers */,
 				7E1E5F912BE5501A008C66BE /* tweak.h in Headers */,
-				7E8A585F2B8E4A9C00676FE2 /* NSString+Tools.h in Headers */,
 				7E1E5F882BE5501A008C66BE /* ImgTool.h in Headers */,
 				7E6F45462E1A8C4E00D4A46E /* JDStatusBarNotification.h in Headers */,
 				7E8A57D52B8E4A9C00676FE2 /* AFURLResponseSerialization.h in Headers */,
@@ -1050,7 +1043,6 @@
 				7E8A58022B8E4A9C00676FE2 /* main.m in Sources */,
 				7E8A57CD2B8E4A9C00676FE2 /* Config.m in Sources */,
 				7E1E5F8D2BE5501A008C66BE /* ImgTool.m in Sources */,
-				7E8A58502B8E4A9C00676FE2 /* NSString+Tools.m in Sources */,
 				7ECF60112E157C5E00459866 /* OtherFilesViewCell.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
