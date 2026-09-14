@@ -1,0 +1,53 @@
+name: p39b JDStatusBarNotification Audit
+
+on:
+  push:
+    branches:
+      - test/zonoemenu-v1-p39b-jdstatus-audit
+    paths:
+      - '.github/workflows/p39b-jdstatus-audit.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/zonoemenu-v1-p39b-jdstatus-audit
+          fetch-depth: 0
+      - name: Verify promoted P39 baseline ancestry
+        run: |
+          set -euxo pipefail
+          git merge-base --is-ancestor 613882da7068795533c530d45775f7ae5f79ed56 HEAD
+          test "$(tr -d '[:space:]' < VERSION)" = 'v1_p39'
+          python3 Tests/p39_active_target_cleanup_contract.py
+      - name: Run JDStatus group audit
+        run: |
+          set -euxo pipefail
+          python3 scripts/p39b_jdstatus_audit.py | tee build/p39b-jdstatus-audit.stdout.txt
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('build/p39b-jdstatus-audit.json').read_text())
+          assert d['objective_c_source_count']==8, d
+          assert all(v==1 for v in d['pbx_source_hits'].values()), d['pbx_source_hits']
+          assert all(v==0 for v in d['swift_pbx_hits'].values()), d['swift_pbx_hits']
+          print('external imports:', d['external_imports'])
+          print('external class refs:', d['external_class_refs_code'])
+          print('external API refs:', d['external_api_refs_code'])
+          print('external dynamic refs:', d['external_dynamic_refs'])
+          print('internal auto/runtime entries:', d['internal_auto_runtime_entries'])
+          print('strong_removal_candidate:', d['strong_removal_candidate'])
+          PY
+      - name: Upload audit evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: p39b-jdstatus-audit
+          path: |
+            build/p39b-jdstatus-audit.json
+            build/p39b-jdstatus-audit.md
+            build/p39b-jdstatus-audit.stdout.txt
+          if-no-files-found: error
