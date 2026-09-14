@@ -1,65 +1,49 @@
 # ROADMAP
 
 ## Current promoted baseline
-- Device-verified version: `v1_p38`.
-- Runtime/source commit: `43c632d4ce6d04e51f9c8cc033292f9d98b134ff`.
-- Audit Run `34840224717`: success.
-- CI Run `34840451436`: success.
-- Real-device regression: user explicitly reported p38 passed.
-- Because p38 `testmod/`, Xcode project and A_customer dylib are byte-identical to p36/p37 runtime, this device pass also covers the p36-p38 runtime lineage, including the Zonoe-to-web UDID fallback.
-
-## P38 completed — Canonical Product Source Finalization
-- All **76** PBX product Sources resolve under `testmod/`; root product source count is **0**.
-- Removed the remaining root `Bsphp/`, `菜单/`, `导入导出/`, and `视图菜单/` mirrors after proving they contained no root-only files.
-- Canonical product source surface is now **`testmod/` only**.
+- Device-verified version: `v1_p39`.
+- Runtime/source commit: `613882da7068795533c530d45775f7ae5f79ed56`.
+- Fixed verification Run `34891852090`: success.
+- Real-device regression: user explicitly reported p39 passed.
+- Active PBX Sources: **75**.
 - All nine active product features remain verified.
-- P38 A_customer SHA256: `560165e890968cd5e229e31193c85d76a75ef2620b19bd71dd554e795a7c11c9`.
 
-## Current development phase — v1_p39 active-target audit
-Status: `audit_complete_cleanup_pending`.
+## P39-A completed — Active Target Slimming
+- Removed only `testmod/category/NSString+Tools.m` and `testmod/category/NSString+Tools.h` plus PBX references.
+- PBX active Sources reduced **76 → 75**.
+- No floating-window/menu, authorization, UDID, cloud/file, backup/restore, or runtime-hook code was changed.
+- P38/P39 exported symbol sets are identical.
+- The four unique `NSString(Tools)` selectors are present in P38 and absent in P39 as intended.
+- Initial CI failure was verification-only: `grep -q` closed a pipeline early, `strings` received SIGPIPE 141 under `pipefail`. The fixed verification workflow does not change the runtime/source commit.
+- P39 A_customer SHA256: `4e5f26da846bc4d9af0f9fce11f55dadf109074b49c9c8ab54f519fb2b89cdd2`.
+- Real-device validation passed; P39 is promoted.
 
-### Audit completed
-- P39 audit branch: `work/zonoemenu-v1-p39-active-target-audit`.
-- Audit Run `34845492258`: success.
-- Artifact `p39-active-target-audit` / ID `10347723184` / digest `sha256:2c75e6e4d7ec3fb0277a7a5f03b32f14ec2ffb30e1c3cc1a600f96974d45a5bd`.
-- PBX Sources: **76**; resolved active sources: **76**.
-- Classification: 25 protected architecture/product units, 2 runtime/dynamic-entry units, 16 referenced non-vendor units, 32 vendor/dependency units, 1 initial low-risk candidate.
-- Detailed evidence is recorded in `P39_AUDIT.md`.
+## Current development phase — P39-B JDStatusBarNotification dependency audit
+Status: `audit_next`.
 
-### P39-A — approved cleanup scope for build validation
-Only one source pair is currently a strong deletion candidate:
-- `testmod/category/NSString+Tools.m`
-- `testmod/category/NSString+Tools.h`
+Audit `JDStatusBarNotification` as one complete dependency unit. The group contains 8 active source files and must not be slimmed file-by-file.
 
-Evidence:
-- No auto-start/hook behavior.
-- No product import of `NSString+Tools.h`.
-- No use of the category-specific sizing selectors outside the category itself.
-- The apparent `[attr fileSize]` hit in `daochucd.m` is on an `NSDictionary *` file-attributes object, not an `NSString` receiver.
-- Removal must also prune Xcode PBX file/build references.
+Required evidence before any deletion decision:
+1. Enumerate all eight PBX-active implementation files and associated public/private/umbrella headers.
+2. Map every product import and every public API call site under canonical `testmod/`.
+3. Search dynamic/runtime use: `NSClassFromString`, selectors, categories, notification names, swizzles, `+load`, constructors, and indirect UI helpers.
+4. Identify which current feature path reaches the dependency, if any.
+5. Decide one of three outcomes only after evidence: keep whole group, replace whole dependency boundary, or remove whole group.
+6. If removal is proven safe, use a guarded script and require contract tests, 9-feature Registry smoke, Module ABI, A_customer/B_debug builds, arm64/arm64e, exported-symbol/ObjC metadata diff, then real-device test.
 
-### Vendor/dependency decisions
-Keep for now because active dependency evidence exists:
-- AFNetworking: live through `NetWorkingApiClient : AFHTTPSessionManager` and AF serializer/security APIs.
-- MBProgressHUD: live authorization/cloud-save importers.
-- SCLAlertView: live authorization UI importer.
-- SSZipArchive + bundled minizip: live backup/restore/import/cloud-save users.
-- SVProgressHUD: live authorization/data/cloud/dispatcher users.
-
-P39-B deeper audit only; no deletion yet:
-- JDStatusBarNotification: audit exact public API and call sites as a complete 8-source dependency group.
-
-### P39 cleanup rules
-1. Do not delete files merely because ordinary textual call sites are zero.
-2. Protect Objective-C `+load`, constructors, swizzles, fishhook/rebind, `dlopen`, runtime hook, authorization, UDID, file, cloud-save, backup/restore and menu-entry paths until explicit proof permits deletion.
-3. Audit third-party stacks as dependency units rather than deleting isolated source files.
-4. Preserve all nine verified menu features.
-5. Every accepted deletion batch must pass contracts, Registry smoke, Module ABI, A_customer and B_debug full builds before device testing.
+## Protected units
+Keep protected until explicit proof says otherwise:
+- Floating window/menu entry: `NSObject+UI`, `JHDragView`, `PopupMenuVC`, coordinator/renderer/event bridge/dispatcher.
+- Authorization and UDID acquisition paths.
+- Remote download, VIP cloud save, local-file browser, backup/restore, clear-data, clear-auth.
+- `JiangHuHook`, `HookClass`, `ImgTool`, fishhook/rebind and other runtime hook paths.
+- AFNetworking, MBProgressHUD, SCLAlertView, SSZipArchive/minizip, SVProgressHUD remain retained based on active dependency evidence.
 
 ## Later backlog
-- After P39 active-target slimming stabilizes, start directory/naming cleanup.
-- Continue moving implementation-heavy headers into `.m` files only where it reduces coupling without adding unnecessary abstraction.
+- After P39-B dependency audit stabilizes, continue active-target vendor/helper unit audits one complete unit at a time.
+- Then start directory/naming cleanup inside canonical `testmod/`.
+- Continue splitting implementation-heavy headers only where it reduces coupling without adding unnecessary abstraction.
 - Keep the rule: delete when possible, merge when appropriate, add interfaces only when a real extension boundary exists.
 
 ## Next task
-Execute **P39-A** as a guarded cleanup: remove only `NSString+Tools.m/.h` plus PBX references, then run the full contract/build/binary-diff gate. Do not mix JDStatusBarNotification or other vendor changes into the same batch.
+Execute **P39-B audit only** for `JDStatusBarNotification`. Do not delete anything until exact imports, API calls, runtime use, and feature-path reachability are proven.
