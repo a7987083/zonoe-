@@ -1,3 +1,4 @@
+# trigger: p37 canonical mirror cleanup
 name: p37 Canonical Mirrors Build
 
 on:
