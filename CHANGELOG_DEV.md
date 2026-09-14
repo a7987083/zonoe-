@@ -1,64 +1,60 @@
 # CHANGELOG_DEV
 
+## 2026-09-14 — v1_p37 Canonical Mirror Cleanup
+- Built from the documented p36 head `ffb90dbdc0be28f90db7648f6ad3e7e09462109d`.
+- Bumped `VERSION` to `v1_p37`.
+- Removed root `category/`, `工具箱/`, `SVProgressHUD/`, and `Package/` only after exact Git tree-SHA equality proof against `testmod/category/`, `testmod/工具箱/`, `testmod/SVProgressHUD/`, and `testmod/Package/`.
+- Left divergent root trees (`Bsphp/`, `菜单/`, `导入导出/`, `视图菜单/`) untouched.
+- Added `Tests/canonical_mirror_cleanup_contract.py` and guarded cleanup script `scripts/p37_apply_canonical_mirror_cleanup.py`.
+- P37 canonical `testmod/` tree and `testmod.xcodeproj` are byte/tree-identical to p36 runtime commit `c85a6a235daf3287b70c13fbe69be455a3aecce2`.
+- P37 runtime/source commit: `6a605489a5f3837301c2ed127088146538c4c849`.
+- Workflow Run `34834303080`: **success**. Mirror proof, p36 UDID behavior contract, Bootstrap/ModuleLoader, Dispatcher, Registry, Module ABI and full A/B Xcode builds passed.
+- `A_customer`: artifact `10343388502`, digest `sha256:6396590bcb450aa8fb018e5c96883253136a629730625a144ca53c96b862a855`.
+- `B_debug`: artifact `10343069444`, digest `sha256:efc025b8f3c816a262289a0b45da2c83bbb516cc12cec3aff72c5770f6a1fb52`.
+- A_customer dylib SHA256: `560165e890968cd5e229e31193c85d76a75ef2620b19bd71dd554e795a7c11c9`, exactly matching p36 A_customer as expected for repository-only cleanup.
+- Device verification pending; p35 remains the promoted device baseline until the p36/p37 UDID paths are explicitly verified.
+
+## 2026-09-14 — v1_p36 UDID Web Fallback
+- Started from device-verified p35 runtime `def6cb1c51fb0ae174f69ae7c5cebf286d1c4bb9`.
+- Kept `zonoe://udid` as the preferred first-launch path.
+- Fixed the missing fallback: when the actual Zonoe `openURL` call fails, start the existing `WX_NongShiFu123 getUDID:` web/profile flow instead of stopping.
+- Kept the legacy 404/profile behavior unchanged: open `udid.php?...`, exit, then on a later launch consume `udid<id>.txt`, store `DZUDID`, and resume authorization.
+- Avoided `canOpenURL` preflight to prevent false negatives in injected hosts without `LSApplicationQueriesSchemes`.
+- P36 runtime/source commit: `c85a6a235daf3287b70c13fbe69be455a3aecce2`.
+- Workflow Run `34829714958`: **success** after correcting the canonical `testmod/category/getKeychain.h` include path.
+- `A_customer`: artifact `10342130206`; dylib SHA256 `560165e890968cd5e229e31193c85d76a75ef2620b19bd71dd554e795a7c11c9`.
+- `B_debug`: artifact `10341329186`.
+- Device verification pending; p37 carries this runtime unchanged.
+
 ## 2026-09-14 — v1_p35 Canonical Source Cleanup
 - Started from device-verified p34 source `cd9a0ab78158de11f1d51cda7461dbc6dd60f956`.
 - Bumped `VERSION` to `v1_p35`.
-- Removed `runtime.placeholder-203` / `暂无` from `ZONFeatureRegistry`.
-- Removed the tag-203 branch from `ZONFeatureRenderer` and the placeholder Dispatcher behavior (`人物血量`) from `ZONFeatureDispatcher`.
-- Updated Registry/Dispatcher tests to require exactly nine active product features and to reject tag 203.
-- Removed root-only retired copies already absent from canonical `testmod/` after p34, including JRMemory/memory-editor remnants, old alternate-icon UI, drag/screenshot helpers, empty categories/helpers and the retired AppStore helper.
-- Preserved all nine active menu features and protected their supporting hook/file/cloud/auth stacks.
-- Final p35 runtime/source commit: `def6cb1c51fb0ae174f69ae7c5cebf286d1c4bb9`.
-- Workflow Run `34825140580`: **success**. Integration guard, Bootstrap/ModuleLoader contract, Dispatcher contract, Registry smoke (9 features / 3 sections), Module ABI smoke and full A/B Xcode builds passed.
-- `A_customer`: artifact `10340495885`, digest `sha256:df0983e3121db5fed1dc4092d7c6c5f36d781163b21bd2d9620f80b02e8e0735`.
-- `B_debug`: artifact `10339941210`, digest `sha256:099d9560b38949558ecd56cc978f27d40970252683666f91ab5ea1b1fe407c65`.
-- Device verification pending; p34 remains the promoted device baseline until explicit p35 pass.
+- Removed `runtime.placeholder-203` / `暂无` from `ZONFeatureRegistry`, renderer and Dispatcher.
+- Removed root-only retired copies already absent from canonical `testmod/` after p34.
+- Preserved all nine active product features.
+- Runtime/source commit: `def6cb1c51fb0ae174f69ae7c5cebf286d1c4bb9`.
+- Workflow Run `34825140580`: **success**.
+- User explicitly reported p35 real-device validation passed; p35 is the current promoted device baseline.
 
 ## 2026-09-14 — v1_p34 Device Verification
 - P34 source commit: `cd9a0ab78158de11f1d51cda7461dbc6dd60f956`.
 - Workflow Run `34758839228`: **success**.
-- A_customer and B_debug full Xcode builds passed after the first retired-feature cleanup.
 - User explicitly reported p34 real-device validation passed.
-- `v1_p34` is the current device-verified baseline and implicitly covers the earlier p33 Bootstrap/ModuleLoader refactor.
 
 ## 2026-09-13 — v1_p33 Bootstrap / ModuleLoader Boundary
 - Started from device-verified p32 source `84f8b3898bee9d95ed4034d12842879cc56280d3`.
-- Bumped `VERSION` to `v1_p33`.
-- Converted `testmod/ZONBootstrap/ZONBootstrap.h` to declarations-only and moved the verified body to `ZONBootstrap.m`.
-- Converted `testmod/ZONCore/ZONModuleLoader.h` to declarations-only and moved loader implementation to `ZONModuleLoader.m`.
-- Corrected prior documentation: ModuleLoader is active because Bootstrap calls `ZONLoadBundledModules()`; before p33 it was compiled transitively from the header.
-- Registered both new `.m` translation units in the Xcode target; final p33 source commit: `0f12e4353e8859c585fe2975812964a28b7410d1`.
-- Added `Tests/bootstrap_moduleloader_contract.py`, comparing all moved function bodies against p32 and locking module-loader ABI/safety invariants.
-- Permanent Module ABI CI now includes the bootstrap/module-loader contract.
-- Initial p33 build Run `34732947582` failed only because standalone `clang -c` validation passed a linker-only `-framework Foundation` flag under `-Werror`; source contracts had already passed.
-- Corrected CI Run `34733013479`: **success**. Independent compilation, symbol checks, Dispatcher contract, Registry smoke, Module ABI smoke and full A/B Xcode builds passed.
-- `A_customer`: artifact `10309833185`, digest `sha256:f9de22ed5a35ea4c40b27968499ffe1d50bdaa13b3a7511dc4bbeef07aa3a111`.
-- `B_debug`: artifact `10309663469`, digest `sha256:63f77461e5338d07ea2399ca2600c238374414ddcef4c6d096c860aac887207e`.
-- Direct p33 device verification was superseded by the later p34 device regression, which includes the p33 code.
+- Converted Bootstrap and ModuleLoader headers to declarations-only and moved implementations into `.m` translation units.
+- Runtime/source commit: `0f12e4353e8859c585fe2975812964a28b7410d1`.
+- Corrected CI Run `34733013479`: **success**.
+- Direct p33 device verification was superseded by later p34 device regression.
 
 ## 2026-09-13 — v1_p32 Device Verification
 - Final p32 source commit: `84f8b3898bee9d95ed4034d12842879cc56280d3`.
 - Workflow Run `34723015809`: **success**.
-- Dispatcher equivalence/PBX/contract, Registry and Module ABI checks passed; A/B builds passed.
 - User explicitly reported the full p32 real-device checklist passed.
 
-## 2026-09-12 — v1_p32-B Dispatcher Source Split
-- Converted `ZONFeatureDispatcher.h` to declarations-only and added `ZONFeatureDispatcher.m` with mechanically moved bodies.
-- Added permanent Dispatcher contract tests and completed PBX/A-B verification.
-
-## 2026-09-12 — v1_p32-A Dispatcher Boundary Audit
-- Audit commit: `e7dddfbb5bb9cd597f6a194d9bee06e0cbba7988`.
-- Workflow Run `34703403975`: success.
-
-## 2026-09-12 — v1_p31 Feature Registry Boundary Cleanup
-- Integrated source commit: `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f`.
-- CI Run `34673034214`: success.
-
-## 2026-09-12 — v1_p30 EventBridge Boundary Cleanup
-- Source commit: `8e88b63611d19af6c42d9172c0f5741b34f51809`.
-
-## 2026-09-12 — v1_p29 Rendering Boundary Cleanup
-- Source commit: `506a22c01a2b46dbea0d4299418fcb702b6cb80e`.
-
-## 2026-09-12 — v1_p28 ZONCore Build Integration
-- Source commit: `350a46deb089a05fc599e641bd1eeb419c36c0d5`.
+## Earlier architecture cleanup
+- v1_p31 Feature Registry Boundary: `5c0e5afddfecc9e9ed4b89f7ad42780cd652847f`.
+- v1_p30 EventBridge Boundary: `8e88b63611d19af6c42d9172c0f5741b34f51809`.
+- v1_p29 Rendering Boundary: `506a22c01a2b46dbea0d4299418fcb702b6cb80e`.
+- v1_p28 ZONCore Build Integration: `350a46deb089a05fc599e641bd1eeb419c36c0d5`.
