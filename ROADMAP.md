@@ -6,43 +6,47 @@
 - CI Run `34825140580`: success.
 - Real-device regression: user explicitly reported p35 passed.
 
-## Current development candidate — v1_p37
+## Current development candidate — v1_p38
 Status: `ci_verified_device_pending`.
 
 ### Runtime lineage
 - `v1_p36` introduced the UDID fallback fix: keep `zonoe://udid` first, and when the real `openURL` call fails, automatically start the existing web/profile UDID flow.
-- `v1_p37` is repository-only canonical-source cleanup on top of the documented p36 state.
-- The complete `testmod/` tree and `testmod.xcodeproj` in p37 are exactly identical to p36 runtime commit `c85a6a235daf3287b70c13fbe69be455a3aecce2`.
-- The produced p37 A_customer dylib SHA256 is also identical to p36: `560165e890968cd5e229e31193c85d76a75ef2620b19bd71dd554e795a7c11c9`.
+- `v1_p37` removed four root mirrors that were exactly identical to their `testmod/` counterparts.
+- `v1_p38` audited and removed the four remaining divergent root mirrors after proving none is a PBX product source and none contains any root-only file.
+- The complete `testmod/` tree and `testmod.xcodeproj` in p38 remain exactly identical to p36 runtime commit `c85a6a235daf3287b70c13fbe69be455a3aecce2`.
+- P38 A_customer dylib SHA256 is `560165e890968cd5e229e31193c85d76a75ef2620b19bd71dd554e795a7c11c9`, exactly matching p36 and p37.
 
-### P37 implemented
-- `VERSION`: `v1_p36` -> `v1_p37`.
-- Removed root `category/` after proving its Git tree SHA exactly equals `testmod/category/`.
-- Removed root `工具箱/` after proving its Git tree SHA exactly equals `testmod/工具箱/`.
-- Removed root `SVProgressHUD/` after proving its Git tree SHA exactly equals `testmod/SVProgressHUD/`.
-- Removed root `Package/` after proving its Git tree SHA exactly equals `testmod/Package/`.
-- Kept divergent root trees (`Bsphp/`, `菜单/`, `导入导出/`, `视图菜单/`) untouched for later audited consolidation.
-- Preserved all nine active product features and the p36 UDID fallback behavior byte-for-byte.
+### P38 implemented
+- `VERSION`: `v1_p37` -> `v1_p38`.
+- Audit Run `34840224717` proved all **76** PBX Sources resolve to `testmod/`; root product source count is **0**.
+- `Bsphp/`: root 10 files vs canonical 39; 7 identical, 3 older divergent copies, 0 root-only files.
+- `菜单/`: root/canonical 28 each; 25 identical, 3 older divergent copies, 0 root-only files.
+- `导入导出/`: root/canonical 34 each; 32 identical, 2 older divergent copies, 0 root-only files.
+- `视图菜单/`: root/canonical 2 each; 2 divergent older copies, 0 root-only files.
+- Removed all four root mirrors and retained only `testmod/Bsphp`, `testmod/菜单`, `testmod/导入导出`, and `testmod/视图菜单`.
+- Canonical product source surface is now **`testmod/` only**.
+- All nine active product features and the p36 UDID fallback behavior remain byte-for-byte unchanged.
 
 ### Verification completed
-- Exact mirror tree-SHA proof: passed for all four removed root mirrors.
+- P38 divergent-source audit: success; artifact `10345433625`.
+- P38 canonical-source guard: passed.
 - Canonical `testmod/` tree equality against p36 runtime: passed.
 - Xcode project equality against p36 runtime: passed.
-- P36 UDID fallback behavior contract inherited and passed.
 - Bootstrap/ModuleLoader contract: passed.
 - Dispatcher contract: passed.
 - Feature Registry smoke: passed with 9 features / 3 sections.
 - Module ABI smoke/example: passed.
 - A_customer full iOS 12 arm64/arm64e Xcode build/package: passed.
+- A_customer exact SHA equivalence check against p36/p37: passed.
 - B_debug full iOS 12 arm64/arm64e Xcode build/package: passed.
-- Workflow Run `34834303080`: success.
-- P37 source commit: `6a605489a5f3837301c2ed127088146538c4c849`.
+- Workflow Run `34840451436`: success.
+- P38 runtime/source commit: `43c632d4ce6d04e51f9c8cc033292f9d98b134ff`.
 
-## Cleanup backlog after p37
-1. Audit the remaining divergent root vs `testmod/` trees individually: `Bsphp/`, `菜单/`, `导入导出/`, `视图菜单/`.
-2. Do not delete or mass-replace a divergent tree until exact file/reference/runtime proof exists.
-3. Continue auditing the active target for obsolete helpers, while protecting Objective-C `+load`, constructors, swizzles, fishhook/rebind, `dlopen`, file/cloud/auth and runtime hook paths.
-4. After canonical-source consolidation is complete, begin directory/naming cleanup and move large header-owned implementation boundaries into `.m` files where appropriate.
+## Cleanup backlog after p38
+1. P39: audit the **active 76-source target inside canonical `testmod/` only** for obsolete helpers/dependencies.
+2. Keep Objective-C `+load`, constructors, swizzles, fishhook/rebind, `dlopen`, current file/cloud/auth and runtime hook paths protected until explicit proof permits deletion.
+3. Re-audit AFNetworking, MBProgressHUD/SCLAlertView/JDStatusBarNotification and other vendor/helper groups as complete dependency units rather than deleting isolated `.m` files by textual reference count.
+4. After active-target slimming stabilizes, begin directory/naming cleanup and move remaining large header-owned implementation boundaries into `.m` files.
 
 ## Next task
-Real-device test the `v1_p37` A_customer artifact. Because its runtime is byte-identical to p36, focus on the p36 first-launch UDID behavior: test once with Zonoe installed and once without Zonoe. A successful p37 device result promotes p37 and covers the p36 runtime behavior at the same time.
+Real-device test the `v1_p38` A_customer artifact. Because p38 runtime and the produced A_customer dylib are byte-identical to p36/p37, focus on the first-launch UDID behavior: test once with Zonoe installed and once without Zonoe. A successful p38 device result promotes p38 and covers the p36-p38 runtime lineage at the same time.
