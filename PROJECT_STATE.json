@@ -6,9 +6,9 @@
   "current_work_branch": "work/zonoemenu-v1-p38-divergent-audit",
   "current_version": "v1_p38",
   "current_phase": "v1_p38_canonical_source_finalization",
-  "phase_status": "ci_verified_device_pending",
-  "last_device_verified_code_commit": "def6cb1c51fb0ae174f69ae7c5cebf286d1c4bb9",
-  "last_device_verified_version": "v1_p35",
+  "phase_status": "device_verified",
+  "last_device_verified_code_commit": "43c632d4ce6d04e51f9c8cc033292f9d98b134ff",
+  "last_device_verified_version": "v1_p38",
   "device_test_policy_document": "DEVICE_TEST_MATRIX.md",
   "architecture_review_document": "REFACTOR_REVIEW.md",
   "minimum_ios": "12.0",
@@ -50,14 +50,14 @@
     "ci_trigger_commit": "37e270ac57b83c0a160e17bdeaca5da53511cec9",
     "ci_run_id": 34829714958,
     "ci_status": "success",
-    "device_status": "pending",
+    "device_status": "superseded_and_covered_by_p38_device_pass",
     "intended_behavior_change": "when Zonoe cannot be opened, start the legacy web/profile UDID acquisition flow instead of stopping"
   },
   "p37": {
     "source_commit": "6a605489a5f3837301c2ed127088146538c4c849",
     "ci_run_id": 34834303080,
     "ci_status": "success",
-    "device_status": "pending",
+    "device_status": "superseded_and_covered_by_p38_device_pass",
     "runtime_tree_identical_to_p36": true,
     "xcode_project_identical_to_p36": true,
     "active_feature_count": 9
@@ -100,7 +100,9 @@
         "digest": "sha256:a934a5c2d81782a27398b72d0a390c3117df7d64d0eb00c45c431d619f81c02a"
       }
     },
-    "device_status": "pending"
+    "device_status": "passed",
+    "device_reported_by_user": true,
+    "device_pass_covers_runtime_lineage": ["v1_p36", "v1_p37", "v1_p38"]
   },
-  "next_task": "real-device test v1_p38 A_customer for the inherited p36 UDID paths. Because the p38 testmod tree, Xcode project and A_customer dylib are byte-identical to p36/p37, a successful p38 device report covers the p36-p38 runtime lineage. After promotion, start p39 active-target obsolete-helper audit inside canonical testmod only."
+  "next_task": "start p39 active-target obsolete-helper and dependency audit inside canonical testmod only; protect Objective-C auto-start/hook paths and the nine verified product features unless explicit dependency proof permits removal"
 }
