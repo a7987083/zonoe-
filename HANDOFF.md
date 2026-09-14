@@ -2,37 +2,51 @@
 
 ## Repository / baselines
 - Repository: `a7987083/zonoe-`.
-- Current work branch: `work/zonoemenu-v1-p33-bootstrap-moduleloader-boundary`.
-- Current development version: `v1_p33`.
-- Current p33 source commit: `0f12e4353e8859c585fe2975812964a28b7410d1`.
-- Device-verified baseline remains `v1_p32` / `84f8b3898bee9d95ed4034d12842879cc56280d3` until p33 device regression passes.
+- Current work branch: `work/zonoemenu-v1-p35-canonical-cleanup`.
+- Current development version: `v1_p35`.
+- Current p35 runtime/source commit: `def6cb1c51fb0ae174f69ae7c5cebf286d1c4bb9`.
+- Current documentation HEAD is newer than the runtime/source commit; do not confuse docs-only commits with the p35 code baseline.
+- Device-verified baseline: `v1_p34` / `cd9a0ab78158de11f1d51cda7461dbc6dd60f956`.
+- p34 device regression was explicitly reported passed by the user.
 
-## p33 scope
-P33 is an isolated compilation-ownership refactor of the active startup/module-loader path:
-- `ZONBootstrap.h` -> declaration-only; implementation moved to `ZONBootstrap.m`.
-- `ZONModuleLoader.h` -> declaration-only; implementation moved to `ZONModuleLoader.m`.
-- Both `.m` files are registered in `testmod.xcodeproj`.
-- No intended authorization, UDID, menu, Dispatcher, route, persistence, UI, module ABI or module-loading behavior change.
+## p35 scope
+P35 is a canonical-source cleanup built directly on the p34 device-verified baseline.
 
-Important correction: ModuleLoader is active. `main.m` calls `ZONBootstrapStart()`, and Bootstrap calls `ZONLoadBundledModules()`. Older documentation saying it was inactive was based on the absence of an independent `.m` target entry and was incorrect because its implementation was header-owned.
+Intentional product change:
+- Remove the obsolete `runtime.placeholder-203` / `暂无` control from the runtime menu.
+
+Cleanup-only changes:
+- Remove the tag-203 rendering branch and Dispatcher placeholder behavior (`人物血量`).
+- Remove root-only remnants of stacks already removed from canonical `testmod/` in p34, including the old memory-editor/JRMemory stack and other retired helper/UI copies.
+- Keep `testmod/` as the canonical product source surface.
+
+Protected active product behavior:
+- Remote download.
+- VIP cloud save.
+- Local-file browser.
+- Backup / restore.
+- Clear game data.
+- Clear authorization records.
+- IAP/no-ads runtime hook behavior.
+- Ad-speed toggle and speed slider.
 
 ## Verification
-- Source/body equivalence against p32: passed for Bootstrap and all ModuleLoader functions.
-- Isolated product-source scope: passed.
-- PBX registration: passed.
-- Independent `.m` compilation with warnings-as-errors: passed.
-- Required symbol checks: passed.
+- P35 source commit: `def6cb1c51fb0ae174f69ae7c5cebf286d1c4bb9`.
+- Workflow: `p35 Canonical Cleanup Build` / Run `34825140580` / success.
+- Integration cleanup guard: passed.
+- Registry smoke: passed with exactly 9 active features and 3 sections.
+- Tag 203 absent from Registry/Renderer/Dispatcher.
+- Bootstrap/ModuleLoader contract: passed.
 - Dispatcher contract: passed.
-- Feature Registry smoke: passed.
 - Module ABI smoke/example exports: passed.
-- A_customer and B_debug full Xcode build/package, iOS 12 / arm64 + arm64e: passed.
-- Workflow: `p33 Bootstrap ModuleLoader Boundary Build` / Run `34733013479` / success.
-- A artifact: `testmod-v1_p33-A_customer` / ID `10309833185`.
-- B artifact: `testmod-v1_p33-B_debug` / ID `10309663469`.
-- Real-device p33 validation: pending.
+- A_customer iOS 12 arm64 + arm64e full Xcode build/package: passed.
+- B_debug iOS 12 arm64 + arm64e full Xcode build/package: passed.
+- A artifact: `testmod-v1_p35-A_customer` / ID `10340495885` / digest `sha256:df0983e3121db5fed1dc4092d7c6c5f36d781163b21bd2d9620f80b02e8e0735`.
+- B artifact: `testmod-v1_p35-B_debug` / ID `10339941210` / digest `sha256:099d9560b38949558ecd56cc978f27d40970252683666f91ab5ea1b1fe407c65`.
+- Real-device p35 validation: pending.
 
-## Architecture review findings
-See `REFACTOR_REVIEW.md`. Highest remaining risks are canonical-source ambiguity between root and `testmod/`, the implementation-heavy active `ZONUDIDBridge.h`, and UDID/auth plumbing living inside `NSObject+UI.m`.
+## Important repository-cleanup rule
+Do not delete files merely because textual references are zero. Objective-C `+load`, constructors, swizzles, fishhook/rebind and `dlopen` paths can be active without ordinary call sites. Active hook stacks (`JiangHuHook`, `HookClass`, `ImgTool`) and current file/cloud/auth paths are protected until explicit dependency proof says otherwise.
 
 ## Next task
-Run the p33 A_customer real-device startup/bootstrap checklist from `DEVICE_TEST_MATRIX.md`. Do not promote p33 or start an auth/UDID structural refactor until that result is recorded.
+Run the p35 A_customer device checklist from `DEVICE_TEST_MATRIX.md`. Expected visible change: the `暂无` tag-203 row no longer exists. All nine retained product functions must still match p34 behavior. If that passes, promote p35 and continue the next root/testmod canonical-source cleanup batch.
