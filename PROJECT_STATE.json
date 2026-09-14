@@ -4,9 +4,9 @@
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
   "current_work_branch": "work/zonoemenu-v1-p39-active-target-audit",
-  "current_version": "v1_p38",
-  "current_phase": "v1_p39_active_target_audit",
-  "phase_status": "audit_complete_cleanup_pending",
+  "current_version": "v1_p39",
+  "current_phase": "v1_p39_active_target_cleanup",
+  "phase_status": "ci_verified_device_pending",
   "last_device_verified_code_commit": "43c632d4ce6d04e51f9c8cc033292f9d98b134ff",
   "last_device_verified_version": "v1_p38",
   "device_test_policy_document": "DEVICE_TEST_MATRIX.md",
@@ -102,8 +102,28 @@
       "SSZipArchive/minizip",
       "SVProgressHUD"
     ],
-    "p39_b_vendor_audit": "JDStatusBarNotification as a complete 8-source unit",
-    "runtime_changed": false
+    "p39_b_vendor_audit": "JDStatusBarNotification as a complete 8-source unit"
   },
-  "next_task": "execute p39-A guarded removal of NSString+Tools.m/.h plus PBX references only; run full contracts, A/B builds and binary metadata diff before any device candidate is produced"
+  "p39": {
+    "source_commit": "613882da7068795533c530d45775f7ae5f79ed56",
+    "ci_fix_commit": "5364d440442474f540d90b8d52f69fabb2b1deb7",
+    "ci_run_id": 34891852090,
+    "ci_status": "success",
+    "device_status": "pending",
+    "active_source_count": 75,
+    "removed_unit": [
+      "testmod/category/NSString+Tools.m",
+      "testmod/category/NSString+Tools.h"
+    ],
+    "a_customer_artifact_id": 10367415741,
+    "a_customer_artifact_digest": "sha256:15f128ffbd98a25b30cc365a7b48191330ae12ba0e400b3938d6c2c9637a6ec3",
+    "a_customer_dylib_sha256": "4e5f26da846bc4d9af0f9fce11f55dadf109074b49c9c8ab54f519fb2b89cdd2",
+    "b_debug_artifact_id": 10367146287,
+    "b_debug_artifact_digest": "sha256:d357fec51a71632803db598d0f71309cb8cf0d12997b68f106175088d3f2329b",
+    "metadata_verification": "passed; P38/P39 exported symbol sets identical and NSString(Tools) unique selectors absent from P39",
+    "first_ci_failure_root_cause": "verification-only shell bug: grep -q closed the pipeline early, strings received SIGPIPE 141 under pipefail",
+    "runtime_source_changed_by_ci_fix": false,
+    "active_feature_count": 9
+  },
+  "next_task": "real-device test P39 A_customer; verify floating window/menu, 9 active features, normal authorization/UDID paths and no regression from NSString+Tools removal"
 }
