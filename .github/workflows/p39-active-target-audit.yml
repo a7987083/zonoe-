@@ -21,6 +21,7 @@ jobs:
         run: |
           set -euxo pipefail
           python3 scripts/p39_active_target_audit.py
+          python3 scripts/p39_candidate_semantic_check.py
           git diff --check
       - name: Upload audit report
         uses: actions/upload-artifact@v4
@@ -29,3 +30,5 @@ jobs:
           path: |
             p39-active-target-audit.md
             p39-active-target-audit.json
+            p39-candidate-semantic-check.md
+            p39-candidate-semantic-check.json
