@@ -18,18 +18,50 @@
 - P39 A_customer SHA256: `4e5f26da846bc4d9af0f9fce11f55dadf109074b49c9c8ab54f519fb2b89cdd2`.
 - Real-device validation passed; P39 is promoted.
 
-## Current development phase — P39-B JDStatusBarNotification dependency audit
-Status: `audit_next`.
+## P39-B completed — JDStatusBarNotification dependency audit
+Status: `complete_keep_live_dependency`.
 
-Audit `JDStatusBarNotification` as one complete dependency unit. The group contains 8 active source files and must not be slimmed file-by-file.
+Audit evidence:
+- Work branch: `work/zonoemenu-v1-p39b-jdstatus-audit`.
+- CI Run `34894434619`: **success**.
+- Artifact `p39b-jdstatus-audit` / ID `10368133245` / digest `sha256:5b46890e7594493ba4a2ee89e3c1b1a9e77dd66e09134d33577d49adf9ebf5ef`.
+- Eight Objective-C implementation units are PBX-active.
+- Eleven headers are present.
+- `NotificationPresenter.swift` has zero PBX hits and is not compiled.
+- Decision: **KEEP_LIVE_DEPENDENCY**.
 
-Required evidence before any deletion decision:
-1. Enumerate all eight PBX-active implementation files and associated public/private/umbrella headers.
-2. Map every product import and every public API call site under canonical `testmod/`.
-3. Search dynamic/runtime use: `NSClassFromString`, selectors, categories, notification names, swizzles, `+load`, constructors, and indirect UI helpers.
-4. Identify which current feature path reaches the dependency, if any.
-5. Decide one of three outcomes only after evidence: keep whole group, replace whole dependency boundary, or remove whole group.
-6. If removal is proven safe, use a guarded script and require contract tests, 9-feature Registry smoke, Module ABI, A_customer/B_debug builds, arm64/arm64e, exported-symbol/ObjC metadata diff, then real-device test.
+Proven live product paths:
+1. `testmod/菜单/PubgLoad.mm` — cloud-save/download status, download percentage/progress bar, success/failure/load messages.
+2. `testmod/Bsphp/main.m` — startup/UDID acquisition, UDID write error/success and continuation status.
+3. `testmod/Bsphp/WX_NongShiFu123.mm` — first activation, authorization query, software-source/ad-speed activation and completion status.
+
+Two files import the umbrella header without any JDStatusBarNotification class/API use and are only later include-hygiene candidates:
+- `testmod/导入导出/PreferenceManager.m`
+- `testmod/工具箱/Hook/JiangHuHook.m`
+
+The audit found no external dynamic JDStatus reference and no internal `+load`, constructor, swizzle, fishhook/rebind, or `dlopen` automatic entry. Those findings do not make the library removable because direct live calls already prove it is required.
+
+## P39 active-target audit closure
+All previously uncertain dependency units now have a decision:
+- AFNetworking: keep — live dependency.
+- MBProgressHUD: keep — live dependency.
+- SCLAlertView: keep — live dependency.
+- SSZipArchive/minizip: keep — live dependency.
+- SVProgressHUD: keep — live dependency.
+- JDStatusBarNotification: keep — live dependency.
+- `NSString+Tools`: removed and device-verified in P39.
+
+Therefore the active-target deletion audit is complete at **75 Sources**. Do not continue deleting vendor units without new evidence.
+
+## Next development phase — v1_p40 source-layout and dependency hygiene
+Start from the immutable, device-verified P39 runtime. P40 should begin with an audit, not a bulk rename/move.
+
+Scope:
+1. Inventory canonical `testmod/` directories and identify obsolete naming/layout debt, duplicate-purpose folders, stale headers/imports and implementation-heavy headers.
+2. First low-risk include-hygiene candidates are the stale JDStatus imports in `PreferenceManager.m` and `JiangHuHook.m`; treat these as source-cleanliness changes, not evidence to remove the JDStatus library.
+3. Avoid renaming/moving active sources until every PBX/header/import path is mapped and a guarded transformation can update them atomically.
+4. Preserve the 75-source active target and all nine verified product features unless a new explicit audit proves a source removable.
+5. Every runtime/source change still requires contracts, Registry smoke, Module ABI, A_customer/B_debug arm64+arm64e builds and device regression before promotion.
 
 ## Protected units
 Keep protected until explicit proof says otherwise:
@@ -37,13 +69,7 @@ Keep protected until explicit proof says otherwise:
 - Authorization and UDID acquisition paths.
 - Remote download, VIP cloud save, local-file browser, backup/restore, clear-data, clear-auth.
 - `JiangHuHook`, `HookClass`, `ImgTool`, fishhook/rebind and other runtime hook paths.
-- AFNetworking, MBProgressHUD, SCLAlertView, SSZipArchive/minizip, SVProgressHUD remain retained based on active dependency evidence.
-
-## Later backlog
-- After P39-B dependency audit stabilizes, continue active-target vendor/helper unit audits one complete unit at a time.
-- Then start directory/naming cleanup inside canonical `testmod/`.
-- Continue splitting implementation-heavy headers only where it reduces coupling without adding unnecessary abstraction.
-- Keep the rule: delete when possible, merge when appropriate, add interfaces only when a real extension boundary exists.
+- All retained vendor units listed above.
 
 ## Next task
-Execute **P39-B audit only** for `JDStatusBarNotification`. Do not delete anything until exact imports, API calls, runtime use, and feature-path reachability are proven.
+Begin **P40 audit only** for canonical source layout, naming and include/dependency hygiene. Do not bulk-move or rename product sources until the audit produces exact PBX/import dependency maps and a reversible cleanup plan.
