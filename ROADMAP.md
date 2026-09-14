@@ -1,48 +1,48 @@
 # ROADMAP
 
 ## Current promoted baseline
-- Device-verified version: `v1_p34`.
-- Source commit: `cd9a0ab78158de11f1d51cda7461dbc6dd60f956`.
-- CI Run `34758839228`: success.
-- Real-device regression: user explicitly reported p34 passed.
-- p34 is the fallback baseline until p35 device verification passes.
+- Device-verified version: `v1_p35`.
+- Source commit: `def6cb1c51fb0ae174f69ae7c5cebf286d1c4bb9`.
+- CI Run `34825140580`: success.
+- Real-device regression: user explicitly reported p35 passed.
 
-## Current development candidate — v1_p35
+## Current development candidate — v1_p37
 Status: `ci_verified_device_pending`.
 
-### Goal
-Continue repository slimming without removing any of the nine active menu features. Establish `testmod/` as the canonical product source surface and remove the retired tag-203 placeholder plus root-only remnants of feature stacks already removed from `testmod/` in p34.
+### Runtime lineage
+- `v1_p36` introduced the UDID fallback fix: keep `zonoe://udid` first, and when the real `openURL` call fails, automatically start the existing web/profile UDID flow.
+- `v1_p37` is repository-only canonical-source cleanup on top of the documented p36 state.
+- The complete `testmod/` tree and `testmod.xcodeproj` in p37 are exactly identical to p36 runtime commit `c85a6a235daf3287b70c13fbe69be455a3aecce2`.
+- The produced p37 A_customer dylib SHA256 is also identical to p36: `560165e890968cd5e229e31193c85d76a75ef2620b19bd71dd554e795a7c11c9`.
 
-### Implemented
-- `VERSION`: `v1_p34` -> `v1_p35`.
-- Removed `runtime.placeholder-203` / `暂无` from `ZONFeatureRegistry`.
-- Removed the tag-203 renderer branch from `ZONFeatureRenderer`.
-- Removed the tag-203 Dispatcher behavior (`人物血量`) from `ZONFeatureDispatcher`.
-- Updated Registry/Dispatcher tests to require exactly nine active features and to reject tag 203.
-- Removed root-only retired copies of the old memory-editor stack, JRMemory.framework, old alternate-icon UI, old drag/screenshot helpers, empty helpers/categories, and retired AppStore helper.
-- Preserved all nine active product features: remote download, cloud save, local files, backup, restore, clear game data, clear authorization, IAP/no-ads, ad speed.
+### P37 implemented
+- `VERSION`: `v1_p36` -> `v1_p37`.
+- Removed root `category/` after proving its Git tree SHA exactly equals `testmod/category/`.
+- Removed root `工具箱/` after proving its Git tree SHA exactly equals `testmod/工具箱/`.
+- Removed root `SVProgressHUD/` after proving its Git tree SHA exactly equals `testmod/SVProgressHUD/`.
+- Removed root `Package/` after proving its Git tree SHA exactly equals `testmod/Package/`.
+- Kept divergent root trees (`Bsphp/`, `菜单/`, `导入导出/`, `视图菜单/`) untouched for later audited consolidation.
+- Preserved all nine active product features and the p36 UDID fallback behavior byte-for-byte.
 
 ### Verification completed
-- Canonical-cleanup guard: passed.
-- All nine active Registry identifiers preserved.
-- Tag 203 absent from Registry, Renderer and Dispatcher.
+- Exact mirror tree-SHA proof: passed for all four removed root mirrors.
+- Canonical `testmod/` tree equality against p36 runtime: passed.
+- Xcode project equality against p36 runtime: passed.
+- P36 UDID fallback behavior contract inherited and passed.
 - Bootstrap/ModuleLoader contract: passed.
 - Dispatcher contract: passed.
 - Feature Registry smoke: passed with 9 features / 3 sections.
-- Module ABI smoke/example exports: passed.
+- Module ABI smoke/example: passed.
 - A_customer full iOS 12 arm64/arm64e Xcode build/package: passed.
 - B_debug full iOS 12 arm64/arm64e Xcode build/package: passed.
-- Workflow Run `34825140580`: success.
-- P35 runtime/source commit: `def6cb1c51fb0ae174f69ae7c5cebf286d1c4bb9`.
+- Workflow Run `34834303080`: success.
+- P37 source commit: `6a605489a5f3837301c2ed127088146538c4c849`.
 
-### Promotion gate
-P35 requires A_customer real-device regression. The expected intentional visual change is that the `203 / 暂无` runtime placeholder is gone. The other nine product functions must behave the same as p34.
-
-## Next cleanup backlog after p35 promotion
-1. Continue canonical-source consolidation for remaining root vs `testmod/` duplicate trees, but only after CI/scripts/reference proof.
-2. Audit remaining 76 active p34-era target sources for unused helpers without touching active hooks or file/cloud features.
-3. Keep `AFNetworking`, `MBProgressHUD`, `SCLAlertView`, `JDStatusBarNotification`, `SSZipArchive/minizip`, `JHDragView`, `PubgLoad`, `NSObject+UI`, authorization and runtime hook stacks until explicit dependency proof says otherwise.
-4. Only after repository cleanup stabilizes, do directory/naming reorganization and UDID boundary cleanup.
+## Cleanup backlog after p37
+1. Audit the remaining divergent root vs `testmod/` trees individually: `Bsphp/`, `菜单/`, `导入导出/`, `视图菜单/`.
+2. Do not delete or mass-replace a divergent tree until exact file/reference/runtime proof exists.
+3. Continue auditing the active target for obsolete helpers, while protecting Objective-C `+load`, constructors, swizzles, fishhook/rebind, `dlopen`, file/cloud/auth and runtime hook paths.
+4. After canonical-source consolidation is complete, begin directory/naming cleanup and move large header-owned implementation boundaries into `.m` files where appropriate.
 
 ## Next task
-Run the v1_p35 device checklist in `DEVICE_TEST_MATRIX.md`. If passed, promote p35 as the new device-verified baseline and continue the next canonical-source cleanup batch.
+Real-device test the `v1_p37` A_customer artifact. Because its runtime is byte-identical to p36, focus on the p36 first-launch UDID behavior: test once with Zonoe installed and once without Zonoe. A successful p37 device result promotes p37 and covers the p36 runtime behavior at the same time.
