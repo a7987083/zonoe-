@@ -2,25 +2,31 @@
 
 ## Repository / baselines
 - Repository: `a7987083/zonoe-`.
-- Current work branch: `work/zonoemenu-v1-p35-canonical-cleanup`.
-- Current development version: `v1_p35`.
-- Current p35 runtime/source commit: `def6cb1c51fb0ae174f69ae7c5cebf286d1c4bb9`.
-- Current documentation HEAD is newer than the runtime/source commit; do not confuse docs-only commits with the p35 code baseline.
-- Device-verified baseline: `v1_p34` / `cd9a0ab78158de11f1d51cda7461dbc6dd60f956`.
-- p34 device regression was explicitly reported passed by the user.
+- Current work branch: `work/zonoemenu-v1-p37-canonical-mirrors`.
+- Current development version: `v1_p37`.
+- Current p37 runtime/source commit: `6a605489a5f3837301c2ed127088146538c4c849`.
+- P37 documentation HEAD is newer than the runtime/source commit; do not confuse docs-only commits with the p37 code baseline.
+- Device-verified baseline: `v1_p35` / `def6cb1c51fb0ae174f69ae7c5cebf286d1c4bb9`.
+- P35 real-device regression was explicitly reported passed by the user.
 
-## p35 scope
-P35 is a canonical-source cleanup built directly on the p34 device-verified baseline.
+## Runtime lineage
+### v1_p36 — UDID fallback fix
+- Preferred path remains `zonoe://udid` with callback + nonce.
+- If the actual `openURL` attempt cannot open Zonoe, the stable UDID API falls back to the existing `WX_NongShiFu123 getUDID:` web/profile acquisition flow.
+- The legacy server/profile protocol was not redesigned: HTTP 404 opens `udid.php?...` and exits; a later app launch checks `udid<id>.txt`, stores `DZUDID`, and resumes the existing authorization flow.
+- P36 runtime commit: `c85a6a235daf3287b70c13fbe69be455a3aecce2`.
+- CI Run `34829714958`: success.
+- Device status: pending.
 
-Intentional product change:
-- Remove the obsolete `runtime.placeholder-203` / `暂无` control from the runtime menu.
+### v1_p37 — canonical mirror cleanup
+- Repository-only cleanup on top of the documented p36 state.
+- Removed root `category/`, `工具箱/`, `SVProgressHUD/`, and `Package/` only after each Git tree SHA exactly matched its `testmod/` counterpart.
+- Kept divergent root trees `Bsphp/`, `菜单/`, `导入导出/`, and `视图菜单/` untouched.
+- The entire p37 `testmod/` tree is identical to p36 runtime commit `c85a6a235daf3287b70c13fbe69be455a3aecce2`.
+- `testmod.xcodeproj` is also identical to p36.
+- P37 A_customer dylib SHA256 `560165e890968cd5e229e31193c85d76a75ef2620b19bd71dd554e795a7c11c9` is exactly the same as p36 A_customer.
 
-Cleanup-only changes:
-- Remove the tag-203 rendering branch and Dispatcher placeholder behavior (`人物血量`).
-- Remove root-only remnants of stacks already removed from canonical `testmod/` in p34, including the old memory-editor/JRMemory stack and other retired helper/UI copies.
-- Keep `testmod/` as the canonical product source surface.
-
-Protected active product behavior:
+## Protected active product behavior
 - Remote download.
 - VIP cloud save.
 - Local-file browser.
@@ -29,24 +35,28 @@ Protected active product behavior:
 - Clear authorization records.
 - IAP/no-ads runtime hook behavior.
 - Ad-speed toggle and speed slider.
+- Zonoe preferred UDID callback path and p36 web/profile fallback.
 
 ## Verification
-- P35 source commit: `def6cb1c51fb0ae174f69ae7c5cebf286d1c4bb9`.
-- Workflow: `p35 Canonical Cleanup Build` / Run `34825140580` / success.
-- Integration cleanup guard: passed.
+- P37 source commit: `6a605489a5f3837301c2ed127088146538c4c849`.
+- Workflow: `p37 Canonical Mirrors Build` / Run `34834303080` / success.
+- Exact mirror SHA proof: passed for all four removed root mirrors.
+- P37 canonical runtime tree equality against p36: passed.
+- P36 UDID fallback behavior contract: passed under p37 inheritance.
 - Registry smoke: passed with exactly 9 active features and 3 sections.
-- Tag 203 absent from Registry/Renderer/Dispatcher.
 - Bootstrap/ModuleLoader contract: passed.
 - Dispatcher contract: passed.
-- Module ABI smoke/example exports: passed.
+- Module ABI smoke/example: passed.
 - A_customer iOS 12 arm64 + arm64e full Xcode build/package: passed.
 - B_debug iOS 12 arm64 + arm64e full Xcode build/package: passed.
-- A artifact: `testmod-v1_p35-A_customer` / ID `10340495885` / digest `sha256:df0983e3121db5fed1dc4092d7c6c5f36d781163b21bd2d9620f80b02e8e0735`.
-- B artifact: `testmod-v1_p35-B_debug` / ID `10339941210` / digest `sha256:099d9560b38949558ecd56cc978f27d40970252683666f91ab5ea1b1fe407c65`.
-- Real-device p35 validation: pending.
+- A artifact: `testmod-v1_p37-A_customer` / ID `10343388502` / digest `sha256:6396590bcb450aa8fb018e5c96883253136a629730625a144ca53c96b862a855`.
+- B artifact: `testmod-v1_p37-B_debug` / ID `10343069444` / digest `sha256:efc025b8f3c816a262289a0b45da2c83bbb516cc12cec3aff72c5770f6a1fb52`.
+- Real-device p37 validation: pending.
 
-## Important repository-cleanup rule
+## Important cleanup rule
 Do not delete files merely because textual references are zero. Objective-C `+load`, constructors, swizzles, fishhook/rebind and `dlopen` paths can be active without ordinary call sites. Active hook stacks (`JiangHuHook`, `HookClass`, `ImgTool`) and current file/cloud/auth paths are protected until explicit dependency proof says otherwise.
 
+Do not mechanically delete the remaining divergent root trees. Audit file-by-file and prove which copy is canonical before any consolidation.
+
 ## Next task
-Run the p35 A_customer device checklist from `DEVICE_TEST_MATRIX.md`. Expected visible change: the `暂无` tag-203 row no longer exists. All nine retained product functions must still match p34 behavior. If that passes, promote p35 and continue the next root/testmod canonical-source cleanup batch.
+Run the p37 A_customer device checklist from `DEVICE_TEST_MATRIX.md`. Because p37 runtime is byte-identical to p36, test the first-launch UDID flow with Zonoe installed and without Zonoe installed. A successful p37 device result promotes p37 and covers the inherited p36 runtime at the same time.
