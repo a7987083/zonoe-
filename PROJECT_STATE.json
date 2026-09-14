@@ -3,9 +3,9 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p36-udid-web-fallback",
-  "current_version": "v1_p36",
-  "current_phase": "v1_p36_udid_web_fallback",
+  "current_work_branch": "work/zonoemenu-v1-p37-canonical-mirrors",
+  "current_version": "v1_p37",
+  "current_phase": "v1_p37_canonical_mirror_cleanup",
   "phase_status": "ci_verified_device_pending",
   "last_device_verified_code_commit": "def6cb1c51fb0ae174f69ae7c5cebf286d1c4bb9",
   "last_device_verified_version": "v1_p35",
@@ -40,19 +40,7 @@
     "ci_status": "success",
     "device_status": "passed",
     "device_reported_by_user": true,
-    "active_feature_count": 9,
-    "artifacts": {
-      "A_customer": {
-        "name": "testmod-v1_p35-A_customer",
-        "artifact_id": 10340495885,
-        "digest": "sha256:df0983e3121db5fed1dc4092d7c6c5f36d781163b21bd2d9620f80b02e8e0735"
-      },
-      "B_debug": {
-        "name": "testmod-v1_p35-B_debug",
-        "artifact_id": 10339941210,
-        "digest": "sha256:099d9560b38949558ecd56cc978f27d40970252683666f91ab5ea1b1fe407c65"
-      }
-    }
+    "active_feature_count": 9
   },
   "p36": {
     "baseline_commit": "def6cb1c51fb0ae174f69ae7c5cebf286d1c4bb9",
@@ -62,30 +50,44 @@
     "ci_trigger_commit": "37e270ac57b83c0a160e17bdeaca5da53511cec9",
     "ci_run_id": 34829714958,
     "ci_status": "success",
-    "scope": [
-      "keep zonoe://udid as the preferred first-launch UDID path",
-      "use openURL completion failure as the Zonoe-unavailable signal",
-      "fallback to the existing WX_NongShiFu123 getUDID web/profile flow",
-      "store a returned DZUDID through ZONUDIDBridge so existing authorization callback resumes",
-      "preserve all nine v1_p35 menu features and customer startup ownership"
-    ],
-    "behavior_intentionally_changed": true,
+    "device_status": "pending",
     "intended_behavior_change": "when Zonoe cannot be opened, start the legacy web/profile UDID acquisition flow instead of stopping",
-    "web_flow_note": "on legacy server 404 the existing flow opens udid.php/profile acquisition and exits; a later app launch rechecks the server, stores DZUDID on HTTP 200, and resumes authorization",
+    "web_flow_note": "on legacy server 404 the existing flow opens udid.php/profile acquisition and exits; a later app launch rechecks the server, stores DZUDID on HTTP 200, and resumes authorization"
+  },
+  "p37": {
+    "baseline_commit": "ffb90dbdc0be28f90db7648f6ad3e7e09462109d",
+    "runtime_equivalent_commit": "c85a6a235daf3287b70c13fbe69be455a3aecce2",
+    "branch": "work/zonoemenu-v1-p37-canonical-mirrors",
+    "test_branch": "test/zonoemenu-v1-p37-canonical-mirrors-build",
+    "source_commit": "6a605489a5f3837301c2ed127088146538c4c849",
+    "ci_trigger_commit": "1edd96bbcacc9283c6c7e8994c42635a37b76eec",
+    "ci_run_id": 34834303080,
+    "ci_status": "success",
+    "scope": [
+      "remove root category mirror after exact Git tree SHA equality proof against testmod/category",
+      "remove root 工具箱 mirror after exact Git tree SHA equality proof against testmod/工具箱",
+      "remove root SVProgressHUD mirror after exact Git tree SHA equality proof against testmod/SVProgressHUD",
+      "remove root Package mirror after exact Git tree SHA equality proof against testmod/Package",
+      "preserve the complete testmod runtime tree and Xcode project exactly as v1_p36"
+    ],
+    "behavior_intentionally_changed": false,
+    "runtime_tree_identical_to_p36": true,
+    "xcode_project_identical_to_p36": true,
+    "active_feature_count": 9,
     "artifacts": {
       "A_customer": {
-        "name": "testmod-v1_p36-A_customer",
-        "artifact_id": 10342130206,
-        "digest": "sha256:3e2c6d4595e2748728977896ddd00e5d6acdb5dc53352910a9a16dbdb09e118d",
+        "name": "testmod-v1_p37-A_customer",
+        "artifact_id": 10343388502,
+        "digest": "sha256:6396590bcb450aa8fb018e5c96883253136a629730625a144ca53c96b862a855",
         "dylib_sha256": "560165e890968cd5e229e31193c85d76a75ef2620b19bd71dd554e795a7c11c9"
       },
       "B_debug": {
-        "name": "testmod-v1_p36-B_debug",
-        "artifact_id": 10341329186,
-        "digest": "sha256:2a7466bcf5036156a820e02e969b649791840b6239fb7c5b29f2cf374e8a6c31"
+        "name": "testmod-v1_p37-B_debug",
+        "artifact_id": 10343069444,
+        "digest": "sha256:efc025b8f3c816a262289a0b45da2c83bbb516cc12cec3aff72c5770f6a1fb52"
       }
     },
     "device_status": "pending"
   },
-  "next_task": "real-device test v1_p36 A_customer twice: with Zonoe installed verify the existing callback path, and without Zonoe verify automatic web/profile fallback plus successful authorization after the profile flow and subsequent launch"
+  "next_task": "real-device test v1_p37 A_customer for the inherited p36 UDID paths: with Zonoe installed verify the callback path; without Zonoe verify automatic web/profile fallback and successful authorization after the subsequent launch. Because the p37 testmod tree and dylib are byte-identical to p36, this device pass also covers the p36 runtime behavior."
 }
