@@ -5,10 +5,10 @@
   "production_branch": "dev/zonoemenu-production-v1",
   "current_work_branch": "work/zonoemenu-v1-p39-active-target-audit",
   "current_version": "v1_p39",
-  "current_phase": "v1_p39_active_target_cleanup",
-  "phase_status": "ci_verified_device_pending",
-  "last_device_verified_code_commit": "43c632d4ce6d04e51f9c8cc033292f9d98b134ff",
-  "last_device_verified_version": "v1_p38",
+  "current_phase": "v1_p39_b_jdstatusbar_dependency_audit",
+  "phase_status": "device_verified_p39_b_audit_next",
+  "last_device_verified_code_commit": "613882da7068795533c530d45775f7ae5f79ed56",
+  "last_device_verified_version": "v1_p39",
   "device_test_policy_document": "DEVICE_TEST_MATRIX.md",
   "architecture_review_document": "REFACTOR_REVIEW.md",
   "minimum_ios": "12.0",
@@ -21,7 +21,7 @@
   },
   "p33": {
     "source_commit": "0f12e4353e8859c585fe2975812964a28b7410d1",
-    "run_id": 34733013479,
+    "ci_run_id": 34733013479,
     "ci_status": "success",
     "device_status": "superseded_and_covered_by_p34_device_pass"
   },
@@ -50,8 +50,7 @@
     "ci_trigger_commit": "37e270ac57b83c0a160e17bdeaca5da53511cec9",
     "ci_run_id": 34829714958,
     "ci_status": "success",
-    "device_status": "superseded_and_covered_by_p38_device_pass",
-    "intended_behavior_change": "when Zonoe cannot be opened, start the legacy web/profile UDID acquisition flow instead of stopping"
+    "device_status": "superseded_and_covered_by_p38_device_pass"
   },
   "p37": {
     "source_commit": "6a605489a5f3837301c2ed127088146538c4c849",
@@ -70,8 +69,7 @@
     "device_reported_by_user": true,
     "canonical_product_source_surface": "testmod/",
     "remaining_root_product_mirrors": [],
-    "active_feature_count": 9,
-    "device_pass_covers_runtime_lineage": ["v1_p36", "v1_p37", "v1_p38"]
+    "active_feature_count": 9
   },
   "p39_audit": {
     "planned_version": "v1_p39",
@@ -94,7 +92,6 @@
       "testmod/category/NSString+Tools.m",
       "testmod/category/NSString+Tools.h"
     ],
-    "candidate_assessment": "strong deletion candidate; no product import or category-specific selector use found; daochucd [attr fileSize] is NSDictionary file-attribute usage, not NSString category usage",
     "vendor_keep_units": [
       "AFNetworking",
       "MBProgressHUD",
@@ -109,7 +106,8 @@
     "ci_fix_commit": "5364d440442474f540d90b8d52f69fabb2b1deb7",
     "ci_run_id": 34891852090,
     "ci_status": "success",
-    "device_status": "pending",
+    "device_status": "passed",
+    "device_reported_by_user": true,
     "active_source_count": 75,
     "removed_unit": [
       "testmod/category/NSString+Tools.m",
@@ -125,5 +123,5 @@
     "runtime_source_changed_by_ci_fix": false,
     "active_feature_count": 9
   },
-  "next_task": "real-device test P39 A_customer; verify floating window/menu, 9 active features, normal authorization/UDID paths and no regression from NSString+Tools removal"
+  "next_task": "P39-B: audit JDStatusBarNotification as a complete 8-source dependency unit; map public API imports, runtime/dynamic use, and call sites before deciding keep/replace/remove; do not delete isolated files"
 }
