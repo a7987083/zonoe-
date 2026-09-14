@@ -9,11 +9,39 @@
 #import "NSObject+UI.h"
 #import "../ZONServices/ZONUDIDBridge.h"
 #import "../ZONServices/ZonoeUDIDAPI.h"
+#import "../Bsphp/WX_NongShiFu123.h"
+#import "../category/getKeychain.h"
 
 #pragma mark - Stable public UDID API
 
 static ZonoeUDIDCallback gZonoeUDIDCallback = nil;
 static id gZonoeUDIDObserverToken = nil;
+static BOOL gZonoeLegacyWebFallbackInFlight = NO;
+
+static void ZonoeStartLegacyWebUDIDFallback(void)
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (gZonoeLegacyWebFallbackInFlight || ZONUDIDBridgeCurrentUDID().length > 0) return;
+
+        gZonoeLegacyWebFallbackInFlight = YES;
+        NSLog(@"[zonoemenu][INFO][udid] Zonoe unavailable; starting legacy web UDID flow");
+
+        WX_NongShiFu123 *legacyAuth = [WX_NongShiFu123 new];
+        [legacyAuth getUDID:^{
+            dispatch_async(dispatch_get_main_queue(), ^{
+                gZonoeLegacyWebFallbackInFlight = NO;
+                NSString *udid = [getKeychain getKeychainDataForKey:@"DZUDID"];
+                if (!ZONUDIDBridgeIsPlausibleUDID(udid)) {
+                    NSLog(@"[zonoemenu][WARN][udid] legacy web flow completed without a valid DZUDID");
+                    return;
+                }
+
+                NSLog(@"[zonoemenu][INFO][udid] legacy web flow produced DZUDID; resuming authorization");
+                ZONUDIDBridgeStoreUDID(udid);
+            });
+        }];
+    });
+}
 
 static void ZonoeDeliverUDIDIfNeeded(NSString *udid)
 {
@@ -70,7 +98,9 @@ void ZonoeRequestUDIDIfNeeded(void)
             return;
         }
 
-        ZONUDIDBridgeRequestIfNeeded();
+        ZONUDIDBridgeRequestIfNeededWithUnavailableHandler(^{
+            ZonoeStartLegacyWebUDIDFallback();
+        });
     });
 }
 
@@ -83,7 +113,9 @@ void ZonoeForceRefreshUDID(void)
 {
     dispatch_async(dispatch_get_main_queue(), ^{
         ZonoeEnsureUDIDObserver();
-        ZONUDIDBridgeForceRefresh();
+        ZONUDIDBridgeForceRefreshWithUnavailableHandler(^{
+            ZonoeStartLegacyWebUDIDFallback();
+        });
     });
 }
 

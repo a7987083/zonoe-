@@ -18,6 +18,7 @@ extern NSString*软件信息;
 - (void)BSPHPy;
 - (void)WBSPHP;
 - (void)loada;
+- (void)getUDID:(void (^)(void))completion;
 - (void)saveUDID;
 //- (void)loadmode;
 -(NSString*)GetIOSUDID;

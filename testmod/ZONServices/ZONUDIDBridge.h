@@ -334,10 +334,14 @@ static inline void ZONUDIDBridgeStart(void)
 
 #pragma mark - Request
 
-static inline void ZONUDIDBridgeRequestIfNeeded(void)
+static inline void ZONUDIDBridgeRequestIfNeededWithUnavailableHandler(dispatch_block_t _Nullable unavailableHandler)
 {
     if (ZONUDIDBridgeCurrentUDID().length > 0) return;
-    if (ZONUDIDBridgeCallbackScheme().length == 0) return;
+    if (ZONUDIDBridgeCallbackScheme().length == 0) {
+        NSLog(@"[zonoemenu][WARN][udid] zonoe callback scheme unavailable; using fallback");
+        if (unavailableHandler) unavailableHandler();
+        return;
+    }
 
     NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;
     NSTimeInterval now = NSDate.date.timeIntervalSince1970;
@@ -346,7 +350,11 @@ static inline void ZONUDIDBridgeRequestIfNeeded(void)
 
     NSString *nonce = ZONUDIDBridgeNewNonce();
     NSURL *requestURL = ZONUDIDBridgeRequestURLForNonce(nonce);
-    if (!requestURL) return;
+    if (!requestURL) {
+        NSLog(@"[zonoemenu][WARN][udid] unable to construct zonoe://udid request; using fallback");
+        if (unavailableHandler) unavailableHandler();
+        return;
+    }
 
     ZONUDIDBridgeStart();
     [defaults setObject:nonce forKey:ZONUDIDBridgeRequestNonceKey];
@@ -358,12 +366,18 @@ static inline void ZONUDIDBridgeRequestIfNeeded(void)
                            completionHandler:^(BOOL success) {
         if (!success) {
             ZONUDIDBridgeClearPendingRequest();
-            NSLog(@"[zonoemenu][WARN][udid] unable to open zonoe://udid");
+            NSLog(@"[zonoemenu][WARN][udid] unable to open zonoe://udid; using web fallback");
+            if (unavailableHandler) unavailableHandler();
         }
     }];
 }
 
-static inline void ZONUDIDBridgeForceRefresh(void)
+static inline void ZONUDIDBridgeRequestIfNeeded(void)
+{
+    ZONUDIDBridgeRequestIfNeededWithUnavailableHandler(nil);
+}
+
+static inline void ZONUDIDBridgeForceRefreshWithUnavailableHandler(dispatch_block_t _Nullable unavailableHandler)
 {
     NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;
     [defaults removeObjectForKey:ZONUDIDBridgeValueKey];
@@ -371,8 +385,13 @@ static inline void ZONUDIDBridgeForceRefresh(void)
     ZONUDIDBridgeClearPendingRequest();
 
     dispatch_async(dispatch_get_main_queue(), ^{
-        ZONUDIDBridgeRequestIfNeeded();
+        ZONUDIDBridgeRequestIfNeededWithUnavailableHandler(unavailableHandler);
     });
+}
+
+static inline void ZONUDIDBridgeForceRefresh(void)
+{
+    ZONUDIDBridgeForceRefreshWithUnavailableHandler(nil);
 }
 
 NS_ASSUME_NONNULL_END
