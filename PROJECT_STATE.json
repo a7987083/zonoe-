@@ -3,10 +3,10 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p39-active-target-audit",
+  "current_work_branch": "work/zonoemenu-v1-p39b-jdstatus-audit",
   "current_version": "v1_p39",
   "current_phase": "v1_p39_b_jdstatusbar_dependency_audit",
-  "phase_status": "device_verified_p39_b_audit_next",
+  "phase_status": "audit_complete_keep_live_dependency",
   "last_device_verified_code_commit": "613882da7068795533c530d45775f7ae5f79ed56",
   "last_device_verified_version": "v1_p39",
   "device_test_policy_document": "DEVICE_TEST_MATRIX.md",
@@ -123,5 +123,37 @@
     "runtime_source_changed_by_ci_fix": false,
     "active_feature_count": 9
   },
-  "next_task": "P39-B: audit JDStatusBarNotification as a complete 8-source dependency unit; map public API imports, runtime/dynamic use, and call sites before deciding keep/replace/remove; do not delete isolated files"
+  "p39_b_jdstatus_audit": {
+    "branch": "work/zonoemenu-v1-p39b-jdstatus-audit",
+    "test_branch": "test/zonoemenu-v1-p39b-jdstatus-audit",
+    "audit_script_commit": "c4c1fce90549bc587e63d6e8d99d0ef42c8700e0",
+    "ci_trigger_commit": "1f5960a1e979dfe46d996ef3e94252580fef3490",
+    "ci_run_id": 34894434619,
+    "ci_status": "success",
+    "artifact_id": 10368133245,
+    "artifact_digest": "sha256:5b46890e7594493ba4a2ee89e3c1b1a9e77dd66e09134d33577d49adf9ebf5ef",
+    "decision": "KEEP_LIVE_DEPENDENCY",
+    "objective_c_active_sources": 8,
+    "header_count": 11,
+    "swift_wrapper_compiled": false,
+    "live_reference_files": [
+      "testmod/菜单/PubgLoad.mm",
+      "testmod/Bsphp/main.m",
+      "testmod/Bsphp/WX_NongShiFu123.mm"
+    ],
+    "protected_runtime_paths": [
+      "cloud-save/download status and progress",
+      "startup/UDID status",
+      "authorization/activation status"
+    ],
+    "stale_import_candidates": [
+      "testmod/导入导出/PreferenceManager.m",
+      "testmod/工具箱/Hook/JiangHuHook.m"
+    ],
+    "external_dynamic_refs": 0,
+    "internal_auto_runtime_entries": 0,
+    "runtime_changed": false
+  },
+  "active_target_audit_status": "complete_at_75_sources_all_remaining_vendor_groups_retained_by_live_evidence",
+  "next_task": "P40: audit canonical testmod source layout, naming and include/dependency hygiene starting from the P39 device-verified baseline; remove only proven-stale imports or structural clutter and preserve all 75 active sources unless new evidence proves otherwise"
 }
