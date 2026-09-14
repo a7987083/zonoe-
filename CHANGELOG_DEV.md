@@ -1,5 +1,14 @@
 # CHANGELOG_DEV
 
+## 2026-09-14 — v1_p38 Device Verification
+- P38 runtime/source commit: `43c632d4ce6d04e51f9c8cc033292f9d98b134ff`.
+- Audit Run `34840224717`: success.
+- Build Run `34840451436`: success.
+- User explicitly reported p38 real-device validation passed.
+- P38 is now the current promoted device baseline.
+- Because p38 `testmod/`, `testmod.xcodeproj`, and A_customer dylib are byte-identical to p36/p37 runtime, this device pass also covers the inherited p36 UDID web-fallback behavior and p37 repository-only cleanup.
+- Next phase: `v1_p39` active-target obsolete-helper/dependency audit inside canonical `testmod/` only.
+
 ## 2026-09-14 — v1_p38 Canonical Product Source Finalization
 - Built from p37 documented head `5f9d3844bff98314e0af109a6803a4642e685cb7`.
 - Bumped `VERSION` to `v1_p38`.
@@ -13,8 +22,7 @@
 - Workflow Run `34840451436`: **success**. Canonical-source guard, Bootstrap/ModuleLoader, Dispatcher, Registry, Module ABI and full A/B Xcode builds passed.
 - `A_customer`: artifact `10345384325`, digest `sha256:e1d1d37af6b0dd8bbb77f17f5bda9bfe95f7a30a321fdff647ae1aa97ce22c38`.
 - `B_debug`: artifact `10345514011`, digest `sha256:a934a5c2d81782a27398b72d0a390c3117df7d64d0eb00c45c431d619f81c02a`.
-- A_customer dylib SHA256: `560165e890968cd5e229e31193c85d76a75ef2620b19bd71dd554e795a7c11c9`, exactly matching p36 and p37. This proves root-source deletion did not change the customer runtime binary.
-- Device verification pending; p35 remains the promoted baseline until the inherited p36 UDID paths are explicitly verified on p38.
+- A_customer dylib SHA256: `560165e890968cd5e229e31193c85d76a75ef2620b19bd71dd554e795a7c11c9`, exactly matching p36 and p37.
 
 ## 2026-09-14 — v1_p37 Canonical Mirror Cleanup
 - Built from the documented p36 head `ffb90dbdc0be28f90db7648f6ad3e7e09462109d`.
@@ -31,7 +39,7 @@
 - Kept the legacy 404/profile behavior unchanged.
 - P36 runtime/source commit: `c85a6a235daf3287b70c13fbe69be455a3aecce2`.
 - Workflow Run `34829714958`: **success**.
-- Device verification pending; p38 carries this runtime unchanged.
+- Later covered by the byte-identical p38 real-device pass.
 
 ## 2026-09-14 — v1_p35 Canonical Source Cleanup
 - Started from device-verified p34 source `cd9a0ab78158de11f1d51cda7461dbc6dd60f956`.
@@ -40,7 +48,7 @@
 - Preserved all nine active product features.
 - Runtime/source commit: `def6cb1c51fb0ae174f69ae7c5cebf286d1c4bb9`.
 - Workflow Run `34825140580`: **success**.
-- User explicitly reported p35 real-device validation passed; p35 is the current promoted device baseline.
+- User explicitly reported p35 real-device validation passed.
 
 ## 2026-09-14 — v1_p34 Device Verification
 - P34 source commit: `cd9a0ab78158de11f1d51cda7461dbc6dd60f956`.
