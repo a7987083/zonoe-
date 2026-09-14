@@ -77,9 +77,14 @@ def tracked(path: str) -> bool:
 
 
 def main() -> None:
-    head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
-    if head != P34_BASELINE:
-        raise SystemExit(f"expected p34 device baseline {P34_BASELINE}, got {head}")
+    if subprocess.call(["git", "merge-base", "--is-ancestor", P34_BASELINE, "HEAD"]) != 0:
+        raise SystemExit(f"p34 device baseline {P34_BASELINE} is not an ancestor of HEAD")
+    staged_diff = subprocess.check_output(
+        ["git", "diff", "--name-only", f"{P34_BASELINE}..HEAD"], text=True
+    ).splitlines()
+    unexpected = [p for p in staged_diff if p != "scripts/p35_apply_canonical_cleanup.py"]
+    if unexpected:
+        raise SystemExit(f"unexpected pre-cleanup changes above p34 baseline: {unexpected}")
 
     # 1) Remove the retired tag-203 placeholder from the canonical registry.
     replace_exact(
