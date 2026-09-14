@@ -22,7 +22,7 @@ NSArray<NSDictionary<NSString *, id> *> *ZONBuiltInSectionMetadata(void)
         sections = @[
             @{ ZONSectionIdentifierKey:@"base", ZONSectionTitleKey:@"基础功能", ZONSectionDetailKey:@"远程下载 / 云存档", ZONSectionStateKey:@"fold_base", ZONSectionRendererKey:@"cards" },
             @{ ZONSectionIdentifierKey:@"data", ZONSectionTitleKey:@"数据功能", ZONSectionDetailKey:@"备份存档 /恢复存档 / 清理配置和授权", ZONSectionStateKey:@"fold_draw", ZONSectionRendererKey:@"grid" },
-            @{ ZONSectionIdentifierKey:@"runtime", ZONSectionTitleKey:@"其他功能", ZONSectionDetailKey:@"1 / 2 / 3", ZONSectionStateKey:@"fold_role", ZONSectionRendererKey:@"runtime" },
+            @{ ZONSectionIdentifierKey:@"runtime", ZONSectionTitleKey:@"其他功能", ZONSectionDetailKey:@"内购 / 广告加速", ZONSectionStateKey:@"fold_role", ZONSectionRendererKey:@"runtime" },
         ];
     });
     return sections;
@@ -45,7 +45,6 @@ NSArray<NSDictionary<NSString *, id> *> *ZONBuiltInFeatureMetadata(void)
 
             @{ ZONFeatureIdentifierKey:@"runtime.iap-noads", ZONFeatureTitleKey:@"内购破解+ iGameGod去广告", ZONFeatureSectionKey:@"其他功能", ZONFeatureLegacyTagKey:@201, ZONFeatureKindKey:@(ZONFeatureKindToggle), ZONFeatureRiskKey:@(ZONFeatureRiskMedium), ZONFeatureMigratedKey:@YES },
             @{ ZONFeatureIdentifierKey:@"runtime.ad-speed", ZONFeatureTitleKey:@"广告加速", ZONFeatureSectionKey:@"其他功能", ZONFeatureLegacyTagKey:@202, ZONFeatureKindKey:@(ZONFeatureKindToggle), ZONFeatureRiskKey:@(ZONFeatureRiskMedium), ZONFeatureMigratedKey:@YES },
-            @{ ZONFeatureIdentifierKey:@"runtime.placeholder-203", ZONFeatureTitleKey:@"暂无", ZONFeatureSectionKey:@"其他功能", ZONFeatureLegacyTagKey:@203, ZONFeatureKindKey:@(ZONFeatureKindPlaceholder), ZONFeatureRiskKey:@(ZONFeatureRiskLow), ZONFeatureMigratedKey:@YES },
         ];
     });
     return features;

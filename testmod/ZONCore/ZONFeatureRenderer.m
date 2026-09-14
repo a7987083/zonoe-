@@ -166,8 +166,6 @@ void ZONRenderRuntimeFeatures(NSArray<NSDictionary<NSString *, id> *> *features,
             [contentView addSubview:ZONRenderSwitchRow(feature, 10, panelWidth, target, switchAction)];
         } else if ([identifier isEqualToString:@"runtime.ad-speed"]) {
             [contentView addSubview:ZONRenderAdSpeedRow(feature, 80, panelWidth, target, adSwitchAction, adSliderAction)];
-        } else if ([identifier isEqualToString:@"runtime.placeholder-203"]) {
-            [contentView addSubview:ZONRenderSwitchRow(feature, 200, panelWidth, target, switchAction)];
         }
     }
 }

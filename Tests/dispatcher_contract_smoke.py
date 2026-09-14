@@ -59,7 +59,6 @@ for needle in [
     '[[WX_NongShiFu123 alloc] deletekm];',
     'forKey:@"NNGG"', 'forKey:@"NNGGNNGG"', '[ImgTool share].NeiGou = on;',
     'forKey:@"AADD"', 'forKey:@"AADDAADD"', '[ImgTool share].ADSpeed = on;',
-    '@"runtime.placeholder-203"', 'NSLog(@"人物血量");',
 ]:
     require(IMPL, needle, "Dispatcher contract marker")
 
@@ -71,3 +70,6 @@ for needle in ['@"NNGGNNGG"', '@"AADDAADD"', '@"AADDssppeedd"',
     require(EVENT, needle, "EventBridge runtime sync marker")
 
 print("dispatcher-contract: PASS")
+
+if "runtime.placeholder-203" in IMPL or "人物血量" in IMPL:
+    fail("retired tag-203 placeholder dispatch still present")

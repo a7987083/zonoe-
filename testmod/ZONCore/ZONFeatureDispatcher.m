@@ -135,8 +135,8 @@ void ZONPresentClearAuthorizationConfirmation(UIViewController *hostViewControll
     [hostViewController presentViewController:alert animated:YES completion:nil];
 }
 
-/// Routes registry-owned actions. All ten built-in features have completed staged
-/// migration, so PopupMenuVC no longer carries per-tag compatibility fallbacks.
+/// Routes registry-owned actions. All active built-in features are registry-owned,
+/// so PopupMenuVC no longer carries per-tag compatibility fallbacks.
 BOOL ZONDispatchMigratedActionForLegacyTag(NSInteger legacyTag,
                                                           UIViewController *hostViewController)
 {
@@ -194,8 +194,8 @@ BOOL ZONDispatchMigratedActionForLegacyTag(NSInteger legacyTag,
     return NO;
 }
 
-/// Toggle/placeholder dispatch for registry-owned runtime controls. This preserves
-/// the exact UserDefaults keys and ImgTool side effects previously used by PopupMenuVC.
+/// Toggle dispatch for registry-owned runtime controls. This preserves the exact
+/// UserDefaults keys and ImgTool side effects previously used by PopupMenuVC.
 BOOL ZONDispatchMigratedToggleForLegacyTag(NSInteger legacyTag, BOOL on)
 {
     NSDictionary<NSString *, id> *feature = ZONFeatureMetadataForLegacyTag(legacyTag);
@@ -217,11 +217,6 @@ BOOL ZONDispatchMigratedToggleForLegacyTag(NSInteger legacyTag, BOOL on)
         [ud setBool:on forKey:@"AADDAADD"];
         [ud synchronize];
         [ImgTool share].ADSpeed = on;
-        return YES;
-    }
-
-    if ([identifier isEqualToString:@"runtime.placeholder-203"]) {
-        NSLog(@"人物血量");
         return YES;
     }
 
