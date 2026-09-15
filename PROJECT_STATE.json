@@ -3,18 +3,18 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p43-architecture-audit",
-  "current_test_branch": "test/zonoemenu-v1-p43-architecture-audit",
-  "current_version": "v1_p42",
-  "current_phase": "v1_p43_architecture_state_refresh_and_ownership_audit",
-  "phase_status": "audit_completed_runtime_unchanged",
+  "current_work_branch": "work/zonoemenu-v1-p44-authorization-orchestration-boundary",
+  "current_test_branch": "test/zonoemenu-v1-p44-authorization-orchestration-boundary-build",
+  "current_version": "v1_p44",
+  "current_phase": "v1_p44_authorization_orchestration_boundary",
+  "phase_status": "ci_verified_device_pending",
   "last_device_verified_code_commit": "e87b683a9c868e00d13582c8145bb9368878fee3",
   "last_device_verified_version": "v1_p42",
-  "last_ci_run_id": 35001000784,
+  "last_ci_run_id": 35020232205,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
-  "active_source_count": 77,
+  "active_source_count": 78,
   "canonical_product_surface": ["testmod/", "testmod.xcodeproj"],
   "canonical_refactor_plan": "ROADMAP.md",
   "architecture_review_document": "REFACTOR_REVIEW.md",
@@ -92,6 +92,26 @@
     ],
     "protected_legacy_implementation": "testmod/Bsphp/WX_NongShiFu123.mm"
   },
+  "p44": {
+    "branch": "work/zonoemenu-v1-p44-authorization-orchestration-boundary",
+    "test_branch": "test/zonoemenu-v1-p44-authorization-orchestration-boundary-build",
+    "source_commit": "aee574d180da7cc82db54be7ab5aeaa9d072c561",
+    "ci_head": "d6a110befbbc8c96dfffcae1f942c94b6011fe2d",
+    "ci_run_id": 35020232205,
+    "ci_status": "success",
+    "device_status": "pending",
+    "active_source_count": 78,
+    "added_active_source": "testmod/ZONServices/ZONAuthorizationCoordinator.m",
+    "implementation_migration": "mechanical extraction of authorization/reset orchestration from testmod/Bsphp/main.m; +load and framework preflight remain in main.m",
+    "independent_compile": "passed against iPhoneOS SDK; warnings-as-errors retained with only third-party JDStatusBarNotification unguarded-availability warning suppressed",
+    "export_surface": "identical_to_p42",
+    "load_libraries": "identical_to_p42",
+    "a_customer_artifact_id": 10417242852,
+    "a_customer_artifact_digest": "sha256:d9ce3432727b1c2ce5302ad4e732237ac7c45261ebd65cc3e7eda291ae2c71b8",
+    "a_customer_dylib_sha256": "f8d33f888ea5466217938af1cd338765252effb2cc4eda039a871579346e0435",
+    "b_debug_artifact_id": 10417212790,
+    "b_debug_artifact_digest": "sha256:2979768f150373160bffd1bddaf45e5d1ba1ee6d9ed1c8cdc05149485abd4a78"
+  },
   "refactor_rules": {
     "one_architectural_concern_per_version": true,
     "ci_does_not_equal_device_promotion": true,
@@ -105,58 +125,50 @@
       "version": "v1_p43",
       "name": "Architecture State Refresh & Remaining Ownership Audit",
       "status": "completed_runtime_unchanged",
-      "runtime_change_intended": false,
-      "goal": "Refresh P42 ownership/call-chain/PBX facts and choose exactly one safe P44 extraction target."
+      "runtime_change_intended": false
     },
     {
       "version": "v1_p44",
       "name": "Authorization Orchestration Boundary",
-      "status": "next_planned",
-      "runtime_change_intended": false,
-      "goal": "Isolate authorization orchestration while preserving +load timing, callback ordering, variant behavior and authorization continuation."
+      "status": "ci_verified_device_pending",
+      "runtime_change_intended": false
     },
     {
       "version": "v1_p45",
       "name": "Legacy UDID Web/Profile Fallback Adapter Boundary",
-      "status": "planned_conditional",
-      "runtime_change_intended": false,
-      "goal": "Hide WX_NongShiFu123 fallback details behind a narrow adapter with exact DZUDID and continuation semantics."
+      "status": "planned_after_p44_device_gate",
+      "runtime_change_intended": false
     },
     {
       "version": "v1_p46",
       "name": "Startup Side-Effect Instrumentation & Launch Contract",
       "status": "planned",
-      "runtime_change_intended": false,
-      "goal": "Measure and lock startup ordering before any later startup simplification."
+      "runtime_change_intended": false
     },
     {
       "version": "v1_p47",
       "name": "Repository Hygiene / Generated Artifact Cleanup",
       "status": "planned",
-      "runtime_change_intended": false,
-      "goal": "Remove only proven-nonconsumer generated/user-state material in an isolated cleanup."
+      "runtime_change_intended": false
     },
     {
       "version": "v1_p48",
       "name": "Legacy God-Object Split #1",
       "status": "planned_target_selected_by_p43_evidence",
-      "runtime_change_intended": false,
-      "goal": "Mechanically split one responsibility from exactly one audited large legacy unit."
+      "runtime_change_intended": false
     },
     {
       "version": "v1_p49",
       "name": "Active Target / Dead Code / Dependency Audit",
       "status": "planned",
-      "runtime_change_intended": false,
-      "goal": "Recompute active runtime surface and remove only proven-unused code/dependencies."
+      "runtime_change_intended": false
     },
     {
       "version": "v1_p50",
       "name": "Refactor Stabilization / Architecture Freeze",
       "status": "planned",
-      "runtime_change_intended": false,
-      "goal": "Consolidate verified boundaries, inventories, contracts and documentation, then stop structural churn without a concrete need."
+      "runtime_change_intended": false
     }
   ],
-  "next_task": "Start P44 Authorization Orchestration Boundary from the P42 device baseline. Mechanically extract the authorization/reset helper block from testmod/Bsphp/main.m into ZONAuthorizationCoordinator.h/.m; preserve +load and Bootstrap timing, WX_NongShiFu123 implementation, DZUDID semantics, callback ordering, queues and loada continuation exactly."
+  "next_task": "Real-device validate P44 A_customer: existing DZUDID fast path, cleared auth/UDID Zonoe callback and DZUDID writeback, deletekm reset clearing bridge state, fallback/foreground return behavior, and menu smoke. Keep P42 as rollback baseline until explicit PASS."
 }
