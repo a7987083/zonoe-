@@ -1,5 +1,26 @@
 # CHANGELOG_DEV
 
+## 2026-09-16 — v1_p44 Authorization Orchestration Boundary
+- Work branch: `work/zonoemenu-v1-p44-authorization-orchestration-boundary`.
+- Product source commit: `aee574d180da7cc82db54be7ab5aeaa9d072c561`.
+- Test branch: `test/zonoemenu-v1-p44-authorization-orchestration-boundary-build`.
+- Successful CI head: `d6a110befbbc8c96dfffcae1f942c94b6011fe2d`.
+- CI Run `35020232205`: **success**.
+- Added `testmod/ZONServices/ZONAuthorizationCoordinator.h/.m`.
+- Mechanically moved authorization/reset orchestration from `testmod/Bsphp/main.m` into the coordinator; `main.m +load`, Bootstrap call position and framework preflight remain in `main.m`.
+- The moved block includes `deletekm` compatibility IMP storage/call-through, UDID reset state, customer status helper, cached/fresh UDID authorization flow and `[auth loada]` continuation.
+- `WX_NongShiFu123.mm`, `ZonoeUDIDAPI.m`, `ZONUDIDBridge.m`, Bootstrap, ModuleLoader, `PubgLoad.mm` and `JiangHuHook.m` remain protected/unchanged by the P44 contract.
+- PBX active Sources changed **77 → 78**; sole new active source is `ZONAuthorizationCoordinator.m`.
+- Added `Tests/p44_authorization_coordinator_contract.py` proving mechanical equivalence against P42 and unchanged `main.m` outside the extracted block/import.
+- New coordinator translation unit independently compiles against iPhoneOS; strict warnings remain errors, with only the pre-existing third-party JDStatusBarNotification `UIWindowScene` availability warning suppressed in that isolated compile check.
+- A_customer and B_debug full builds passed for `arm64 + arm64e`.
+- P44/P42 exported symbol sets are identical.
+- P44/P42 linked load-library sets are identical.
+- A_customer artifact ID `10417242852`, digest `sha256:d9ce3432727b1c2ce5302ad4e732237ac7c45261ebd65cc3e7eda291ae2c71b8`.
+- A_customer dylib SHA256 `f8d33f888ea5466217938af1cd338765252effb2cc4eda039a871579346e0435`.
+- B_debug artifact ID `10417212790`, digest `sha256:2979768f150373160bffd1bddaf45e5d1ba1ee6d9ed1c8cdc05149485abd4a78`.
+- P44 status is **CI verified / real-device pending**. P42 remains the promoted rollback/device baseline.
+
 ## 2026-09-16 — P43 Architecture State Refresh & Remaining Ownership Audit
 - Created work branch `work/zonoemenu-v1-p43-architecture-audit` and test branch `test/zonoemenu-v1-p43-architecture-audit` from the post-P42 documentation head.
 - Added `P43_ARCHITECTURE_AUDIT.md` with current P42 startup/auth/legacy ownership findings.
