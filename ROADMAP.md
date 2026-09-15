@@ -5,25 +5,36 @@
 ## Current promoted baseline
 - Device-verified version: `v1_p42`.
 - Runtime/source commit: `e87b683a9c868e00d13582c8145bb9368878fee3`.
-- Work branch: `work/zonoemenu-v1-p42-zonoe-udid-api-boundary`.
-- Test branch: `test/zonoemenu-v1-p42-zonoe-udid-api-boundary-build`.
+- Baseline work branch: `work/zonoemenu-v1-p42-zonoe-udid-api-boundary`.
+- Baseline test branch: `test/zonoemenu-v1-p42-zonoe-udid-api-boundary-build`.
 - CI Run `34995566144`: **success**.
 - Real-device regression: **passed and explicitly reported by user**.
 - Active PBX Sources: **77**.
 - Architectures: `arm64 + arm64e`.
 - P42/P41 exported symbol sets and linked load-library sets are identical.
-- P42 is the mandatory rollback/device baseline for every later candidate until a newer version explicitly passes its real-device gate.
+- P42 remains the mandatory rollback/device baseline until a later runtime candidate explicitly passes its real-device gate.
+
+## Current development phase
+- Phase: **P43 — Architecture State Refresh & Remaining Ownership Audit**.
+- Work branch: `work/zonoemenu-v1-p43-architecture-audit`.
+- Test branch: `test/zonoemenu-v1-p43-architecture-audit`.
+- Audit head: `aed6b72e15a5d7096b42b2dbf4f8fa467c963150`.
+- CI Run `35001000784`: **success**.
+- Product runtime/PBX versus P42: **identical**.
+- Active Sources: **77**.
+- Device test: **not required**, because P43 changes only audit/tests/docs and the canonical runtime tree is unchanged.
+- Detailed evidence: `P43_ARCHITECTURE_AUDIT.md`.
 
 ## Refactor operating rules
 1. One architectural concern per version. Never combine ownership cleanup with behavior, timing, threading, protocol, persistence, UI, or feature changes.
 2. Every source-moving phase needs a mechanical/equivalence contract where practical.
 3. Every phase must define protected files/symbols/state machines before source changes begin.
-4. CI success is not device promotion. A version becomes the new baseline only after explicit real-device PASS.
+4. CI success is not device promotion. A runtime-affecting version becomes the new baseline only after explicit real-device PASS.
 5. A failed candidate does not modify the promoted fallback baseline.
 6. Preserve `testmod/` + `testmod.xcodeproj` as the canonical runtime/product surface. PBX membership decides whether code is active.
 7. Do not delete legacy code until active-target reachability and runtime consumers are proven absent.
 8. Do not change `+load`, main-queue sequencing, callback timing, socket retry timing, URL schemes, persistence keys, or authorization continuation as part of structural cleanup.
-9. Every completed development version must record branch, product commit, CI run/status, A_customer artifact, architectures, SHA256, device status, and rollback baseline.
+9. Every completed runtime development version must record branch, product commit, CI run/status, A_customer artifact, architectures, SHA256, device status, and rollback baseline. Audit-only phases must record branch, audit head, CI run and runtime-equivalence proof.
 10. `CHANGELOG_DEV.md` records what actually changed; `HANDOFF.md` records context/risks; `PROJECT_STATE.json` is machine-readable state; `KNOWN_ISSUES.md` tracks open risks.
 
 ## Completed foundation
@@ -44,76 +55,83 @@
 - A_customer dylib SHA256: `9174bed40c8297a3927348d61cc0959a02f42391741d249edab2dcdfbcc63ad6`.
 - Device validation: passed.
 
+### P43 — Architecture State Refresh & Remaining Ownership Audit — COMPLETED / RUNTIME UNCHANGED
+- Work branch: `work/zonoemenu-v1-p43-architecture-audit`.
+- Test branch: `test/zonoemenu-v1-p43-architecture-audit`.
+- Audit head: `aed6b72e15a5d7096b42b2dbf4f8fa467c963150`.
+- CI Run `35001000784`: **success**.
+- Added `P43_ARCHITECTURE_AUDIT.md` and `Tests/p43_architecture_audit.py`.
+- Contract proves `testmod/` + `testmod.xcodeproj` are unchanged from P42 product commit.
+- Contract proves active Sources remain exactly **77** and the audited legacy units remain active.
+- `WX_NongShiFu123.mm` remains a high-risk legacy implementation and is explicitly excluded from direct P44 rewriting.
+- P44 target selected: authorization orchestration/reset glue currently implemented as static helpers in `testmod/Bsphp/main.m`.
+- Planned P44 boundary: `testmod/ZONServices/ZONAuthorizationCoordinator.h/.m`.
+- P42 remains the rollback/device baseline.
+
 # Planned refactor stages
 
-## P43 — Architecture State Refresh & Remaining Ownership Audit
-**Status:** `next / planned`
-
-### Goal
-Create an up-to-date, P42-based ownership map before touching the next high-risk legacy boundary. Remove stale architectural assumptions from documentation and identify exactly which remaining responsibilities are safe to split.
-
-### In scope
-- Re-audit startup/auth/UDID/menu/module call chains from the P42 tree.
-- Re-audit active PBX Sources and direct imports/callers for `main.m`, `WX_NongShiFu123.mm`, `PubgLoad.mm`, `JiangHuHook.m`, `daochucd.m`, `YYYPicker.m`, `fuhzu.m` and other large legacy units.
-- Update `REFACTOR_REVIEW.md` to P42 facts.
-- Add machine-checkable reachability/ownership reports or tests where useful.
-- Identify the single safest P44 extraction target and exact protected behavior.
-
-### Out of scope / forbidden
-- No runtime behavior change.
-- No source move merely because a file looks large.
-- No authorization, UDID, network, UI, persistence, timing or threading change.
-- No dead-code deletion without reachability proof.
-
-### Verification gate
-- Documentation and audit output agree with PBX membership.
-- No product-runtime diff unless an audit helper/test is explicitly non-product.
-- CI audit job succeeds.
-- Real-device gate: not required if product runtime is byte/tree unchanged; otherwise mandatory.
-
-### Exit criteria
-P44 target, allowed diff, protected files, invariants, and rollback plan are written into this ROADMAP before P44 source work begins.
-
----
-
 ## P44 — Authorization Orchestration Boundary
-**Status:** `planned / conditional on P43 audit`
+**Status:** `NEXT / planned from P43 evidence`
 
 ### Goal
-Separate authorization orchestration from startup/UI ownership without changing the existing customer authorization sequence.
+Separate customer authorization orchestration/reset glue from startup-host ownership without changing the existing authorization sequence.
 
-### Expected scope
-- Extract only orchestration that P43 proves can be mechanically isolated from `main.m` / legacy auth implementation.
-- Prefer a narrow coordinator/service translation unit with declarations in a small header.
-- Keep `WX_NongShiFu123` as an implementation dependency behind the boundary rather than rewriting it.
+### Exact selected scope
+Mechanically extract the current `main.m` helper block that owns:
+- original `deletekm` IMP storage;
+- `ZONClearStoredUDIDState`;
+- `ZONDeleteKMAndUDID`;
+- `ZONInstallAuthorizationResetExtension`;
+- `ZONShowCustomerStatus`;
+- `ZONContinueCustomerAuthorization`;
+- `ZONStartCustomerAuthorization`.
+
+Preferred new boundary:
+- `testmod/ZONServices/ZONAuthorizationCoordinator.h`
+- `testmod/ZONServices/ZONAuthorizationCoordinator.m`
+
+`main.m` remains the `+load` startup host and calls the new boundary at the same positions/order.
 
 ### Protected behavior
 - `main.m +load` execution timing.
-- authorization-reset compatibility hook installation order.
-- A_customer vs B_debug branch behavior.
-- cached UDID handling.
-- `ZonoeSetUDIDCallback` / request ordering.
-- transition into `loada` / existing authorization continuation.
-- all persistence/keychain keys and network/API semantics.
+- authorization-reset compatibility hook installation before `ZONBootstrapStart`.
+- original `deletekm` IMP call-through before UDID-state clearing.
+- removal of `DZUDID` and the exact four Zonoe bridge-default keys.
+- AppLovinSDK/UnityFramework preflight order.
+- A_customer vs B_debug compile-time branch behavior.
+- cached `DZUDID` fast path.
+- `ZonoeCurrentUDID()` bridge-cache path.
+- first request order: status -> callback registration -> `ZonoeRequestUDIDIfNeeded`.
+- callback validation/write-back verification and `[auth loada]` continuation.
+- all current queues, delays, status text/durations, persistence keys and network semantics.
+- `WX_NongShiFu123.mm` implementation remains unchanged.
 
 ### Forbidden
 - No async/sync changes.
 - No queue changes.
 - No retry/timeout changes.
-- No API endpoint or payload changes.
-- No UI changes.
+- No API endpoint/payload changes.
+- No UI redesign.
+- No rewrite/split of `WX_NongShiFu123.mm`.
+- No startup/preflight reordering.
 
 ### Verification gate
-- Mechanical/equivalence contract for moved orchestration.
-- Independent compile of new translation unit with warnings-as-errors where feasible.
-- Full A_customer + B_debug arm64/arm64e builds.
-- Exported symbols/load libraries compared with P42 unless an intentionally new internal symbol is hidden.
-- A_customer real-device startup/auth/UDID/menu smoke before promotion.
+- Exact/mechanical extraction contract from the P42/P43 `main.m` helper block.
+- Protected-source identity for `WX_NongShiFu123.mm`, Zonoe UDID bridge/API implementation and unrelated runtime surfaces.
+- New translation unit independently compiles with warnings-as-errors where feasible.
+- PBX active Sources expected **77 → 78**, with the sole new active source `ZONAuthorizationCoordinator.m`.
+- Full A_customer + B_debug iPhoneOS builds for `arm64 + arm64e`.
+- Exported-symbol and linked-library comparison against P42.
+- A_customer artifact/digest/dylib SHA256 recorded.
+- Real-device promotion gate: startup, cached UDID, fresh Zonoe callback, fallback path, authorization continuation and menu smoke.
+
+### Rollback
+`v1_p42` / `e87b683a9c868e00d13582c8145bb9368878fee3` remains the rollback baseline until P44 explicitly passes device validation.
 
 ---
 
 ## P45 — Legacy UDID Web/Profile Fallback Adapter Boundary
-**Status:** `planned / conditional`
+**Status:** `planned / conditional on P44 device pass`
 
 ### Goal
 Isolate the legacy `WX_NongShiFu123 getUDID:` fallback behind a narrow adapter so modern `ZonoeUDIDAPI` no longer directly owns legacy class details.
@@ -142,7 +160,7 @@ Isolate the legacy `WX_NongShiFu123 getUDID:` fallback behind a narrow adapter s
 Measure and lock startup ordering before any later attempt to simplify global startup side effects.
 
 ### Scope
-- Add non-functional timing/signpost/log instrumentation around: `+load`, authorization-reset hook install, framework preflight, Bootstrap ready callback, authorization start/ready, module scan/load, first floating entry/menu presentation.
+- Add non-functional timing/signpost/log instrumentation around `+load`, authorization-reset hook install, framework preflight, Bootstrap ready callback, authorization start/ready, module scan/load and first floating entry/menu presentation.
 - Produce a startup-order contract/document from device/CI evidence.
 
 ### Forbidden
@@ -155,9 +173,6 @@ Measure and lock startup ordering before any later attempt to simplify global st
 - A/B builds.
 - No semantic product-path diff beyond instrumentation.
 - Real-device startup sequence captured at least once on A_customer.
-
-### Exit criteria
-Only measured evidence may justify a later startup-behavior refactor. If evidence is insufficient, startup timing remains protected indefinitely.
 
 ---
 
@@ -172,38 +187,25 @@ Reduce repository noise without changing runtime or build outputs.
 - Extend `.gitignore` where safe.
 - Remove only files proven not to be build/release/runtime inputs.
 
-### Forbidden
-- Do not combine with source refactors.
-- Do not delete vendor/dependency material required by bootstrap scripts or CI.
-- Do not delete any file referenced by PBX, scripts, release packaging or runtime loaders.
-
 ### Verification gate
 - Before/after active PBX source set identical.
 - Build scripts and dependency bootstrap succeed.
-- A_customer/B_debug dylibs are byte-identical when the build environment is deterministic; otherwise exported symbols, load libraries and source inputs must match.
-- Device test not required if binaries are proven identical; otherwise required.
+- Binaries byte-identical where deterministic; otherwise exports/load libraries/source inputs match.
+- Device test required only if runtime binary equivalence cannot be proved.
 
 ---
 
 ## P48 — Legacy God-Object Split #1
-**Status:** `planned / target chosen only by P43 evidence`
+**Status:** `planned / target chosen from audit evidence`
 
 ### Goal
-Split exactly one large legacy unit with the best risk/reward ratio. Candidate list includes `WX_NongShiFu123.mm`, `PubgLoad.mm`, `JiangHuHook.m`, `daochucd.m`, `YYYPicker.m`, `fuhzu.m`; P43 decides the target.
-
-### Scope
-- One responsibility only: e.g. persistence adapter, UI helper, dispatch adapter, or service adapter.
-- Move existing code mechanically before any cleanup/renaming.
-
-### Forbidden
-- No simultaneous redesign of the selected legacy unit.
-- No multiple god-object splits in one version.
-- No behavior simplification based on assumptions.
+Split exactly one large legacy unit with the best risk/reward ratio. Candidate list includes `WX_NongShiFu123.mm`, `PubgLoad.mm`, `JiangHuHook.m`, `daochucd.m`, `YYYPicker.m`, `fuhzu.m`; target must be selected from live call/state evidence.
 
 ### Verification gate
-- Target-specific body/invariant contract.
-- Full A/B builds.
-- Relevant real-device feature path plus common menu/startup smoke.
+- One responsibility only.
+- Mechanical move before cleanup/renaming.
+- Target-specific invariant contract.
+- Full A/B builds and relevant real-device path.
 
 ---
 
@@ -211,17 +213,7 @@ Split exactly one large legacy unit with the best risk/reward ratio. Candidate l
 **Status:** `planned`
 
 ### Goal
-Recompute the active runtime surface after the boundary work and remove only proven-unused code/dependencies.
-
-### Scope
-- PBX active source inventory.
-- import/caller/reference audit.
-- unique-selector/symbol checks for removal candidates.
-- JDStatusBarNotification and other retained third-party/legacy dependencies may be re-audited only if call reachability changed.
-
-### Forbidden
-- No deletion based only on search absence in one path.
-- No behavior changes bundled with removal.
+Recompute the active runtime surface after boundary work and remove only proven-unused code/dependencies.
 
 ### Verification gate
 - Explicit removal proof per file/dependency.
@@ -237,16 +229,10 @@ Recompute the active runtime surface after the boundary work and remove only pro
 ### Goal
 Consolidate the proven architecture after P43–P49, update documentation/contracts, and stop structural churn unless a concrete maintenance or feature need justifies more change.
 
-### Scope
-- Re-run architecture audit.
-- Ensure declarations/implementations have clear owners.
-- Ensure documentation matches active target.
-- Retire obsolete audit helpers only if their invariant has permanent replacement coverage.
-- Produce final source/feature/dependency inventory.
-
 ### Verification gate
+- Full architecture audit and source/dependency inventory.
 - Full CI, A/B arm64+arm64e artifacts, ABI/load-library review.
-- Full real-device regression using the current device matrix.
+- Full real-device regression.
 - Promote only after explicit user PASS.
 
 # Protected behavior across all planned stages
@@ -274,4 +260,4 @@ For each runtime-affecting candidate:
 8. Only then update `last_device_verified_*` and promote the version.
 
 # Next Task
-Start **P43 — Architecture State Refresh & Remaining Ownership Audit** from the promoted P42 baseline. First action: refresh `REFACTOR_REVIEW.md` from the actual P42 tree and active PBX membership, then choose exactly one P44 authorization-orchestration extraction target. Do not modify product runtime during the audit unless the ROADMAP is first amended with an explicit isolated scope and verification gate.
+Start **P44 — Authorization Orchestration Boundary** from the P42 device baseline and the P43 audit decision. Create `ZONAuthorizationCoordinator.h/.m`, mechanically extract only the selected authorization/reset helper block from `testmod/Bsphp/main.m`, keep `main.m +load` and `WX_NongShiFu123.mm` behavior unchanged, add equivalence/protected-source contracts, then run full A_customer/B_debug arm64+arm64e CI before requesting device validation.
