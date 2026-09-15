@@ -139,6 +139,7 @@
 		7ECBD4392F3A614700C56F1C /* ZONFeatureDispatcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4382F3A614700C56F1C /* ZONFeatureDispatcher.m */; };
 		7ECBD43B2F3A614800C56F1C /* ZONModuleLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD43A2F3A614800C56F1C /* ZONModuleLoader.m */; };
 		7ECBD43D2F3A614900C56F1C /* ZONBootstrap.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD43C2F3A614900C56F1C /* ZONBootstrap.m */; };
+		7ECBD43F2F3A614A00C56F1C /* ZONUDIDBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD43E2F3A614A00C56F1C /* ZONUDIDBridge.m */; };
 		7ECBD4212F29099D00C56F1C /* PopupMenuVC.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECBD4202F29099D00C56F1C /* PopupMenuVC.h */; };
 		7ECBD4232F30EF6100C56F1C /* FoldSectionView.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECBD4222F30EF6100C56F1C /* FoldSectionView.h */; };
 		7ECBD4252F30EF6C00C56F1C /* FoldSectionView.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4242F30EF6C00C56F1C /* FoldSectionView.m */; };
@@ -309,6 +310,7 @@
 		7ECBD4382F3A614700C56F1C /* ZONFeatureDispatcher.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONFeatureDispatcher.m"; sourceTree = SOURCE_ROOT; };
 		7ECBD43A2F3A614800C56F1C /* ZONModuleLoader.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONModuleLoader.m"; sourceTree = SOURCE_ROOT; };
 		7ECBD43C2F3A614900C56F1C /* ZONBootstrap.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONBootstrap/ZONBootstrap.m"; sourceTree = SOURCE_ROOT; };
+		7ECBD43E2F3A614A00C56F1C /* ZONUDIDBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZONUDIDBridge.m"; sourceTree = SOURCE_ROOT; };
 		7ECBD4202F29099D00C56F1C /* PopupMenuVC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PopupMenuVC.h; sourceTree = "<group>"; };
 		7ECBD4222F30EF6100C56F1C /* FoldSectionView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FoldSectionView.h; sourceTree = "<group>"; };
 		7ECBD4242F30EF6C00C56F1C /* FoldSectionView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FoldSectionView.m; sourceTree = "<group>"; };
@@ -1022,6 +1024,7 @@
 				7ECBD4392F3A614700C56F1C /* ZONFeatureDispatcher.m in Sources */,
 				7ECBD43B2F3A614800C56F1C /* ZONModuleLoader.m in Sources */,
 				7ECBD43D2F3A614900C56F1C /* ZONBootstrap.m in Sources */,
+				7ECBD43F2F3A614A00C56F1C /* ZONUDIDBridge.m in Sources */,
 				7E6F45522E1A8C4E00D4A46E /* JDSBNotificationViewController.m in Sources */,
 				7E8A57FA2B8E4A9C00676FE2 /* SCLSwitchView.m in Sources */,
 				7E8A57D92B8E4A9C00676FE2 /* AFNetworkReachabilityManager.m in Sources */,
