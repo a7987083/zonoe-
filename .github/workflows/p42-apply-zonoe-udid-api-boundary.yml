@@ -48,3 +48,5 @@ jobs:
           git diff --cached --check
           git commit -m 'refactor: move Zonoe UDID API implementation into service unit'
           git push origin HEAD:work/zonoemenu-v1-p42-zonoe-udid-api-boundary
+
+# trigger: p42-source-migration
