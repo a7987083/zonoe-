@@ -3,73 +3,73 @@
 ## Current promoted baseline
 - Device-verified version: `v1_p39`.
 - Runtime/source commit: `613882da7068795533c530d45775f7ae5f79ed56`.
-- Fixed verification Run `34891852090`: success.
-- Real-device regression: user explicitly reported p39 passed.
+- Verification Run `34891852090`: success.
+- Real-device regression: passed and explicitly reported by user.
 - Active PBX Sources: **75**.
 - All nine active product features remain verified.
 
-## P39-A completed — Active Target Slimming
-- Removed only `testmod/category/NSString+Tools.m` and `testmod/category/NSString+Tools.h` plus PBX references.
-- PBX active Sources reduced **76 → 75**.
-- No floating-window/menu, authorization, UDID, cloud/file, backup/restore, or runtime-hook code was changed.
-- P38/P39 exported symbol sets are identical.
-- The four unique `NSString(Tools)` selectors are present in P38 and absent in P39 as intended.
-- Initial CI failure was verification-only: `grep -q` closed a pipeline early, `strings` received SIGPIPE 141 under `pipefail`. The fixed verification workflow does not change the runtime/source commit.
-- P39 A_customer SHA256: `4e5f26da846bc4d9af0f9fce11f55dadf109074b49c9c8ab54f519fb2b89cdd2`.
-- Real-device validation passed; P39 is promoted.
+## P40 completed — zero-behavior source/dependency hygiene
+- Source commit: `09aa9f27fe0b0491ac17f92ed9ed20d496bf8f33`.
+- Test branch: `test/zonoemenu-v1-p40-zero-behavior-refactor`.
+- Successful CI head: `8eeb3212f9236bea9eeb6be2f8ca88d71c2a0e5b`.
+- CI Run `34915266733`: **success**.
+- Active Sources remained **75**.
+- Localized `ZONFeatureDispatcher` implementation-only imports from `.h` into `.m`.
+- Removed the uncompiled JDStatusBar `NotificationPresenter.swift` wrapper.
+- Removed the proven-stale JDStatus umbrella import from `PreferenceManager.m`.
+- A_customer and B_debug dylibs were byte-identical to promoted P39 artifacts.
+- P40 was an architectural cleanup candidate and was not separately promoted by a real-device report.
 
-## P39-B completed — JDStatusBarNotification dependency audit
-Status: `complete_keep_live_dependency`.
+## P41 implemented — UDID bridge compilation boundary
+Status: **CI verified / real-device pending**.
 
-Audit evidence:
-- Work branch: `work/zonoemenu-v1-p39b-jdstatus-audit`.
-- CI Run `34894434619`: **success**.
-- Artifact `p39b-jdstatus-audit` / ID `10368133245` / digest `sha256:5b46890e7594493ba4a2ee89e3c1b1a9e77dd66e09134d33577d49adf9ebf5ef`.
-- Eight Objective-C implementation units are PBX-active.
-- Eleven headers are present.
-- `NotificationPresenter.swift` has zero PBX hits and is not compiled.
-- Decision: **KEEP_LIVE_DEPENDENCY**.
+Source:
+- Work branch: `work/zonoemenu-v1-p41-udidbridge-boundary`.
+- Product source commit: `ffa6e2a7c380ca34ec1add72d488eb96c1f60bfe`.
+- Test branch: `test/zonoemenu-v1-p41-udidbridge-boundary-build`.
+- CI trigger/head: `925cd9b11364278e1927f300cc46e13dace2a239`.
+- CI Run `34959813770`: **success**.
 
-Proven live product paths:
-1. `testmod/菜单/PubgLoad.mm` — cloud-save/download status, download percentage/progress bar, success/failure/load messages.
-2. `testmod/Bsphp/main.m` — startup/UDID acquisition, UDID write error/success and continuation status.
-3. `testmod/Bsphp/WX_NongShiFu123.mm` — first activation, authorization query, software-source/ad-speed activation and completion status.
+Change:
+- `testmod/ZONServices/ZONUDIDBridge.h` is now declaration-only.
+- The exact P40 callback/nonce/storage/socket/request implementation was mechanically moved into `testmod/ZONServices/ZONUDIDBridge.m`.
+- The bridge symbols are explicitly hidden from the dylib export surface.
+- No `main.m`, `NSObject+UI.m`, authorization, menu, cloud-save, backup/restore, hook, or other protected runtime implementation was changed.
 
-Two files import the umbrella header without any JDStatusBarNotification class/API use and are only later include-hygiene candidates:
-- `testmod/导入导出/PreferenceManager.m`
-- `testmod/工具箱/Hook/JiangHuHook.m`
+Source-count rule:
+- P39/P40: 75 active Sources.
+- P41: **76 active Sources**.
+- The only addition is `ZONUDIDBridge.m`; none of the existing 75 sources was removed.
+- This increase is intentional because formerly header-owned executable code now has an explicit translation-unit owner.
 
-The audit found no external dynamic JDStatus reference and no internal `+load`, constructor, swizzle, fishhook/rebind, or `dlopen` automatic entry. Those findings do not make the library removable because direct live calls already prove it is required.
+Verification:
+- P41 mechanical body-equivalence contract: passed.
+- `ZONUDIDBridge.m` independent iPhoneOS compile with `-Wall -Wextra -Werror`: passed.
+- A_customer arm64 + arm64e full build: passed.
+- B_debug arm64 + arm64e full build: passed.
+- Exported symbol set versus P40: identical.
+- `ZONUDIDBridge*` symbols do not leak into the dylib export surface.
+- Linked load-library set versus P40: identical.
+- A_customer artifact: `10392947122`, digest `sha256:8b5ed743e7d9c958fa695fce7cdb4f0cf48984dc94a2162b539a75698392a336`.
+- B_debug artifact: `10393041635`, digest `sha256:4d9123c5df4554e71c4d33ba11ddcec15fb3adcc3c5470daaf21505ed6f4afd0`.
 
-## P39 active-target audit closure
-All previously uncertain dependency units now have a decision:
-- AFNetworking: keep — live dependency.
-- MBProgressHUD: keep — live dependency.
-- SCLAlertView: keep — live dependency.
-- SSZipArchive/minizip: keep — live dependency.
-- SVProgressHUD: keep — live dependency.
-- JDStatusBarNotification: keep — live dependency.
-- `NSString+Tools`: removed and device-verified in P39.
-
-Therefore the active-target deletion audit is complete at **75 Sources**. Do not continue deleting vendor units without new evidence.
-
-## Next development phase — v1_p40 source-layout and dependency hygiene
-Start from the immutable, device-verified P39 runtime. P40 should begin with an audit, not a bulk rename/move.
-
-Scope:
-1. Inventory canonical `testmod/` directories and identify obsolete naming/layout debt, duplicate-purpose folders, stale headers/imports and implementation-heavy headers.
-2. First low-risk include-hygiene candidates are the stale JDStatus imports in `PreferenceManager.m` and `JiangHuHook.m`; treat these as source-cleanliness changes, not evidence to remove the JDStatus library.
-3. Avoid renaming/moving active sources until every PBX/header/import path is mapped and a guarded transformation can update them atomically.
-4. Preserve the 75-source active target and all nine verified product features unless a new explicit audit proves a source removable.
-5. Every runtime/source change still requires contracts, Registry smoke, Module ABI, A_customer/B_debug arm64+arm64e builds and device regression before promotion.
-
-## Protected units
-Keep protected until explicit proof says otherwise:
-- Floating window/menu entry: `NSObject+UI`, `JHDragView`, `PopupMenuVC`, coordinator/renderer/event bridge/dispatcher.
-- Authorization and UDID acquisition paths.
-- Remote download, VIP cloud save, local-file browser, backup/restore, clear-data, clear-auth.
-- `JiangHuHook`, `HookClass`, `ImgTool`, fishhook/rebind and other runtime hook paths.
-- All retained vendor units listed above.
+## Protected behavior
+Keep unchanged until an explicit, isolated phase proves otherwise:
+- `main.m +load` timing and Bootstrap/authorization sequencing.
+- Zonoe callback scheme, nonce generation/validation, callback URL parsing and storage keys.
+- Localhost bridge port/timeouts/retry count and pending-request age limits.
+- `zonoe://udid` preferred path and legacy web/profile fallback.
+- Floating entry/menu stack and all nine active features.
+- Cloud save, local files, backup/restore, clear-data and clear-auth paths.
+- `JiangHuHook`, `HookClass`, `ImgTool`, fishhook/rebind runtime paths.
 
 ## Next task
-Begin **P40 audit only** for canonical source layout, naming and include/dependency hygiene. Do not bulk-move or rename product sources until the audit produces exact PBX/import dependency maps and a reversible cleanup plan.
+Perform **P41 real-device regression**, using A_customer as the promotion gate. Required checks:
+1. normal startup with an already cached valid UDID;
+2. first/forced acquisition through `zonoe://udid` callback + nonce;
+3. localhost bridge result acceptance;
+4. fallback to the existing web/profile flow when Zonoe cannot open;
+5. authorization continues normally after UDID acquisition;
+6. menu and core features still open and operate normally.
+
+Do not promote P41 until the real-device result is explicitly reported. P39 remains the fallback/device baseline. After P41 promotion, the next architecture candidate is moving the stable `ZonoeUDIDAPI` implementation out of `NSObject+UI.m` into its own translation unit.
