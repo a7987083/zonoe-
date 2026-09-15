@@ -7,9 +7,9 @@
   "current_test_branch": "test/zonoemenu-v1-p44-authorization-orchestration-boundary-build",
   "current_version": "v1_p44",
   "current_phase": "v1_p44_authorization_orchestration_boundary",
-  "phase_status": "ci_verified_device_pending",
-  "last_device_verified_code_commit": "e87b683a9c868e00d13582c8145bb9368878fee3",
-  "last_device_verified_version": "v1_p42",
+  "phase_status": "completed_device_passed",
+  "last_device_verified_code_commit": "aee574d180da7cc82db54be7ab5aeaa9d072c561",
+  "last_device_verified_version": "v1_p44",
   "last_ci_run_id": 35020232205,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
@@ -24,8 +24,8 @@
   "known_issues_document": "KNOWN_ISSUES.md",
   "changelog_document": "CHANGELOG_DEV.md",
   "rollback_baseline": {
-    "version": "v1_p42",
-    "source_commit": "e87b683a9c868e00d13582c8145bb9368878fee3",
+    "version": "v1_p44",
+    "source_commit": "aee574d180da7cc82db54be7ab5aeaa9d072c561",
     "device_status": "passed"
   },
   "p39": {
@@ -63,7 +63,7 @@
     "ci_head": "698bd84d676107f65ae14d6b2041805948001674",
     "ci_run_id": 34995566144,
     "ci_status": "success",
-    "device_status": "passed",
+    "device_status": "passed_superseded_by_p44",
     "device_reported_by_user": true,
     "active_source_count": 77,
     "added_active_source": "testmod/ZONServices/ZonoeUDIDAPI.m",
@@ -84,13 +84,7 @@
     "runtime_changed": false,
     "device_test_required": false,
     "active_source_count": 77,
-    "runtime_tree_vs_p42": "identical",
-    "selected_p44_target": "authorization orchestration/reset glue in testmod/Bsphp/main.m",
-    "selected_p44_boundary": [
-      "testmod/ZONServices/ZONAuthorizationCoordinator.h",
-      "testmod/ZONServices/ZONAuthorizationCoordinator.m"
-    ],
-    "protected_legacy_implementation": "testmod/Bsphp/WX_NongShiFu123.mm"
+    "runtime_tree_vs_p42": "identical"
   },
   "p44": {
     "branch": "work/zonoemenu-v1-p44-authorization-orchestration-boundary",
@@ -99,7 +93,8 @@
     "ci_head": "d6a110befbbc8c96dfffcae1f942c94b6011fe2d",
     "ci_run_id": 35020232205,
     "ci_status": "success",
-    "device_status": "pending",
+    "device_status": "passed",
+    "device_reported_by_user": true,
     "active_source_count": 78,
     "added_active_source": "testmod/ZONServices/ZONAuthorizationCoordinator.m",
     "implementation_migration": "mechanical extraction of authorization/reset orchestration from testmod/Bsphp/main.m; +load and framework preflight remain in main.m",
@@ -121,54 +116,14 @@
     "delete_only_after_reachability_proof": true
   },
   "planned_refactor_phases": [
-    {
-      "version": "v1_p43",
-      "name": "Architecture State Refresh & Remaining Ownership Audit",
-      "status": "completed_runtime_unchanged",
-      "runtime_change_intended": false
-    },
-    {
-      "version": "v1_p44",
-      "name": "Authorization Orchestration Boundary",
-      "status": "ci_verified_device_pending",
-      "runtime_change_intended": false
-    },
-    {
-      "version": "v1_p45",
-      "name": "Legacy UDID Web/Profile Fallback Adapter Boundary",
-      "status": "planned_after_p44_device_gate",
-      "runtime_change_intended": false
-    },
-    {
-      "version": "v1_p46",
-      "name": "Startup Side-Effect Instrumentation & Launch Contract",
-      "status": "planned",
-      "runtime_change_intended": false
-    },
-    {
-      "version": "v1_p47",
-      "name": "Repository Hygiene / Generated Artifact Cleanup",
-      "status": "planned",
-      "runtime_change_intended": false
-    },
-    {
-      "version": "v1_p48",
-      "name": "Legacy God-Object Split #1",
-      "status": "planned_target_selected_by_p43_evidence",
-      "runtime_change_intended": false
-    },
-    {
-      "version": "v1_p49",
-      "name": "Active Target / Dead Code / Dependency Audit",
-      "status": "planned",
-      "runtime_change_intended": false
-    },
-    {
-      "version": "v1_p50",
-      "name": "Refactor Stabilization / Architecture Freeze",
-      "status": "planned",
-      "runtime_change_intended": false
-    }
+    {"version":"v1_p43","name":"Architecture State Refresh & Remaining Ownership Audit","status":"completed_runtime_unchanged","runtime_change_intended":false},
+    {"version":"v1_p44","name":"Authorization Orchestration Boundary","status":"completed_device_passed","runtime_change_intended":false},
+    {"version":"v1_p45","name":"Legacy UDID Web/Profile Fallback Adapter Boundary","status":"next_planned","runtime_change_intended":false},
+    {"version":"v1_p46","name":"Startup Side-Effect Instrumentation & Launch Contract","status":"planned","runtime_change_intended":false},
+    {"version":"v1_p47","name":"Repository Hygiene / Generated Artifact Cleanup","status":"planned","runtime_change_intended":false},
+    {"version":"v1_p48","name":"Legacy God-Object Split #1","status":"planned_target_selected_by_p43_evidence","runtime_change_intended":false},
+    {"version":"v1_p49","name":"Active Target / Dead Code / Dependency Audit","status":"planned","runtime_change_intended":false},
+    {"version":"v1_p50","name":"Refactor Stabilization / Architecture Freeze","status":"planned","runtime_change_intended":false}
   ],
-  "next_task": "Real-device validate P44 A_customer: existing DZUDID fast path, cleared auth/UDID Zonoe callback and DZUDID writeback, deletekm reset clearing bridge state, fallback/foreground return behavior, and menu smoke. Keep P42 as rollback baseline until explicit PASS."
+  "next_task": "Start P45 Legacy UDID Web/Profile Fallback Adapter Boundary from the P44 device baseline. Move only the legacy fallback invocation/completion adapter out of ZonoeUDIDAPI.m into a narrow service unit while preserving one-in-flight guard, main-queue dispatch, WX_NongShiFu123 getUDID:, DZUDID read, plausibility validation, ZONUDIDBridgeStoreUDID continuation, logs and trigger conditions exactly."
 }
