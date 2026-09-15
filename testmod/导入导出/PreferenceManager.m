@@ -6,7 +6,6 @@
 //
 
 #import "PreferenceManager.h"
-#import "JDStatusBarNotification.h"
 
 @implementation PreferenceManager
 
