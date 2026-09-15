@@ -17,7 +17,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 8f1d6e66a19765da88634dc257053168b13a9c0c
+          ref: 4d37640bc4081dd56154ea968ce8ba79b14fbcf3
           fetch-depth: 0
       - name: Verify runtime/source identity and contracts
         run: |
@@ -58,7 +58,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 8f1d6e66a19765da88634dc257053168b13a9c0c
+          ref: 4d37640bc4081dd56154ea968ce8ba79b14fbcf3
           fetch-depth: 0
       - name: Verify exact candidate source
         run: |
