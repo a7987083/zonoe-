@@ -76,9 +76,6 @@ def main():
         "testmod/ZONServices/ZONUDIDBridge.m",
         "testmod/ZONServices/ZONAuthorizationCoordinator.h",
         "testmod/ZONServices/ZONAuthorizationCoordinator.m",
-        "testmod/ZONCore/ZONBootstrap.m",
-        "testmod/ZONCore/ZONModuleLoader.m",
-        "testmod/ZONCore/ZONFeatureDispatcher.m",
         "testmod/菜单/PubgLoad.mm",
     ]
     for path in protected:
