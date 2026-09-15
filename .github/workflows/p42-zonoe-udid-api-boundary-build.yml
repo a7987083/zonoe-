@@ -192,3 +192,5 @@ jobs:
       - name: Fail if Xcode build failed
         if: env.XCODEBUILD_STATUS != '0'
         run: exit "${XCODEBUILD_STATUS:-1}"
+
+# trigger: p42-build-after-unicode-fix
