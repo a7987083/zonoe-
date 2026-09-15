@@ -60,42 +60,25 @@ CI Run: `34959813770` / `success`
 Status: `passed`
 Result: user explicitly reported real-device validation normal before P42 development began.
 
-Required scope covered the UDID/authorization chain plus common smoke behavior: cached UDID startup, zonoe callback/nonce path, localhost bridge acceptance where exercised, legacy web/profile fallback, authorization continuation, floating menu and core-feature smoke.
-
 ## v1_p42 — Zonoe UDID API Boundary
 Source commit: `e87b683a9c868e00d13582c8145bb9368878fee3`
 CI Run: `34995566144` / `success`
-Status: `passed`
-Result: **current promoted device-verified baseline while P44 awaits device validation**. User explicitly reported P42 real-device validation normal.
-
-Product change:
-- Moved the existing `ZonoeUDIDAPI` implementation from `testmod/视图菜单/NSObject+UI.m` into `testmod/ZONServices/ZonoeUDIDAPI.m`.
-- `NSObject+UI.m` now owns only UI behavior from this boundary.
-- PBX active Sources: **76 → 77**, with `ZonoeUDIDAPI.m` as the sole addition.
-- Exact migration contract passed.
-- `ZonoeUDIDAPI.m` independent iPhoneOS compile with `-Wall -Wextra -Werror` passed.
-- A_customer and B_debug arm64 + arm64e builds passed.
-- Exported symbol set and linked load-library set are unchanged versus P41.
-
-Device result:
-- Normal startup passed.
-- Floating menu behavior passed.
-- UDID/authorization regression reported normal.
-- Return-from-Zonoe/browser behavior reported normal.
+Status: `passed; superseded by P44`
+Result: user explicitly reported P42 real-device validation normal.
 
 ## v1_p44 — Authorization Orchestration Boundary
 Source commit: `aee574d180da7cc82db54be7ab5aeaa9d072c561`
 CI head: `d6a110befbbc8c96dfffcae1f942c94b6011fe2d`
 CI Run: `35020232205` / `success`
-Status: `pending real-device validation`
-Rollback baseline: `v1_p42` / `e87b683a9c868e00d13582c8145bb9368878fee3`
+Status: `passed`
+Result: **current promoted device-verified baseline**. User explicitly reported P44 real-device validation normal.
 
 Product change:
 - Added `testmod/ZONServices/ZONAuthorizationCoordinator.h/.m`.
 - Mechanically moved authorization/reset orchestration from `testmod/Bsphp/main.m` into `ZONAuthorizationCoordinator.m`.
 - `main.m +load`, `ZONBootstrapStart` position, AppLovinSDK/UnityFramework preflight and A_customer/B_debug startup split remain in `main.m` and keep their original order.
-- `WX_NongShiFu123.mm`, `ZonoeUDIDAPI.m`, `ZONUDIDBridge.m`, Bootstrap, ModuleLoader, menu and hook implementations are protected/unchanged by the P44 contract.
-- PBX active Sources: **77 → 78**, with `ZONAuthorizationCoordinator.m` as the sole new active source.
+- `WX_NongShiFu123.mm`, `ZonoeUDIDAPI.m`, `ZONUDIDBridge.m`, Bootstrap, ModuleLoader, menu and hook implementations remained protected by contract.
+- PBX active Sources: **77 → 78**, sole new active source `ZONAuthorizationCoordinator.m`.
 
 CI evidence:
 - Mechanical extraction contract: passed.
@@ -108,16 +91,11 @@ CI evidence:
 - A_customer dylib SHA256: `f8d33f888ea5466217938af1cd338765252effb2cc4eda039a871579346e0435`.
 - B_debug artifact: `10417212790`, digest `sha256:2979768f150373160bffd1bddaf45e5d1ba1ee6d9ed1c8cdc05149485abd4a78`.
 
-Required real-device scope before promotion:
-1. Existing valid `DZUDID`: app starts normally and authorization continues without unnecessary Zonoe jump.
-2. Clear authorization/UDID state: Zonoe request opens/returns, callback is received, `DZUDID` is written/verified, then authorization continues normally.
-3. Clear-auth / `deletekm` compatibility path: next startup performs fresh UDID acquisition rather than restoring stale Zonoe bridge state.
-4. Zonoe unavailable or legacy fallback path where practical: return to foreground does not crash, dead-loop, or issue duplicate UDID requests; authorization continuation remains normal.
-5. Run the common device smoke test above for floating entry/menu and basic controls.
-
-Promotion rule:
-- Only an explicit user real-device PASS promotes P44 and changes `last_device_verified_*` from P42 to P44.
-- Until then, P42 remains the mandatory rollback/device baseline and P45 product development remains blocked.
+Device result:
+- Existing/cached authorization startup normal.
+- Cleared auth/UDID flow and authorization continuation normal.
+- Return/fallback behavior showed no reported regression.
+- Floating entry/menu smoke normal.
 
 ## P39-B — JDStatusBarNotification dependency audit
 Status: `audit only; KEEP_LIVE_DEPENDENCY`.
