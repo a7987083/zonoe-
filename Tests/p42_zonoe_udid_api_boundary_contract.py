@@ -38,7 +38,7 @@ def main():
     if VERSION.read_text().strip() != "v1_p42": fail("VERSION")
 
     changed = subprocess.check_output([
-        "git","diff","--name-only",P41,"HEAD","--","VERSION","testmod","testmod.xcodeproj"
+        "git","-c","core.quotepath=false","diff","--name-only",P41,"HEAD","--","VERSION","testmod","testmod.xcodeproj"
     ], text=True).splitlines()
     expected = {
         "VERSION",
