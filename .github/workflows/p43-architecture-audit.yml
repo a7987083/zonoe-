@@ -1,0 +1,32 @@
+name: P43 Architecture Audit
+
+on:
+  push:
+    branches:
+      - work/zonoemenu-v1-p43-architecture-audit
+      - test/zonoemenu-v1-p43-architecture-audit
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify P43 architecture audit contract
+        run: python3 Tests/p43_architecture_audit.py
+
+      - name: Verify audit-only product tree
+        run: |
+          git -c core.quotepath=false diff --exit-code \
+            e87b683a9c868e00d13582c8145bb9368878fee3 HEAD -- \
+            testmod testmod.xcodeproj
+
+      - name: Report selected P44 target
+        run: |
+          echo "P43 runtime tree: identical to P42"
+          echo "P43 active Sources: 77"
+          echo "P44 selected target: authorization orchestration/reset glue in testmod/Bsphp/main.m"
