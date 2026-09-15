@@ -1,13 +1,15 @@
 # CODEBASE REVIEW / REFACTOR PLAN
 
 ## Review baseline
-- Repository: `a7987083/zonoe-`
-- Device-verified runtime baseline: `v1_p32` / `84f8b3898bee9d95ed4034d12842879cc56280d3`.
-- Current development candidate: `v1_p33` / `0f12e4353e8859c585fe2975812964a28b7410d1`.
-- p33 CI: Run `34733013479` / success.
-- p33 device status: pending; p32 remains the promoted runtime baseline until explicit device regression passes.
+- Repository: `a7987083/zonoe-`.
+- Current promoted/device baseline: `v1_p42` / `e87b683a9c868e00d13582c8145bb9368878fee3`.
+- CI Run `34995566144`: success.
+- P42 real-device validation: passed.
+- Active PBX Sources: 77.
+- Canonical runtime/product surface: `testmod/` + `testmod.xcodeproj`.
+- **Canonical future phase order, scope and gates live in `ROADMAP.md`. This review records architecture facts and risks; it does not override ROADMAP sequencing.**
 
-## Architecture summary
+## Current architecture summary
 
 ### Startup / authorization
 ```text
@@ -15,11 +17,26 @@ dyld loads testmod dylib
   -> testmod/Bsphp/main.m +load
      -> install authorization-reset compatibility hook
      -> ZONBootstrapStart(preflight, ready)
-        -> synchronous legacy framework preflight (AppLovinSDK / UnityFramework)
+        -> synchronous framework preflight
         -> main queue variant entry
            -> B_debug: floating entry
-           -> A_customer: status -> keychain / UDID -> authorization loada
+           -> A_customer: status -> ZonoeUDIDAPI -> authorization continuation
         -> ZONLoadBundledModules()
+```
+
+### UDID / authorization identity path
+```text
+A_customer authorization startup
+  -> ZonoeUDIDAPI.h
+     -> ZonoeUDIDAPI.m
+        -> ZONUDIDBridge.h
+           -> ZONUDIDBridge.m
+              -> zonoe://udid callback + nonce
+              -> localhost bridge polling
+              -> NSUserDefaults bridge cache
+        -> legacy WX_NongShiFu123 getUDID: fallback when needed
+        -> DZUDID keychain validation/storage continuation
+  -> existing authorization continuation
 ```
 
 ### Menu / feature flow
@@ -50,99 +67,106 @@ ZONBootstrap
      -> initialize(ZONHostAPI)
 ```
 
-### UDID flow
-```text
-main.m
-  -> public ZonoeUDIDAPI functions (currently implemented in NSObject+UI.m)
-     -> ZONUDIDBridge header-owned implementation
-        -> callback URL + nonce and/or localhost result fetch
-        -> NSUserDefaults bridge cache
-     -> DZUDID keychain
-     -> authorization loada
-```
+## Closed architecture findings
 
-## Priority findings
+### Canonical-source ambiguity — corrected
+- P38 established `testmod/` + `testmod.xcodeproj` as the canonical active product surface.
+- PBX membership still decides whether code is active.
 
-### P0 — canonical-source ambiguity
-The repository contains legacy source trees at repository root and active copies below `testmod/`. Some names are duplicated while implementations have diverged substantially; for example the root `菜单/PopupMenuVC.m` is a legacy all-in-one controller while `testmod/菜单/PopupMenuVC.m` is now only the compatibility shell around `ZONMenuCoordinator`.
+### Bootstrap / ModuleLoader implementation-heavy headers — corrected
+- P33 moved active implementation ownership into explicit `.m` translation units.
 
-Risk: an engineer can make a correct-looking change to the wrong copy and produce no runtime change, or later accidentally reintroduce obsolete implementation.
+### ZONUDIDBridge implementation-heavy header — corrected
+- P41 source: `ffa6e2a7c380ca34ec1add72d488eb96c1f60bfe`.
+- `ZONUDIDBridge.h` is declaration-only; `ZONUDIDBridge.m` owns implementation.
+- CI and real-device validation passed.
 
-Plan: treat `testmod/` + `testmod.xcodeproj` as the canonical product-runtime surface, then audit PBX membership and references before archiving/removing root duplicates in an isolated no-runtime-change phase.
+### ZonoeUDIDAPI mixed with UI category — corrected
+- P42 source: `e87b683a9c868e00d13582c8145bb9368878fee3`.
+- `ZonoeUDIDAPI.m` now owns stable public UDID API state/implementation.
+- `NSObject+UI.m` no longer owns the UDID callback/fallback block.
+- CI and real-device validation passed.
 
-### P0 — implementation-heavy active headers
-Before p33, `ZONBootstrap.h` and `ZONModuleLoader.h` contained active runtime implementations as `static inline` functions. `ZONModuleLoader` was incorrectly described by old documentation as inactive, but Bootstrap directly invokes `ZONLoadBundledModules()`.
+## Remaining priority findings
 
-Risk: implicit compilation ownership, transitive-import dependency, duplicate definitions/copies, and misleading target topology.
+### P0 — authorization orchestration ownership is still cross-cutting
+Authorization startup currently spans `main.m`, `ZonoeUDIDAPI`, `ZONUDIDBridge` and legacy `WX_NongShiFu123` continuation behavior.
 
-Status: fixed in p33 by declaration headers + independent `.m` translation units, exact body-equivalence checks and PBX registration.
+Risk:
+- a structural move can alter callback order, queue ownership, one-shot delivery, startup continuation or customer/B_debug branching even without changing obvious business logic.
 
-Remaining high-risk example: `testmod/ZONServices/ZONUDIDBridge.h` is still a large active implementation header.
+Plan:
+- P43 first maps exact callers/state ownership from the P42 tree.
+- P44 may isolate only the smallest mechanically provable authorization-orchestration boundary.
+- `+load` timing and authorization continuation are protected.
 
-### P1 — UDID/auth plumbing mixed with UI category
-`testmod/视图菜单/NSObject+UI.m` owns both floating/menu UI behavior and the stable `ZonoeUDIDAPI` implementation, while the lower-level bridge itself is implemented in `ZONUDIDBridge.h`.
+### P0 — global startup side effects remain order-sensitive
+`main.m` still uses `+load`, method implementation replacement for authorization reset and synchronous startup/preflight behavior.
 
-Risk: device identity, callback lifecycle, networking/socket retry logic and UIKit presentation share compilation/lifecycle ownership. A future UI edit can accidentally affect auth/UDID behavior.
+Risk:
+- order-dependent behavior and weak test isolation.
 
-Plan: first audit and lock the UDID state machine; then mechanically move stable API implementation to `ZonoeUDIDAPI.m` and bridge implementation to `ZONUDIDBridge.m`. Require customer authorization/UDID real-device regression before promotion.
+Plan:
+- do not optimize or reorder during ownership cleanup.
+- P46 adds instrumentation/launch contract before any future timing/threading change is considered.
+
+### P1 — legacy fallback coupling
+`ZonoeUDIDAPI.m` still directly instantiates/calls `WX_NongShiFu123` for the existing web/profile UDID fallback and reads `DZUDID` after completion.
+
+Risk:
+- a modern service boundary still knows legacy implementation details.
+
+Plan:
+- P45 may add a narrow adapter only after P43/P44 evidence.
+- no rewrite of fallback semantics, trigger conditions, keychain key or callback behavior.
 
 ### P1 — repository hygiene / generated artifacts
-The tree includes generated/package binaries and user-specific Xcode state alongside source.
+Generated/package binaries, user-state and historical/reproducible material may remain tracked.
 
-Risk: repository size, indexing noise, accidental binary churn and weak source/build provenance.
+Risk:
+- repository size/indexing noise and accidental binary churn.
 
-Plan: audit consumers first, then isolate a repository-hygiene commit with `.gitignore` and removal of reproducible/generated/user-state files. Do not combine with runtime refactors.
+Plan:
+- P47 isolates cleanup from runtime refactors and proves each removal has no PBX/script/release/runtime consumer.
 
 ### P2 — large legacy files / god objects
-Large legacy surfaces such as `jianghu.*`, `WX_NongShiFu123.mm`, `DLGMemUIView.m` and `PubgLoad.mm` carry broad responsibility and are expensive to reason about.
+Large surfaces including `WX_NongShiFu123.mm`, `PubgLoad.mm`, `JiangHuHook.m`, `daochucd.m`, `YYYPicker.m`, `fuhzu.m` remain expensive to reason about.
 
-Plan: audit actual call/target ownership before splitting. Each split needs an invariant contract and its own build/device gate; do not perform opportunistic rewrites.
+Risk:
+- hidden shared state, callbacks, selectors, runtime hooks and UI lifecycle coupling.
 
-### P2 — global startup side effects
-`main.m` uses `+load`, method implementation replacement for authorization reset, synchronous framework preflight and global/static state.
+Plan:
+- P43 audits actual call/target ownership.
+- P48 selects exactly one unit and one responsibility based on evidence; no opportunistic multi-file redesign.
 
-Risk: order-sensitive startup behavior and difficult isolation/testing.
+### P2 — dead-code/dependency assumptions
+Historical review already proved that apparently stale components can remain live through PBX or indirect runtime paths.
 
-Plan: instrument first; only then consider a launch adapter. Preserve `+load` timing until measured behavior proves it can move safely.
+Plan:
+- P49 re-audits active target/dependencies after the boundary phases.
+- deletion requires PBX/import/caller/symbol evidence and a dedicated verification gate.
 
 ## Performance observations
-No runtime profiler or launch-time measurement was produced by this review, so these are risks, not measured regressions:
-- framework existence checks and `dlopen` happen synchronously during `+load` preflight;
-- bundled-module directory scan and `dlopen` currently occur on the main queue after variant entry;
-- UDID localhost polling is off-main but can span repeated socket timeout/sleep cycles;
-- duplicate sources/binaries primarily hurt checkout/index/CI rather than proven runtime performance.
+No current measured regression justifies semantic optimization. Potential costs remain:
+- synchronous framework/preflight work during startup;
+- module scan/load after variant entry;
+- localhost polling retry windows;
+- repository/generated material affecting CI/indexing rather than proven runtime performance.
 
-Recommended next performance step: add signpost/timing around preflight, authorization-ready, module scan and first menu presentation before changing thread/timing semantics.
+Rule: measurement before optimization. P46 owns startup timing/signpost evidence; structural phases must not alter queue/timing semantics.
 
-## p33 implemented refactor
-- `VERSION` -> `v1_p33`.
-- `ZONBootstrap.h` -> declarations only.
-- Added `ZONBootstrap.m` with the exact p32 implementation body.
-- `ZONModuleLoader.h` -> public declarations only.
-- Added `ZONModuleLoader.m`; public entry points are external functions and internal helpers are file-static.
-- Registered both `.m` files in the `testmod` Xcode target.
-- Added `Tests/bootstrap_moduleloader_contract.py` and permanent CI coverage.
+## Protected behavior
+Until a ROADMAP stage explicitly authorizes and proves otherwise, preserve:
+- `main.m +load` timing and Bootstrap/authorization sequencing;
+- authorization-reset compatibility behavior;
+- Zonoe callback scheme/host, nonce generation/validation, callback parsing and storage keys;
+- localhost bridge port/timeouts/retry count/delay/pending age/request throttle;
+- `zonoe://udid` preferred path and legacy web/profile fallback;
+- `DZUDID` keychain semantics;
+- floating/menu stack and active features;
+- cloud save/local files/backup-restore/clear-data/clear-auth paths;
+- module-loader directories, containment checks, ABI checks and `dlopen` behavior;
+- `JiangHuHook`, `HookClass`, `ImgTool`, fishhook/rebind runtime paths.
 
-No intended authorization, UDID, menu, dispatcher, module ABI, route, persistence, UI or module-loading semantic change.
-
-## Behavior-preservation proof
-`Tests/bootstrap_moduleloader_contract.py` compares the moved function bodies against device-verified p32 commit `84f8b3898bee9d95ed4034d12842879cc56280d3` for:
-- `ZONBootstrapStart`
-- `ZONCoreLog`
-- `ZONGetHostAPI`
-- `ZONBundledModuleDirectories`
-- `ZONPathIsInsideDirectory`
-- `ZONLoadModuleAtPath`
-- `ZONLoadBundledModules`
-
-It additionally locks call ownership and module-loader safety/ABI invariants: module directories, `.dylib` filter, symlink resolution, `RTLD_NOW | RTLD_LOCAL`, required exports, ABI rejection, duplicate-identifier rejection, host API initialization and failure `dlclose`.
-
-CI Run `34733013479` additionally proved:
-- source scope stayed isolated from protected auth/UI/Dispatcher files;
-- both new translation units compile independently under `-Wall -Wextra -Werror`;
-- required exported symbols exist;
-- Dispatcher contract, Feature Registry smoke and Module ABI smoke pass;
-- `A_customer` and `B_debug` fully compile/link/package for iOS 12, arm64 + arm64e.
-
-## Promotion rule
-P33 is `ci_verified_device_pending`. It must not supersede p32 until the p33 real-device startup/bootstrap checklist is explicitly reported as passed.
+## Next review action
+Execute P43 as defined in `ROADMAP.md`: refresh active PBX/source reachability and ownership evidence from the actual P42 tree, then choose exactly one P44 authorization-orchestration extraction target. Do not change product runtime during the audit merely to reduce file size or improve aesthetics.
