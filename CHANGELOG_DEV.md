@@ -1,5 +1,21 @@
 # CHANGELOG_DEV
 
+## 2026-09-16 — Canonical Post-P42 Refactor Plan
+- Published the complete post-P42 refactor sequence in `ROADMAP.md` so future work does not depend on chat history.
+- Defined P43 through P50 with explicit goals, scope, forbidden changes, verification gates, exit criteria and promotion rules.
+- P43: Architecture State Refresh & Remaining Ownership Audit.
+- P44: Authorization Orchestration Boundary.
+- P45: Legacy UDID Web/Profile Fallback Adapter Boundary.
+- P46: Startup Side-Effect Instrumentation & Launch Contract.
+- P47: Repository Hygiene / Generated Artifact Cleanup.
+- P48: Legacy God-Object Split #1, target selected only by P43 evidence.
+- P49: Active Target / Dead Code / Dependency Audit.
+- P50: Refactor Stabilization / Architecture Freeze.
+- Updated `PROJECT_STATE.json` with the machine-readable P42 promoted baseline and the full planned phase list.
+- Updated `HANDOFF.md` with takeover rules and the canonical-document precedence rule.
+- Refreshed `KNOWN_ISSUES.md` to close obsolete P41/P42 ownership issues and track remaining startup/auth/legacy/hygiene risks.
+- No product runtime source, PBX membership, binary, authorization/UDID behavior, UI behavior, timing or threading semantics changed by this documentation update.
+
 ## 2026-09-16 — v1_p42 Zonoe UDID API Boundary
 - Work branch: `work/zonoemenu-v1-p42-zonoe-udid-api-boundary`.
 - Product source commit: `e87b683a9c868e00d13582c8145bb9368878fee3`.
