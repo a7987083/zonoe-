@@ -3,10 +3,11 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p39b-jdstatus-audit",
-  "current_version": "v1_p39",
-  "current_phase": "v1_p39_b_jdstatusbar_dependency_audit",
-  "phase_status": "audit_complete_keep_live_dependency",
+  "current_work_branch": "work/zonoemenu-v1-p41-udidbridge-boundary",
+  "current_test_branch": "test/zonoemenu-v1-p41-udidbridge-boundary-build",
+  "current_version": "v1_p41",
+  "current_phase": "v1_p41_udidbridge_boundary",
+  "phase_status": "ci_verified_device_pending",
   "last_device_verified_code_commit": "613882da7068795533c530d45775f7ae5f79ed56",
   "last_device_verified_version": "v1_p39",
   "device_test_policy_document": "DEVICE_TEST_MATRIX.md",
@@ -23,7 +24,7 @@
     "source_commit": "0f12e4353e8859c585fe2975812964a28b7410d1",
     "ci_run_id": 34733013479,
     "ci_status": "success",
-    "device_status": "superseded_and_covered_by_p34_device_pass"
+    "device_status": "superseded_and_covered_by_later_device_pass"
   },
   "p34": {
     "branch": "work/zonoemenu-v1-p34-cleanup",
@@ -71,36 +72,6 @@
     "remaining_root_product_mirrors": [],
     "active_feature_count": 9
   },
-  "p39_audit": {
-    "planned_version": "v1_p39",
-    "branch": "work/zonoemenu-v1-p39-active-target-audit",
-    "test_branch": "test/zonoemenu-v1-p39-active-target-audit",
-    "audit_head": "fa9598578394da29e30decfaf71aacebfc2e5a3e",
-    "audit_run_id": 34845492258,
-    "audit_status": "success",
-    "artifact_id": 10347723184,
-    "artifact_digest": "sha256:2c75e6e4d7ec3fb0277a7a5f03b32f14ec2ffb30e1c3cc1a600f96974d45a5bd",
-    "active_source_count": 76,
-    "classification": {
-      "keep_protected": 25,
-      "keep_runtime_entry": 2,
-      "keep_referenced": 16,
-      "audit_vendor_group": 32,
-      "initial_low_risk_candidate": 1
-    },
-    "p39_a_first_cleanup_candidate": [
-      "testmod/category/NSString+Tools.m",
-      "testmod/category/NSString+Tools.h"
-    ],
-    "vendor_keep_units": [
-      "AFNetworking",
-      "MBProgressHUD",
-      "SCLAlertView",
-      "SSZipArchive/minizip",
-      "SVProgressHUD"
-    ],
-    "p39_b_vendor_audit": "JDStatusBarNotification as a complete 8-source unit"
-  },
   "p39": {
     "source_commit": "613882da7068795533c530d45775f7ae5f79ed56",
     "ci_fix_commit": "5364d440442474f540d90b8d52f69fabb2b1deb7",
@@ -119,41 +90,66 @@
     "b_debug_artifact_id": 10367146287,
     "b_debug_artifact_digest": "sha256:d357fec51a71632803db598d0f71309cb8cf0d12997b68f106175088d3f2329b",
     "metadata_verification": "passed; P38/P39 exported symbol sets identical and NSString(Tools) unique selectors absent from P39",
-    "first_ci_failure_root_cause": "verification-only shell bug: grep -q closed the pipeline early, strings received SIGPIPE 141 under pipefail",
-    "runtime_source_changed_by_ci_fix": false,
     "active_feature_count": 9
   },
   "p39_b_jdstatus_audit": {
     "branch": "work/zonoemenu-v1-p39b-jdstatus-audit",
     "test_branch": "test/zonoemenu-v1-p39b-jdstatus-audit",
-    "audit_script_commit": "c4c1fce90549bc587e63d6e8d99d0ef42c8700e0",
-    "ci_trigger_commit": "1f5960a1e979dfe46d996ef3e94252580fef3490",
     "ci_run_id": 34894434619,
     "ci_status": "success",
-    "artifact_id": 10368133245,
-    "artifact_digest": "sha256:5b46890e7594493ba4a2ee89e3c1b1a9e77dd66e09134d33577d49adf9ebf5ef",
     "decision": "KEEP_LIVE_DEPENDENCY",
     "objective_c_active_sources": 8,
-    "header_count": 11,
     "swift_wrapper_compiled": false,
-    "live_reference_files": [
-      "testmod/菜单/PubgLoad.mm",
-      "testmod/Bsphp/main.m",
-      "testmod/Bsphp/WX_NongShiFu123.mm"
-    ],
-    "protected_runtime_paths": [
-      "cloud-save/download status and progress",
-      "startup/UDID status",
-      "authorization/activation status"
-    ],
-    "stale_import_candidates": [
-      "testmod/导入导出/PreferenceManager.m",
-      "testmod/工具箱/Hook/JiangHuHook.m"
-    ],
-    "external_dynamic_refs": 0,
-    "internal_auto_runtime_entries": 0,
     "runtime_changed": false
   },
-  "active_target_audit_status": "complete_at_75_sources_all_remaining_vendor_groups_retained_by_live_evidence",
-  "next_task": "P40: audit canonical testmod source layout, naming and include/dependency hygiene starting from the P39 device-verified baseline; remove only proven-stale imports or structural clutter and preserve all 75 active sources unless new evidence proves otherwise"
+  "p40": {
+    "branch": "work/zonoemenu-v1-p40-review-8",
+    "test_branch": "test/zonoemenu-v1-p40-zero-behavior-refactor",
+    "source_commit": "09aa9f27fe0b0491ac17f92ed9ed20d496bf8f33",
+    "ci_head": "8eeb3212f9236bea9eeb6be2f8ca88d71c2a0e5b",
+    "ci_run_id": 34915266733,
+    "ci_status": "success",
+    "device_status": "not_promoted_separately",
+    "active_source_count": 75,
+    "changes": [
+      "localized ZONFeatureDispatcher implementation imports from .h to .m",
+      "removed uncompiled JDStatusBar NotificationPresenter.swift wrapper",
+      "removed stale JDStatus import from PreferenceManager.m"
+    ],
+    "p39_binary_equivalence": "byte_identical for A_customer and B_debug",
+    "a_customer_artifact_id": 10375937019,
+    "b_debug_artifact_id": 10375874104
+  },
+  "p41": {
+    "branch": "work/zonoemenu-v1-p41-udidbridge-boundary",
+    "test_branch": "test/zonoemenu-v1-p41-udidbridge-boundary-build",
+    "source_commit": "ffa6e2a7c380ca34ec1add72d488eb96c1f60bfe",
+    "ci_trigger_commit": "925cd9b11364278e1927f300cc46e13dace2a239",
+    "ci_run_id": 34959813770,
+    "ci_status": "success",
+    "device_status": "pending",
+    "active_source_count": 76,
+    "source_count_change": "75 -> 76 because ZONUDIDBridge implementation became an explicit translation unit; no previous active source was removed",
+    "added_active_source": "testmod/ZONServices/ZONUDIDBridge.m",
+    "header_status": "declaration_only",
+    "implementation_migration": "mechanical body-equivalence from P40 implementation-heavy header",
+    "export_surface": "identical_to_p40; ZONUDIDBridge symbols hidden from dylib exports",
+    "load_libraries": "identical_to_p40",
+    "independent_compile": "passed with -Wall -Wextra -Werror against iPhoneOS SDK",
+    "a_customer_artifact_id": 10392947122,
+    "a_customer_artifact_digest": "sha256:8b5ed743e7d9c958fa695fce7cdb4f0cf48984dc94a2162b539a75698392a336",
+    "b_debug_artifact_id": 10393041635,
+    "b_debug_artifact_digest": "sha256:4d9123c5df4554e71c4d33ba11ddcec15fb3adcc3c5470daaf21505ed6f4afd0",
+    "protected_behavior_changes": false,
+    "real_device_gate": [
+      "customer startup",
+      "existing cached UDID",
+      "zonoe callback + nonce path",
+      "localhost bridge result path",
+      "web/profile fallback when zonoe openURL fails",
+      "authorization continuation after UDID acquisition"
+    ]
+  },
+  "active_target_audit_status": "P39 promoted baseline has 75 sources; P41 candidate has 76 only because bridge implementation ownership is now explicit",
+  "next_task": "real-device validate P41 A_customer UDID/authorization paths; keep P39 as fallback baseline until pass is explicitly reported; only after promotion consider moving ZonoeUDIDAPI implementation out of NSObject+UI.m"
 }
