@@ -50,23 +50,38 @@ Status: `passed`
 
 ## v1_p39 — Active Target Slimming
 Source commit: `613882da7068795533c530d45775f7ae5f79ed56`
-CI verification fix commit: `5364d440442474f540d90b8d52f69fabb2b1deb7` (CI/test only; runtime unchanged)
+CI verification fix commit: `5364d440442474f540d90b8d52f69fabb2b1deb7`
 Fixed verification Run: `34891852090` / `success`
 Status: `passed`
-Result: current device-verified baseline. User explicitly reported p39 real-device validation passed.
+
+## v1_p41 — UDID Bridge Boundary
+Source commit: `ffa6e2a7c380ca34ec1add72d488eb96c1f60bfe`
+CI Run: `34959813770` / `success`
+Status: `passed`
+Result: user explicitly reported real-device validation normal before P42 development began.
+
+Required scope covered the UDID/authorization chain plus common smoke behavior: cached UDID startup, zonoe callback/nonce path, localhost bridge acceptance where exercised, legacy web/profile fallback, authorization continuation, floating menu and core-feature smoke.
+
+## v1_p42 — Zonoe UDID API Boundary
+Source commit: `e87b683a9c868e00d13582c8145bb9368878fee3`
+CI Run: `34995566144` / `success`
+Status: `passed`
+Result: **current device-verified baseline**. User explicitly reported P42 real-device validation normal.
 
 Product change:
-- Removed unused `NSString+Tools.m/.h` and corresponding PBX references only.
-- PBX active Sources: **76 → 75**.
-- P38/P39 exported symbol sets are identical.
-- Four unique `NSString(Tools)` selectors are intentionally absent in P39.
-- Nine active product features remain intact.
+- Moved the existing `ZonoeUDIDAPI` implementation from `testmod/视图菜单/NSObject+UI.m` into `testmod/ZONServices/ZonoeUDIDAPI.m`.
+- `NSObject+UI.m` now owns only UI behavior from this boundary.
+- PBX active Sources: **76 → 77**, with `ZonoeUDIDAPI.m` as the sole addition.
+- Exact migration contract passed.
+- `ZonoeUDIDAPI.m` independent iPhoneOS compile with `-Wall -Wextra -Werror` passed.
+- A_customer and B_debug arm64 + arm64e builds passed.
+- Exported symbol set and linked load-library set are unchanged versus P41.
 
 Device result:
-- App/floating entry/menu behavior reported normal.
-- User reported P39 test normal after CI verification succeeded.
-- P39 promoted as current real-device baseline.
+- Normal startup passed.
+- Floating menu behavior passed.
+- UDID/authorization regression reported normal.
+- Return-from-Zonoe/browser behavior reported normal.
 
 ## P39-B — JDStatusBarNotification dependency audit
-Status: `audit only; no deletion approved yet`
-If a removal candidate is proven, define a separate device checklist after exact dependency reachability is known. Until then, P39 remains the fallback baseline.
+Status: `audit only; KEEP_LIVE_DEPENDENCY`.
