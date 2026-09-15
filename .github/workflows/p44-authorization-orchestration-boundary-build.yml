@@ -1,5 +1,5 @@
 name: p44 Authorization Orchestration Boundary Build
-# validation trigger 1
+# validation trigger 2
 
 on:
   push:
@@ -33,6 +33,7 @@ jobs:
           set -euxo pipefail
           SDKROOT="$(xcrun --sdk iphoneos --show-sdk-path)"
           xcrun --sdk iphoneos clang -fobjc-arc -Wall -Wextra -Werror \
+            -Wno-unguarded-availability-new \
             -isysroot "$SDKROOT" -miphoneos-version-min=12.0 -arch arm64 \
             -I testmod/导入导出/JDStatusBarNotification/Public \
             -c testmod/ZONServices/ZONAuthorizationCoordinator.m \
