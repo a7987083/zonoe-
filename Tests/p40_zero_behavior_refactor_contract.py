@@ -82,11 +82,15 @@ expected_product_diff = {
     "testmod/导入导出/JDStatusBarNotification/Public/NotificationPresenter.swift",
     "testmod/导入导出/PreferenceManager.m",
 }
+# core.quotePath=false keeps UTF-8 paths literal so the contract compares repository
+# paths rather than Git's C-style quoted octal representation of non-ASCII names.
 actual_product_diff = set(
     filter(
         None,
         out(
             "git",
+            "-c",
+            "core.quotePath=false",
             "diff",
             "--name-only",
             P39,
