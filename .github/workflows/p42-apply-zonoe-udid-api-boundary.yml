@@ -1,0 +1,50 @@
+name: p42 Apply Zonoe UDID API Boundary
+
+on:
+  push:
+    branches:
+      - work/zonoemenu-v1-p42-zonoe-udid-api-boundary
+    paths:
+      - '.github/workflows/p42-apply-zonoe-udid-api-boundary.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/zonoemenu-v1-p42-zonoe-udid-api-boundary
+          fetch-depth: 0
+      - name: Apply guarded P42 source migration
+        run: |
+          set -euxo pipefail
+          python3 scripts/p42_apply_zonoe_udid_api_boundary.py
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          pbx=Path('testmod.xcodeproj/project.pbxproj').read_text(errors='replace')
+          names=[]
+          for name in re.findall(r'/\* ([^*/\n]+?) in Sources \*/', pbx):
+              if name not in names: names.append(name)
+          assert len(names)==77, len(names)
+          assert names.count('ZONUDIDBridge.m')==1
+          assert names.count('ZonoeUDIDAPI.m')==1
+          assert Path('VERSION').read_text().strip()=='v1_p42'
+          ui=Path('testmod/视图菜单/NSObject+UI.m').read_text()
+          api=Path('testmod/ZONServices/ZonoeUDIDAPI.m').read_text()
+          assert 'ZonoeCurrentUDID(' not in ui
+          assert 'ZonoeCurrentUDID(' in api
+          assert 'WX_NongShiFu123' in api
+          PY
+      - name: Commit generated P42 product source
+        run: |
+          set -euxo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add VERSION testmod/视图菜单/NSObject+UI.m testmod/ZONServices/ZonoeUDIDAPI.m testmod.xcodeproj/project.pbxproj
+          git diff --cached --check
+          git commit -m 'refactor: move Zonoe UDID API implementation into service unit'
+          git push origin HEAD:work/zonoemenu-v1-p42-zonoe-udid-api-boundary
