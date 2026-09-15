@@ -11,7 +11,6 @@ VERSION = ROOT / "VERSION"
 START = "#pragma mark - Authorization reset compatibility\n"
 END = "@implementation NSObject (mian)\n"
 COORD_IMPORT = '#import "../ZONServices/ZONAuthorizationCoordinator.h"\n'
-
 FILE_REF_ID = "7ECBD4422F3A614B00C56F1C"
 BUILD_FILE_ID = "7ECBD4432F3A614B00C56F1C"
 
@@ -48,7 +47,6 @@ def main():
         if marker not in block:
             fail(f"missing expected marker: {marker}")
 
-    # Only the two functions called by main.m lose `static`; function bodies remain unchanged.
     migrated = block.replace(
         "static void ZONInstallAuthorizationResetExtension(void)",
         "void ZONInstallAuthorizationResetExtension(void)",
@@ -78,7 +76,6 @@ def main():
         encoding="utf-8",
     )
 
-    # Keep +load and all startup/preflight code untouched; only remove the moved block and add one import.
     new_main = text[:start] + text[end:]
     anchor = '#import "../ZONServices/ZonoeUDIDAPI.h"\n'
     if anchor not in new_main:
@@ -91,38 +88,37 @@ def main():
         fail("PBX already contains coordinator")
 
     file_ref_anchor = '7ECBD4402F3A614B00C56F1C /* ZonoeUDIDAPI.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ZonoeUDIDAPI.m; sourceTree = "<group>"; };'
-    if file_ref_anchor not in pbx:
-        fail("PBX ZonoeUDIDAPI.m fileRef anchor missing")
+    build_anchor = '7ECBD4412F3A614B00C56F1C /* ZonoeUDIDAPI.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4402F3A614B00C56F1C /* ZonoeUDIDAPI.m */; };'
+    group_item = "\t\t\t\t7ECBD4402F3A614B00C56F1C /* ZonoeUDIDAPI.m */,"
+    source_item = "\t\t\t\t7ECBD4412F3A614B00C56F1C /* ZonoeUDIDAPI.m in Sources */,"
+
+    for marker, name in [
+        (file_ref_anchor, "fileRef"),
+        (build_anchor, "build"),
+        (group_item, "group"),
+        (source_item, "sources"),
+    ]:
+        if marker not in pbx:
+            fail(f"PBX ZonoeUDIDAPI.m {name} anchor missing")
+
     pbx = pbx.replace(
         file_ref_anchor,
         file_ref_anchor + f'\n\t\t{FILE_REF_ID} /* ZONAuthorizationCoordinator.m */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ZONAuthorizationCoordinator.m; sourceTree = "<group>"; }};',
         1,
     )
-
-    build_anchor = '7ECBD4412F3A614B00C56F1C /* ZonoeUDIDAPI.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4402F3A614B00C56F1C /* ZonoeUDIDAPI.m */; };'
-    if build_anchor not in pbx:
-        fail("PBX ZonoeUDIDAPI.m build anchor missing")
     pbx = pbx.replace(
         build_anchor,
         build_anchor + f'\n\t\t{BUILD_FILE_ID} /* ZONAuthorizationCoordinator.m in Sources */ = {{isa = PBXBuildFile; fileRef = {FILE_REF_ID} /* ZONAuthorizationCoordinator.m */; }};',
         1,
     )
-
-    group_item = "\t\t\t\t7ECBD4402F3A614B00C56F1C /* ZonoeUDIDAPI.m */,"
-    if group_item not in pbx:
-        fail("PBX service group item anchor missing")
     pbx = pbx.replace(
         group_item,
-        group_item + f"\n\t\t\t\t{FILE_REF_ID} /* ZONAuthorizationCoordinator.m */,") ,
+        group_item + f"\n\t\t\t\t{FILE_REF_ID} /* ZONAuthorizationCoordinator.m */,
         1,
     )
-
-    source_item = "\t\t\t\t7ECBD4412F3A614B00C56F1C /* ZonoeUDIDAPI.m in Sources */,"
-    if source_item not in pbx:
-        fail("PBX Sources item anchor missing")
     pbx = pbx.replace(
         source_item,
-        source_item + f"\n\t\t\t\t{BUILD_FILE_ID} /* ZONAuthorizationCoordinator.m in Sources */,") ,
+        source_item + f"\n\t\t\t\t{BUILD_FILE_ID} /* ZONAuthorizationCoordinator.m in Sources */,
         1,
     )
     PBX.write_text(pbx, encoding="utf-8")
