@@ -48,7 +48,7 @@ def main():
         if marker not in block:
             fail(f"missing expected marker: {marker}")
 
-    # Only the two functions called by main.m lose `static`; all function bodies remain byte-for-byte.
+    # Only the two functions called by main.m lose `static`; function bodies remain unchanged.
     migrated = block.replace(
         "static void ZONInstallAuthorizationResetExtension(void)",
         "void ZONInstallAuthorizationResetExtension(void)",
@@ -59,12 +59,24 @@ def main():
         1,
     )
 
-    header = '''#import <Foundation/Foundation.h>\n\nNS_ASSUME_NONNULL_BEGIN\n\nvoid ZONInstallAuthorizationResetExtension(void) __attribute__((visibility("hidden")));\nvoid ZONStartCustomerAuthorization(void) __attribute__((visibility("hidden")));\n\nNS_ASSUME_NONNULL_END\n'''
+    HEADER.write_text(
+        '#import <Foundation/Foundation.h>\n\n'
+        'NS_ASSUME_NONNULL_BEGIN\n\n'
+        'void ZONInstallAuthorizationResetExtension(void) __attribute__((visibility("hidden")));\n'
+        'void ZONStartCustomerAuthorization(void) __attribute__((visibility("hidden")));\n\n'
+        'NS_ASSUME_NONNULL_END\n',
+        encoding="utf-8",
+    )
 
-    impl = '''#import "ZONAuthorizationCoordinator.h"\n#import "../Bsphp/WX_NongShiFu123.h"\n#import "../category/getKeychain.h"\n#import "../导入导出/JDStatusBarNotification/Public/JDStatusBarNotification.h"\n#import "ZonoeUDIDAPI.h"\n#import <objc/runtime.h>\n\n''' + migrated
-
-    HEADER.write_text(header, encoding="utf-8")
-    IMPL.write_text(impl, encoding="utf-8")
+    IMPL.write_text(
+        '#import "ZONAuthorizationCoordinator.h"\n'
+        '#import "../Bsphp/WX_NongShiFu123.h"\n'
+        '#import "../category/getKeychain.h"\n'
+        '#import "../导入导出/JDStatusBarNotification/Public/JDStatusBarNotification.h"\n'
+        '#import "ZonoeUDIDAPI.h"\n'
+        '#import <objc/runtime.h>\n\n' + migrated,
+        encoding="utf-8",
+    )
 
     # Keep +load and all startup/preflight code untouched; only remove the moved block and add one import.
     new_main = text[:start] + text[end:]
@@ -78,8 +90,7 @@ def main():
     if "ZONAuthorizationCoordinator.m in Sources" in pbx or "ZONAuthorizationCoordinator.m */" in pbx:
         fail("PBX already contains coordinator")
 
-    # Register fileRef next to the existing P42 service unit if available.
-    file_ref_anchor = "7ECBD4402F3A614B00C56F1C /* ZonoeUDIDAPI.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ZonoeUDIDAPI.m; sourceTree = \"<group>\"; };"
+    file_ref_anchor = '7ECBD4402F3A614B00C56F1C /* ZonoeUDIDAPI.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ZonoeUDIDAPI.m; sourceTree = "<group>"; };'
     if file_ref_anchor not in pbx:
         fail("PBX ZonoeUDIDAPI.m fileRef anchor missing")
     pbx = pbx.replace(
@@ -88,7 +99,7 @@ def main():
         1,
     )
 
-    build_anchor = "7ECBD4412F3A614B00C56F1C /* ZonoeUDIDAPI.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4402F3A614B00C56F1C /* ZonoeUDIDAPI.m */; };"
+    build_anchor = '7ECBD4412F3A614B00C56F1C /* ZonoeUDIDAPI.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4402F3A614B00C56F1C /* ZonoeUDIDAPI.m */; };'
     if build_anchor not in pbx:
         fail("PBX ZonoeUDIDAPI.m build anchor missing")
     pbx = pbx.replace(
@@ -97,20 +108,23 @@ def main():
         1,
     )
 
-    group_anchor = "7ECBD4402F3A614B00C56F1C /* ZonoeUDIDAPI.m */,")
-    PBX.write_text(pbx, encoding="utf-8")
-
-    # The exact group/source list insertion is handled by generic anchors below.
-    pbx = PBX.read_text(encoding="utf-8")
     group_item = "\t\t\t\t7ECBD4402F3A614B00C56F1C /* ZonoeUDIDAPI.m */,"
     if group_item not in pbx:
         fail("PBX service group item anchor missing")
-    pbx = pbx.replace(group_item, group_item + f"\n\t\t\t\t{FILE_REF_ID} /* ZONAuthorizationCoordinator.m */,", 1)
+    pbx = pbx.replace(
+        group_item,
+        group_item + f"\n\t\t\t\t{FILE_REF_ID} /* ZONAuthorizationCoordinator.m */,") ,
+        1,
+    )
 
     source_item = "\t\t\t\t7ECBD4412F3A614B00C56F1C /* ZonoeUDIDAPI.m in Sources */,"
     if source_item not in pbx:
         fail("PBX Sources item anchor missing")
-    pbx = pbx.replace(source_item, source_item + f"\n\t\t\t\t{BUILD_FILE_ID} /* ZONAuthorizationCoordinator.m in Sources */,", 1)
+    pbx = pbx.replace(
+        source_item,
+        source_item + f"\n\t\t\t\t{BUILD_FILE_ID} /* ZONAuthorizationCoordinator.m in Sources */,") ,
+        1,
+    )
     PBX.write_text(pbx, encoding="utf-8")
 
     VERSION.write_text("v1_p44\n", encoding="utf-8")
