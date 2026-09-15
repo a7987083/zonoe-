@@ -3,14 +3,14 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p42-zonoe-udid-api-boundary",
-  "current_test_branch": "test/zonoemenu-v1-p42-zonoe-udid-api-boundary-build",
+  "current_work_branch": "work/zonoemenu-v1-p43-architecture-audit",
+  "current_test_branch": "test/zonoemenu-v1-p43-architecture-audit",
   "current_version": "v1_p42",
-  "current_phase": "v1_p42_zonoe_udid_api_boundary",
-  "phase_status": "device_verified_promoted",
+  "current_phase": "v1_p43_architecture_state_refresh_and_ownership_audit",
+  "phase_status": "audit_completed_runtime_unchanged",
   "last_device_verified_code_commit": "e87b683a9c868e00d13582c8145bb9368878fee3",
   "last_device_verified_version": "v1_p42",
-  "last_ci_run_id": 34995566144,
+  "last_ci_run_id": 35001000784,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
@@ -18,6 +18,7 @@
   "canonical_product_surface": ["testmod/", "testmod.xcodeproj"],
   "canonical_refactor_plan": "ROADMAP.md",
   "architecture_review_document": "REFACTOR_REVIEW.md",
+  "p43_audit_document": "P43_ARCHITECTURE_AUDIT.md",
   "device_test_policy_document": "DEVICE_TEST_MATRIX.md",
   "handoff_document": "HANDOFF.md",
   "known_issues_document": "KNOWN_ISSUES.md",
@@ -74,6 +75,23 @@
     "export_surface": "identical_to_p41",
     "load_libraries": "identical_to_p41"
   },
+  "p43": {
+    "branch": "work/zonoemenu-v1-p43-architecture-audit",
+    "test_branch": "test/zonoemenu-v1-p43-architecture-audit",
+    "audit_head": "aed6b72e15a5d7096b42b2dbf4f8fa467c963150",
+    "ci_run_id": 35001000784,
+    "ci_status": "success",
+    "runtime_changed": false,
+    "device_test_required": false,
+    "active_source_count": 77,
+    "runtime_tree_vs_p42": "identical",
+    "selected_p44_target": "authorization orchestration/reset glue in testmod/Bsphp/main.m",
+    "selected_p44_boundary": [
+      "testmod/ZONServices/ZONAuthorizationCoordinator.h",
+      "testmod/ZONServices/ZONAuthorizationCoordinator.m"
+    ],
+    "protected_legacy_implementation": "testmod/Bsphp/WX_NongShiFu123.mm"
+  },
   "refactor_rules": {
     "one_architectural_concern_per_version": true,
     "ci_does_not_equal_device_promotion": true,
@@ -86,14 +104,14 @@
     {
       "version": "v1_p43",
       "name": "Architecture State Refresh & Remaining Ownership Audit",
-      "status": "next_planned",
+      "status": "completed_runtime_unchanged",
       "runtime_change_intended": false,
       "goal": "Refresh P42 ownership/call-chain/PBX facts and choose exactly one safe P44 extraction target."
     },
     {
       "version": "v1_p44",
       "name": "Authorization Orchestration Boundary",
-      "status": "planned_conditional_on_p43",
+      "status": "next_planned",
       "runtime_change_intended": false,
       "goal": "Isolate authorization orchestration while preserving +load timing, callback ordering, variant behavior and authorization continuation."
     },
@@ -140,5 +158,5 @@
       "goal": "Consolidate verified boundaries, inventories, contracts and documentation, then stop structural churn without a concrete need."
     }
   ],
-  "next_task": "Start P43 from P42. Refresh REFACTOR_REVIEW.md from the actual P42 tree and PBX membership, produce ownership/reachability evidence, and select one P44 authorization-orchestration extraction target before any product source change."
+  "next_task": "Start P44 Authorization Orchestration Boundary from the P42 device baseline. Mechanically extract the authorization/reset helper block from testmod/Bsphp/main.m into ZONAuthorizationCoordinator.h/.m; preserve +load and Bootstrap timing, WX_NongShiFu123 implementation, DZUDID semantics, callback ordering, queues and loada continuation exactly."
 }
