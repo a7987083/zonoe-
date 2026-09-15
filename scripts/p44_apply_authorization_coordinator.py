@@ -97,12 +97,11 @@ def main():
     old_file_id = file_line.strip().split()[0]
     build_line = only_line(lines, lambda x: "/* ZonoeUDIDAPI.m in Sources */ = {isa = PBXBuildFile;" in x, "buildRef")
     old_build_id = build_line.strip().split()[0]
-    group_line = only_line(lines, lambda x: x.strip() == f"{old_file_id} /* ZonoeUDIDAPI.m */,", "group item")
     source_line = only_line(lines, lambda x: x.strip() == f"{old_build_id} /* ZonoeUDIDAPI.m in Sources */,", "source item")
 
     pbx = pbx.replace(
         file_line,
-        file_line + f'\n\t\t{FILE_REF_ID} /* ZONAuthorizationCoordinator.m */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ZONAuthorizationCoordinator.m; sourceTree = "<group>"; }};',
+        file_line + f'\n\t\t{FILE_REF_ID} /* ZONAuthorizationCoordinator.m */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZONAuthorizationCoordinator.m"; sourceTree = SOURCE_ROOT; }};',
         1,
     )
     pbx = pbx.replace(
@@ -110,10 +109,12 @@ def main():
         build_line + f'\n\t\t{BUILD_FILE_ID} /* ZONAuthorizationCoordinator.m in Sources */ = {{isa = PBXBuildFile; fileRef = {FILE_REF_ID} /* ZONAuthorizationCoordinator.m */; }};',
         1,
     )
-    group_indent = group_line[:len(group_line) - len(group_line.lstrip())]
     source_indent = source_line[:len(source_line) - len(source_line.lstrip())]
-    pbx = pbx.replace(group_line, group_line + f'\n{group_indent}{FILE_REF_ID} /* ZONAuthorizationCoordinator.m */,', 1)
-    pbx = pbx.replace(source_line, source_line + f'\n{source_indent}{BUILD_FILE_ID} /* ZONAuthorizationCoordinator.m in Sources */,', 1)
+    pbx = pbx.replace(
+        source_line,
+        source_line + f'\n{source_indent}{BUILD_FILE_ID} /* ZONAuthorizationCoordinator.m in Sources */,',
+        1,
+    )
 
     PBX.write_text(pbx, encoding="utf-8")
     VERSION.write_text("v1_p44\n", encoding="utf-8")
