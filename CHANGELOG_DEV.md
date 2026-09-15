@@ -1,5 +1,19 @@
 # CHANGELOG_DEV
 
+## 2026-09-16 — P43 Architecture State Refresh & Remaining Ownership Audit
+- Created work branch `work/zonoemenu-v1-p43-architecture-audit` and test branch `test/zonoemenu-v1-p43-architecture-audit` from the post-P42 documentation head.
+- Added `P43_ARCHITECTURE_AUDIT.md` with current P42 startup/auth/legacy ownership findings.
+- Added `Tests/p43_architecture_audit.py` and `.github/workflows/p43-architecture-audit.yml`.
+- P43 audit CI Run `35001000784`: **success**.
+- Contract proves canonical product runtime/PBX (`testmod/` + `testmod.xcodeproj`) is unchanged from P42 product commit `e87b683a9c868e00d13582c8145bb9368878fee3`.
+- Active PBX Sources remain exactly **77**.
+- Verified `main.m`, `WX_NongShiFu123.mm`, `PubgLoad.mm`, `JiangHuHook.m`, `daochucd.m`, `YYYPicker.m`, `fuhzu.m`, `ZONUDIDBridge.m` and `ZonoeUDIDAPI.m` remain active target units.
+- Selected P44 target: the authorization orchestration/reset helper block currently owned by `testmod/Bsphp/main.m`.
+- Planned P44 boundary: `testmod/ZONServices/ZONAuthorizationCoordinator.h/.m`.
+- Explicitly excluded direct rewrite/split of `WX_NongShiFu123.mm` from P44 because it remains a broad high-risk legacy authorization/network/UI implementation.
+- No runtime source, PBX, binary, authorization behavior, UDID behavior, UI, persistence, timing, threading, endpoint or protocol semantics changed in P43.
+- Real-device validation is not required for P43 because the runtime tree is unchanged; P42 remains the promoted device/rollback baseline.
+
 ## 2026-09-16 — Canonical Post-P42 Refactor Plan
 - Published the complete post-P42 refactor sequence in `ROADMAP.md` so future work does not depend on chat history.
 - Defined P43 through P50 with explicit goals, scope, forbidden changes, verification gates, exit criteria and promotion rules.
