@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import re
 
 ROOT = Path(__file__).resolve().parents[1]
 MAIN = ROOT / "testmod/Bsphp/main.m"
@@ -20,11 +19,15 @@ def fail(msg):
     raise SystemExit(f"p44-apply: {msg}")
 
 
-def one_match(pattern, text, name):
-    matches = list(re.finditer(pattern, text, re.M))
-    if len(matches) != 1:
-        fail(f"expected one {name} anchor, found {len(matches)}")
-    return matches[0]
+def only_line(lines, predicate, name):
+    found = [line for line in lines if predicate(line)]
+    if len(found) != 1:
+        print("p44-apply candidates for", name)
+        for line in lines:
+            if "ZonoeUDIDAPI.m" in line:
+                print(repr(line))
+        fail(f"expected one {name}, found {len(found)}")
+    return found[0]
 
 
 def main():
@@ -88,34 +91,29 @@ def main():
     pbx = PBX.read_text(encoding="utf-8")
     if "ZONAuthorizationCoordinator.m" in pbx:
         fail("PBX already contains coordinator")
+    lines = pbx.splitlines()
 
-    file_ref = one_match(r'^\s*([A-F0-9]{24}) /\* ZonoeUDIDAPI\.m \*/ = \{isa = PBXFileReference;.*path = ZonoeUDIDAPI\.m;.*\};$', pbx, "fileRef")
-    old_file_id = file_ref.group(1)
-    file_line = file_ref.group(0)
+    file_line = only_line(lines, lambda x: "/* ZonoeUDIDAPI.m */ = {isa = PBXFileReference;" in x, "fileRef")
+    old_file_id = file_line.strip().split()[0]
+    build_line = only_line(lines, lambda x: "/* ZonoeUDIDAPI.m in Sources */ = {isa = PBXBuildFile;" in x, "buildRef")
+    old_build_id = build_line.strip().split()[0]
+    group_line = only_line(lines, lambda x: x.strip() == f"{old_file_id} /* ZonoeUDIDAPI.m */,", "group item")
+    source_line = only_line(lines, lambda x: x.strip() == f"{old_build_id} /* ZonoeUDIDAPI.m in Sources */,", "source item")
+
     pbx = pbx.replace(
         file_line,
         file_line + f'\n\t\t{FILE_REF_ID} /* ZONAuthorizationCoordinator.m */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ZONAuthorizationCoordinator.m; sourceTree = "<group>"; }};',
         1,
     )
-
-    build_ref = one_match(rf'^\s*([A-F0-9]{{24}}) /\* ZonoeUDIDAPI\.m in Sources \*/ = \{{isa = PBXBuildFile; fileRef = {old_file_id} /\* ZonoeUDIDAPI\.m \*/; \}};$', pbx, "buildRef")
-    old_build_id = build_ref.group(1)
-    build_line = build_ref.group(0)
     pbx = pbx.replace(
         build_line,
         build_line + f'\n\t\t{BUILD_FILE_ID} /* ZONAuthorizationCoordinator.m in Sources */ = {{isa = PBXBuildFile; fileRef = {FILE_REF_ID} /* ZONAuthorizationCoordinator.m */; }};',
         1,
     )
-
-    group_match = one_match(rf'^\s*{old_file_id} /\* ZonoeUDIDAPI\.m \*/,$', pbx, "group item")
-    group_line = group_match.group(0)
-    indent = group_line[:len(group_line) - len(group_line.lstrip())]
-    pbx = pbx.replace(group_line, group_line + f'\n{indent}{FILE_REF_ID} /* ZONAuthorizationCoordinator.m */,', 1)
-
-    source_match = one_match(rf'^\s*{old_build_id} /\* ZonoeUDIDAPI\.m in Sources \*/,$', pbx, "source item")
-    source_line = source_match.group(0)
-    indent = source_line[:len(source_line) - len(source_line.lstrip())]
-    pbx = pbx.replace(source_line, source_line + f'\n{indent}{BUILD_FILE_ID} /* ZONAuthorizationCoordinator.m in Sources */,', 1)
+    group_indent = group_line[:len(group_line) - len(group_line.lstrip())]
+    source_indent = source_line[:len(source_line) - len(source_line.lstrip())]
+    pbx = pbx.replace(group_line, group_line + f'\n{group_indent}{FILE_REF_ID} /* ZONAuthorizationCoordinator.m */,', 1)
+    pbx = pbx.replace(source_line, source_line + f'\n{source_indent}{BUILD_FILE_ID} /* ZONAuthorizationCoordinator.m in Sources */,', 1)
 
     PBX.write_text(pbx, encoding="utf-8")
     VERSION.write_text("v1_p44\n", encoding="utf-8")
