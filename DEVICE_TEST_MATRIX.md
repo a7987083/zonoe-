@@ -97,5 +97,42 @@ Device result:
 - Return/fallback behavior showed no reported regression.
 - Floating entry/menu smoke normal.
 
+## v1_p45 — Legacy UDID Web/Profile Fallback Adapter Boundary
+Source commit: `841da61c51e8c7fef81c15a56ecdb92c31b9f96d`
+CI head: `ae57fdd5f61a0901f559083a95d0f984a6f2da84`
+CI Run: `35036655523` / `success`
+Status: `pending real-device validation`
+Rollback baseline: `v1_p44` / `aee574d180da7cc82db54be7ab5aeaa9d072c561`
+
+Product change:
+- Added `testmod/ZONServices/ZONLegacyUDIDFallbackAdapter.h/.m`.
+- Mechanically moved the legacy web/profile fallback block out of `ZonoeUDIDAPI.m`.
+- The adapter still owns the same `gZonoeLegacyWebFallbackInFlight` guard, main-queue dispatch, `WX_NongShiFu123 getUDID:` invocation, `DZUDID` read, plausibility validation, logs and `ZONUDIDBridgeStoreUDID` continuation.
+- `ZonoeUDIDAPI.m` retains only the two existing unavailable-handler trigger points, now calling the adapter boundary.
+- `WX_NongShiFu123.mm`, `ZONUDIDBridge.*`, `ZONAuthorizationCoordinator.*`, `main.m` and `PubgLoad.mm` are protected/unchanged by contract.
+- PBX active Sources: **78 → 79**, sole new active source `ZONLegacyUDIDFallbackAdapter.m`.
+
+CI evidence:
+- Mechanical extraction contract: passed.
+- Adapter independent iPhoneOS compile: passed.
+- A_customer and B_debug builds: passed.
+- Architectures: `arm64 + arm64e`.
+- P45/P44 exported symbol sets: identical.
+- P45/P44 linked load-library sets: identical.
+- A_customer artifact: `10424070482`, digest `sha256:5b81d2d673b970518c84a35e271e1a2f74ffcbee907d319d39a9f18bdf96747a`.
+- A_customer dylib SHA256: `15c7d06db2afd08ab1de014d00a0992e76666031b6b4219efb2d82792a19dc56`.
+- B_debug artifact: `10423676606`, digest `sha256:c5b2ca0a36a518a92a660f9ffde4a94b22054e5eec0af331d5cb8cdd79012477`.
+
+Required real-device scope before promotion:
+1. Normal Zonoe UDID path: startup/request/callback/authorization remains normal and does not invoke fallback unnecessarily.
+2. Legacy fallback path where practical: when Zonoe is unavailable, fallback opens once, returns to foreground normally, and does not duplicate the fallback request.
+3. Fallback completion: valid `DZUDID` is read and bridged, then authorization continuation completes normally.
+4. Invalid/empty fallback result: no crash or authorization loop; later retry behavior remains unchanged from P44.
+5. Run the common floating-entry/menu smoke test above.
+
+Promotion rule:
+- Only an explicit user real-device PASS promotes P45 and changes `last_device_verified_*` from P44 to P45.
+- Until then, P44 remains the mandatory rollback/device baseline and P46 product development remains blocked.
+
 ## P39-B — JDStatusBarNotification dependency audit
 Status: `audit only; KEEP_LIVE_DEPENDENCY`.
