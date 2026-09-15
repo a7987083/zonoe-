@@ -2,96 +2,82 @@
 
 ## Current baseline
 - Promoted/device baseline: `v1_p42` / `e87b683a9c868e00d13582c8145bb9368878fee3`.
-- P42 CI Run `34995566144`: success.
-- P42 real-device validation: passed.
-- Active PBX Sources: 77.
-- P43 audit Run `35001000784`: success; product runtime/PBX unchanged from P42.
-- Canonical future plan: `ROADMAP.md`.
+- P42 CI Run `34995566144`: success; real-device validation passed.
+- Current candidate: `v1_p44` / `aee574d180da7cc82db54be7ab5aeaa9d072c561`.
+- P44 CI Run `35020232205`: success.
+- P44 device status: **pending**.
+- Active PBX Sources: 78 on P44 candidate.
+- Canonical plan: `ROADMAP.md`.
 
 ## Open risks
 
-### P44 authorization orchestration extraction is startup-sensitive
-- P43 selected the static authorization/reset helper block in `testmod/Bsphp/main.m` as the P44 extraction target.
-- Planned boundary: `testmod/ZONServices/ZONAuthorizationCoordinator.h/.m`.
-- Risk: a mechanically small source move can still alter startup semantics if call order, queue behavior, callback ownership, object lifetime or method-replacement timing changes.
-- Required invariants: reset-extension install remains before `ZONBootstrapStart`; original `deletekm` IMP call-through remains before extended UDID clearing; `DZUDID` and the four Zonoe bridge-default keys keep exact semantics; existing-keychain and bridge-cache fast paths remain unchanged; fresh acquisition remains status -> callback registration -> request; `[auth loada]` continuation remains unchanged.
-- Mitigation: P44 must use an exact/mechanical extraction contract, protected-source identity checks, full A/B builds, export/load-library comparison and A_customer real-device validation before promotion.
-- Rollback: P42 remains the device baseline until P44 passes its device gate.
+### P44 real-device authorization/lifecycle validation pending
+- The structural extraction itself is CI-verified: mechanical equivalence contract passed, coordinator independent compile passed, A_customer/B_debug arm64+arm64e builds passed, and exported symbols/load libraries are identical to P42.
+- Remaining risk is runtime lifecycle behavior that static/build checks cannot prove: Objective-C block/object lifetime across the new translation unit, `+load` startup lifecycle, method-replacement timing, foreground return after Zonoe/browser, and legacy fallback continuation.
+- Required device checks: existing `DZUDID` fast path; clear-auth/fresh Zonoe callback and `DZUDID` writeback; deletekm reset clearing bridge state; fallback/foreground return without duplicate loop/crash; menu smoke.
+- Rollback: P42 remains promoted until explicit P44 real-device PASS.
 
 ### Global startup side effects remain order-sensitive
-- `testmod/Bsphp/main.m` still uses `+load`, authorization-reset compatibility replacement and synchronous framework preflight/bootstrap behavior.
-- P44 is not authorized to change those semantics; it may only move ownership of the selected helper block.
-- Risk: startup order remains difficult to isolate and easy to break with innocent-looking cleanup.
-- Plan: P46 instruments/measures launch ordering before any later startup simplification is considered.
+- `testmod/Bsphp/main.m` still uses `+load`, framework preflight and Bootstrap startup behavior.
+- P44 deliberately preserved those semantics and only moved authorization/reset helper ownership.
+- Risk: later cleanup can still break ordering even when source looks simpler.
+- Plan: P46 instruments/measures launch ordering before any startup simplification.
 
 ### `WX_NongShiFu123.mm` remains a high-risk legacy god object
-- P43 confirmed it remains active and owns broad responsibilities including `loada`, authorization state, network/server flows, UDID/IDFV branches, activation UI and validation/status behavior.
-- Risk: direct cleanup or splitting can alter device activation, callback/UI timing or network behavior.
-- Rule: do not rewrite or split it in P44. P44 treats it strictly as an implementation dependency.
+- It remains active and owns broad responsibilities including `loada`, authorization state, network/server flows, UDID/IDFV branches, activation UI and validation/status behavior.
+- P44 treats it only as an implementation dependency; it was not rewritten or split.
 - Later split work must be evidence-driven and isolated.
 
 ### Legacy web/profile fallback still depends directly on WX_NongShiFu123
 - `ZonoeUDIDAPI.m` still invokes the existing `WX_NongShiFu123 getUDID:` fallback and reads `DZUDID` after completion.
-- This is intentional and currently device-verified.
-- Risk: legacy implementation details leak into the modern service boundary.
-- Plan: P45 creates only a narrow adapter after P44 device pass; no fallback behavior rewrite.
+- This is intentional and remains the target for P45 only after P44 device promotion.
+- Risk: legacy class details remain coupled to the modern UDID service boundary.
 
 ### Other large active legacy surfaces remain coupled
-- P43 confirmed `PubgLoad.mm`, `JiangHuHook.m`, `daochucd.m`, `YYYPicker.m` and `fuhzu.m` remain active/candidate legacy units.
-- `PubgLoad.mm` mixes file/download/config/UI responsibilities.
-- `JiangHuHook.m` is a protected runtime-hook surface affecting menu lifecycle, StoreKit and ad/video behavior through CaptainHook/ImgTool state.
-- Risk: opportunistic splitting can alter state ownership, callbacks, UI timing or runtime hooks.
-- Plan: defer god-object splitting to P48 and choose exactly one responsibility based on live call/state evidence.
+- `PubgLoad.mm`, `JiangHuHook.m`, `daochucd.m`, `YYYPicker.m` and `fuhzu.m` remain active/candidate legacy units.
+- `JiangHuHook.m` is a protected runtime-hook surface; opportunistic splitting can alter StoreKit/ad/video/menu behavior.
+- Plan: defer a single evidence-driven split to P48.
 
 ### Repository hygiene
 - Generated/package binaries, user-specific Xcode state and historical/reproducible material may remain tracked.
-- Risk: repository/index/CI noise and accidental binary churn.
-- Plan: P47 isolated cleanup only after proving no PBX/script/release/runtime consumer depends on each removal candidate.
+- Plan: P47 isolated cleanup only after proving no PBX/script/release/runtime consumer depends on each candidate.
 
 ### Dead-code assumptions can be wrong
-- Historical audits already showed that apparently stale dependencies may still be live, including JDStatusBarNotification paths.
-- Rule: file-name duplication or search absence is not deletion proof. PBX membership, import/caller reachability and runtime/symbol evidence are required.
-- Plan: P49 re-audits active target/dependencies after the boundary work.
+- Historical audits already showed apparently stale dependencies can still be live, including JDStatusBarNotification paths.
+- Rule: PBX membership, import/caller reachability and runtime/symbol evidence are required before deletion.
+- Plan: P49 re-audits after boundary work.
 
 ### Performance risks are not yet measured regressions
-- Synchronous preflight, module loading and startup side effects may affect launch performance, but no current measured regression justifies changing timing/threading.
-- Plan: P46 measurement first. Do not optimize queues, retry delays, `dlopen` timing or `+load` based on assumption.
+- Synchronous preflight/module/startup effects may affect launch performance, but no measured regression currently justifies timing/threading changes.
+- Plan: P46 measurement first.
 
 ## Closed / corrected
 
+### P44 authorization orchestration ownership mixed into main.m — STRUCTURALLY CLOSED / DEVICE GATE OPEN
+- Product source `aee574d180da7cc82db54be7ab5aeaa9d072c561` adds `ZONAuthorizationCoordinator.h/.m` and mechanically removes the helper implementation block from `main.m`.
+- CI Run `35020232205`: success.
+- Active Sources 77 → 78; sole new source `ZONAuthorizationCoordinator.m`.
+- A/B builds, independent compile, mechanical contract, P42 ABI and load-library comparisons all passed.
+- This item is structurally closed, but promotion remains blocked by the separate P44 device-validation issue above.
+
 ### P43 remaining-ownership uncertainty — CLOSED
-- P43 work branch: `work/zonoemenu-v1-p43-architecture-audit`.
-- Audit head: `aed6b72e15a5d7096b42b2dbf4f8fa467c963150`.
-- CI Run `35001000784`: success.
-- Runtime/PBX tree versus P42 is unchanged and active Sources remain 77.
-- P44 target is now explicitly fixed as the authorization orchestration/reset helper block in `main.m`; `WX_NongShiFu123.mm` is excluded from direct P44 rewriting.
-- Evidence is recorded in `P43_ARCHITECTURE_AUDIT.md`.
+- P43 audit head `aed6b72e15a5d7096b42b2dbf4f8fa467c963150`; CI `35001000784` success.
+- Runtime/PBX versus P42 unchanged; P44 target was explicitly selected from audit evidence.
 
 ### P41 real-device validation pending — CLOSED
-- P41 source `ffa6e2a7c380ca34ec1add72d488eb96c1f60bfe`, CI Run `34959813770`.
-- User explicitly reported real-device validation normal.
-- P41 was later superseded by device-verified P42.
+- P41 CI passed and user explicitly reported device validation normal; later superseded by P42.
 
 ### ZonoeUDIDAPI ownership mixed with UI — CLOSED
-- Closed by P42 source `e87b683a9c868e00d13582c8145bb9368878fee3`.
-- `ZonoeUDIDAPI` implementation now lives in `testmod/ZONServices/ZonoeUDIDAPI.m`.
-- `NSObject+UI.m` no longer owns UDID callback/fallback state.
-- P42 CI and real-device validation passed.
+- Closed by P42 source `e87b683a9c868e00d13582c8145bb9368878fee3`; P42 CI/device passed.
 
 ### ZONUDIDBridge implementation-heavy header — CLOSED
-- Closed by P41.
-- `ZONUDIDBridge.h` is declaration-only; implementation lives in `ZONUDIDBridge.m`.
-- P41 contract/build/device validation passed.
+- Closed by P41; bridge declaration/implementation ownership is explicit and device-verified through later baselines.
 
 ### Canonical product-source ambiguity — CORRECTED
-- P38 established `testmod/` + `testmod.xcodeproj` as canonical active product surface.
-- New work must still verify PBX membership rather than relying on filenames alone.
+- `testmod/` + `testmod.xcodeproj` are canonical; PBX membership remains authoritative.
 
-### ModuleLoader inactive-path assumption — CORRECTED
-- P33 made Bootstrap/ModuleLoader ownership explicit through `.m` translation units and permanent contract coverage.
-
-### Dispatcher/Registry earlier validation risks — CLOSED
-- Covered by their own CI/device gates and superseded by later device-verified baselines through P42.
+### ModuleLoader / Dispatcher / Registry earlier validation risks — CLOSED
+- Covered by permanent contracts/CI and superseded by later device-verified baselines.
 
 ## Tracking rule
-When a planned ROADMAP risk becomes fixed, move it to `Closed / corrected` only after the corresponding CI gate and, when required, real-device gate pass. Do not mark an issue closed merely because source code was edited.
+Move an open risk to fully closed only after its required CI and, where applicable, real-device gate pass. Source edits or CI success alone do not equal runtime promotion.
