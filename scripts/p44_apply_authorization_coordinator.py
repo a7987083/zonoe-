@@ -113,12 +113,12 @@ def main():
     )
     pbx = pbx.replace(
         group_item,
-        group_item + f"\n\t\t\t\t{FILE_REF_ID} /* ZONAuthorizationCoordinator.m */,
+        group_item + f"\n\t\t\t\t{FILE_REF_ID} /* ZONAuthorizationCoordinator.m */,",
         1,
     )
     pbx = pbx.replace(
         source_item,
-        source_item + f"\n\t\t\t\t{BUILD_FILE_ID} /* ZONAuthorizationCoordinator.m in Sources */,
+        source_item + f"\n\t\t\t\t{BUILD_FILE_ID} /* ZONAuthorizationCoordinator.m in Sources */,",
         1,
     )
     PBX.write_text(pbx, encoding="utf-8")
