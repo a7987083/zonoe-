@@ -1,0 +1,41 @@
+name: P45 Apply Legacy UDID Fallback Adapter
+
+on:
+  push:
+    branches:
+      - work/zonoemenu-v1-p45-legacy-udid-fallback-adapter
+    paths:
+      - scripts/p45_apply_legacy_udid_fallback_adapter.py
+      - .github/workflows/p45-apply-legacy-udid-fallback-adapter.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/zonoemenu-v1-p45-legacy-udid-fallback-adapter
+          fetch-depth: 0
+      - name: Apply P45 migration
+        run: python3 scripts/p45_apply_legacy_udid_fallback_adapter.py
+      - name: Verify product diff scope
+        run: |
+          set -euxo pipefail
+          git diff --check
+          git status --short
+          test "$(tr -d '[:space:]' < VERSION)" = 'v1_p45'
+          grep -F 'ZONStartLegacyWebUDIDFallback' testmod/ZONServices/ZONLegacyUDIDFallbackAdapter.m
+          ! grep -F 'gZonoeLegacyWebFallbackInFlight' testmod/ZONServices/ZonoeUDIDAPI.m
+      - name: Commit generated P45 source
+        run: |
+          set -euxo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add VERSION testmod.xcodeproj/project.pbxproj testmod/ZONServices/ZonoeUDIDAPI.m testmod/ZONServices/ZONLegacyUDIDFallbackAdapter.h testmod/ZONServices/ZONLegacyUDIDFallbackAdapter.m
+          git diff --cached --quiet && exit 0
+          git commit -m 'refactor: isolate legacy UDID fallback adapter'
+          git push origin HEAD:work/zonoemenu-v1-p45-legacy-udid-fallback-adapter
