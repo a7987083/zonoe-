@@ -3,14 +3,16 @@
 ## Repository / current baseline
 - Repository: `a7987083/zonoe-`.
 - Canonical runtime/product surface: `testmod/` + `testmod.xcodeproj`.
-- Current work branch: `work/zonoemenu-v1-p42-zonoe-udid-api-boundary`.
-- Current test branch: `test/zonoemenu-v1-p42-zonoe-udid-api-boundary-build`.
-- Current promoted version: `v1_p42`.
+- Current promoted/device version: `v1_p42`.
 - Promoted/device baseline source: `e87b683a9c868e00d13582c8145bb9368878fee3`.
-- CI Run `34995566144`: success.
-- Real-device validation: explicitly reported normal by user.
+- P42 CI Run `34995566144`: success.
+- P42 real-device validation: explicitly reported normal by user.
 - Active PBX Sources: 77.
 - Architectures: arm64 + arm64e.
+- Current audit work branch: `work/zonoemenu-v1-p43-architecture-audit`.
+- Current audit test branch: `test/zonoemenu-v1-p43-architecture-audit`.
+- P43 audit head: `aed6b72e15a5d7096b42b2dbf4f8fa467c963150`.
+- P43 CI Run `35001000784`: success.
 - **Canonical future refactor sequence is defined in `ROADMAP.md`. If chat history conflicts with repository docs, use `ROADMAP.md` + `PROJECT_STATE.json` as the source of truth.**
 
 ## P41 — UDID Bridge Boundary
@@ -39,61 +41,83 @@
 - B_debug artifact: `10406554164`.
 - B_debug artifact digest: `sha256:ef422950b514da765c7da3504f8ab961b9415c65d63158dbac2fdf8a15884d06`.
 
+## P43 — Architecture State Refresh & Remaining Ownership Audit
+- Work branch: `work/zonoemenu-v1-p43-architecture-audit`.
+- Test branch: `test/zonoemenu-v1-p43-architecture-audit`.
+- Audit head: `aed6b72e15a5d7096b42b2dbf4f8fa467c963150`.
+- CI Run `35001000784`: **success**.
+- P43 is audit-only. `testmod/` + `testmod.xcodeproj` are tree-identical to P42 product source.
+- Active Sources remain exactly **77**.
+- No real-device test is required for P43 because the product runtime is unchanged.
+- Detailed audit: `P43_ARCHITECTURE_AUDIT.md`.
+
+### P43 ownership result
+`testmod/Bsphp/main.m` currently mixes startup hosting with a coherent authorization/reset helper block. P43 selected that helper block as the safest P44 extraction target.
+
+P44 selected functions/state:
+- `gZONOriginalDeleteKM`;
+- `ZONClearStoredUDIDState`;
+- `ZONDeleteKMAndUDID`;
+- `ZONInstallAuthorizationResetExtension`;
+- `ZONShowCustomerStatus`;
+- `ZONContinueCustomerAuthorization`;
+- `ZONStartCustomerAuthorization`.
+
+Planned P44 boundary:
+- `testmod/ZONServices/ZONAuthorizationCoordinator.h`;
+- `testmod/ZONServices/ZONAuthorizationCoordinator.m`.
+
+`main.m` must remain the `+load` startup host. P44 must not rewrite `WX_NongShiFu123.mm`.
+
 ## Runtime call chain that must remain stable
 ```text
 dyld
   -> testmod/Bsphp/main.m +load
-     -> authorization reset compatibility hook
+     -> authorization reset compatibility install
      -> ZONBootstrapStart(...)
+        -> framework preflight: AppLovinSDK / UnityFramework
         -> A_customer authorization startup
-           -> ZonoeUDIDAPI.h
+           -> authorization coordinator (planned P44 ownership only; same behavior)
+              -> DZUDID keychain fast path
               -> ZonoeUDIDAPI.m
-                 -> ZONUDIDBridge.h
-                    -> ZONUDIDBridge.m
-                       -> zonoe://udid callback + nonce
-                       -> localhost bridge polling
-                       -> NSUserDefaults bridge cache
+                 -> ZONUDIDBridge.m
+                    -> zonoe://udid callback + nonce
+                    -> localhost bridge polling
+                    -> NSUserDefaults bridge cache
                  -> legacy WX_NongShiFu123 web/profile fallback when needed
-           -> authorization continuation
+              -> WX_NongShiFu123 loada continuation
         -> B_debug floating entry
         -> ZONLoadBundledModules()
 ```
 
-## Non-negotiable protected behavior
-Unless a ROADMAP phase explicitly authorizes and separately proves otherwise, preserve:
-- `main.m +load` timing and startup order.
-- authorization-reset compatibility hook behavior.
-- A_customer/B_debug variant split.
-- Zonoe scheme/host/nonce/callback parsing/storage semantics.
-- localhost bridge port/timeouts/retry/delay/pending-age/request-throttle values.
-- `DZUDID` keychain semantics.
-- legacy `WX_NongShiFu123` fallback trigger and continuation behavior.
-- floating/menu UI and active features.
-- cloud save/local files/backup-restore/clear-data/clear-auth paths.
-- module-loader directories, containment checks, ABI rules and `dlopen` behavior.
-- `JiangHuHook`, `HookClass`, `ImgTool`, fishhook/rebind runtime behavior.
+## P44 non-negotiable invariants
+- `ZONInstallAuthorizationResetExtension` remains before `ZONBootstrapStart`.
+- Original `deletekm` IMP is invoked before extended UDID state clearing.
+- Reset still removes `DZUDID` and exactly these defaults: `zonoe.udid.bridge.value`, `zonoe.udid.bridge.scheme`, `zonoe.udid.bridge.requestTimestamp`, `zonoe.udid.bridge.requestNonce`.
+- Existing valid `DZUDID` still goes directly to `[auth loada]`.
+- Bridge cache still uses `ZonoeCurrentUDID()`.
+- Fresh acquisition order remains status -> `ZonoeSetUDIDCallback` -> `ZonoeRequestUDIDIfNeeded`.
+- Callback validation, keychain write/read verification and `[auth loada]` continuation remain unchanged.
+- Queue behavior, status text/durations, persistence keys, endpoints, payloads and retry/timing semantics remain unchanged.
+- `main.m +load`, framework preflight and A_customer/B_debug branch timing remain unchanged.
+- `WX_NongShiFu123.mm`, `ZONUDIDBridge.m`, `ZonoeUDIDAPI.m`, menu, hooks and unrelated product runtime remain protected.
 
-## Refactor sequence after P42
-The full goals/scope/forbidden changes/gates are in `ROADMAP.md`. Sequence:
-1. **P43** — Architecture State Refresh & Remaining Ownership Audit.
-2. **P44** — Authorization Orchestration Boundary.
-3. **P45** — Legacy UDID Web/Profile Fallback Adapter Boundary.
-4. **P46** — Startup Side-Effect Instrumentation & Launch Contract.
-5. **P47** — Repository Hygiene / Generated Artifact Cleanup.
-6. **P48** — Legacy God-Object Split #1, target selected only by P43 evidence.
-7. **P49** — Active Target / Dead Code / Dependency Audit.
-8. **P50** — Refactor Stabilization / Architecture Freeze.
+## Legacy risk map
+- `WX_NongShiFu123.mm`: active, high-risk god object spanning authorization, network, UDID/IDFV, activation UI and status flows. Do not split in P44.
+- `PubgLoad.mm`: active broad file/download/config/UI surface. Not P44.
+- `JiangHuHook.m`: active CaptainHook runtime surface affecting menu lifecycle, StoreKit and ad/video behavior. Protected.
+- `daochucd.m`, `YYYPicker.m`, `fuhzu.m`: active legacy candidates; defer any split/removal to later evidence-driven stages.
 
 ## Takeover rules
-- Do not invent the next phase from memory; read `ROADMAP.md` first.
-- Read `PROJECT_STATE.json` for current branch/commit/CI/device status before modifying source.
-- Read `KNOWN_ISSUES.md` before selecting a risky boundary.
-- Read `CHANGELOG_DEV.md` to distinguish planned work from completed work.
-- Verify PBX membership before assuming a same-named source file is active.
+- Read `ROADMAP.md` first; it is the phase/source-of-truth document.
+- Read `PROJECT_STATE.json` for current branch/CI/device state.
+- Read `P43_ARCHITECTURE_AUDIT.md` before implementing P44.
+- Read `KNOWN_ISSUES.md` before touching startup/auth/legacy code.
+- Verify PBX membership before assuming a same-named file is active.
 - One architectural concern per version; no opportunistic cleanup.
-- A source move should be mechanical first, cleanup later.
-- CI success alone never promotes a candidate.
-- Keep P42 as rollback/device baseline until a later candidate explicitly passes real-device validation.
+- Source moves are mechanical first, cleanup later.
+- CI success alone never promotes a runtime candidate.
+- Keep P42 as rollback/device baseline until P44 explicitly passes real-device validation.
 
 ## Immediate Next Task
-Start P43. Refresh `REFACTOR_REVIEW.md` from the actual P42 tree and active PBX membership, audit remaining ownership/reachability, and select exactly one P44 authorization-orchestration extraction target. P43 is audit-first; do not modify product runtime merely to make the architecture look cleaner.
+Start **P44 — Authorization Orchestration Boundary**. Mechanically move only the selected static authorization/reset helper block from `testmod/Bsphp/main.m` into `testmod/ZONServices/ZONAuthorizationCoordinator.h/.m`, register exactly one new active `.m` source (expected 77 → 78), preserve `main.m +load` and all protected behavior, add extraction/protected-source contracts, build A_customer and B_debug for arm64 + arm64e, compare exports/load libraries against P42, then request A_customer real-device validation.
