@@ -1,0 +1,39 @@
+name: P44 Apply Authorization Coordinator
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - work/zonoemenu-v1-p44-authorization-orchestration-boundary
+    paths:
+      - scripts/p44_apply_authorization_coordinator.py
+      - .github/workflows/p44-apply-authorization-coordinator.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/zonoemenu-v1-p44-authorization-orchestration-boundary
+          fetch-depth: 0
+      - name: Apply P44 migration
+        run: python3 scripts/p44_apply_authorization_coordinator.py
+      - name: Verify product diff scope
+        run: |
+          git -c core.quotepath=false diff -- testmod/Bsphp/main.m testmod/ZONServices/ZONAuthorizationCoordinator.h testmod/ZONServices/ZONAuthorizationCoordinator.m testmod.xcodeproj/project.pbxproj VERSION
+          test "$(cat VERSION)" = "v1_p44"
+      - name: Commit generated P44 source
+        run: |
+          if git diff --quiet && git status --porcelain | grep -q '^'; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add VERSION testmod/Bsphp/main.m testmod/ZONServices/ZONAuthorizationCoordinator.h testmod/ZONServices/ZONAuthorizationCoordinator.m testmod.xcodeproj/project.pbxproj
+          git commit -m "refactor: extract authorization orchestration coordinator"
+          git push origin HEAD:work/zonoemenu-v1-p44-authorization-orchestration-boundary
