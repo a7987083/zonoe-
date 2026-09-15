@@ -28,8 +28,8 @@ jobs:
           test "$(cat VERSION)" = "v1_p44"
       - name: Commit generated P44 source
         run: |
-          if git diff --quiet && git status --porcelain | grep -q '^'; then
-            echo "No changes to commit"
+          if [ -z "$(git status --porcelain -- VERSION testmod/Bsphp/main.m testmod/ZONServices/ZONAuthorizationCoordinator.h testmod/ZONServices/ZONAuthorizationCoordinator.m testmod.xcodeproj/project.pbxproj)" ]; then
+            echo "No product changes to commit"
             exit 0
           fi
           git config user.name github-actions[bot]
