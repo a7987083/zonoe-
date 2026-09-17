@@ -15,32 +15,32 @@ Every runtime-affecting development version must define its required real-device
 - `v1_p42`: passed; superseded.
 - `v1_p44`: passed; superseded by later promoted baselines.
 - P45/P46/P47 intermediate CI-verified behavior is covered by later real-device-passed baselines.
+- `v1_p48_1`: passed; superseded by P49.
 
-## v1_p48_1 — StoreKit Residual Cleanup
-Source: `71eddfa0600112aa56a8bef45013d73f4673794a`  
-CI head: `efabe050194b87518c1442b4fe078ed7283db846`  
-CI Run: `35180342515` / **success**  
+## v1_p49 — Active Target / Dead Code / Dependency Audit
+Source: `4cebe094ad7a4dd554e8266af34dcf3abe04902a`  
+CI head: `592aa64cd35307e358716d3f1517a75a41e986f3`  
+CI Run: `35195152912` / **success**  
 Status: **passed / current promoted device baseline**.
 
 CI evidence:
-- `YYYPicker` StoreKit/App Store residual surface removed.
-- Restore-save public behavior retained.
-- Active PBX Sources: **78**.
-- PBX unchanged versus P48.
+- `Network.framework` proven to have zero source consumers before removal.
+- `Network.framework` removed from PBX.
+- Active PBX Sources remain **78**.
 - A_customer and B_debug builds passed for `arm64 + arm64e`.
-- Exported symbol surface is identical to P48.
-- Load-library delta versus P48 is exactly the removal of `StoreKit.framework`; all other libraries are unchanged.
-- A_customer artifact `10480455519`; digest `sha256:beb2e1dd9b0b6ad913b5dc00911a890fd33293f9f33204196266474909b47dfe`.
-- A_customer dylib SHA256 `36bbe4c32882d98b274fb7cfb40bf62f727502b4867765bee1f747c0e5fbe90d`.
-- B_debug artifact `10480331340`; digest `sha256:fb21abd689eee241ae9331e24558756a342fd50a766fd8d4740bab5fde615e8e`.
+- Exported symbol surface is identical to P48.1.
+- Load-library delta versus P48.1 is exactly the removal of `Network.framework`; all other libraries are unchanged.
+- A_customer artifact `10485344383`; digest `sha256:33ae7fda25128e9d0bd6a167a82aedaf3a1272a8ceb13111bef23c58ff270c5d`.
+- A_customer dylib SHA256 `4d19c0368b8c599ff59635aa0e36a75a2ba67e797d14e91a48fef3b494e66bac`.
+- B_debug artifact `10485622521`; digest `sha256:9156b57fd832461274f3c8d1625c8b8213d556c9862b32d1d461294783a23e27`.
 
 Real-device result:
-- User explicitly reported P48.1 normal on device.
-- Restore-save path and menu smoke showed no reported regression.
-- P48.1 is therefore promoted and becomes the rollback baseline.
+- User explicitly reported P49 normal on device.
+- Startup, authorization, menu, storage operations and networking showed no reported regression.
+- P49 is therefore promoted and becomes the rollback baseline.
 
 ## Promotion rule
-P48.1 has satisfied both CI and real-device gates. Any P49 deletion or dependency removal must be validated against this baseline.
+P49 has satisfied both CI and real-device gates. P50 must start from this promoted baseline.
 
 ## P39-B — JDStatusBarNotification dependency audit
 Status: audit only; KEEP_LIVE_DEPENDENCY.
