@@ -7,7 +7,7 @@
   "current_test_branch": null,
   "current_version": "v1_p50",
   "current_phase": "v1_p50_refactor_stabilization_architecture_freeze",
-  "phase_status": "in_progress_runtime_frozen_to_p49",
+  "phase_status": "completed_runtime_frozen_to_p49",
   "last_device_verified_code_commit": "4cebe094ad7a4dd554e8266af34dcf3abe04902a",
   "last_device_verified_version": "v1_p49",
   "last_ci_run_id": 35195152912,
@@ -18,6 +18,7 @@
   "canonical_product_surface": ["testmod/", "testmod.xcodeproj"],
   "canonical_refactor_plan": "ROADMAP.md",
   "architecture_freeze_document": "P50_ARCHITECTURE_FREEZE.md",
+  "final_status_matrix": "P50_FINAL_STATUS_MATRIX.md",
   "device_test_policy_document": "DEVICE_TEST_MATRIX.md",
   "handoff_document": "HANDOFF.md",
   "known_issues_document": "KNOWN_ISSUES.md",
@@ -26,11 +27,6 @@
     "version": "v1_p49",
     "source_commit": "4cebe094ad7a4dd554e8266af34dcf3abe04902a",
     "device_status": "passed"
-  },
-  "p48_1": {
-    "source_commit": "71eddfa0600112aa56a8bef45013d73f4673794a",
-    "ci_run_id": 35180342515,
-    "device_status": "passed_superseded"
   },
   "p49": {
     "branch": "work/zonoemenu-v1-p49-active-target-audit",
@@ -43,8 +39,6 @@
     "device_reported_by_user": true,
     "active_source_count": 78,
     "network_framework_removed": true,
-    "export_surface": "identical_to_p48_1",
-    "load_libraries": "identical_to_p48_1_except_network_framework_removed",
     "a_customer_artifact_id": 10485344383,
     "a_customer_artifact_digest": "sha256:33ae7fda25128e9d0bd6a167a82aedaf3a1272a8ceb13111bef23c58ff270c5d",
     "a_customer_dylib_sha256": "4d19c0368b8c599ff59635aa0e36a75a2ba67e797d14e91a48fef3b494e66bac",
@@ -55,22 +49,25 @@
     "branch": "work/zonoemenu-v1-p50-architecture-freeze",
     "runtime_baseline_commit": "4cebe094ad7a4dd554e8266af34dcf3abe04902a",
     "runtime_change_intended": false,
-    "status": "in_progress",
+    "runtime_drift": false,
+    "status": "completed",
     "freeze_contract": "P50_ARCHITECTURE_FREEZE.md",
-    "contract_test": "Tests/p50_architecture_freeze_contract.py"
+    "final_status_matrix": "P50_FINAL_STATUS_MATRIX.md",
+    "contract_test": "Tests/p50_architecture_freeze_contract.py",
+    "ci_workflow": ".github/workflows/p50-architecture-freeze.yml"
   },
   "refactor_rules": {
     "one_architectural_concern_per_version": true,
     "ci_does_not_equal_device_promotion": true,
     "no_runtime_drift_during_p50": true,
-    "no_timing_threading_protocol_changes_during_structural_cleanup": true,
     "pbx_membership_defines_active_product_code": true,
-    "delete_only_after_reachability_proof": true
+    "delete_only_after_reachability_proof": true,
+    "ui_must_use_registry_dispatcher": true,
+    "no_automatic_post_p50_structural_refactor": true
   },
   "planned_refactor_phases": [
-    {"version":"v1_p48_1","name":"StoreKit Residual Cleanup","status":"completed_device_passed","runtime_change_intended":false},
     {"version":"v1_p49","name":"Active Target / Dead Code / Dependency Audit","status":"completed_device_passed","runtime_change_intended":false},
-    {"version":"v1_p50","name":"Refactor Stabilization / Architecture Freeze","status":"in_progress","runtime_change_intended":false}
+    {"version":"v1_p50","name":"Refactor Stabilization / Architecture Freeze","status":"completed","runtime_change_intended":false}
   ],
-  "next_task": "Complete P50 freeze CI and synchronize ROADMAP/HANDOFF/CHANGELOG. Product runtime must remain identical to promoted P49."
+  "next_task": "No automatic P51 refactor. Open the next stage only for a concrete product requirement. A menu redesign should be UI-only and preserve Registry/Dispatcher plus all frozen runtime boundaries."
 }
