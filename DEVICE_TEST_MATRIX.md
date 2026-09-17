@@ -16,31 +16,40 @@ Every runtime-affecting development version must define its required real-device
 - `v1_p44`: passed; superseded by later promoted baselines.
 - P45/P46/P47 intermediate CI-verified behavior is covered by later real-device-passed baselines.
 - `v1_p48_1`: passed; superseded by P49.
+- `v1_p49`: passed; superseded by P51-B.
 
-## v1_p49 — Active Target / Dead Code / Dependency Audit
-Source: `4cebe094ad7a4dd554e8266af34dcf3abe04902a`  
-CI head: `592aa64cd35307e358716d3f1517a75a41e986f3`  
-CI Run: `35195152912` / **success**  
+## v1_p51b — Backup Refactor
+Source: `e8df5c72c8698eda76971ac44b44d611c6e8cbbb`  
+CI head: `cd70800e364cf9ceb8c5c3b91df3b9d8c1a377a6`  
+CI Run: `35255286856` / **success**  
 Status: **passed / current promoted device baseline**.
 
 CI evidence:
-- `Network.framework` proven to have zero source consumers before removal.
-- `Network.framework` removed from PBX.
+- Runtime scope limited to `testmod/导入导出/daochucd.m` relative to P51-A.
 - Active PBX Sources remain **78**.
+- Backup behavior contract passed.
+- Documents/Library backup paths preserve the existing 50 MiB confirmation semantics.
+- Staging layout remains `tmp/zonoe/{Documents,Library}`.
+- Cleanup paths remain `Library/HeimdallrBU`, `Library/Caches`, `Library/UnityCache`, and `Documents/zonoe` inside the staging tree.
+- Archive destination remains `Documents/zonoe/<name>.zip` and the existing share flow is preserved.
 - A_customer and B_debug builds passed for `arm64 + arm64e`.
-- Exported symbol surface is identical to P48.1.
-- Load-library delta versus P48.1 is exactly the removal of `Network.framework`; all other libraries are unchanged.
-- A_customer artifact `10485344383`; digest `sha256:33ae7fda25128e9d0bd6a167a82aedaf3a1272a8ceb13111bef23c58ff270c5d`.
-- A_customer dylib SHA256 `4d19c0368b8c599ff59635aa0e36a75a2ba67e797d14e91a48fef3b494e66bac`.
-- B_debug artifact `10485622521`; digest `sha256:9156b57fd832461274f3c8d1625c8b8213d556c9862b32d1d461294783a23e27`.
+- Exported symbols and linked libraries match the P51-A candidate.
+- A_customer artifact `10511909626`; digest `sha256:a8786d238573418cdd69e51578df0b8e5a8fab791dbac61e462dd81c55c2c5b6`.
+- A_customer dylib SHA256 `770b2cc1088fdcaa9f7fcfb5abb08d17e257f38f992ecee4b8b3eed4149f1053`.
+- B_debug artifact `10511974476`; digest `sha256:d456aa02a8bc5cfc23f02c349949af468261e370b1c0b37af156b4fe965fb0be`.
 
 Real-device result:
-- User explicitly reported P49 normal on device.
-- Startup, authorization, menu, storage operations and networking showed no reported regression.
-- P49 is therefore promoted and becomes the rollback baseline.
+- User explicitly reported **all P51-B device tests normal**.
+- Small backup, named backup, Documents+Library archive structure, >50 MiB skip/backup paths, cleanup behavior, repeated backup, cancellation paths, and quick regression checks showed no reported regression.
+- P51-B is therefore promoted and becomes the current rollback/device baseline.
+
+## Previous v1_p49 baseline
+Source: `4cebe094ad7a4dd554e8266af34dcf3abe04902a`  
+CI Run: `35195152912` / success.  
+Status: passed / superseded by P51-B.
 
 ## Promotion rule
-P49 has satisfied both CI and real-device gates. P50 must start from this promoted baseline.
+P51-B has satisfied both CI and real-device gates. P51-C must start from this promoted baseline.
 
 ## P39-B — JDStatusBarNotification dependency audit
 Status: audit only; KEEP_LIVE_DEPENDENCY.
