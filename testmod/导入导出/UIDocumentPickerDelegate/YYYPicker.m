@@ -1,4 +1,3 @@
-
 //
 //  ViewController.m
 //  DocumentPicker
@@ -19,40 +18,18 @@
 #define screenW [[UIScreen mainScreen] bounds].size.width
 #define screenH [[UIScreen mainScreen] bounds].size.height
 
-#define NKColorWithRGB(rgbValue) [UIColor colorWithRed:((float)((rgbValue & 0xFF0000) >> 16))/255.0 green:((float)((rgbValue & 0xFF00) >> 8))/255.0 blue:((float)(rgbValue & 0xFF))/255.0 alpha:1.0]
-
+#define NKColorWithRGB(rgbValue) [UIColor colorWithRed:((float)((rgbValue & 0xFF0000) >> 16))/255.0 green:((float)(rgbValue & 0xFF00) >> 8)/255.0 blue:((float)(rgbValue & 0xFF))/255.0 alpha:1.0]
 
 @interface YYYPicker ()<UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout>
 @property (nonatomic, strong) UICollectionView *collectionView;
 @property (nonatomic, strong) NSMutableArray *dataArr;
-
-
 @property (nonatomic, strong) NKOtherFilesModel *seleFileM;
- 
 @end
-// cell
+
 static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
 
 @implementation YYYPicker
 
-//- (NSMutableArray *)dataArr
-//{
-//    if (_dataArr == nil) {
-//        _dataArr = [NSMutableArray array];
-//        
-//        NSString *documentPath = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) lastObject] stringByAppendingPathComponent:@"OtherFiles"];
-//        NSFileManager *fileManager = [NSFileManager defaultManager];
-//        NSArray *files = [fileManager contentsOfDirectoryAtPath:documentPath error:nil];
-//        for (NSString *fileName in files) {
-//            NSString *filePath = [documentPath stringByAppendingPathComponent:fileName];
-//            NKOtherFilesModel *model = [[NKOtherFilesModel alloc] init];
-//            model.fileName = fileName;
-//            model.filePath = filePath;
-//            [_dataArr addObject:model];
-//        }
-//    }
-//    return _dataArr;
-//}
 - (NSMutableArray *)dataArr
 {
     if (_dataArr == nil) {
@@ -60,43 +37,66 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
     }
     return _dataArr;
 }
+
+#pragma mark - Restore engine
+
++ (NSSet<NSString *> *)restoreSkipItems
+{
+    static NSSet<NSString *> *skipItems;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        skipItems = [NSSet setWithObjects:@"__MACOSX", @".DS_Store", @"Preferences", nil];
+    });
+    return skipItems;
+}
+
+- (NSString *)restoreStagingRootPath
+{
+    return [NSHomeDirectory() stringByAppendingPathComponent:@"tmp/zonoe"];
+}
+
+- (NSString *)restoreInboxPathForBundleIdentifier:(NSString *)bundleIdentifier
+{
+    NSString *tmpRoot = [NSHomeDirectory() stringByAppendingString:@"/tmp/"];
+    return [NSString stringWithFormat:@"%@%@-Inbox", tmpRoot, bundleIdentifier];
+}
+
 + (void)recursivelyCopyContentsOfDirectory:(NSString *)sourcePath
-                                toDirectory:(NSString *)destinationPath
-                                  fileManager:(NSFileManager *)fm
-                                    skipItems:(NSSet<NSString *> *)skipItems
-                                        error:(NSError **)error
+                               toDirectory:(NSString *)destinationPath
+                               fileManager:(NSFileManager *)fm
+                                 skipItems:(NSSet<NSString *> *)skipItems
+                                     error:(NSError **)error
 {
     BOOL srcIsDir = NO;
     if (![fm fileExistsAtPath:sourcePath isDirectory:&srcIsDir]) return;
 
-    // 1. 类型预检查：如果目标已存在，但类型与源不符，强制删除目标以防冲突
     BOOL dstExists = NO;
     BOOL dstIsDir = NO;
     dstExists = [fm fileExistsAtPath:destinationPath isDirectory:&dstIsDir];
 
     if (dstExists && (srcIsDir != dstIsDir)) {
-        // 类型不匹配（例如：源是文件夹，目标是文件；或反之）
         [fm removeItemAtPath:destinationPath error:nil];
-        dstExists = NO; // 重置标记
+        dstExists = NO;
     }
 
     if (srcIsDir) {
-        // 处理目录
         if (!dstExists) {
-            [fm createDirectoryAtPath:destinationPath withIntermediateDirectories:YES attributes:nil error:error];
+            [fm createDirectoryAtPath:destinationPath
+          withIntermediateDirectories:YES
+                           attributes:nil
+                                error:error];
         }
-        
+
         NSArray *contents = [fm contentsOfDirectoryAtPath:sourcePath error:error];
         for (NSString *item in contents) {
             if ([skipItems containsObject:item]) continue;
             [self recursivelyCopyContentsOfDirectory:[sourcePath stringByAppendingPathComponent:item]
                                          toDirectory:[destinationPath stringByAppendingPathComponent:item]
-                                           fileManager:fm
-                                             skipItems:skipItems
-                                                 error:error];
+                                         fileManager:fm
+                                           skipItems:skipItems
+                                               error:error];
         }
     } else {
-        // 处理文件：直接覆盖式拷贝
         if (dstExists) {
             [fm removeItemAtPath:destinationPath error:nil];
         }
@@ -104,60 +104,8 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
     }
 }
 
-
-
-
-- (void)addBtnAction
+- (NSString *)fixedName:(NSString *)name
 {
-  
-         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-    
-
-                             [[NKSeleDocumentTool shareDocumentTool] seleDocumentWithDocumentTypes:@[@"public.data"]
-                                                                                              Mode:UIDocumentPickerModeImport controller:self finishBlock:^(NSArray<NSURL *> *urls) {
-                                 NSURL *fileUrl = urls.firstObject;
- 
-
-                                 NSString *fileName = [[[fileUrl absoluteString] componentsSeparatedByString:@"/"] lastObject];
-                                 NSString*fileNamezc = [fileName stringByRemovingPercentEncoding];
- 
-                                 
-                                  NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
-                                 NSString *CFBundleDisplayName = [infoDictionary objectForKey:@"CFBundleDisplayName"];
-                                  NSString *BundID = [infoDictionary objectForKey:@"CFBundleIdentifier"];
-                                 NSString *dataFilea = [NSHomeDirectory() stringByAppendingString:@"/tmp/"] ;
-                                 NSString *cachesPathz = [NSString stringWithFormat:@"%@%@-Inbox",dataFilea,BundID];
-                                 NSLog(@"🆚BundID=\n%@\n",CFBundleDisplayName);
- 
-                                     self->_dataArr = nil;
-                                     [self.collectionView reloadData];
-                                 NSString *dataFile = [cachesPathz stringByAppendingPathComponent:fileNamezc];
-                                  NSString *zonoefile = [NSHomeDirectory() stringByAppendingString:@"/tmp/zonoe"] ;
-                                 dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-                                     [SVProgressHUD showWithStatus:@"处理中..."];
-                                     BOOL isSuccess =
-                                     [SSZipArchive unzipFileAtPath:dataFile toDestination:zonoefile];
-
-                                     dispatch_async(dispatch_get_main_queue(), ^{
-                                         if (isSuccess) {
-                                             NSFileManager *Manager = [NSFileManager defaultManager];
-                                             [Manager removeItemAtPath:cachesPathz error:nil];
-                                             [self yidongwenjian];
-                                         }
-                                     });
-                                 });
-//                                 
-//                                 BOOL isSuccess=[SSZipArchive unzipFileAtPath:dataFile toDestination:zonoefile];
-//                                 
-//                                 if (isSuccess) {
-//                                     NSFileManager *Manager = [NSFileManager defaultManager];
-//                                     [Manager removeItemAtPath:cachesPathz error:nil];
-//                                     [self yidongwenjian];
-//                                 }
-                             }];
-         });
-}
-- (NSString *)fixedName:(NSString *)name {
     NSData *data = [name dataUsingEncoding:NSISOLatin1StringEncoding];
     NSString *utf8 = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
     return utf8 ?: name;
@@ -174,8 +122,6 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
 
     NSArray *items = [fm contentsOfDirectoryAtPath:root error:nil];
     for (NSString *item in items) {
-
-        // 跳过无意义目录
         if ([item hasPrefix:@"."] || [item isEqualToString:@"__MACOSX"]) {
             continue;
         }
@@ -187,12 +133,10 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
             continue;
         }
 
-        // 1️⃣ 当前目录就是目标
         if ([fixed isEqualToString:target]) {
             return path;
         }
 
-        // 2️⃣ 递归子目录
         NSString *found = [self findTargetDir:target inRoot:path];
         if (found) return found;
     }
@@ -200,64 +144,141 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
     return nil;
 }
 
+- (void)restoreDirectoryFrom:(NSString *)sourcePath
+               toDestination:(NSString *)destinationPath
+                       label:(NSString *)label
+                 fileManager:(NSFileManager *)fileManager
+                   skipItems:(NSSet<NSString *> *)skipItems
+                       error:(NSError **)error
+{
+    if (sourcePath.length == 0 || destinationPath.length == 0) return;
 
-- (void)yidongwenjian {
+    [YYYPicker recursivelyCopyContentsOfDirectory:sourcePath
+                                      toDirectory:destinationPath
+                                      fileManager:fileManager
+                                        skipItems:skipItems
+                                            error:error];
 
+    NSLog((*error) ? @"❌ %@ 复制失败" : @"✅ %@ 复制完成", label);
+}
+
+- (BOOL)restoreBackupTreeAtRoot:(NSString *)root
+{
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSString *srcDoc = [self findTargetDir:@"Documents" inRoot:root];
+    NSString *srcLib = [self findTargetDir:@"Library" inRoot:root];
+
+    if (!srcDoc && !srcLib) {
+        NSLog(@"❌ zip 中未找到 Documents / Library");
+        return NO;
+    }
+
+    NSError *err = nil;
+    NSSet<NSString *> *skipItems = [YYYPicker restoreSkipItems];
+
+    if (srcDoc) {
+        NSString *dstDoc = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
+                                                                NSUserDomainMask,
+                                                                YES).firstObject;
+        [self restoreDirectoryFrom:srcDoc
+                     toDestination:dstDoc
+                             label:@"Documents"
+                       fileManager:fm
+                         skipItems:skipItems
+                             error:&err];
+    }
+
+    if (srcLib) {
+        NSString *dstLib = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory,
+                                                                NSUserDomainMask,
+                                                                YES).firstObject;
+        [self restoreDirectoryFrom:srcLib
+                     toDestination:dstLib
+                             label:@"Library"
+                       fileManager:fm
+                         skipItems:skipItems
+                             error:&err];
+    }
+
+    return YES;
+}
+
+- (void)reloadRestoredPreferences
+{
+    [PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"];
+}
+
+- (void)unzipRestoreArchiveAtPath:(NSString *)archivePath
+                        inboxPath:(NSString *)inboxPath
+                      stagingRoot:(NSString *)stagingRoot
+{
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        [SVProgressHUD showWithStatus:@"处理中..."];
+        BOOL isSuccess = [SSZipArchive unzipFileAtPath:archivePath toDestination:stagingRoot];
 
-        NSFileManager *fm = [NSFileManager defaultManager];
-        NSString *root = [NSHomeDirectory() stringByAppendingPathComponent:@"tmp/zonoe"];
-
-        // 1️⃣ 找真实 Documents / Library
-        NSString *srcDoc = [self findTargetDir:@"Documents" inRoot:root];
-        NSString *srcLib = [self findTargetDir:@"Library" inRoot:root];
-
-        if (!srcDoc && !srcLib) {
-            NSLog(@"❌ zip 中未找到 Documents / Library");
-            return;
-        }
-
-        NSError *err = nil;
-        NSSet *skip = [NSSet setWithObjects:
-            @"__MACOSX", @".DS_Store", @"Preferences", nil];
-
-        // 2️⃣ 拷贝 Documents
-        if (srcDoc) {
-            NSString *dstDoc =
-            NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES).firstObject;
-
-            [YYYPicker recursivelyCopyContentsOfDirectory:srcDoc
-                                                toDirectory:dstDoc
-                                                  fileManager:fm
-                                                    skipItems:skip
-                                                        error:&err];
-
-            NSLog(err ? @"❌ Documents 复制失败" : @"✅ Documents 复制完成");
-        }
-
-        // 3️⃣ 拷贝 Library
-        if (srcLib) {
-            NSString *dstLib =
-            NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES).firstObject;
-
-            [YYYPicker recursivelyCopyContentsOfDirectory:srcLib
-                                                toDirectory:dstLib
-                                                  fileManager:fm
-                                                    skipItems:skip
-                                                        error:&err];
-
-            NSLog(err ? @"❌ Library 复制失败" : @"✅ Library 复制完成");
-        }
-
-        // 4️⃣ 加载配置
         dispatch_async(dispatch_get_main_queue(), ^{
-            [PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"];
+            if (isSuccess) {
+                [[NSFileManager defaultManager] removeItemAtPath:inboxPath error:nil];
+                [self yidongwenjian];
+            }
         });
     });
 }
 
-  
+- (void)handlePickedRestoreURL:(NSURL *)fileUrl
+{
+    if (!fileUrl) return;
+
+    NSString *fileName = [[[fileUrl absoluteString] componentsSeparatedByString:@"/"] lastObject];
+    NSString *decodedFileName = [fileName stringByRemovingPercentEncoding];
+
+    NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
+    NSString *displayName = [infoDictionary objectForKey:@"CFBundleDisplayName"];
+    NSString *bundleIdentifier = [infoDictionary objectForKey:@"CFBundleIdentifier"];
+    NSString *inboxPath = [self restoreInboxPathForBundleIdentifier:bundleIdentifier];
+    NSString *archivePath = [inboxPath stringByAppendingPathComponent:decodedFileName];
+    NSString *stagingRoot = [self restoreStagingRootPath];
+
+    NSLog(@"🆚BundID=\n%@\n", displayName);
+
+    self->_dataArr = nil;
+    [self.collectionView reloadData];
+
+    [self unzipRestoreArchiveAtPath:archivePath
+                         inboxPath:inboxPath
+                       stagingRoot:stagingRoot];
+}
+
+#pragma mark - Restore UI entry
+
+- (void)addBtnAction
+{
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(), ^{
+        [[NKSeleDocumentTool shareDocumentTool]
+         seleDocumentWithDocumentTypes:@[@"public.data"]
+         Mode:UIDocumentPickerModeImport
+         controller:self
+         finishBlock:^(NSArray<NSURL *> *urls) {
+            [self handlePickedRestoreURL:urls.firstObject];
+        }];
+    });
+}
+
+- (void)yidongwenjian
+{
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        BOOL restored = [self restoreBackupTreeAtRoot:[self restoreStagingRootPath]];
+        if (!restored) return;
+
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self reloadRestoredPreferences];
+        });
+    });
+}
+
 #pragma mark - UICollectionViewDataSource
+
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section
 {
     return self.dataArr.count;
@@ -271,26 +292,34 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
     return cell;
 }
 
-
-
 #pragma mark - item宽高
-- (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
+
+- (CGSize)collectionView:(UICollectionView *)collectionView
+                  layout:(UICollectionViewLayout *)collectionViewLayout
+  sizeForItemAtIndexPath:(NSIndexPath *)indexPath
+{
     CGFloat itemW = (screenW - (1 + 3)*5 ) /3 ;
     return CGSizeMake(itemW, itemW + 10);
 }
 
 #pragma mark - <UICollectionViewDelegateFlowLayout>
 #pragma mark - X间距
-- (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout minimumInteritemSpacingForSectionAtIndex:(NSInteger)section {
+
+- (CGFloat)collectionView:(UICollectionView *)collectionView
+                   layout:(UICollectionViewLayout *)collectionViewLayout
+minimumInteritemSpacingForSectionAtIndex:(NSInteger)section
+{
     return 5;
 }
 
 #pragma mark - Y间距
-- (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout minimumLineSpacingForSectionAtIndex:(NSInteger)section {
+
+- (CGFloat)collectionView:(UICollectionView *)collectionView
+                   layout:(UICollectionViewLayout *)collectionViewLayout
+minimumLineSpacingForSectionAtIndex:(NSInteger)section
+{
     return 5;
 }
-
-
 
 - (NSInteger)numberOfPreviewItemsInPreviewController:(QLPreviewController *)controller
 {
@@ -302,30 +331,36 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
     NSURL *documentsDirectoryURL = [NSURL fileURLWithPath:self.seleFileM.filePath];
     return documentsDirectoryURL;
 }
- 
+
 - (void)viewWillAppear:(BOOL)animated
 {
     [super viewWillAppear:animated];
 
-    NSString *documentPath =[[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) lastObject] stringByAppendingPathComponent:@"OtherFiles"];
+    NSString *documentPath = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
+                                                                    NSUserDomainMask,
+                                                                    YES) lastObject]
+                              stringByAppendingPathComponent:@"OtherFiles"];
     if (![[NSFileManager defaultManager] fileExistsAtPath:documentPath]) {
-        [[NSFileManager defaultManager]
-         createDirectoryAtPath:documentPath
-         withIntermediateDirectories:YES
-         attributes:nil error:nil];
+        [[NSFileManager defaultManager] createDirectoryAtPath:documentPath
+                                  withIntermediateDirectories:YES
+                                                   attributes:nil
+                                                        error:nil];
     }
 
-    [self loadOtherFilesAsync]; // ✅ 异步加载
+    [self loadOtherFilesAsync];
 }
+
 - (void)loadOtherFilesAsync
 {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         NSMutableArray *tmpArr = [NSMutableArray array];
 
-        NSString *documentPath =[[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) lastObject]stringByAppendingPathComponent:@"OtherFiles"];
+        NSString *documentPath = [[NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
+                                                                        NSUserDomainMask,
+                                                                        YES) lastObject]
+                                  stringByAppendingPathComponent:@"OtherFiles"];
 
-        NSArray *files =
-        [[NSFileManager defaultManager] contentsOfDirectoryAtPath:documentPath error:nil];
+        NSArray *files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:documentPath error:nil];
 
         for (NSString *fileName in files) {
             NKOtherFilesModel *model = [[NKOtherFilesModel alloc] init];
@@ -340,4 +375,5 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
         });
     });
 }
+
 @end
