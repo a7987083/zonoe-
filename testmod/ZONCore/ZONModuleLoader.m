@@ -1,5 +1,6 @@
 #import "ZONModuleLoader.h"
 #import <dlfcn.h>
+#import "../ZONServices/ZONLaunchTrace.h"
 
 void ZONCoreLog(ZONLogLevel level, const char * _Nullable moduleID, const char * _Nullable message) {
     NSString *module = moduleID ? [NSString stringWithUTF8String:moduleID] : @"core";
@@ -103,6 +104,7 @@ static BOOL ZONLoadModuleAtPath(NSString *path, NSMutableSet<NSString *> *loaded
 void ZONLoadBundledModules(void) {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
+        ZONLaunchTraceRecord(ZONLaunchTraceModuleScanBegin);
         NSFileManager *fm = [NSFileManager defaultManager];
         NSMutableSet<NSString *> *loadedIdentifiers = [NSMutableSet set];
 
@@ -134,5 +136,6 @@ void ZONLoadBundledModules(void) {
                 ZONLoadModuleAtPath(path, loadedIdentifiers);
             }
         }
+        ZONLaunchTraceRecord(ZONLaunchTraceModuleScanEnd);
     });
 }

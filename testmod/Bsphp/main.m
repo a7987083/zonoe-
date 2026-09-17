@@ -15,6 +15,7 @@
 #import "../ZONBootstrap/ZONBootstrap.h"
 #import "../ZONServices/ZonoeUDIDAPI.h"
 #import "../ZONServices/ZONAuthorizationCoordinator.h"
+#import "../ZONServices/ZONLaunchTrace.h"
 
 #ifndef ZON_BUILD_VARIANT_DEBUG
 #define ZON_BUILD_VARIANT_DEBUG 0
@@ -74,20 +75,28 @@
 
 +(void)load
 {
+    ZONLaunchTraceRecord(ZONLaunchTraceMainLoadEnter);
     ZONInstallAuthorizationResetExtension();
+    ZONLaunchTraceRecord(ZONLaunchTraceAuthResetInstalled);
 
     ZONBootstrapStart(^{
+        ZONLaunchTraceRecord(ZONLaunchTraceBootstrapPreflightBegin);
         // Preserve the verified legacy framework preflight timing/order.
         [self tryLoadAppLovinSDK];
+        ZONLaunchTraceRecord(ZONLaunchTraceAppLovinPreflightComplete);
         [self UnityFramework];
+        ZONLaunchTraceRecord(ZONLaunchTraceUnityPreflightComplete);
     }, ^{
+        ZONLaunchTraceRecord(ZONLaunchTraceVariantEntryBegin);
 #if ZON_BUILD_VARIANT_DEBUG
         // B_debug: developer entry. No customer authorization and no UDID request.
+        ZONLaunchTraceRecord(ZONLaunchTraceVariantDebugFloatingRequest);
         [NSObject 显示图标];
 #else
         // A_customer: formal customer entry. UDID is acquired only when loada needs it.
         NSObject *statusHost = [NSObject new];
         [statusHost showProgressNotificationAndAnimate];
+        ZONLaunchTraceRecord(ZONLaunchTraceVariantCustomerAuthRequest);
         ZONStartCustomerAuthorization();
 #endif
     });

@@ -3,6 +3,7 @@
 #import "../category/getKeychain.h"
 #import "JDStatusBarNotification.h"
 #import "ZonoeUDIDAPI.h"
+#import "ZONLaunchTrace.h"
 #import <objc/runtime.h>
 
 #pragma mark - Authorization reset compatibility
@@ -85,17 +86,20 @@ static void ZONContinueCustomerAuthorization(WX_NongShiFu123 *auth, NSString *ud
                               5.0);
     }
 
+    ZONLaunchTraceRecord(ZONLaunchTraceAuthorizationContinue);
     [auth loada];
 }
 
 void ZONStartCustomerAuthorization(void)
 {
+    ZONLaunchTraceRecord(ZONLaunchTraceAuthorizationEnter);
     WX_NongShiFu123 *auth = [WX_NongShiFu123 new];
 
     // Existing valid customer keychain data wins. This avoids unnecessary zonoe jumps
     // for already activated customers.
     NSString *existing = [getKeychain getKeychainDataForKey:@"DZUDID"];
     if (existing.length >= 5) {
+        ZONLaunchTraceRecord(ZONLaunchTraceAuthorizationExistingDZUDID);
         [auth loada];
         return;
     }
@@ -103,6 +107,7 @@ void ZONStartCustomerAuthorization(void)
     // Reuse the C1/v1_p3 bridge cache when available.
     NSString *cached = ZonoeCurrentUDID();
     if (cached.length >= 5) {
+        ZONLaunchTraceRecord(ZONLaunchTraceAuthorizationBridgeCache);
         ZONContinueCustomerAuthorization(auth, cached, NO);
         return;
     }
@@ -113,7 +118,9 @@ void ZONStartCustomerAuthorization(void)
 
     // First customer activation: authorization is the only owner of UDID acquisition.
     // No menu/icon action requests UDID anymore.
+    ZONLaunchTraceRecord(ZONLaunchTraceAuthorizationAwaitUDID);
     ZonoeSetUDIDCallback(^(NSString *udid) {
+        ZONLaunchTraceRecord(ZONLaunchTraceAuthorizationUDIDCallback);
         ZONContinueCustomerAuthorization(auth, udid, YES);
     });
     ZonoeRequestUDIDIfNeeded();

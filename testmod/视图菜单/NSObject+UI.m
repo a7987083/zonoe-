@@ -7,6 +7,7 @@
 #import "JHDragView.h"
 #import "PopupMenuVC.h"
 #import "NSObject+UI.h"
+#import "../ZONServices/ZONLaunchTrace.h"
 
 @implementation NSObject (UI)
 
@@ -14,6 +15,7 @@
 
 - (void)显示图标
 {
+    ZONLaunchTraceRecord(ZONLaunchTraceFloatingEntryRequest);
     dispatch_async(dispatch_get_main_queue(), ^{
 
         UIViewController *vc = [self topViewController];
@@ -32,6 +34,7 @@
 
             view.tag = 100;
             [parentView addSubview:view];
+            ZONLaunchTraceRecord(ZONLaunchTraceFloatingEntryAttached);
         }
     });
 }
@@ -57,7 +60,9 @@
         // Menu presentation is intentionally UDID-agnostic.
         // A_customer owns UDID acquisition in the loada authorization path.
         // B_debug never requests UDID automatically.
+        ZONLaunchTraceRecord(ZONLaunchTraceMenuPresentationRequest);
         [topVC presentViewController:menu animated:NO completion:nil];
+        ZONLaunchTraceRecord(ZONLaunchTraceMenuPresentationDispatched);
     });
 }
 
