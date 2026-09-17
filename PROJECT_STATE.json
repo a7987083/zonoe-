@@ -3,14 +3,14 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p48-storekit-cleanup",
-  "current_test_branch": "test/zonoemenu-v1-p48-storekit-cleanup-build",
-  "current_version": "v1_p48_1",
-  "current_phase": "v1_p48_1_storekit_residual_cleanup",
+  "current_work_branch": "work/zonoemenu-v1-p49-active-target-audit",
+  "current_test_branch": "test/zonoemenu-v1-p49-active-target-audit",
+  "current_version": "v1_p49",
+  "current_phase": "v1_p49_active_target_dead_code_dependency_audit",
   "phase_status": "completed_device_passed",
-  "last_device_verified_code_commit": "71eddfa0600112aa56a8bef45013d73f4673794a",
-  "last_device_verified_version": "v1_p48_1",
-  "last_ci_run_id": 35180342515,
+  "last_device_verified_code_commit": "4cebe094ad7a4dd554e8266af34dcf3abe04902a",
+  "last_device_verified_version": "v1_p49",
+  "last_ci_run_id": 35195152912,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
@@ -25,50 +25,35 @@
   "known_issues_document": "KNOWN_ISSUES.md",
   "changelog_document": "CHANGELOG_DEV.md",
   "rollback_baseline": {
-    "version": "v1_p48_1",
-    "source_commit": "71eddfa0600112aa56a8bef45013d73f4673794a",
+    "version": "v1_p49",
+    "source_commit": "4cebe094ad7a4dd554e8266af34dcf3abe04902a",
     "device_status": "passed"
   },
-  "p44": {
-    "source_commit": "aee574d180da7cc82db54be7ab5aeaa9d072c561",
-    "ci_run_id": 35020232205,
-    "device_status": "passed_superseded"
-  },
-  "p45": {
-    "source_commit": "841da61c51e8c7fef81c15a56ecdb92c31b9f96d",
-    "ci_run_id": 35036655523,
-    "device_status": "covered_by_later_promoted_device_baseline"
-  },
-  "p46": {
-    "source_commit": "83a49f46c1d0e4eecf5a52a485ebc35442786f67",
-    "ci_run_id": 35167182449,
-    "device_status": "covered_by_later_promoted_device_baseline"
-  },
-  "p47": {
-    "repository_candidate_commit": "64f8575966d62695123b9f8444f89dbc98e796df",
-    "runtime_source_commit": "83a49f46c1d0e4eecf5a52a485ebc35442786f67",
-    "ci_run_id": 35169166129,
-    "device_status": "covered_by_later_promoted_device_baseline"
-  },
   "p48_1": {
-    "branch": "work/zonoemenu-v1-p48-storekit-cleanup",
-    "test_branch": "test/zonoemenu-v1-p48-storekit-cleanup-build",
     "source_commit": "71eddfa0600112aa56a8bef45013d73f4673794a",
-    "ci_head": "efabe050194b87518c1442b4fe078ed7283db846",
     "ci_run_id": 35180342515,
+    "device_status": "passed_superseded",
+    "active_source_count": 78,
+    "storekit_surface_removed": true
+  },
+  "p49": {
+    "branch": "work/zonoemenu-v1-p49-active-target-audit",
+    "test_branch": "test/zonoemenu-v1-p49-active-target-audit",
+    "source_commit": "4cebe094ad7a4dd554e8266af34dcf3abe04902a",
+    "ci_head": "592aa64cd35307e358716d3f1517a75a41e986f3",
+    "ci_run_id": 35195152912,
     "ci_status": "success",
     "device_status": "passed",
     "device_reported_by_user": true,
     "active_source_count": 78,
-    "storekit_surface_removed": true,
-    "pbx_changed_vs_p48": false,
-    "export_surface": "identical_to_p48",
-    "load_libraries": "identical_to_p48_except_storekit_removed",
-    "a_customer_artifact_id": 10480455519,
-    "a_customer_artifact_digest": "sha256:beb2e1dd9b0b6ad913b5dc00911a890fd33293f9f33204196266474909b47dfe",
-    "a_customer_dylib_sha256": "36bbe4c32882d98b274fb7cfb40bf62f727502b4867765bee1f747c0e5fbe90d",
-    "b_debug_artifact_id": 10480331340,
-    "b_debug_artifact_digest": "sha256:fb21abd689eee241ae9331e24558756a342fd50a766fd8d4740bab5fde615e8e"
+    "network_framework_removed": true,
+    "export_surface": "identical_to_p48_1",
+    "load_libraries": "identical_to_p48_1_except_network_framework_removed",
+    "a_customer_artifact_id": 10485344383,
+    "a_customer_artifact_digest": "sha256:33ae7fda25128e9d0bd6a167a82aedaf3a1272a8ceb13111bef23c58ff270c5d",
+    "a_customer_dylib_sha256": "4d19c0368b8c599ff59635aa0e36a75a2ba67e797d14e91a48fef3b494e66bac",
+    "b_debug_artifact_id": 10485622521,
+    "b_debug_artifact_digest": "sha256:9156b57fd832461274f3c8d1625c8b8213d556c9862b32d1d461294783a23e27"
   },
   "refactor_rules": {
     "one_architectural_concern_per_version": true,
@@ -81,8 +66,8 @@
   },
   "planned_refactor_phases": [
     {"version":"v1_p48_1","name":"StoreKit Residual Cleanup","status":"completed_device_passed","runtime_change_intended":false},
-    {"version":"v1_p49","name":"Active Target / Dead Code / Dependency Audit","status":"next_planned","runtime_change_intended":false},
-    {"version":"v1_p50","name":"Refactor Stabilization / Architecture Freeze","status":"planned","runtime_change_intended":false}
+    {"version":"v1_p49","name":"Active Target / Dead Code / Dependency Audit","status":"completed_device_passed","runtime_change_intended":false},
+    {"version":"v1_p50","name":"Refactor Stabilization / Architecture Freeze","status":"next_planned","runtime_change_intended":false}
   ],
-  "next_task": "Define P49 Active Target / Dead Code / Dependency Audit from the P48.1 promoted baseline. Do not delete code or dependencies until PBX membership, caller/import reachability, runtime/symbol evidence and build impact are proven."
+  "next_task": "Start P50 Refactor Stabilization / Architecture Freeze from the P49 promoted baseline. Preserve behavior and use P49 as rollback baseline."
 }
