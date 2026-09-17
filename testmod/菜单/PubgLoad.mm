@@ -413,6 +413,33 @@ static NSString *fullPath;
        });
 
 }
+- (NSURLSession *)zonoeArchiveDownloadSession
+{
+    return [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]
+                                            delegate:self
+                                       delegateQueue:[NSOperationQueue mainQueue]];
+}
+
+- (void)startArchiveDownloadWithURL:(NSURL *)url
+{
+    if (!url) {
+        return;
+    }
+    NSURLSessionDownloadTask *task = [[self zonoeArchiveDownloadSession] downloadTaskWithURL:url];
+    [task resume];
+}
+
+- (BOOL)isCloudEntitlementValidWithCode:(NSNumber *)code
+                                    msg:(NSString *)msg
+                                 expire:(NSNumber *)expire
+                               testMode:(BOOL)testMode
+{
+    NSTimeInterval now = [[NSDate date] timeIntervalSince1970];
+    return testMode || (code && [code intValue] == 1 &&
+                        msg && [msg isEqualToString:@"ok"] &&
+                        expire && [expire doubleValue] > now);
+}
+
 -(void)yuanchengdwon
 {
 
@@ -458,11 +485,7 @@ static NSString *fullPath;
         [presenter presentWithText:@"准备下载存档,请稍后." dismissAfterDelay:10 includedStyle:JDStatusBarNotificationIncludedStyleWarning];
     });
          NSURL *url = [NSURL URLWithString:远程下载地址];
-        NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration] delegate:self delegateQueue:[NSOperationQueue mainQueue]];
-        // 2、利用NSURLSessionDownloadTask创建任务(task)
-        NSURLSessionDownloadTask *task = [session downloadTaskWithURL:url];
-        // 3、执行任务
-        [task resume];
+        [self startArchiveDownloadWithURL:url];
  }
 
 
@@ -651,12 +674,12 @@ static NSString *fullPath;
         NSNumber *code = dicInfo[@"code"];
         NSString *msg = dicInfo[@"msg"];
         NSNumber *expire = dicInfo[@"expire"];
-        NSTimeInterval now = [[NSDate date] timeIntervalSince1970];
         BOOL testMode = NO; // NO = 正常验证, YES = 测试模式（绕过验证）
 
-        if (testMode || (code && [code intValue] == 1 &&
-                         msg && [msg isEqualToString:@"ok"] &&
-                         expire && [expire doubleValue] > now)) {
+        if ([self isCloudEntitlementValidWithCode:code
+                                              msg:msg
+                                           expire:expire
+                                         testMode:testMode]) {
             dispatch_async(dispatch_get_main_queue(), ^{
                 JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
                 [presenter dismissAnimated:YES]; // 或者 YES，取决于你的需求
@@ -726,15 +749,7 @@ static NSString *fullPath;
             // ==================================================
             // ✅ 开始下载
             // ==================================================
-            NSURLSession *session =
-            [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration]
-                                          delegate:self
-                                     delegateQueue:[NSOperationQueue mainQueue]];
-            
-            NSURLSessionDownloadTask *task =
-            [session downloadTaskWithURL:downloadURL];
-            
-            [task resume];
+            [self startArchiveDownloadWithURL:downloadURL];
         }
     });
 }
