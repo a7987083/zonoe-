@@ -152,8 +152,11 @@ jobs:
           diff -u /tmp/p48.exports /tmp/p481.exports | tee build/export-diff.txt
           otool -L "$BASE" | tail -n +2 | sed 's/^[[:space:]]*//' | sort > /tmp/p48.loadlibs
           otool -L "$CURR" | tail -n +2 | sed 's/^[[:space:]]*//' | sort > /tmp/p481.loadlibs
-          diff -u /tmp/p48.loadlibs /tmp/p481.loadlibs | tee build/loadlib-diff.txt
-          printf 'P48.1 StoreKit residual cleanup.\nACTIVE_SOURCES=78\nSTOREKIT_SURFACE_REMOVED=true\nABI_EXPORTS_IDENTICAL=true\nLOAD_LIBRARIES_IDENTICAL=true\n' | tee build/p48-storekit-cleanup-evidence.txt
+          test "$(grep -c '^/System/Library/Frameworks/StoreKit.framework/StoreKit ' /tmp/p48.loadlibs)" -eq 1
+          ! grep -q '^/System/Library/Frameworks/StoreKit.framework/StoreKit ' /tmp/p481.loadlibs
+          grep -v '^/System/Library/Frameworks/StoreKit.framework/StoreKit ' /tmp/p48.loadlibs > /tmp/p48.expected-loadlibs
+          diff -u /tmp/p48.expected-loadlibs /tmp/p481.loadlibs | tee build/loadlib-diff.txt
+          printf 'P48.1 StoreKit residual cleanup.\nACTIVE_SOURCES=78\nSTOREKIT_SURFACE_REMOVED=true\nSTOREKIT_LOAD_COMMAND_REMOVED=true\nABI_EXPORTS_IDENTICAL=true\nOTHER_LOAD_LIBRARIES_IDENTICAL=true\n' | tee build/p48-storekit-cleanup-evidence.txt
       - name: Upload candidate evidence
         if: always()
         uses: actions/upload-artifact@v4
