@@ -22,8 +22,8 @@ wx.write_text(text2, encoding='utf-8')
 p = pbx.read_text(encoding='utf-8')
 lines = p.splitlines(keepends=True)
 removed = [line for line in lines if 'fuzhu.h' in line or 'fuhzu.m' in line]
-if len(removed) not in (0, 7):
-    raise SystemExit(f'expected 7 PBX legacy-file lines before migration, found={len(removed)}')
+if len(removed) not in (0, 8):
+    raise SystemExit(f'expected 8 PBX legacy-file lines before migration, found={len(removed)}')
 p = ''.join(line for line in lines if 'fuzhu.h' not in line and 'fuhzu.m' not in line)
 pbx.write_text(p, encoding='utf-8')
 
