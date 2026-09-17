@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import re
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,12 +27,10 @@ if version != "v1_p47":
 
 tracked = set(git("ls-files").splitlines())
 
-# Removed package artifact must not return.
 old_pkg = "Packages/com.leizi.www..testmod_0.1-1_iphoneos-arm.zip"
 if old_pkg in tracked:
     fail("old generated package artifact is still tracked")
 
-# No user/build/package outputs may be tracked after P47.
 for path in sorted(tracked):
     low = path.lower()
     if "/xcuserdata/" in f"/{low}" or low.endswith(".xcuserstate"):
@@ -58,7 +57,10 @@ for rule in required:
         fail(f"missing ignore rule: {rule}")
 
 pbx = (ROOT / "testmod.xcodeproj/project.pbxproj").read_text()
-source_members = sum(1 for line in pbx.splitlines() if " in Sources */" in line)
+phases = re.findall(r"isa = PBXSourcesBuildPhase;.*?files = \((.*?)\);", pbx, flags=re.S)
+if len(phases) != 1:
+    fail(f"unexpected PBXSourcesBuildPhase count: {len(phases)}")
+source_members = sum(1 for line in phases[0].splitlines() if " in Sources */" in line)
 if source_members != 79:
     fail(f"active PBX Sources drift: {source_members}, expected 79")
 
