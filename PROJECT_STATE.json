@@ -7,9 +7,9 @@
   "current_test_branch": "test/zonoemenu-v1-p51e-destructive-toggle-refactor",
   "current_version": "v1_p51e",
   "current_phase": "v1_p51e_destructive_toggle_refactor",
-  "phase_status": "ci_passed_awaiting_device",
-  "last_device_verified_code_commit": "f9ceb7497276b3a27c84821e17010ebfb6a90e17",
-  "last_device_verified_version": "v1_p51d",
+  "phase_status": "completed_device_passed",
+  "last_device_verified_code_commit": "78c65ad571355656a5acb4cd45cdfa298646886c",
+  "last_device_verified_version": "v1_p51e",
   "last_ci_run_id": 35278168202,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
@@ -17,14 +17,14 @@
   "active_source_count": 78,
   "canonical_product_surface": ["testmod/", "testmod.xcodeproj"],
   "rollback_baseline": {
-    "version": "v1_p51d",
-    "source_commit": "f9ceb7497276b3a27c84821e17010ebfb6a90e17",
+    "version": "v1_p51e",
+    "source_commit": "78c65ad571355656a5acb4cd45cdfa298646886c",
     "device_status": "passed"
   },
   "p51d": {
     "source_commit": "f9ceb7497276b3a27c84821e17010ebfb6a90e17",
     "ci_run_id": 35277000183,
-    "device_status": "passed",
+    "device_status": "passed_superseded",
     "a_customer_artifact_id": 10520991636,
     "a_customer_dylib_sha256": "10ef844d531b406b4768174d627825a20a3159d7fbe500668e8aad2aad7b7e61"
   },
@@ -35,7 +35,8 @@
     "ci_head": "56cbfd4629c8aa84a7d32d256254be3dbf17a047",
     "ci_run_id": 35278168202,
     "ci_status": "success",
-    "device_status": "pending",
+    "device_status": "passed",
+    "device_reported_by_user": true,
     "active_source_count": 78,
     "a_customer_artifact_id": 10521188214,
     "a_customer_artifact_digest": "sha256:8e9b1dbc756ab75d456dcb9f524b84290ce7e903a9272c8e7abd469add711edb",
@@ -43,5 +44,5 @@
     "b_debug_artifact_id": 10521073336,
     "b_debug_artifact_digest": "sha256:289fd2faf8b8ad3ab2c9902045e7756f16872e8d22f552531b5ffa7a0786f463"
   },
-  "next_task": "Real-device validate P51-E clear-game-data, clear-authorization, IAP/noads toggle, and ad-speed toggle behavior. Do not promote until explicit user PASS."
+  "next_task": "P51 feature implementation refactor is complete through P51-E. Select the next dedicated stage without mixing UI changes into the verified runtime baseline."
 }
