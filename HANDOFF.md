@@ -3,37 +3,43 @@
 ## Repository / source of truth
 - Repository: `a7987083/zonoe-`.
 - Canonical runtime/product surface: `testmod/` + `testmod.xcodeproj`.
-- Read `ROADMAP.md` first and `PROJECT_STATE.json` second. If chat history conflicts with them, repository docs win.
+- Read `ROADMAP.md`, `PROJECT_STATE.json`, then `P50_ARCHITECTURE_FREEZE.md`.
 
-## Current promoted baseline
-- Version: `v1_p48_1`.
-- Product source: `71eddfa0600112aa56a8bef45013d73f4673794a`.
-- Work branch: `work/zonoemenu-v1-p48-storekit-cleanup`.
-- Test branch: `test/zonoemenu-v1-p48-storekit-cleanup-build`.
-- CI head: `efabe050194b87518c1442b4fe078ed7283db846`.
-- CI Run `35180342515`: **success**.
+## Current promoted runtime baseline
+- Version: `v1_p49`.
+- Product source: `4cebe094ad7a4dd554e8266af34dcf3abe04902a`.
+- CI Run `35195152912`: **success**.
 - Real-device validation: **passed, explicitly reported by user**.
 - Active Sources: **78**.
 - Architectures: `arm64 + arm64e`.
-- A_customer artifact: `10480455519`, digest `sha256:beb2e1dd9b0b6ad913b5dc00911a890fd33293f9f33204196266474909b47dfe`.
-- A_customer dylib SHA256: `36bbe4c32882d98b274fb7cfb40bf62f727502b4867765bee1f747c0e5fbe90d`.
-- B_debug artifact: `10480331340`, digest `sha256:fb21abd689eee241ae9331e24558756a342fd50a766fd8d4740bab5fde615e8e`.
-- P48.1 is the rollback/device baseline until a later candidate explicitly passes its real-device gate.
+- A_customer artifact: `10485344383`, digest `sha256:33ae7fda25128e9d0bd6a167a82aedaf3a1272a8ceb13111bef23c58ff270c5d`.
+- A_customer dylib SHA256: `4d19c0368b8c599ff59635aa0e36a75a2ba67e797d14e91a48fef3b494e66bac`.
+- B_debug artifact: `10485622521`, digest `sha256:9156b57fd832461274f3c8d1625c8b8213d556c9862b32d1d461294783a23e27`.
+- P49 is the rollback/device baseline.
 
-## P48.1 change
-- Removed residual StoreKit/App Store presentation code from `YYYPicker`.
-- Preserved restore-save/import behavior.
-- PBX did not change versus P48.
-- Exported symbols are identical to P48.
-- Load libraries are identical to P48 except `StoreKit.framework` is deliberately absent.
+## P49 change
+- Removed proven-unused `Network.framework` from PBX.
+- Active Sources remain 78.
+- A_customer/B_debug builds passed.
+- Exported symbols are identical to P48.1.
+- Load libraries are identical to P48.1 except `Network.framework` is absent.
+- User reported startup, authorization, menu, save/network smoke normal on device.
 
-## Runtime chain to preserve
+## P50 state
+- Work branch: `work/zonoemenu-v1-p50-architecture-freeze`.
+- P50 is a stabilization/freeze stage; **no runtime behavior change is intended**.
+- Contract: `P50_ARCHITECTURE_FREEZE.md`.
+- Static gate: `Tests/p50_architecture_freeze_contract.py`.
+- CI gate: `.github/workflows/p50-architecture-freeze.yml`.
+- P50 must keep `testmod/` + `testmod.xcodeproj` identical to promoted P49.
+
+## Frozen runtime chain
 ```text
 dyld
   -> main.m +load
      -> authorization reset install
      -> ZONBootstrapStart
-        -> AppLovinSDK / UnityFramework preflight
+        -> preflight
         -> A_customer authorization or B_debug floating entry
         -> ZONLoadBundledModules
            -> module directory scan / dlopen
@@ -41,13 +47,13 @@ dyld
   -> floating entry/menu lifecycle
 ```
 
-## Takeover rules
-- Never optimize startup timing based only on source inspection; use device trace evidence first.
-- Do not change `+load`, queues, timeouts, retries, callback order or module loading timing during structural cleanup.
-- Verify PBX membership and repository/runtime reachability before deleting or moving code.
-- One architectural concern per version.
-- CI success never equals device promotion.
-- Historical audit/CI material is not dead merely because it is old.
+## Frozen ownership rules
+- Startup/bootstrap responsibilities stay in their current boundary.
+- Authorization/UDID stays behind Coordinator/API/Bridge/Fallback Adapter.
+- Menu/UI consumes Registry/Dispatcher; new UI must not directly couple to legacy feature implementations.
+- Module discovery/load ordering remains unchanged without a dedicated stage.
+- Save/restore/cloud-save and persistence semantics remain unchanged without a dedicated stage.
+- Active dependency/source deletion requires a new reachability audit and promotion gate.
 
 ## Immediate Next Task
-P49 — Active Target / Dead Code / Dependency Audit. Recompute the active PBX/build/framework/dependency surface from P48.1 and produce evidence before deleting anything. Compare all candidate changes against P48.1.
+Finish P50 contract CI and canonical documentation synchronization. Do not modify runtime/product files during P50.
