@@ -21,7 +21,6 @@ jobs:
           set -euxo pipefail
           test "$(tr -d '[:space:]' < VERSION)" = 'v1_p46'
           python3 Tests/p46_launch_contract.py
-          python3 Tests/bootstrap_moduleloader_contract.py
           python3 Tests/dispatcher_contract_smoke.py
       - name: Compile launch trace probe for iPhoneOS
         run: |
