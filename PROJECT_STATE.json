@@ -3,14 +3,14 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p50-architecture-freeze",
-  "current_test_branch": null,
-  "current_version": "v1_p50",
-  "current_phase": "v1_p50_refactor_stabilization_architecture_freeze",
-  "phase_status": "completed_runtime_frozen_to_p49",
-  "last_device_verified_code_commit": "4cebe094ad7a4dd554e8266af34dcf3abe04902a",
-  "last_device_verified_version": "v1_p49",
-  "last_ci_run_id": 35195152912,
+  "current_work_branch": "work/zonoemenu-v1-p51b-backup-refactor",
+  "current_test_branch": "test/zonoemenu-v1-p51b-backup-refactor",
+  "current_version": "v1_p51b",
+  "current_phase": "v1_p51b_backup_refactor",
+  "phase_status": "completed_device_passed",
+  "last_device_verified_code_commit": "e8df5c72c8698eda76971ac44b44d611c6e8cbbb",
+  "last_device_verified_version": "v1_p51b",
+  "last_ci_run_id": 35255286856,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
@@ -24,8 +24,8 @@
   "known_issues_document": "KNOWN_ISSUES.md",
   "changelog_document": "CHANGELOG_DEV.md",
   "rollback_baseline": {
-    "version": "v1_p49",
-    "source_commit": "4cebe094ad7a4dd554e8266af34dcf3abe04902a",
+    "version": "v1_p51b",
+    "source_commit": "e8df5c72c8698eda76971ac44b44d611c6e8cbbb",
     "device_status": "passed"
   },
   "p49": {
@@ -35,7 +35,7 @@
     "ci_head": "592aa64cd35307e358716d3f1517a75a41e986f3",
     "ci_run_id": 35195152912,
     "ci_status": "success",
-    "device_status": "passed",
+    "device_status": "passed_superseded",
     "device_reported_by_user": true,
     "active_source_count": 78,
     "network_framework_removed": true,
@@ -56,18 +56,35 @@
     "contract_test": "Tests/p50_architecture_freeze_contract.py",
     "ci_workflow": ".github/workflows/p50-architecture-freeze.yml"
   },
+  "p51a": {
+    "branch": "work/zonoemenu-v1-p51-feature-execution-refactor",
+    "source_commit": "0f4ed9f989893172bf5ea8b34952a0372b8c2af8",
+    "ci_run_id": 35253980287,
+    "ci_status": "success",
+    "status": "covered_by_p51b_device_pass"
+  },
+  "p51b": {
+    "branch": "work/zonoemenu-v1-p51b-backup-refactor",
+    "test_branch": "test/zonoemenu-v1-p51b-backup-refactor",
+    "source_commit": "e8df5c72c8698eda76971ac44b44d611c6e8cbbb",
+    "ci_head": "cd70800e364cf9ceb8c5c3b91df3b9d8c1a377a6",
+    "ci_run_id": 35255286856,
+    "ci_status": "success",
+    "device_status": "passed",
+    "device_reported_by_user": true,
+    "active_source_count": 78,
+    "a_customer_artifact_id": 10511909626,
+    "a_customer_artifact_digest": "sha256:a8786d238573418cdd69e51578df0b8e5a8fab791dbac61e462dd81c55c2c5b6",
+    "a_customer_dylib_sha256": "770b2cc1088fdcaa9f7fcfb5abb08d17e257f38f992ecee4b8b3eed4149f1053",
+    "b_debug_artifact_id": 10511974476,
+    "b_debug_artifact_digest": "sha256:d456aa02a8bc5cfc23f02c349949af468261e370b1c0b37af156b4fe965fb0be"
+  },
   "refactor_rules": {
     "one_architectural_concern_per_version": true,
     "ci_does_not_equal_device_promotion": true,
-    "no_runtime_drift_during_p50": true,
     "pbx_membership_defines_active_product_code": true,
     "delete_only_after_reachability_proof": true,
-    "ui_must_use_registry_dispatcher": true,
-    "no_automatic_post_p50_structural_refactor": true
+    "ui_must_use_registry_dispatcher": true
   },
-  "planned_refactor_phases": [
-    {"version":"v1_p49","name":"Active Target / Dead Code / Dependency Audit","status":"completed_device_passed","runtime_change_intended":false},
-    {"version":"v1_p50","name":"Refactor Stabilization / Architecture Freeze","status":"completed","runtime_change_intended":false}
-  ],
-  "next_task": "No automatic P51 refactor. Open the next stage only for a concrete product requirement. A menu redesign should be UI-only and preserve Registry/Dispatcher plus all frozen runtime boundaries."
+  "next_task": "P51-C restore-save refactor: separate picker/UI orchestration from restore engine while preserving ZIP import, Documents/Library discovery, copy semantics, PreferenceManager reload, and current user-visible behavior."
 }
