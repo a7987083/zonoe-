@@ -1,0 +1,53 @@
+name: p48 Remove App Store Legacy
+
+on:
+  push:
+    branches:
+      - work/zonoemenu-v1-p48-god-object-split-preflight
+    paths:
+      - 'scripts/p48_remove_app_store_legacy.py'
+      - '.github/workflows/p48-remove-app-store-legacy.yml'
+      - 'testmod/**'
+      - 'testmod.xcodeproj/**'
+      - 'VERSION'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply P48 App Store legacy removal
+        run: python3 scripts/p48_remove_app_store_legacy.py
+      - name: Verify exact removal scope
+        run: |
+          git -c core.quotepath=false diff -- testmod testmod.xcodeproj VERSION
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path('.')
+          assert not (root/'testmod/导入导出/fuzhu.h').exists()
+          assert not (root/'testmod/导入导出/fuhzu.m').exists()
+          wx=(root/'testmod/Bsphp/WX_NongShiFu123.mm').read_text(encoding='utf-8')
+          assert '#import "fuzhu.h"' not in wx
+          assert 'checkbanben' not in wx
+          pbx=(root/'testmod.xcodeproj/project.pbxproj').read_text(encoding='utf-8')
+          assert 'fuzhu.h' not in pbx and 'fuhzu.m' not in pbx
+          assert (root/'VERSION').read_text().strip() == 'v1_p48'
+          print('P48 removal scope PASS')
+          PY
+      - name: Commit runtime candidate if changed
+        run: |
+          if git diff --quiet -- testmod testmod.xcodeproj VERSION; then
+            echo 'No runtime changes to commit'
+            exit 0
+          fi
+          git config user.name 'a7987083'
+          git config user.email '85878547+a7987083@users.noreply.github.com'
+          git add -A testmod testmod.xcodeproj VERSION
+          git commit -m 'refactor: remove legacy App Store version checker'
+          git push origin HEAD:work/zonoemenu-v1-p48-god-object-split-preflight
