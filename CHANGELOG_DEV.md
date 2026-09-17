@@ -1,91 +1,50 @@
 # CHANGELOG_DEV
 
-## 2026-09-17 — v1_p47 Repository Hygiene / Generated Artifact Cleanup
-- Work branch: `work/zonoemenu-v1-p47-repository-hygiene`.
-- Repository candidate commit: `64f8575966d62695123b9f8444f89dbc98e796df`.
-- Runtime source remains P46: `83a49f46c1d0e4eecf5a52a485ebc35442786f67`; `testmod/` and `testmod.xcodeproj/` are byte-identical to P46.
-- Test branch: `test/zonoemenu-v1-p47-repository-hygiene-build`.
-- Successful CI head: `eed8c8aca74a8c6e6985848a11c76d5a52cc2f40`.
-- CI Run `35169166129`: **success**.
-- Removed tracked generated package `Packages/com.leizi.www..testmod_0.1-1_iphoneos-arm.zip` after exact filename and `Packages/` reference searches returned no repository consumers.
-- Added narrow `.gitignore` rule `Packages/*.zip`; existing user/build ignore coverage retained.
-- Historical phase scripts/tests/workflows were deliberately retained as reproducibility/evidence material rather than treated as garbage solely because they are old.
-- Added `P47_REPOSITORY_HYGIENE_AUDIT.md` and `Tests/p47_repository_hygiene_contract.py`.
-- Contract proves canonical product trees equal P46, no tracked package ZIP/user/build debris, and Active PBX Sources remain **79**.
-- Inherited P46 launch contract: PASS.
+## 2026-09-17 — v1_p48_1 StoreKit Residual Cleanup
+- Work branch: `work/zonoemenu-v1-p48-storekit-cleanup`.
+- Product source commit: `71eddfa0600112aa56a8bef45013d73f4673794a`.
+- Test branch: `test/zonoemenu-v1-p48-storekit-cleanup-build`.
+- Successful CI head: `efabe050194b87518c1442b4fe078ed7283db846`.
+- CI Run `35180342515`: **success**.
+- Removed residual StoreKit/App Store presentation surface from `YYYPicker` while preserving restore-save/import behavior.
+- PBX unchanged versus P48; Active Sources remain **78**.
 - A_customer and B_debug builds passed for `arm64 + arm64e`.
-- P47/P46 exported symbols and load libraries are identical.
-- A_customer artifact ID `10476362290`, digest `sha256:f913b210dd80e2438af1bfc13b8b8b3aafe3ab3837c8d4507935abb10adfdfe5`.
-- A_customer dylib SHA256 `0a02a4eae98c6e18801320e2558c63769683697caf5faf557f38d553cbc729a2`, **byte-identical to P46 A_customer**.
-- B_debug artifact ID `10476157646`, digest `sha256:d2f57b2f041b533a40dcfdec43e691c274822b97214deeeb5acaac3e115a7bcd`.
-- P47 status: **CI verified / promotion blocked on inherited P46 combined device gate**. P44 remains promoted rollback baseline until explicit PASS.
+- Exported symbols are identical to P48.
+- Load-library comparison differs from P48 by exactly one intended removal: `StoreKit.framework`; all other load libraries are unchanged.
+- A_customer artifact ID `10480455519`, digest `sha256:beb2e1dd9b0b6ad913b5dc00911a890fd33293f9f33204196266474909b47dfe`.
+- A_customer dylib SHA256 `36bbe4c32882d98b274fb7cfb40bf62f727502b4867765bee1f747c0e5fbe90d`.
+- B_debug artifact ID `10480331340`, digest `sha256:fb21abd689eee241ae9331e24558756a342fd50a766fd8d4740bab5fde615e8e`.
+- User explicitly reported P48.1 real-device validation normal.
+- **P48.1 is promoted and is the current rollback/device baseline.**
+
+## 2026-09-17 — v1_p47 Repository Hygiene / Generated Artifact Cleanup
+- Repository candidate commit: `64f8575966d62695123b9f8444f89dbc98e796df`.
+- Runtime source remained P46 `83a49f46c1d0e4eecf5a52a485ebc35442786f67`.
+- CI Run `35169166129`: success.
+- Removed tracked generated package ZIP and added `Packages/*.zip` ignore rule without changing canonical runtime/product trees.
+- Historical phase scripts/tests/workflows retained as reproducibility evidence.
 
 ## 2026-09-17 — v1_p46 Startup Side-Effect Instrumentation & Launch Contract
-- Work branch: `work/zonoemenu-v1-p46-launch-contract`.
 - Product source commit: `83a49f46c1d0e4eecf5a52a485ebc35442786f67`.
-- Test branch: `test/zonoemenu-v1-p46-launch-contract-build`.
-- Successful CI head: `4cb21f21c76b359fbf7ad13e7d514df39ce83645`.
-- CI Run `35167182449`: **success**.
-- Added header-only `testmod/ZONServices/ZONLaunchTrace.h` using `mach_absolute_time`, structured `NSLog`, and legacy `os_signpost_event_emit` for iOS 12-compatible launch observability.
-- Added trace points around `main.m +load`, reset installation, Bootstrap/preflight, A_customer/B_debug variant entry, authorization cached/fresh paths, legacy fallback, module scan/load, floating-entry attach and menu presentation.
-- No PBX registration was added; Active Sources remain **79**.
-- `Tests/p46_launch_contract.py` proves that removing trace imports/calls restores every touched runtime file exactly to P45 and that the PBX is byte-identical to P45.
-- Trace header contains no queue/timer/sleep scheduling primitives; key startup ordering remains unchanged by contract.
-- Independent iPhoneOS arm64 trace probe compiled with `-Wall -Wextra -Werror`.
-- A_customer and B_debug builds passed for `arm64 + arm64e`.
-- P46/P45 exported symbol sets are identical.
-- P46/P45 load-library sets are identical.
-- A_customer artifact ID `10475352058`, digest `sha256:79c34fd78c0071ed2a865ee24082806f6289e5a6615a0d022446dc6aa84ad0e1`.
-- A_customer dylib SHA256 `0a02a4eae98c6e18801320e2558c63769683697caf5faf557f38d553cbc729a2`.
-- B_debug artifact ID `10475337852`, digest `sha256:7cf081e2956a0a293f6deafbea20c680350dbf5356f87edfdc4affba915fb6dd`.
-- P46 status: **CI verified / device pending**. It inherits P45 runtime, so its device gate must also cover P45 legacy fallback behavior. P44 remains promoted rollback baseline.
+- CI Run `35167182449`: success.
+- Added header-only launch instrumentation; no PBX source membership change.
+- Behavior is covered by later promoted real-device baselines.
 
 ## 2026-09-16 — v1_p45 Legacy UDID Web/Profile Fallback Adapter Boundary
-- Work branch: `work/zonoemenu-v1-p45-legacy-udid-fallback-adapter`.
 - Product source commit: `841da61c51e8c7fef81c15a56ecdb92c31b9f96d`.
-- Test branch: `test/zonoemenu-v1-p45-legacy-udid-fallback-adapter-build`.
-- Successful CI head: `ae57fdd5f61a0901f559083a95d0f984a6f2da84`.
-- CI Run `35036655523`: **success**.
-- Added `ZONLegacyUDIDFallbackAdapter.h/.m` and mechanically moved the existing legacy `WX_NongShiFu123 getUDID:` fallback block out of `ZonoeUDIDAPI.m` without changing main-queue, one-in-flight, `DZUDID`, plausibility-check, log or bridge-store semantics.
-- Active Sources changed **78 → 79**, sole new active source `ZONLegacyUDIDFallbackAdapter.m`.
-- Adapter independent iPhoneOS compile passed; A_customer/B_debug arm64+arm64e builds passed.
-- P45/P44 exports and load libraries are identical.
-- A_customer artifact `10424070482`, digest `sha256:5b81d2d673b970518c84a35e271e1a2f74ffcbee907d319d39a9f18bdf96747a`, dylib SHA256 `15c7d06db2afd08ab1de014d00a0992e76666031b6b4219efb2d82792a19dc56`.
-- B_debug artifact `10423676606`, digest `sha256:c5b2ca0a36a518a92a660f9ffde4a94b22054e5eec0af331d5cb8cdd79012477`.
-- P45 did not receive a separate explicit real-device PASS before P46 development; it remains an intermediate CI-verified version.
+- CI Run `35036655523`: success.
+- Mechanically isolated the legacy `WX_NongShiFu123 getUDID:` fallback behind `ZONLegacyUDIDFallbackAdapter`.
+- Behavior is covered by later promoted real-device baselines.
 
 ## 2026-09-16 — v1_p44 Authorization Orchestration Boundary
-- Work branch: `work/zonoemenu-v1-p44-authorization-orchestration-boundary`.
 - Product source commit: `aee574d180da7cc82db54be7ab5aeaa9d072c561`.
-- Test branch: `test/zonoemenu-v1-p44-authorization-orchestration-boundary-build`.
-- Successful CI head: `d6a110befbbc8c96dfffcae1f942c94b6011fe2d`.
-- CI Run `35020232205`: **success**.
-- Added `testmod/ZONServices/ZONAuthorizationCoordinator.h/.m` and mechanically moved authorization/reset orchestration out of `main.m` while preserving `+load`, Bootstrap call position and framework preflight order.
-- Active Sources changed **77 → 78**.
-- A_customer/B_debug arm64+arm64e builds passed; P44/P42 exports/load libraries are identical.
-- A_customer artifact `10417242852`, digest `sha256:d9ce3432727b1c2ce5302ad4e732237ac7c45261ebd65cc3e7eda291ae2c71b8`, dylib SHA256 `f8d33f888ea5466217938af1cd338765252effb2cc4eda039a871579346e0435`.
-- User explicitly reported P44 real-device validation normal; **P44 is the current promoted device baseline**.
-
-## 2026-09-16 — P43 Architecture State Refresh & Remaining Ownership Audit
-- Work branch `work/zonoemenu-v1-p43-architecture-audit`; test `test/zonoemenu-v1-p43-architecture-audit`.
-- Audit head `aed6b72e15a5d7096b42b2dbf4f8fa467c963150`; CI Run `35001000784`: success.
-- Canonical runtime/PBX remained identical to P42; Active Sources stayed 77.
-- Selected the authorization/reset helper block in `main.m` as P44 target and excluded direct `WX_NongShiFu123.mm` rewrite.
-
-## 2026-09-16 — Canonical Post-P42 Refactor Plan
-- Published complete P43–P50 sequence in `ROADMAP.md` with goals, scope, forbidden changes, gates and promotion rules.
-
-## 2026-09-16 — v1_p42 Zonoe UDID API Boundary
-- Source `e87b683a9c868e00d13582c8145bb9368878fee3`; CI `34995566144` success; Active Sources 77.
-- Moved `ZonoeUDIDAPI` implementation from `NSObject+UI.m` to `ZONServices/ZonoeUDIDAPI.m` mechanically.
-- A_customer artifact `10407391591`; dylib SHA256 `9174bed40c8297a3927348d61cc0959a02f42391741d249edab2dcdfbcc63ad6`.
-- User explicitly reported P42 device validation normal; later superseded by P44.
-
-## 2026-09-15 — v1_p41 UDID Bridge Boundary
-- Source `ffa6e2a7c380ca34ec1add72d488eb96c1f60bfe`; CI `34959813770` success; Active Sources 76.
-- `ZONUDIDBridge.h` became declaration-only and implementation moved to `ZONUDIDBridge.m`; device passed, later superseded.
+- CI Run `35020232205`: success.
+- User explicitly reported real-device validation normal; later superseded by P48/P48.1.
 
 ## Earlier architecture cleanup
+- P43 architecture audit: CI `35001000784` success.
+- P42 Zonoe UDID API Boundary: CI `34995566144` success; device passed.
+- P41 UDID Bridge Boundary: CI `34959813770` success; device passed.
 - P40 zero-behavior cleanup: `09aa9f27fe0b0491ac17f92ed9ed20d496bf8f33`, CI `34915266733` success.
 - P39 active target slimming: `613882da7068795533c530d45775f7ae5f79ed56`, device passed.
 - P33 Bootstrap / ModuleLoader boundary: `0f12e4353e8859c585fe2975812964a28b7410d1`.
