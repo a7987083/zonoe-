@@ -1,53 +1,45 @@
 # CHANGELOG_DEV
 
-## 2026-09-18 — v1_p50 Refactor Stabilization / Architecture Freeze — IN PROGRESS
-- Work branch: `work/zonoemenu-v1-p50-architecture-freeze`.
-- Runtime baseline remains promoted P49 commit `4cebe094ad7a4dd554e8266af34dcf3abe04902a`.
-- Added `P50_ARCHITECTURE_FREEZE.md`.
-- Added `Tests/p50_architecture_freeze_contract.py`.
-- Added `.github/workflows/p50-architecture-freeze.yml`.
-- P50 policy: no runtime/product drift from P49; structural changes require a new explicitly scoped stage.
-
-## 2026-09-18 — v1_p49 Active Target / Dead Code / Dependency Audit
-- Work branch: `work/zonoemenu-v1-p49-active-target-audit`.
-- Product source commit: `4cebe094ad7a4dd554e8266af34dcf3abe04902a`.
-- Test branch: `test/zonoemenu-v1-p49-active-target-audit`.
-- Successful CI head: `592aa64cd35307e358716d3f1517a75a41e986f3`.
-- CI Run `35195152912`: **success**.
-- Proved `Network.framework` had zero source consumers and removed it from PBX only.
-- Active PBX Sources remain **78**.
-- A_customer and B_debug builds passed for `arm64 + arm64e`.
-- Exported symbols are identical to P48.1.
-- Load-library comparison differs from P48.1 by exactly one intended removal: `Network.framework`.
-- A_customer artifact ID `10485344383`, digest `sha256:33ae7fda25128e9d0bd6a167a82aedaf3a1272a8ceb13111bef23c58ff270c5d`.
-- A_customer dylib SHA256 `4d19c0368b8c599ff59635aa0e36a75a2ba67e797d14e91a48fef3b494e66bac`.
-- B_debug artifact ID `10485622521`, digest `sha256:9156b57fd832461274f3c8d1625c8b8213d556c9862b32d1d461294783a23e27`.
-- User explicitly reported P49 real-device validation normal.
-- **P49 is promoted and is the current rollback/device baseline.**
-
-## 2026-09-17 — v1_p48_1 StoreKit Residual Cleanup
-- Product source commit: `71eddfa0600112aa56a8bef45013d73f4673794a`.
-- CI Run `35180342515`: **success**.
-- Removed residual StoreKit/App Store presentation surface from `YYYPicker` while preserving restore-save/import behavior.
+## 2026-09-18 — v1_p51b Backup Refactor — DEVICE PASSED
+- Work branch: `work/zonoemenu-v1-p51b-backup-refactor`.
+- Product source commit: `e8df5c72c8698eda76971ac44b44d611c6e8cbbb`.
+- Test branch: `test/zonoemenu-v1-p51b-backup-refactor`.
+- CI head: `cd70800e364cf9ceb8c5c3b91df3b9d8c1a377a6`.
+- CI Run `35255286856`: **success**.
+- Refactored duplicated Documents/Library backup loops into a shared backup helper without changing the backup entry or output contract.
+- Preserved the 50 MiB confirmation threshold, Skip/Backup choices, staging layout, cleanup paths, ZIP destination and share flow.
 - Active Sources remain **78**.
 - A_customer and B_debug builds passed for `arm64 + arm64e`.
-- Load-library comparison differs from P48 by exactly one intended removal: `StoreKit.framework`.
-- User explicitly reported P48.1 real-device validation normal.
-- Superseded by P49.
+- Exported symbols and linked libraries match P51-A.
+- A_customer artifact ID `10511909626`, digest `sha256:a8786d238573418cdd69e51578df0b8e5a8fab791dbac61e462dd81c55c2c5b6`.
+- A_customer dylib SHA256 `770b2cc1088fdcaa9f7fcfb5abb08d17e257f38f992ecee4b8b3eed4149f1053`.
+- B_debug artifact ID `10511974476`, digest `sha256:d456aa02a8bc5cfc23f02c349949af468261e370b1c0b37af156b4fe965fb0be`.
+- User explicitly reported all required P51-B real-device tests normal.
+- **P51-B is promoted and is now the current rollback/device baseline.**
 
-## 2026-09-17 — v1_p47 Repository Hygiene / Generated Artifact Cleanup
-- Repository candidate commit: `64f8575966d62695123b9f8444f89dbc98e796df`.
-- Runtime source remained P46 `83a49f46c1d0e4eecf5a52a485ebc35442786f67`.
-- CI Run `35169166129`: success.
+## 2026-09-18 — v1_p51 Feature Execution Refactor — CI VERIFIED
+- Standardized nine feature execution routing and de-duplicated runtime-toggle persistence.
+- CI Run `35253980287`: success.
+- Device behavior is covered by the later P51-B real-device pass.
+
+## 2026-09-18 — v1_p50 Refactor Stabilization / Architecture Freeze
+- Work branch: `work/zonoemenu-v1-p50-architecture-freeze`.
+- Runtime baseline remained P49 commit `4cebe094ad7a4dd554e8266af34dcf3abe04902a`.
+- Added architecture freeze contract, final status matrix and CI guardrails.
+
+## 2026-09-18 — v1_p49 Active Target / Dead Code / Dependency Audit
+- Product source commit: `4cebe094ad7a4dd554e8266af34dcf3abe04902a`.
+- CI Run `35195152912`: success.
+- Removed unused `Network.framework`; Active Sources remained 78.
+- User explicitly reported P49 real-device validation normal.
+- Superseded by P51-B.
 
 ## Earlier architecture cleanup
-- P46 Startup Side-Effect Instrumentation & Launch Contract: CI `35167182449` success.
-- P45 Legacy UDID Web/Profile Fallback Adapter Boundary: CI `35036655523` success.
-- P44 Authorization Orchestration Boundary: CI `35020232205` success; device passed.
-- P43 architecture audit: CI `35001000784` success.
-- P42 Zonoe UDID API Boundary: CI `34995566144` success; device passed.
-- P41 UDID Bridge Boundary: CI `34959813770` success; device passed.
-- P40 zero-behavior cleanup: `09aa9f27fe0b0491ac17f92ed9ed20d496bf8f33`, CI `34915266733` success.
-- P39 active target slimming: `613882da7068795533c530d45775f7ae5f79ed56`, device passed.
-- P33 Bootstrap / ModuleLoader boundary: `0f12e4353e8859c585fe2975812964a28b7410d1`.
-- P32 Dispatcher split: `84f8b3898bee9d95ed4034d12842879cc56280d3`, device passed.
+- P48.1 StoreKit residual cleanup: device passed.
+- P47 Repository Hygiene: CI passed.
+- P46 Startup Side-Effect Instrumentation & Launch Contract: CI passed.
+- P45 Legacy UDID Web/Profile Fallback Adapter Boundary: CI passed.
+- P44 Authorization Orchestration Boundary: CI passed; device passed.
+- P43 architecture audit: CI passed.
+- P42 Zonoe UDID API Boundary: CI passed; device passed.
+- P41 UDID Bridge Boundary: CI passed; device passed.
