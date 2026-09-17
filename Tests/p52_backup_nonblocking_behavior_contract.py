@@ -2,6 +2,7 @@ from pathlib import Path
 
 src = Path("testmod/导入导出/daochucd.m").read_text()
 version = Path("VERSION").read_text().strip()
+slash = chr(92)
 
 required = [
     "requestBackupDecisionForItemNamed:",
@@ -11,7 +12,6 @@ required = [
     '@"提示"',
     '@"跳过"',
     '@"备份"',
-    '备份 \"%@\" 大于 %.2f MB，是否跳过？',
     'label:@"Documents"',
     'label:@"Library"',
     'HeimdallrBU',
@@ -27,6 +27,9 @@ required = [
 
 for marker in required:
     assert marker in src, f"missing behavior marker: {marker}"
+
+prompt_marker = '备份 ' + slash + '"%@' + slash + '" 大于 %.2f MB，是否跳过？'
+assert prompt_marker in src, f"missing behavior marker: {prompt_marker!r}"
 
 for forbidden in [
     "dispatch_semaphore_t",
