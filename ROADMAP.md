@@ -1,177 +1,134 @@
 # ROADMAP
 
-> Canonical refactor plan for `zonoemenu`. This file is the source of truth for stage goals, scope, forbidden changes, verification gates, status, and Next Task. Do not rely on chat history for sequencing decisions.
+> Canonical refactor plan for `zonoemenu`. This file is the source of truth for stage goals, allowed scope, forbidden scope, verification gates, status, and Next Task. Do not rely on chat history for sequencing decisions.
 
 ## Current promoted baseline
-- Device-verified version: `v1_p42`.
-- Runtime/source commit: `e87b683a9c868e00d13582c8145bb9368878fee3`.
-- CI Run `34995566144`: **success**.
-- Real-device regression: **passed**.
-- Active PBX Sources: **77**.
-- Architectures: `arm64 + arm64e`.
-- P42 remains the mandatory rollback/device baseline until a later runtime candidate explicitly passes its real-device gate.
-
-## Current development phase
-### P44 — Authorization Orchestration Boundary — CI VERIFIED / DEVICE PENDING
-- Work branch: `work/zonoemenu-v1-p44-authorization-orchestration-boundary`.
-- Test branch: `test/zonoemenu-v1-p44-authorization-orchestration-boundary-build`.
-- Product source commit: `aee574d180da7cc82db54be7ab5aeaa9d072c561`.
-- Successful CI head: `d6a110befbbc8c96dfffcae1f942c94b6011fe2d`.
+- Device-verified version: `v1_p44`.
+- Runtime/source commit: `aee574d180da7cc82db54be7ab5aeaa9d072c561`.
 - CI Run `35020232205`: **success**.
-- Active PBX Sources: **77 → 78**; sole new active source is `testmod/ZONServices/ZONAuthorizationCoordinator.m`.
-- A_customer artifact: `10417242852`, digest `sha256:d9ce3432727b1c2ce5302ad4e732237ac7c45261ebd65cc3e7eda291ae2c71b8`.
-- A_customer dylib SHA256: `f8d33f888ea5466217938af1cd338765252effb2cc4eda039a871579346e0435`.
-- B_debug artifact: `10417212790`, digest `sha256:2979768f150373160bffd1bddaf45e5d1ba1ee6d9ed1c8cdc05149485abd4a78`.
+- Real-device regression: **passed and explicitly reported by user**.
+- Active PBX Sources: **78**.
+- Architectures: `arm64 + arm64e`.
+- P44 remains the mandatory rollback/device baseline until a later candidate explicitly passes its device gate.
+
+## Current development state
+### P45 — Legacy UDID Web/Profile Fallback Adapter Boundary — CI VERIFIED / DEVICE PENDING
+- Product source: `841da61c51e8c7fef81c15a56ecdb92c31b9f96d`.
+- CI head: `ae57fdd5f61a0901f559083a95d0f984a6f2da84`.
+- CI Run `35036655523`: **success**.
+- Active Sources: **79**.
+- P45/P44 exports and load libraries: **identical**.
+- Device status: **pending**. P45 has not been promoted separately.
+
+### P46 — Startup Side-Effect Instrumentation & Launch Contract — CI VERIFIED / DEVICE PENDING
+- Work branch: `work/zonoemenu-v1-p46-launch-contract`.
+- Test branch: `test/zonoemenu-v1-p46-launch-contract-build`.
+- Product source commit: `83a49f46c1d0e4eecf5a52a485ebc35442786f67`.
+- Successful CI head: `4cb21f21c76b359fbf7ad13e7d514df39ce83645`.
+- CI Run `35167182449`: **success**.
+- Active PBX Sources: **79**, unchanged from P45.
+- Instrumentation implementation: header-only `testmod/ZONServices/ZONLaunchTrace.h`; not registered in PBX.
+- A_customer artifact: `10475352058`, digest `sha256:79c34fd78c0071ed2a865ee24082806f6289e5a6615a0d022446dc6aa84ad0e1`.
+- A_customer dylib SHA256: `0a02a4eae98c6e18801320e2558c63769683697caf5faf557f38d553cbc729a2`.
+- B_debug artifact: `10475337852`, digest `sha256:7cf081e2956a0a293f6deafbea20c680350dbf5356f87edfdc4affba915fb6dd`.
 - Both artifacts contain `arm64 + arm64e`.
-- P44/P42 exported symbol sets: **identical**.
-- P44/P42 linked load-library sets: **identical**.
-- Device status: **pending**. Do not promote P44 until explicit real-device PASS.
+- P46/P45 exported symbols and load libraries: **identical**.
+- P46-specific contract proves that removing trace imports/calls restores each touched runtime file exactly to P45 content and that PBX remains byte-identical to P45.
+- Device status: **pending**. Because P46 contains the still-unpromoted P45 runtime, P46 device validation must cover both P45 fallback behavior and P46 launch instrumentation before promotion.
 
 ## Refactor operating rules
 1. One architectural concern per version. Never combine ownership cleanup with behavior, timing, threading, protocol, persistence, UI, or feature changes.
-2. Every source-moving phase needs a mechanical/equivalence contract where practical.
-3. Every phase must define protected files/symbols/state machines before source changes begin.
-4. CI success is not device promotion. A runtime-affecting version becomes the new baseline only after explicit real-device PASS.
-5. A failed or untested candidate does not modify the promoted fallback baseline.
-6. Preserve `testmod/` + `testmod.xcodeproj` as the canonical runtime/product surface. PBX membership decides whether code is active.
-7. Do not delete legacy code until active-target reachability and runtime consumers are proven absent.
-8. Do not change `+load`, main-queue sequencing, callback timing, socket retry timing, URL schemes, persistence keys, or authorization continuation as part of structural cleanup.
-9. Every runtime candidate records branch, product commit, CI run/status, A_customer artifact, architectures, SHA256, device status, and rollback baseline.
-10. `CHANGELOG_DEV.md` records actual changes; `HANDOFF.md` records context/risks; `PROJECT_STATE.json` is machine-readable state; `KNOWN_ISSUES.md` tracks unresolved risks.
+2. Source-moving phases require mechanical/equivalence contracts where practical.
+3. Instrumentation phases must prove that removing instrumentation restores the prior candidate exactly.
+4. CI success is not device promotion.
+5. A failed or untested candidate never changes the promoted rollback baseline.
+6. `testmod/` + `testmod.xcodeproj` are the canonical runtime/product surface; PBX membership defines active product code.
+7. Do not delete legacy code without PBX/caller/runtime reachability proof.
+8. Do not change `+load`, queues, callback ordering, retry/timeout behavior, URL schemes, persistence keys, authorization continuation or module loading timing during structural cleanup.
+9. Every runtime candidate records branch, product commit, CI run/status, artifact IDs/digests, architectures, dylib SHA256, device status and rollback baseline.
+10. `CHANGELOG_DEV.md`, `HANDOFF.md`, `PROJECT_STATE.json`, `KNOWN_ISSUES.md`, and `DEVICE_TEST_MATRIX.md` must remain synchronized with this file.
 
 ## Completed foundation
-### P41 — UDID Bridge Compilation Boundary — COMPLETED / DEVICE PASSED
-- Source `ffa6e2a7c380ca34ec1add72d488eb96c1f60bfe`; CI `34959813770` success.
-- `ZONUDIDBridge.h` became declaration-only; implementation moved to `ZONUDIDBridge.m`.
-- Active Sources 75 → 76. Device passed; superseded by P42.
-
-### P42 — ZonoeUDIDAPI Service Boundary — COMPLETED / CURRENT DEVICE BASELINE
-- Source `e87b683a9c868e00d13582c8145bb9368878fee3`; CI `34995566144` success.
-- `ZonoeUDIDAPI` moved mechanically from `NSObject+UI.m` to `ZONServices/ZonoeUDIDAPI.m`.
-- Active Sources 76 → 77. Device passed.
-
-### P43 — Architecture State Refresh & Remaining Ownership Audit — COMPLETED / RUNTIME UNCHANGED
-- Work `work/zonoemenu-v1-p43-architecture-audit`; test `test/zonoemenu-v1-p43-architecture-audit`.
-- Audit head `aed6b72e15a5d7096b42b2dbf4f8fa467c963150`; CI `35001000784` success.
-- Runtime/PBX remained identical to P42; device test not required.
-- P44 target selected: authorization/reset orchestration in `testmod/Bsphp/main.m`.
-
-## P44 implementation definition
-### Goal
-Separate customer authorization orchestration/reset glue from startup-host ownership without changing customer authorization behavior.
-
-### Implemented scope
-The following existing responsibilities were mechanically moved from `testmod/Bsphp/main.m` to `testmod/ZONServices/ZONAuthorizationCoordinator.m`:
-- original `deletekm` IMP storage;
-- `ZONClearStoredUDIDState`;
-- `ZONDeleteKMAndUDID`;
-- `ZONInstallAuthorizationResetExtension`;
-- `ZONShowCustomerStatus`;
-- `ZONContinueCustomerAuthorization`;
-- `ZONStartCustomerAuthorization`.
-
-`ZONAuthorizationCoordinator.h` exposes only the two entry points needed by `main.m`, with hidden visibility. `main.m` remains the `+load` startup host and calls those entry points at the original locations/order.
-
-### Protected behavior preserved by contract
-- `main.m +load` timing and `ZONBootstrapStart` position.
-- authorization-reset hook installed before Bootstrap.
-- original `deletekm` IMP call-through before UDID state clearing.
-- exact `DZUDID` key and four Zonoe bridge-default keys.
-- AppLovinSDK/UnityFramework preflight order.
-- A_customer/B_debug branch behavior.
-- cached `DZUDID` fast path and `ZonoeCurrentUDID()` bridge-cache path.
-- first request order: status → callback registration → `ZonoeRequestUDIDIfNeeded`.
-- callback validation, keychain write/read verification and `[auth loada]` continuation.
-- existing queues, status strings/durations and persistence semantics.
-- `WX_NongShiFu123.mm`, `ZonoeUDIDAPI.m`, `ZONUDIDBridge.m`, Bootstrap, ModuleLoader, menu and Hook implementations remain protected.
-
-### Verification evidence
-- `Tests/p44_authorization_coordinator_contract.py`: PASS.
-- New coordinator translation unit independently compiles against iPhoneOS SDK with `-Wall -Wextra -Werror`; only the pre-existing third-party JDStatusBarNotification unguarded-availability warning is suppressed for this isolated compile check.
-- A_customer and B_debug full iPhoneOS builds: PASS.
-- `arm64 + arm64e`: PASS.
-- Exported-symbol equality vs P42: PASS.
-- Linked-library equality vs P42: PASS.
-
-### Device promotion gate
-P44 must still pass real-device checks for:
-1. Existing valid `DZUDID` startup → authorization continues normally.
-2. Cleared auth/UDID → Zonoe request/callback → `DZUDID` writeback → authorization continuation.
-3. `deletekm` reset still clears legacy `DZUDID` plus Zonoe bridge state.
-4. Legacy fallback/foreground-return path does not loop, duplicate requests or crash.
-5. Floating entry/menu basic smoke remains normal.
-
-### Rollback
-`v1_p42` / `e87b683a9c868e00d13582c8145bb9368878fee3` remains the rollback baseline until P44 device PASS.
-
----
+- P41 — UDID Bridge Compilation Boundary: completed/device passed, later superseded.
+- P42 — ZonoeUDIDAPI Service Boundary: completed/device passed, later superseded.
+- P43 — Architecture State Refresh & Ownership Audit: completed/runtime unchanged.
+- P44 — Authorization Orchestration Boundary: completed/device passed/current promoted baseline.
 
 ## P45 — Legacy UDID Web/Profile Fallback Adapter Boundary
-**Status:** `planned / blocked on P44 device pass`
-
 ### Goal
-Hide the legacy `WX_NongShiFu123 getUDID:` fallback behind a narrow adapter so `ZonoeUDIDAPI` no longer directly owns legacy class details.
+Hide the existing `WX_NongShiFu123 getUDID:` fallback behind a narrow adapter without changing fallback trigger conditions or continuation semantics.
 
-### Scope
-- Wrap existing fallback entry/callback only.
-- Preserve `DZUDID` lookup, `ZONUDIDBridgeStoreUDID`, one-in-flight guard and main-queue continuation exactly.
+### Implemented scope
+- Added `ZONLegacyUDIDFallbackAdapter.h/.m`.
+- Mechanically moved one-in-flight state, main-queue dispatch, legacy `getUDID:` invocation, `DZUDID` read/validation and `ZONUDIDBridgeStoreUDID` continuation out of `ZonoeUDIDAPI.m`.
+- `WX_NongShiFu123.mm` itself remains unchanged.
 
-### Forbidden
-- No rewrite of legacy web/profile acquisition.
-- No change to fallback trigger conditions, callback semantics, keychain keys or validation rules.
-
-### Verification gate
-- Exact fallback call/continuation contract.
-- A/B arm64+arm64e builds and ABI/load-library comparison.
-- Real-device normal Zonoe path plus forced/unavailable fallback path.
+### Gate
+CI passed; separate device promotion is still pending. Its runtime behavior is inherited by P46 and therefore must be covered by the P46 device gate if P46 is promoted directly.
 
 ---
 
 ## P46 — Startup Side-Effect Instrumentation & Launch Contract
-**Status:** `planned`
-- Measure and lock ordering around `+load`, auth-reset hook, framework preflight, Bootstrap ready, authorization, module loading and floating entry.
-- No queue/order/timeout optimization in this phase.
+### Goal
+Measure and lock the existing startup order before any later startup optimization or simplification is considered.
+
+### Implemented scope
+Header-only `ZONLaunchTrace.h` records monotonic uptime, main-thread flag and legacy `os_signpost` events for:
+- `main.m +load` entry and auth-reset installation;
+- Bootstrap entry/preflight/ready scheduling;
+- AppLovinSDK and UnityFramework preflight completion;
+- A_customer authorization entry, cached/bridge/fresh UDID paths and authorization continuation;
+- legacy fallback begin/invalid/store;
+- module scan/load begin/end;
+- floating-entry request/attach;
+- menu presentation request/dispatched.
+
+### Protected behavior
+- No new dispatch, delay, timer, retry or timeout logic in the trace layer.
+- No PBX source membership changes.
+- No changes to endpoints, storage keys, auth/UDID semantics, fallback conditions, module discovery, menu behavior or hooks.
+- Removing trace imports/calls from the six touched runtime files must reproduce P45 byte-for-byte.
+
+### Verification gate
+- P46 observational contract: PASS.
+- iPhoneOS trace probe compile with `-Wall -Wextra -Werror`: PASS.
+- A_customer + B_debug arm64/arm64e builds: PASS.
+- P46/P45 exported symbols: identical.
+- P46/P45 load libraries: identical.
+- Real-device launch trace + fallback/auth/menu smoke: **pending**.
+
+### Rollback
+`v1_p44` / `aee574d180da7cc82db54be7ab5aeaa9d072c561` remains the rollback baseline until P46 passes the combined device gate.
+
+---
 
 ## P47 — Repository Hygiene / Generated Artifact Cleanup
-**Status:** `planned`
+**Status:** `planned / blocked on P46 device promotion`
+- Audit generated/package binaries, user-specific Xcode state and stale reproducible material.
 - Remove only files proven not to be PBX/script/release/runtime inputs.
-- Keep cleanup isolated from runtime refactors.
+- No runtime feature/refactor work in this phase.
 
 ## P48 — Legacy God-Object Split #1
-**Status:** `planned / target chosen from audit evidence`
-- Split exactly one responsibility from one audited legacy unit; mechanical move first, cleanup later.
+**Status:** `planned`
+- Split exactly one responsibility from one audited active legacy unit; mechanical move first.
 
 ## P49 — Active Target / Dead Code / Dependency Audit
 **Status:** `planned`
-- Recompute active runtime/dependency surface and remove only proven-unused code/dependencies.
+- Recompute active source/dependency surface and remove only proven-unused inputs.
 
 ## P50 — Refactor Stabilization / Architecture Freeze
 **Status:** `planned`
-- Consolidate verified boundaries/inventories/contracts and stop structural churn without a concrete need.
-- Full CI + full real-device regression required before final promotion.
-
-# Protected behavior across all later stages
-Unless a stage explicitly authorizes and independently proves a change, preserve:
-- `main.m +load` timing and Bootstrap/authorization sequencing;
-- authorization-reset compatibility behavior;
-- Zonoe callback scheme/host/nonce/parser/storage semantics;
-- localhost bridge port/timeouts/retries/delays/throttles;
-- `zonoe://udid` preferred path and legacy fallback;
-- `DZUDID` keychain semantics;
-- floating/menu behavior and active features;
-- cloud save/local files/backup/restore/clear-data/clear-auth paths;
-- module discovery, containment, ABI and `dlopen` behavior;
-- `JiangHuHook`, `HookClass`, `ImgTool`, fishhook/rebind behavior.
+- Consolidate verified boundaries/contracts/inventories and stop structural churn without a concrete need.
 
 # Universal promotion checklist
-1. Product diff limited to declared phase scope.
+1. Product diff is limited to the declared scope.
 2. Contract/static tests pass.
-3. New translation units independently compile where applicable.
+3. New translation units or probes compile where applicable.
 4. A_customer + B_debug build for `arm64 + arm64e`.
-5. Export surface and load libraries compared against promoted baseline.
-6. A_customer artifact/digest/dylib SHA256 recorded.
+5. Export surface and load libraries are compared against the immediate runtime predecessor.
+6. A_customer artifact/digest/dylib SHA256 are recorded.
 7. Required real-device checklist passes.
 8. Only then update `last_device_verified_*` and promote.
 
 # Next Task
-**Real-device validate P44 A_customer.** Do not begin P45 product work until P44 receives explicit device PASS. If P44 fails, diagnose against P42 and keep P42 as the promoted rollback baseline.
+**Real-device validate P46 A_customer.** Because P45 never received a separate device PASS, the P46 device gate must also cover the inherited P45 legacy fallback path: normal Zonoe path, fallback only when unavailable, no duplicate fallback, valid `DZUDID` continuation, authorization continuation, foreground return, launch-trace ordering, floating entry and menu smoke. Keep P44 promoted until explicit PASS. After P46 promotion, begin P47 repository hygiene only.
