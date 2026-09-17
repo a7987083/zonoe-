@@ -12,6 +12,9 @@ DerivedData/
 *.dylib
 *.deb
 
+# Generated package outputs
+Packages/*.zip
+
 # macOS
 .DS_Store
 
