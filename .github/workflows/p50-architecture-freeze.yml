@@ -1,0 +1,32 @@
+name: p50 Architecture Freeze
+
+on:
+  push:
+    branches:
+      - work/zonoemenu-v1-p50-architecture-freeze
+
+permissions:
+  contents: read
+
+jobs:
+  freeze-contract:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify no runtime/product drift from promoted P49
+        run: |
+          set -euo pipefail
+          BASE=4cebe094ad7a4dd554e8266af34dcf3abe04902a
+          git diff --exit-code "$BASE" HEAD -- testmod testmod.xcodeproj
+          echo 'P50_PRODUCT_RUNTIME_DRIFT=false'
+      - name: Verify architecture freeze contract
+        run: python3 Tests/p50_architecture_freeze_contract.py
+      - name: Verify promoted P49 evidence markers
+        run: |
+          set -euo pipefail
+          grep -Fq 'v1_p49' P50_ARCHITECTURE_FREEZE.md
+          grep -Fq '35195152912' P50_ARCHITECTURE_FREEZE.md
+          grep -Fq 'Active PBX Sources: `78`' P50_ARCHITECTURE_FREEZE.md
+          echo 'P50_FREEZE_DOCUMENT=PASS'
