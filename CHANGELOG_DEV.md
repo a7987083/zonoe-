@@ -1,47 +1,49 @@
 # CHANGELOG_DEV
 
+## 2026-09-18 — v1_p50 Refactor Stabilization / Architecture Freeze — IN PROGRESS
+- Work branch: `work/zonoemenu-v1-p50-architecture-freeze`.
+- Runtime baseline remains promoted P49 commit `4cebe094ad7a4dd554e8266af34dcf3abe04902a`.
+- Added `P50_ARCHITECTURE_FREEZE.md`.
+- Added `Tests/p50_architecture_freeze_contract.py`.
+- Added `.github/workflows/p50-architecture-freeze.yml`.
+- P50 policy: no runtime/product drift from P49; structural changes require a new explicitly scoped stage.
+
+## 2026-09-18 — v1_p49 Active Target / Dead Code / Dependency Audit
+- Work branch: `work/zonoemenu-v1-p49-active-target-audit`.
+- Product source commit: `4cebe094ad7a4dd554e8266af34dcf3abe04902a`.
+- Test branch: `test/zonoemenu-v1-p49-active-target-audit`.
+- Successful CI head: `592aa64cd35307e358716d3f1517a75a41e986f3`.
+- CI Run `35195152912`: **success**.
+- Proved `Network.framework` had zero source consumers and removed it from PBX only.
+- Active PBX Sources remain **78**.
+- A_customer and B_debug builds passed for `arm64 + arm64e`.
+- Exported symbols are identical to P48.1.
+- Load-library comparison differs from P48.1 by exactly one intended removal: `Network.framework`.
+- A_customer artifact ID `10485344383`, digest `sha256:33ae7fda25128e9d0bd6a167a82aedaf3a1272a8ceb13111bef23c58ff270c5d`.
+- A_customer dylib SHA256 `4d19c0368b8c599ff59635aa0e36a75a2ba67e797d14e91a48fef3b494e66bac`.
+- B_debug artifact ID `10485622521`, digest `sha256:9156b57fd832461274f3c8d1625c8b8213d556c9862b32d1d461294783a23e27`.
+- User explicitly reported P49 real-device validation normal.
+- **P49 is promoted and is the current rollback/device baseline.**
+
 ## 2026-09-17 — v1_p48_1 StoreKit Residual Cleanup
-- Work branch: `work/zonoemenu-v1-p48-storekit-cleanup`.
 - Product source commit: `71eddfa0600112aa56a8bef45013d73f4673794a`.
-- Test branch: `test/zonoemenu-v1-p48-storekit-cleanup-build`.
-- Successful CI head: `efabe050194b87518c1442b4fe078ed7283db846`.
 - CI Run `35180342515`: **success**.
 - Removed residual StoreKit/App Store presentation surface from `YYYPicker` while preserving restore-save/import behavior.
-- PBX unchanged versus P48; Active Sources remain **78**.
+- Active Sources remain **78**.
 - A_customer and B_debug builds passed for `arm64 + arm64e`.
-- Exported symbols are identical to P48.
-- Load-library comparison differs from P48 by exactly one intended removal: `StoreKit.framework`; all other load libraries are unchanged.
-- A_customer artifact ID `10480455519`, digest `sha256:beb2e1dd9b0b6ad913b5dc00911a890fd33293f9f33204196266474909b47dfe`.
-- A_customer dylib SHA256 `36bbe4c32882d98b274fb7cfb40bf62f727502b4867765bee1f747c0e5fbe90d`.
-- B_debug artifact ID `10480331340`, digest `sha256:fb21abd689eee241ae9331e24558756a342fd50a766fd8d4740bab5fde615e8e`.
+- Load-library comparison differs from P48 by exactly one intended removal: `StoreKit.framework`.
 - User explicitly reported P48.1 real-device validation normal.
-- **P48.1 is promoted and is the current rollback/device baseline.**
+- Superseded by P49.
 
 ## 2026-09-17 — v1_p47 Repository Hygiene / Generated Artifact Cleanup
 - Repository candidate commit: `64f8575966d62695123b9f8444f89dbc98e796df`.
 - Runtime source remained P46 `83a49f46c1d0e4eecf5a52a485ebc35442786f67`.
 - CI Run `35169166129`: success.
-- Removed tracked generated package ZIP and added `Packages/*.zip` ignore rule without changing canonical runtime/product trees.
-- Historical phase scripts/tests/workflows retained as reproducibility evidence.
-
-## 2026-09-17 — v1_p46 Startup Side-Effect Instrumentation & Launch Contract
-- Product source commit: `83a49f46c1d0e4eecf5a52a485ebc35442786f67`.
-- CI Run `35167182449`: success.
-- Added header-only launch instrumentation; no PBX source membership change.
-- Behavior is covered by later promoted real-device baselines.
-
-## 2026-09-16 — v1_p45 Legacy UDID Web/Profile Fallback Adapter Boundary
-- Product source commit: `841da61c51e8c7fef81c15a56ecdb92c31b9f96d`.
-- CI Run `35036655523`: success.
-- Mechanically isolated the legacy `WX_NongShiFu123 getUDID:` fallback behind `ZONLegacyUDIDFallbackAdapter`.
-- Behavior is covered by later promoted real-device baselines.
-
-## 2026-09-16 — v1_p44 Authorization Orchestration Boundary
-- Product source commit: `aee574d180da7cc82db54be7ab5aeaa9d072c561`.
-- CI Run `35020232205`: success.
-- User explicitly reported real-device validation normal; later superseded by P48/P48.1.
 
 ## Earlier architecture cleanup
+- P46 Startup Side-Effect Instrumentation & Launch Contract: CI `35167182449` success.
+- P45 Legacy UDID Web/Profile Fallback Adapter Boundary: CI `35036655523` success.
+- P44 Authorization Orchestration Boundary: CI `35020232205` success; device passed.
 - P43 architecture audit: CI `35001000784` success.
 - P42 Zonoe UDID API Boundary: CI `34995566144` success; device passed.
 - P41 UDID Bridge Boundary: CI `34959813770` success; device passed.
