@@ -1,0 +1,39 @@
+name: p48.1 StoreKit Residual Cleanup
+
+on:
+  push:
+    branches:
+      - work/zonoemenu-v1-p48-storekit-cleanup
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply StoreKit residual cleanup
+        run: python3 scripts/p48_remove_storekit_residual.py
+      - name: Verify exact cleanup scope
+        run: |
+          set -euxo pipefail
+          git diff -- testmod/导入导出/UIDocumentPickerDelegate/YYYPicker.h testmod/导入导出/UIDocumentPickerDelegate/YYYPicker.m VERSION
+          test "$(tr -d '[:space:]' < VERSION)" = 'v1_p48_1'
+          ! grep -R -n -E 'StoreKit|SKStoreProductViewController|SKStoreProductParameterITunesItemIdentifier|showAppStoreProductPage|productViewControllerDidFinish|游戏版本ID' \
+            testmod/导入导出/UIDocumentPickerDelegate/YYYPicker.h \
+            testmod/导入导出/UIDocumentPickerDelegate/YYYPicker.m
+      - name: Commit runtime cleanup
+        run: |
+          set -euxo pipefail
+          if git diff --quiet; then
+            echo 'No changes to commit'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add VERSION testmod/导入导出/UIDocumentPickerDelegate/YYYPicker.h testmod/导入导出/UIDocumentPickerDelegate/YYYPicker.m
+          git commit -m 'refactor: remove residual StoreKit App Store surface'
+          git push origin HEAD:work/zonoemenu-v1-p48-storekit-cleanup
