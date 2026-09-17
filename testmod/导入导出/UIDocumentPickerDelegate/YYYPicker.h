@@ -7,11 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
-#import <StoreKit/StoreKit.h> // 导入 StoreKit 框架
-
-@interface YYYPicker : UIViewController <SKStoreProductViewControllerDelegate>
-- (void)showAppStoreProductPage;
-
+@interface YYYPicker : UIViewController
 - (void)addBtnAction;
 -(void)yidongwenjian;
 @end
