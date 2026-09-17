@@ -1,0 +1,56 @@
+name: P46 Apply Launch Contract
+
+on:
+  push:
+    branches:
+      - work/zonoemenu-v1-p46-launch-contract
+    paths:
+      - scripts/p46_apply_launch_contract.py
+      - .github/workflows/p46-apply-launch-contract.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply P46 instrumentation
+        run: python3 scripts/p46_apply_launch_contract.py
+      - name: Verify scope before commit
+        run: |
+          set -euxo pipefail
+          git diff -- VERSION \
+            testmod/Bsphp/main.m \
+            testmod/ZONBootstrap/ZONBootstrap.m \
+            testmod/ZONServices/ZONAuthorizationCoordinator.m \
+            testmod/ZONServices/ZONLegacyUDIDFallbackAdapter.m \
+            testmod/ZONCore/ZONModuleLoader.m \
+            'testmod/视图菜单/NSObject+UI.m' \
+            testmod/ZONServices/ZONLaunchTrace.h
+          test "$(tr -d '[:space:]' < VERSION)" = 'v1_p46'
+          test -f testmod/ZONServices/ZONLaunchTrace.h
+          git diff --name-only | sort > /tmp/changed.txt
+          cat >/tmp/expected.txt <<'EOF'
+          VERSION
+          testmod/Bsphp/main.m
+          testmod/ZONBootstrap/ZONBootstrap.m
+          testmod/ZONCore/ZONModuleLoader.m
+          testmod/ZONServices/ZONAuthorizationCoordinator.m
+          testmod/ZONServices/ZONLegacyUDIDFallbackAdapter.m
+          testmod/ZONServices/ZONLaunchTrace.h
+          testmod/视图菜单/NSObject+UI.m
+          EOF
+          sort -o /tmp/expected.txt /tmp/expected.txt
+          diff -u /tmp/expected.txt /tmp/changed.txt
+      - name: Commit generated P46 source
+        run: |
+          set -euxo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add VERSION testmod
+          git commit -m 'instrument: add P46 startup launch contract tracing'
+          git push origin HEAD:${GITHUB_REF_NAME}
