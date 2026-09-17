@@ -20,7 +20,7 @@ jobs:
         run: |
           set -euo pipefail
           BASE=e1be699655cec468c7d69fd15ed60f1810a4f3b1
-          git diff --name-only "$BASE" HEAD -- testmod testmod.xcodeproj | tee /tmp/runtime-files
+          git -c core.quotePath=false diff --name-only "$BASE" HEAD -- testmod testmod.xcodeproj | tee /tmp/runtime-files
           test "$(wc -l < /tmp/runtime-files | tr -d ' ')" = "1"
           grep -Fx 'testmod/导入导出/daochucd.m' /tmp/runtime-files
           COUNT=$(grep -o '/\* .* in Sources \*/,' testmod.xcodeproj/project.pbxproj | wc -l | tr -d ' ')
