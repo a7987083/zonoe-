@@ -8,6 +8,9 @@
 #import "SVProgressHUD.h"
 #import "WX_NongShiFu123.h"
 
+typedef BOOL (^ZONFeatureActionHandler)(UIViewController *hostViewController);
+typedef BOOL (^ZONFeatureToggleHandler)(BOOL on);
+
 NSString *ZONTmpDirectoryPath(void)
 {
     return [NSHomeDirectory() stringByAppendingPathComponent:@"tmp"];
@@ -47,13 +50,11 @@ void ZONClearGameDataPreservingTmp(void)
         NSFileManager *manager = NSFileManager.defaultManager;
         NSString *tmpPath = ZONTmpDirectoryPath();
 
-        // Preserve /tmp itself; only remove its children.
         if (ZONEnsureTmpDirectory()) {
             NSArray<NSString *> *tmpChildren = [manager contentsOfDirectoryAtPath:tmpPath error:nil];
             for (NSString *child in tmpChildren) {
                 [manager removeItemAtPath:[tmpPath stringByAppendingPathComponent:child] error:nil];
             }
-            // Re-assert the invariant in case a nested cleanup unexpectedly removed it.
             ZONEnsureTmpDirectory();
         }
 
@@ -80,7 +81,6 @@ void ZONClearGameDataPreservingTmp(void)
             [manager removeItemAtPath:[libraryRoot stringByAppendingPathComponent:fileName] error:nil];
         }
 
-        // tmp must survive the clear operation.
         ZONEnsureTmpDirectory();
     });
 
@@ -143,90 +143,105 @@ void ZONPresentClearAuthorizationConfirmation(UIViewController *hostViewControll
     [hostViewController presentViewController:alert animated:YES completion:nil];
 }
 
-/// Routes registry-owned actions. All active built-in features are registry-owned,
-/// so PopupMenuVC no longer carries per-tag compatibility fallbacks.
+static void ZONPersistRuntimeToggle(NSUserDefaults *defaults,
+                                    NSString *integerKey,
+                                    NSString *booleanKey,
+                                    BOOL on)
+{
+    [defaults setInteger:on forKey:integerKey];
+    [defaults setBool:on forKey:booleanKey];
+    [defaults synchronize];
+}
+
+static NSDictionary<NSString *, ZONFeatureActionHandler> *ZONActionRoutes(void)
+{
+    static NSDictionary<NSString *, ZONFeatureActionHandler> *routes;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        routes = @{
+            @"base.remote-download": ^BOOL(__unused UIViewController *host) {
+                [[PubgLoad alloc] yuanchengdwon];
+                return YES;
+            },
+            @"base.cloud-save": ^BOOL(__unused UIViewController *host) {
+                ZONEnsureTmpDirectory();
+                [[PubgLoad alloc] checkCloudSaveStatus];
+                return YES;
+            },
+            @"base.local-files": ^BOOL(UIViewController *host) {
+                SandboxBrowserVC *vc = [[SandboxBrowserVC alloc] init];
+                UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
+                if (@available(iOS 13.0, *)) {
+                    nav.modalPresentationStyle = UIModalPresentationPageSheet;
+                } else {
+                    nav.modalPresentationStyle = UIModalPresentationFullScreen;
+                }
+                [host presentViewController:nav animated:YES completion:nil];
+                return YES;
+            },
+            @"data.backup-save": ^BOOL(__unused UIViewController *host) {
+                [[daochucd alloc] backupasd];
+                return YES;
+            },
+            @"data.restore-save": ^BOOL(__unused UIViewController *host) {
+                [[YYYPicker alloc] addBtnAction];
+                return YES;
+            },
+            @"data.clear-game-data": ^BOOL(UIViewController *host) {
+                ZONPresentClearGameDataConfirmation(host);
+                return YES;
+            },
+            @"auth.clear-records": ^BOOL(UIViewController *host) {
+                ZONPresentClearAuthorizationConfirmation(host);
+                return YES;
+            },
+        };
+    });
+    return routes;
+}
+
+static NSDictionary<NSString *, ZONFeatureToggleHandler> *ZONToggleRoutes(void)
+{
+    static NSDictionary<NSString *, ZONFeatureToggleHandler> *routes;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        routes = @{
+            @"runtime.iap-noads": ^BOOL(BOOL on) {
+                ZONPersistRuntimeToggle(NSUserDefaults.standardUserDefaults, @"NNGG", @"NNGGNNGG", on);
+                [ImgTool share].NeiGou = on;
+                return YES;
+            },
+            @"runtime.ad-speed": ^BOOL(BOOL on) {
+                ZONPersistRuntimeToggle(NSUserDefaults.standardUserDefaults, @"AADD", @"AADDAADD", on);
+                [ImgTool share].ADSpeed = on;
+                return YES;
+            },
+        };
+    });
+    return routes;
+}
+
+/// Routes registry-owned actions. Registry metadata remains the source of truth;
+/// route tables only map a registered identifier to its existing implementation.
 BOOL ZONDispatchMigratedActionForLegacyTag(NSInteger legacyTag,
-                                                          UIViewController *hostViewController)
+                                            UIViewController *hostViewController)
 {
     NSDictionary<NSString *, id> *feature = ZONFeatureMetadataForLegacyTag(legacyTag);
     if (!feature || ![feature[ZONFeatureMigratedKey] boolValue]) return NO;
 
     NSString *identifier = feature[ZONFeatureIdentifierKey];
-
-    if ([identifier isEqualToString:@"base.remote-download"]) {
-        [[PubgLoad alloc] yuanchengdwon];
-        return YES;
-    }
-
-    if ([identifier isEqualToString:@"base.cloud-save"]) {
-        // Self-heal the tmp directory before any cloud-save checks/download work.
-        ZONEnsureTmpDirectory();
-        [[PubgLoad alloc] checkCloudSaveStatus];
-        return YES;
-    }
-
-    if ([identifier isEqualToString:@"base.local-files"]) {
-        SandboxBrowserVC *vc = [[SandboxBrowserVC alloc] init];
-        UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
-
-        if (@available(iOS 13.0, *)) {
-            nav.modalPresentationStyle = UIModalPresentationPageSheet;
-        } else {
-            nav.modalPresentationStyle = UIModalPresentationFullScreen;
-        }
-
-        [hostViewController presentViewController:nav animated:YES completion:nil];
-        return YES;
-    }
-
-    if ([identifier isEqualToString:@"data.backup-save"]) {
-        [[daochucd alloc] backupasd];
-        return YES;
-    }
-
-    if ([identifier isEqualToString:@"data.restore-save"]) {
-        [[YYYPicker alloc] addBtnAction];
-        return YES;
-    }
-
-    if ([identifier isEqualToString:@"data.clear-game-data"]) {
-        ZONPresentClearGameDataConfirmation(hostViewController);
-        return YES;
-    }
-
-    if ([identifier isEqualToString:@"auth.clear-records"]) {
-        ZONPresentClearAuthorizationConfirmation(hostViewController);
-        return YES;
-    }
-
-    return NO;
+    ZONFeatureActionHandler handler = ZONActionRoutes()[identifier];
+    return handler ? handler(hostViewController) : NO;
 }
 
-/// Toggle dispatch for registry-owned runtime controls. This preserves the exact
-/// UserDefaults keys and ImgTool side effects previously used by PopupMenuVC.
+/// Toggle dispatch preserves the exact UserDefaults keys, synchronize call and
+/// ImgTool side effects used by the promoted P49 runtime.
 BOOL ZONDispatchMigratedToggleForLegacyTag(NSInteger legacyTag, BOOL on)
 {
     NSDictionary<NSString *, id> *feature = ZONFeatureMetadataForLegacyTag(legacyTag);
     if (!feature || ![feature[ZONFeatureMigratedKey] boolValue]) return NO;
 
     NSString *identifier = feature[ZONFeatureIdentifierKey];
-    NSUserDefaults *ud = NSUserDefaults.standardUserDefaults;
-
-    if ([identifier isEqualToString:@"runtime.iap-noads"]) {
-        [ud setInteger:on forKey:@"NNGG"];
-        [ud setBool:on forKey:@"NNGGNNGG"];
-        [ud synchronize];
-        [ImgTool share].NeiGou = on;
-        return YES;
-    }
-
-    if ([identifier isEqualToString:@"runtime.ad-speed"]) {
-        [ud setInteger:on forKey:@"AADD"];
-        [ud setBool:on forKey:@"AADDAADD"];
-        [ud synchronize];
-        [ImgTool share].ADSpeed = on;
-        return YES;
-    }
-
-    return NO;
+    ZONFeatureToggleHandler handler = ZONToggleRoutes()[identifier];
+    return handler ? handler(on) : NO;
 }
