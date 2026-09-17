@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import re
 
 root = Path(__file__).resolve().parents[1]
 pbx = (root / 'testmod.xcodeproj' / 'project.pbxproj').read_text(errors='replace')
 freeze = (root / 'P50_ARCHITECTURE_FREEZE.md').read_text(errors='replace')
 
-# P49 promoted target invariants.
-active_sources = pbx.count(' in Sources */')
+# Count only PBXSourcesBuildPhase membership lines, matching the P49 CI contract.
+active_sources = len(re.findall(r'/\* .* in Sources \*/,\s*$', pbx, flags=re.MULTILINE))
 if active_sources != 78:
     raise SystemExit(f'expected 78 active Sources entries, got {active_sources}')
 
