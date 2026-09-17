@@ -5,6 +5,7 @@ import re
 root = Path(__file__).resolve().parents[1]
 pbx = (root / 'testmod.xcodeproj' / 'project.pbxproj').read_text(errors='replace')
 freeze = (root / 'P50_ARCHITECTURE_FREEZE.md').read_text(errors='replace')
+matrix = (root / 'P50_FINAL_STATUS_MATRIX.md').read_text(errors='replace')
 
 # Count only PBXSourcesBuildPhase membership lines, matching the P49 CI contract.
 active_sources = len(re.findall(r'/\* .* in Sources \*/,\s*$', pbx, flags=re.MULTILINE))
@@ -39,8 +40,22 @@ required_markers = [
 for marker in required_markers:
     if marker not in freeze:
         raise SystemExit(f'freeze document missing marker: {marker}')
+    if marker not in matrix:
+        raise SystemExit(f'final matrix missing marker: {marker}')
+
+matrix_markers = [
+    'Architecture ownership matrix',
+    'Allowed post-P50 changes',
+    'Changes that require an explicitly named new stage',
+    'Mandatory gates for future runtime stages',
+    'P41-P49 structural work is considered closed',
+]
+for marker in matrix_markers:
+    if marker not in matrix:
+        raise SystemExit(f'final matrix missing policy marker: {marker}')
 
 print('P50_ARCHITECTURE_FREEZE_CONTRACT=PASS')
+print('P50_FINAL_STATUS_MATRIX=PASS')
 print('ACTIVE_SOURCES=78')
 print('NETWORK_FRAMEWORK_ABSENT=true')
 print('STOREKIT_FRAMEWORK_ABSENT=true')
