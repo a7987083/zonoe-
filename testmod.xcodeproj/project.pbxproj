@@ -127,7 +127,6 @@
 		7EA962D82F46C19000F44CCE /* BUPlayableAd.h in Headers */ = {isa = PBXBuildFile; fileRef = 7EA962D72F46C19000F44CCE /* BUPlayableAd.h */; };
 		7EC87D2A2D5A408B00DF3D9F /* MTG.h in Headers */ = {isa = PBXBuildFile; fileRef = 7EC87D292D5A408B00DF3D9F /* MTG.h */; };
 		7ECBD41B2EEB433E00C56F1C /* csj.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECBD41A2EEB433E00C56F1C /* csj.h */; };
-		7ECBD41D2EFC0B1700C56F1C /* Network.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7ECBD41C2EFC0B1700C56F1C /* Network.framework */; };
 		7ECBD41F2F29099200C56F1C /* PopupMenuVC.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD41E2F29099200C56F1C /* PopupMenuVC.m */; };
 		7ECBD42B2F3A614000C56F1C /* ZONMenuCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD42A2F3A614000C56F1C /* ZONMenuCoordinator.m */; };
 		7ECBD42D2F3A614100C56F1C /* ZONMenuPanelController.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD42C2F3A614100C56F1C /* ZONMenuPanelController.m */; };
@@ -299,7 +298,6 @@
 		7EA962D72F46C19000F44CCE /* BUPlayableAd.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BUPlayableAd.h; sourceTree = "<group>"; };
 		7EC87D292D5A408B00DF3D9F /* MTG.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MTG.h; sourceTree = "<group>"; };
 		7ECBD41A2EEB433E00C56F1C /* csj.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = csj.h; sourceTree = "<group>"; };
-		7ECBD41C2EFC0B1700C56F1C /* Network.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Network.framework; path = System/Library/Frameworks/Network.framework; sourceTree = SDKROOT; };
 		7ECBD41E2F29099200C56F1C /* PopupMenuVC.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PopupMenuVC.m; sourceTree = "<group>"; };
 		7ECBD42A2F3A614000C56F1C /* ZONMenuCoordinator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONMenuCoordinator.m"; sourceTree = SOURCE_ROOT; };
 		7ECBD42C2F3A614100C56F1C /* ZONMenuPanelController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONCore/ZONMenuPanelController.m"; sourceTree = SOURCE_ROOT; };
@@ -352,7 +350,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7ECBD41D2EFC0B1700C56F1C /* Network.framework in Frameworks */,
 				162638E029190A870021622B /* Foundation.framework in Frameworks */,
 				162639BD29190AE00021622B /* libc++.tbd in Frameworks */,
 				162639AE29190ADB0021622B /* UIKit.framework in Frameworks */,
@@ -383,7 +380,6 @@
 		162638DC29190A870021622B /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				7ECBD41C2EFC0B1700C56F1C /* Network.framework */,
 				162638DD29190A870021622B /* UIKit.framework */,
 				162638DF29190A870021622B /* Foundation.framework */,
 				162639BB29190AE00021622B /* CoreGraphics.framework */,
