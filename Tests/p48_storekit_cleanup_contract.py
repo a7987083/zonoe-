@@ -34,7 +34,7 @@ if '- (void)addBtnAction;' not in h or '-(void)yidongwenjian;' not in h:
     raise SystemExit('restore-save public API changed unexpectedly')
 
 changed = subprocess.check_output(
-    ['git','diff','--name-only',BASE,'HEAD','--','testmod'],
+    ['git','-c','core.quotepath=false','diff','--name-only',BASE,'HEAD','--','testmod'],
     cwd=ROOT, text=True
 ).splitlines()
 expected = {
