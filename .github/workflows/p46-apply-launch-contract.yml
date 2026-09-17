@@ -23,7 +23,8 @@ jobs:
       - name: Verify scope before commit
         run: |
           set -euxo pipefail
-          git diff -- VERSION \
+          git add -N testmod/ZONServices/ZONLaunchTrace.h
+          git -c core.quotepath=false diff -- VERSION \
             testmod/Bsphp/main.m \
             testmod/ZONBootstrap/ZONBootstrap.m \
             testmod/ZONServices/ZONAuthorizationCoordinator.m \
@@ -33,7 +34,7 @@ jobs:
             testmod/ZONServices/ZONLaunchTrace.h
           test "$(tr -d '[:space:]' < VERSION)" = 'v1_p46'
           test -f testmod/ZONServices/ZONLaunchTrace.h
-          git diff --name-only | sort > /tmp/changed.txt
+          git -c core.quotepath=false diff --name-only | sort > /tmp/changed.txt
           cat >/tmp/expected.txt <<'EOF'
           VERSION
           testmod/Bsphp/main.m
