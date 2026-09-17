@@ -13,57 +13,52 @@
 - Active Sources: 78.
 - P44 is the rollback/device baseline until a later candidate explicitly passes its real-device gate.
 
-## P45 state
-- Version: `v1_p45`.
-- Product source: `841da61c51e8c7fef81c15a56ecdb92c31b9f96d`.
-- CI Run `35036655523`: success.
-- Active Sources: 79.
-- Device status: **pending / not promoted separately**.
-- `ZONLegacyUDIDFallbackAdapter.h/.m` mechanically hides the existing `WX_NongShiFu123 getUDID:` fallback details from `ZonoeUDIDAPI.m`.
-- P45/P44 exports and load libraries are identical.
+## Intermediate runtime history
+### P45
+- Product source: `841da61c51e8c7fef81c15a56ecdb92c31b9f96d`; CI Run `35036655523`: success.
+- Added the legacy UDID fallback adapter; Active Sources became 79.
+- No separate explicit device promotion was recorded.
 
-## P46 — current candidate
-- Version: `v1_p46`.
-- Work branch: `work/zonoemenu-v1-p46-launch-contract`.
-- Test branch: `test/zonoemenu-v1-p46-launch-contract-build`.
-- Product source commit: `83a49f46c1d0e4eecf5a52a485ebc35442786f67`.
-- Successful CI head: `4cb21f21c76b359fbf7ad13e7d514df39ce83645`.
-- CI Run `35167182449`: **success**.
-- Active Sources: **79**, unchanged from P45.
-- PBX versus P45: byte-identical.
-- A_customer artifact: `10475352058`, digest `sha256:79c34fd78c0071ed2a865ee24082806f6289e5a6615a0d022446dc6aa84ad0e1`.
+### P46
+- Runtime source: `83a49f46c1d0e4eecf5a52a485ebc35442786f67`; CI Run `35167182449`: success.
+- Added header-only `ZONLaunchTrace.h`; PBX stayed unchanged from P45 and Active Sources stayed 79.
 - A_customer dylib SHA256: `0a02a4eae98c6e18801320e2558c63769683697caf5faf557f38d553cbc729a2`.
-- B_debug artifact: `10475337852`, digest `sha256:7cf081e2956a0a293f6deafbea20c680350dbf5356f87edfdc4affba915fb6dd`.
+- Device status remains pending; its gate includes P45 fallback behavior.
+
+## P47 — current candidate
+- Version: `v1_p47`.
+- Work branch: `work/zonoemenu-v1-p47-repository-hygiene`.
+- Test branch: `test/zonoemenu-v1-p47-repository-hygiene-build`.
+- Repository candidate commit: `64f8575966d62695123b9f8444f89dbc98e796df`.
+- Runtime source remains P46: `83a49f46c1d0e4eecf5a52a485ebc35442786f67`.
+- Successful CI head: `eed8c8aca74a8c6e6985848a11c76d5a52cc2f40`.
+- CI Run `35169166129`: **success**.
+- Active Sources: **79**.
+- `testmod/` and `testmod.xcodeproj/`: byte-identical to P46.
+- A_customer artifact: `10476362290`, digest `sha256:f913b210dd80e2438af1bfc13b8b8b3aafe3ab3837c8d4507935abb10adfdfe5`.
+- A_customer dylib SHA256: `0a02a4eae98c6e18801320e2558c63769683697caf5faf557f38d553cbc729a2` — byte-identical to P46.
+- B_debug artifact: `10476157646`, digest `sha256:d2f57b2f041b533a40dcfdec43e691c274822b97214deeeb5acaac3e115a7bcd`.
 - Architectures: `arm64 + arm64e`.
-- P46/P45 exports and load libraries: identical.
-- Device status: **pending**.
+- P47/P46 exports and load libraries: identical.
+- Device status: **inherits P46 combined gate / pending**.
 
-## P46 implementation
-`testmod/ZONServices/ZONLaunchTrace.h` is header-only and uses:
-- `mach_absolute_time()` for monotonic uptime;
-- `NSLog` with `[zonoemenu][TRACE][launch]`;
-- legacy `os_signpost_event_emit` under subsystem `com.zonoemenu.launch` / category `startup` for iOS 12-compatible Instruments visibility.
+## P47 repository changes
+- Removed tracked generated package `Packages/com.leizi.www..testmod_0.1-1_iphoneos-arm.zip` after repository searches found no consumers.
+- Added narrow `.gitignore` rule `Packages/*.zip`.
+- Existing ignores already cover Xcode user state, build/DerivedData, dylib/deb/dSYM, `.DS_Store`, and local secrets/config.
+- Historical phase scripts, tests, audit docs, and workflows remain intentionally tracked as reproducibility/evidence material.
+- `P47_REPOSITORY_HYGIENE_AUDIT.md` documents the evidence and boundary.
 
-Trace points were inserted without moving existing statements in:
-- `testmod/Bsphp/main.m`;
-- `testmod/ZONBootstrap/ZONBootstrap.m`;
-- `testmod/ZONCore/ZONModuleLoader.m`;
-- `testmod/ZONServices/ZONAuthorizationCoordinator.m`;
-- `testmod/ZONServices/ZONLegacyUDIDFallbackAdapter.m`;
-- `testmod/视图菜单/NSObject+UI.m`.
+## Proof that P47 does not change runtime
+`Tests/p47_repository_hygiene_contract.py` enforces:
+- `testmod/` tree equals P46 exactly;
+- `testmod.xcodeproj/` tree equals P46 exactly;
+- Active PBX Sources remain 79;
+- removed package ZIP does not return;
+- no tracked Xcode user/build/package ZIP debris;
+- required ignore rules remain present.
 
-Events cover `+load`, reset install, Bootstrap/preflight, variant entry, authorization cached/fresh paths, legacy fallback, module scan/load, floating-entry attach and menu presentation.
-
-## P46 proof of observational-only behavior
-`Tests/p46_launch_contract.py` enforces:
-- removing `ZONLaunchTrace.h` imports and every `ZONLaunchTraceRecord(...)` line restores all touched runtime files exactly to P45 content;
-- protected authorization/UDID/legacy/menu runtime files remain byte-identical to P45;
-- `testmod.xcodeproj/project.pbxproj` is byte-identical to P45;
-- Active Sources remain 79;
-- the trace header contains no `dispatch_async`, `dispatch_after`, timers, sleeps or other scheduling primitives;
-- key startup order in `main.m` is unchanged.
-
-A separate iPhoneOS arm64 trace probe compiles with `-Wall -Wextra -Werror`.
+The P47 CI also runs the inherited P46 launch contract, builds A_customer/B_debug for arm64+arm64e, and compares exports/load libraries with P46. The final P47 A_customer dylib SHA equals P46 exactly.
 
 ## Runtime chain to preserve
 ```text
@@ -78,24 +73,25 @@ dyld
         -> bootstrap ready
   -> floating entry/menu lifecycle
 ```
-P46 observes this chain only. It does not authorize reordering or optimization.
+P47 does not modify this chain.
 
-## Important current risk
-P46 is built on P45, and P45 never received a separate explicit device PASS. Therefore a P46 device PASS must cover the inherited P45 fallback behavior as well as launch instrumentation. Do not mark P45 or P46 promoted based on CI alone.
+## Important current risk / promotion rule
+P47 itself adds no runtime behavior, but P46 was never explicitly device-promoted and P45 was not separately promoted either. Because the P47 A_customer dylib is byte-identical to P46, one explicit real-device PASS on P47 can satisfy the pending combined P45/P46 runtime gate while simultaneously allowing P47 promotion. Until that PASS, keep P44 as rollback/device baseline.
 
-## Real-device gate for P46
+## Real-device gate for P47 (inherited P46 combined gate)
 1. Normal existing/cached `DZUDID` startup and authorization remain normal.
 2. Fresh Zonoe acquisition returns and authorization continues normally.
 3. Where practical, force Zonoe unavailable and verify legacy fallback starts once, valid `DZUDID` resumes authorization, and foreground return does not duplicate/loop/crash.
-4. Confirm `[zonoemenu][TRACE][launch]` events are emitted in the expected lifecycle order; no trace point may introduce a visible stall or behavior change.
+4. Confirm `[zonoemenu][TRACE][launch]` events appear in plausible lifecycle order without visible stalls.
 5. Floating icon appears, menu opens/closes, and basic controls smoke normally.
 
 ## Takeover rules
-- Never optimize startup timing based only on source inspection; use P46 device trace evidence first.
+- Never optimize startup timing based only on source inspection; use device trace evidence first.
 - Do not change `+load`, queues, timeouts, retries, callback order or module loading timing during structural cleanup.
-- Verify PBX membership before deleting/moving code.
+- Verify PBX membership and repository reachability before deleting/moving code.
 - One architectural concern per version.
 - CI success never equals device promotion.
+- For P48, re-read P43/current reachability evidence and select exactly one legacy responsibility; do not guess a target from chat memory.
 
 ## Immediate Next Task
-Real-device validate P46 A_customer with the combined P45+P46 gate above. Keep P44 as rollback. If P46 passes, promote P46 directly (P45 may remain an intermediate CI-verified version) and start P47 repository hygiene.
+Real-device validate the P47 A_customer candidate using the combined inherited gate above. If explicitly passed, promote P47, record that P46 runtime gate is covered/superseded by the byte-identical P47 device result, then define P48 — Legacy God-Object Split #1 from current evidence.
