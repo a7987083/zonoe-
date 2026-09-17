@@ -24,7 +24,7 @@ jobs:
             echo "Network.framework already removed"
             exit 0
           fi
-          test "$COUNT" = "7"
+          test "$COUNT" = "4"
           python3 scripts/p49_remove_network_framework.py
           test "$(grep -c 'Network.framework' testmod.xcodeproj/project.pbxproj || true)" = "0"
           git config user.name 'github-actions[bot]'
