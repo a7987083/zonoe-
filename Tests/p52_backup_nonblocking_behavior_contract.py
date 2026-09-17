@@ -11,7 +11,7 @@ required = [
     '@"提示"',
     '@"跳过"',
     '@"备份"',
-    '备份 \\"%@\\" 大于 %.2f MB，是否跳过？',
+    '备份 \"%@\" 大于 %.2f MB，是否跳过？',
     'label:@"Documents"',
     'label:@"Library"',
     'HeimdallrBU',
