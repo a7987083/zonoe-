@@ -17,24 +17,17 @@ if n_calls not in (0, 2):
     raise SystemExit(f'expected 2 checkbanben calls before migration, removed={n_calls}')
 wx.write_text(text2, encoding='utf-8')
 
-# Remove exact PBX build/file/group/source/header records for fuzhu/fuhzu.
+# fuzhu.h / fuhzu.m are unique legacy file names. Remove every PBX line that names
+# either file so build-file, file-ref, group, headers, and sources entries all vanish.
 p = pbx.read_text(encoding='utf-8')
-patterns = [
-    r'^\s*7ECF60192E157C5E00459866 /\* fuzhu\.h in Headers \*/ = \{isa = PBXBuildFile;.*\n',
-    r'^\s*7ECF60302E157C5E00459866 /\* fuhzu\.m in Sources \*/ = \{isa = PBXBuildFile;.*\n',
-    r'^\s*7ECF5FE92E157C5E00459866 /\* fuzhu\.h \*/ = \{isa = PBXFileReference;.*\n',
-    r'^\s*7ECF60032E157C5E00459866 /\* fuhzu\.m \*/ = \{isa = PBXFileReference;.*\n',
-    r'^\s*7ECF5FE92E157C5E00459866 /\* fuzhu\.h \*/,\s*\n',
-    r'^\s*7ECF60032E157C5E00459866 /\* fuhzu\.m \*/,\s*\n',
-    r'^\s*7ECF60302E157C5E00459866 /\* fuhzu\.m in Sources \*/,\s*\n',
-]
-for pat in patterns:
-    p, count = re.subn(pat, '', p, flags=re.M)
-    if count not in (0, 1):
-        raise SystemExit(f'unexpected PBX match count {count}: {pat}')
+lines = p.splitlines(keepends=True)
+removed = [line for line in lines if 'fuzhu.h' in line or 'fuhzu.m' in line]
+if len(removed) not in (0, 7):
+    raise SystemExit(f'expected 7 PBX legacy-file lines before migration, found={len(removed)}')
+p = ''.join(line for line in lines if 'fuzhu.h' not in line and 'fuhzu.m' not in line)
 pbx.write_text(p, encoding='utf-8')
 
-# Delete source/header: they contain only the removed App Store legacy category surface.
+# Delete source/header: this pair exists only for the removed App Store version-check category.
 for path in (header, impl):
     if path.exists():
         path.unlink()
@@ -42,11 +35,19 @@ for path in (header, impl):
 version.write_text('v1_p48\n', encoding='utf-8')
 
 # Postconditions: no active legacy selector or iTunes lookup endpoint remains in canonical runtime.
+banned = [
+    'checkbanben',
+    'checkAppStoreVersionWithAppId',
+    'compareVersion:',
+    'compareVersioncn:',
+    'itunes.apple.com/lookup',
+    'itunes.apple.com/cn/lookup',
+    'App Store版本是',
+]
 for path in ROOT.joinpath('testmod').rglob('*'):
-    if not path.is_file() or path.suffix not in {'.h','.m','.mm','.c','.cpp'}:
+    if not path.is_file() or path.suffix not in {'.h', '.m', '.mm', '.c', '.cpp'}:
         continue
     s = path.read_text(encoding='utf-8', errors='ignore')
-    banned = ['checkbanben', 'checkAppStoreVersionWithAppId', 'compareVersioncn:', 'itunes.apple.com/lookup', 'itunes.apple.com/cn/lookup']
     hits = [x for x in banned if x in s]
     if hits:
         raise SystemExit(f'banned App Store legacy remains in {path.relative_to(ROOT)}: {hits}')
