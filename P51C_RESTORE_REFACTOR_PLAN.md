@@ -30,3 +30,19 @@ Promoted/device baseline remains P51-B until P51-C passes real-device validation
 - A_customer + B_debug builds for arm64 + arm64e.
 - Exported symbols and linked libraries must match P51-B artifacts.
 - Real-device restore validation required before promotion.
+
+## Candidate evidence
+- Runtime source commit: `5154a75a8cd88980387080e6c191b03a8f92a81e`.
+- Candidate version: `v1_p51c`.
+- Test branch: `test/zonoemenu-v1-p51c-restore-refactor`.
+- CI head: `24e0502fded288a32789cfc76db1eba27db58c6c`.
+- CI Run: `35268337848` — **success**.
+- Contract: PASS; runtime scope is exactly `testmod/导入导出/UIDocumentPickerDelegate/YYYPicker.m`.
+- Active Sources: 78.
+- A_customer/B_debug: build PASS for `arm64 + arm64e`.
+- ABI exported-symbol surface matches P51-B.
+- Linked-library surface matches P51-B.
+- A_customer artifact: `10518040689`, digest `sha256:b980ab1c91ff352b89d2de395e7a4e12c24b14fd06d2c13158c85616a28b62b8`.
+- A_customer dylib SHA256: `f96528132a479cddc67ab15f975a7132ba7e8664fe1c1f9ba5a308b23e1ee3e6`.
+- B_debug artifact: `10517890902`, digest `sha256:1db3a21200ffceef329a6a93e5ac4be2af05c545314039c1c588d9a7df9e6256`.
+- Promotion status: **candidate / awaiting real-device restore validation**.
