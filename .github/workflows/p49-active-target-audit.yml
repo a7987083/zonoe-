@@ -1,0 +1,35 @@
+name: p49 Active Target Final Validation
+
+on:
+  push:
+    branches:
+      - test/zonoemenu-v1-p49-active-target-audit
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify P49 target state
+        run: |
+          set -euo pipefail
+          test "$(grep -c 'Network.framework' testmod.xcodeproj/project.pbxproj || true)" = "0"
+          COUNT=$(grep -o '/\* .* in Sources \*/,' testmod.xcodeproj/project.pbxproj | wc -l | tr -d ' ')
+          echo "ACTIVE_SOURCES=$COUNT"
+          test "$COUNT" = "78"
+      - name: Materialize vendor sources
+        run: |
+          python3 scripts/materialize_vendor_sources.py
+      - name: Build A_customer
+        run: |
+          set -euo pipefail
+          xcodebuild -project testmod.xcodeproj -scheme testmod -configuration Release -sdk iphoneos ARCHS='arm64 arm64e' ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO GCC_PREPROCESSOR_DEFINITIONS='$(inherited) ZON_VARIANT_A_CUSTOMER=1' build
+      - name: Build B_debug
+        run: |
+          set -euo pipefail
+          xcodebuild -project testmod.xcodeproj -scheme testmod -configuration Release -sdk iphoneos ARCHS='arm64 arm64e' ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO GCC_PREPROCESSOR_DEFINITIONS='$(inherited) ZON_VARIANT_B_DEBUG=1' build
