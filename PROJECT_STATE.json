@@ -3,11 +3,11 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p49-active-target-audit",
-  "current_test_branch": "test/zonoemenu-v1-p49-active-target-audit",
-  "current_version": "v1_p49",
-  "current_phase": "v1_p49_active_target_dead_code_dependency_audit",
-  "phase_status": "completed_device_passed",
+  "current_work_branch": "work/zonoemenu-v1-p50-architecture-freeze",
+  "current_test_branch": null,
+  "current_version": "v1_p50",
+  "current_phase": "v1_p50_refactor_stabilization_architecture_freeze",
+  "phase_status": "in_progress_runtime_frozen_to_p49",
   "last_device_verified_code_commit": "4cebe094ad7a4dd554e8266af34dcf3abe04902a",
   "last_device_verified_version": "v1_p49",
   "last_ci_run_id": 35195152912,
@@ -17,9 +17,7 @@
   "active_source_count": 78,
   "canonical_product_surface": ["testmod/", "testmod.xcodeproj"],
   "canonical_refactor_plan": "ROADMAP.md",
-  "architecture_review_document": "REFACTOR_REVIEW.md",
-  "p43_audit_document": "P43_ARCHITECTURE_AUDIT.md",
-  "p47_hygiene_audit_document": "P47_REPOSITORY_HYGIENE_AUDIT.md",
+  "architecture_freeze_document": "P50_ARCHITECTURE_FREEZE.md",
   "device_test_policy_document": "DEVICE_TEST_MATRIX.md",
   "handoff_document": "HANDOFF.md",
   "known_issues_document": "KNOWN_ISSUES.md",
@@ -32,9 +30,7 @@
   "p48_1": {
     "source_commit": "71eddfa0600112aa56a8bef45013d73f4673794a",
     "ci_run_id": 35180342515,
-    "device_status": "passed_superseded",
-    "active_source_count": 78,
-    "storekit_surface_removed": true
+    "device_status": "passed_superseded"
   },
   "p49": {
     "branch": "work/zonoemenu-v1-p49-active-target-audit",
@@ -55,11 +51,18 @@
     "b_debug_artifact_id": 10485622521,
     "b_debug_artifact_digest": "sha256:9156b57fd832461274f3c8d1625c8b8213d556c9862b32d1d461294783a23e27"
   },
+  "p50": {
+    "branch": "work/zonoemenu-v1-p50-architecture-freeze",
+    "runtime_baseline_commit": "4cebe094ad7a4dd554e8266af34dcf3abe04902a",
+    "runtime_change_intended": false,
+    "status": "in_progress",
+    "freeze_contract": "P50_ARCHITECTURE_FREEZE.md",
+    "contract_test": "Tests/p50_architecture_freeze_contract.py"
+  },
   "refactor_rules": {
     "one_architectural_concern_per_version": true,
     "ci_does_not_equal_device_promotion": true,
-    "mechanical_equivalence_for_source_moves": true,
-    "observational_equivalence_for_instrumentation": true,
+    "no_runtime_drift_during_p50": true,
     "no_timing_threading_protocol_changes_during_structural_cleanup": true,
     "pbx_membership_defines_active_product_code": true,
     "delete_only_after_reachability_proof": true
@@ -67,7 +70,7 @@
   "planned_refactor_phases": [
     {"version":"v1_p48_1","name":"StoreKit Residual Cleanup","status":"completed_device_passed","runtime_change_intended":false},
     {"version":"v1_p49","name":"Active Target / Dead Code / Dependency Audit","status":"completed_device_passed","runtime_change_intended":false},
-    {"version":"v1_p50","name":"Refactor Stabilization / Architecture Freeze","status":"next_planned","runtime_change_intended":false}
+    {"version":"v1_p50","name":"Refactor Stabilization / Architecture Freeze","status":"in_progress","runtime_change_intended":false}
   ],
-  "next_task": "Start P50 Refactor Stabilization / Architecture Freeze from the P49 promoted baseline. Preserve behavior and use P49 as rollback baseline."
+  "next_task": "Complete P50 freeze CI and synchronize ROADMAP/HANDOFF/CHANGELOG. Product runtime must remain identical to promoted P49."
 }
