@@ -1,5 +1,25 @@
 # CHANGELOG_DEV
 
+## 2026-09-17 — v1_p47 Repository Hygiene / Generated Artifact Cleanup
+- Work branch: `work/zonoemenu-v1-p47-repository-hygiene`.
+- Repository candidate commit: `64f8575966d62695123b9f8444f89dbc98e796df`.
+- Runtime source remains P46: `83a49f46c1d0e4eecf5a52a485ebc35442786f67`; `testmod/` and `testmod.xcodeproj/` are byte-identical to P46.
+- Test branch: `test/zonoemenu-v1-p47-repository-hygiene-build`.
+- Successful CI head: `eed8c8aca74a8c6e6985848a11c76d5a52cc2f40`.
+- CI Run `35169166129`: **success**.
+- Removed tracked generated package `Packages/com.leizi.www..testmod_0.1-1_iphoneos-arm.zip` after exact filename and `Packages/` reference searches returned no repository consumers.
+- Added narrow `.gitignore` rule `Packages/*.zip`; existing user/build ignore coverage retained.
+- Historical phase scripts/tests/workflows were deliberately retained as reproducibility/evidence material rather than treated as garbage solely because they are old.
+- Added `P47_REPOSITORY_HYGIENE_AUDIT.md` and `Tests/p47_repository_hygiene_contract.py`.
+- Contract proves canonical product trees equal P46, no tracked package ZIP/user/build debris, and Active PBX Sources remain **79**.
+- Inherited P46 launch contract: PASS.
+- A_customer and B_debug builds passed for `arm64 + arm64e`.
+- P47/P46 exported symbols and load libraries are identical.
+- A_customer artifact ID `10476362290`, digest `sha256:f913b210dd80e2438af1bfc13b8b8b3aafe3ab3837c8d4507935abb10adfdfe5`.
+- A_customer dylib SHA256 `0a02a4eae98c6e18801320e2558c63769683697caf5faf557f38d553cbc729a2`, **byte-identical to P46 A_customer**.
+- B_debug artifact ID `10476157646`, digest `sha256:d2f57b2f041b533a40dcfdec43e691c274822b97214deeeb5acaac3e115a7bcd`.
+- P47 status: **CI verified / promotion blocked on inherited P46 combined device gate**. P44 remains promoted rollback baseline until explicit PASS.
+
 ## 2026-09-17 — v1_p46 Startup Side-Effect Instrumentation & Launch Contract
 - Work branch: `work/zonoemenu-v1-p46-launch-contract`.
 - Product source commit: `83a49f46c1d0e4eecf5a52a485ebc35442786f67`.
