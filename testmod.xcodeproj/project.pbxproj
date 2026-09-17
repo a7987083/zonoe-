@@ -158,10 +158,8 @@
 		7ECF60162E157C5E00459866 /* NKSeleDocumentTool.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECF5FE62E157C5E00459866 /* NKSeleDocumentTool.m */; };
 		7ECF60172E157C5E00459866 /* NKOtherFilesModel.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECF5FE72E157C5E00459866 /* NKOtherFilesModel.h */; };
 		7ECF60182E157C5E00459866 /* YYYPicker.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECF5FE82E157C5E00459866 /* YYYPicker.h */; };
-		7ECF60192E157C5E00459866 /* fuzhu.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECF5FE92E157C5E00459866 /* fuzhu.h */; };
 		7ECF602E2E157C5E00459866 /* PreferenceManager.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECF60012E157C5E00459866 /* PreferenceManager.h */; };
 		7ECF602F2E157C5E00459866 /* daochucd.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECF60022E157C5E00459866 /* daochucd.m */; };
-		7ECF60302E157C5E00459866 /* fuhzu.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECF60032E157C5E00459866 /* fuhzu.m */; };
 		7ECF60312E157C5E00459866 /* SVRadialGradientLayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECF60052E157C5E00459866 /* SVRadialGradientLayer.m */; };
 		7ECF60322E157C5E00459866 /* SVIndefiniteAnimatedView.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECF60062E157C5E00459866 /* SVIndefiniteAnimatedView.h */; };
 		7ECF60332E157C5E00459866 /* SVProgressHUD.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECF60072E157C5E00459866 /* SVProgressHUD.h */; };
@@ -332,10 +330,8 @@
 		7ECF5FE62E157C5E00459866 /* NKSeleDocumentTool.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = NKSeleDocumentTool.m; sourceTree = "<group>"; };
 		7ECF5FE72E157C5E00459866 /* NKOtherFilesModel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = NKOtherFilesModel.h; sourceTree = "<group>"; };
 		7ECF5FE82E157C5E00459866 /* YYYPicker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = YYYPicker.h; sourceTree = "<group>"; };
-		7ECF5FE92E157C5E00459866 /* fuzhu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fuzhu.h; sourceTree = "<group>"; };
 		7ECF60012E157C5E00459866 /* PreferenceManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PreferenceManager.h; sourceTree = "<group>"; };
 		7ECF60022E157C5E00459866 /* daochucd.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = daochucd.m; sourceTree = "<group>"; };
-		7ECF60032E157C5E00459866 /* fuhzu.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = fuhzu.m; sourceTree = "<group>"; };
 		7ECF60052E157C5E00459866 /* SVRadialGradientLayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SVRadialGradientLayer.m; sourceTree = "<group>"; };
 		7ECF60062E157C5E00459866 /* SVIndefiniteAnimatedView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SVIndefiniteAnimatedView.h; sourceTree = "<group>"; };
 		7ECF60072E157C5E00459866 /* SVProgressHUD.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SVProgressHUD.h; sourceTree = "<group>"; };
@@ -738,12 +734,10 @@
 			children = (
 				7E6F452A2E1A8C4E00D4A46E /* JDStatusBarNotification */,
 				7ECF5FE02E157C5E00459866 /* UIDocumentPickerDelegate */,
-				7ECF5FE92E157C5E00459866 /* fuzhu.h */,
 				7ECF60012E157C5E00459866 /* PreferenceManager.h */,
 				7ECF5FDF2E157C5E00459866 /* PreferenceManager.m */,
 				7ECF60022E157C5E00459866 /* daochucd.m */,
 				7ECF5FDE2E157C5E00459866 /* daochucd.h */,
-				7ECF60032E157C5E00459866 /* fuhzu.m */,
 			);
 			path = "导入导出";
 			sourceTree = "<group>";
@@ -807,7 +801,6 @@
 				7EA962D82F46C19000F44CCE /* BUPlayableAd.h in Headers */,
 				7E8A58382B8E4A9C00676FE2 /* PubgLoad.h in Headers */,
 				7E8A57D22B8E4A9C00676FE2 /* AFURLRequestSerialization.h in Headers */,
-				7ECF60192E157C5E00459866 /* fuzhu.h in Headers */,
 				7E8A57F52B8E4A9C00676FE2 /* SCLMacros.h in Headers */,
 				7ECF600F2E157C5E00459866 /* daochucd.h in Headers */,
 				7E8A583F2B8E4A9C00676FE2 /* crypt.h in Headers */,
@@ -1051,7 +1044,6 @@
 				7E8A585C2B8E4A9C00676FE2 /* NSString+URLCode.m in Sources */,
 				7E8A58462B8E4A9C00676FE2 /* SSZipArchive.m in Sources */,
 				7E1E5F9C2BE5507F008C66BE /* UISlider+VDTrackHeight.m in Sources */,
-				7ECF60302E157C5E00459866 /* fuhzu.m in Sources */,
 				7E8A58022B8E4A9C00676FE2 /* main.m in Sources */,
 				7E8A57CD2B8E4A9C00676FE2 /* Config.m in Sources */,
 				7E1E5F8D2BE5501A008C66BE /* ImgTool.m in Sources */,

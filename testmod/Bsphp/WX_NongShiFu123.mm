@@ -27,7 +27,6 @@
 #import "PubgLoad.h"
 #import "SFHFKeychainUtils.h"
 #import "NSObject+UI.h"
-#import "fuzhu.h"
 #import "JDStatusBarNotification.h"
 
 
@@ -740,7 +739,6 @@ NSString* 到期时间弹窗,*UDID_IDFV,*验证版本,*验证过直播,*弹窗�
                                     [presenter dismissAnimated:YES];
                                     [presenter presentWithText:@"插件激活完成\n柴犬图标" dismissAfterDelay:5 includedStyle:JDStatusBarNotificationIncludedStyleSuccess];
 
-                                    [NSObject checkbanben];
                                     [NSObject 显示图标];
                                 }
                             });
@@ -1394,7 +1392,6 @@ NSString* 到期时间弹窗,*UDID_IDFV,*验证版本,*验证过直播,*弹窗�
 
                                 [presenter presentWithText:@"插件激活完成\n柴犬图标" dismissAfterDelay:5 includedStyle:JDStatusBarNotificationIncludedStyleSuccess];
                                 
-                                [NSObject checkbanben];
                                 [NSObject 显示图标];
                                 
                             } else {
