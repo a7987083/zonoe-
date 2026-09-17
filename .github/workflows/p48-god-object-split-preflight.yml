@@ -1,0 +1,24 @@
+name: p48 God Object Split Preflight
+
+on:
+  push:
+    branches:
+      - test/zonoemenu-v1-p48-god-object-split-preflight
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify P48 preflight target and promotion block
+        run: |
+          set -euxo pipefail
+          python3 Tests/p48_split_preflight.py
+          test "$(tr -d '[:space:]' < VERSION)" = 'v1_p47'
+          test "$(git rev-parse 3342805ec3b6c5d11dae3974f5024a010acf98ea:testmod)" = "$(git rev-parse HEAD:testmod)"
+          test "$(git rev-parse 3342805ec3b6c5d11dae3974f5024a010acf98ea:testmod.xcodeproj)" = "$(git rev-parse HEAD:testmod.xcodeproj)"
