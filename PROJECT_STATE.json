@@ -3,14 +3,14 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p51d-pubgload-refactor",
-  "current_test_branch": "test/zonoemenu-v1-p51d-pubgload-refactor",
-  "current_version": "v1_p51d",
-  "current_phase": "v1_p51d_pubgload_refactor",
-  "phase_status": "completed_device_passed",
+  "current_work_branch": "work/zonoemenu-v1-p51e-destructive-toggle-refactor",
+  "current_test_branch": "test/zonoemenu-v1-p51e-destructive-toggle-refactor",
+  "current_version": "v1_p51e",
+  "current_phase": "v1_p51e_destructive_toggle_refactor",
+  "phase_status": "ci_passed_awaiting_device",
   "last_device_verified_code_commit": "f9ceb7497276b3a27c84821e17010ebfb6a90e17",
   "last_device_verified_version": "v1_p51d",
-  "last_ci_run_id": 35277000183,
+  "last_ci_run_id": 35278168202,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
@@ -21,26 +21,27 @@
     "source_commit": "f9ceb7497276b3a27c84821e17010ebfb6a90e17",
     "device_status": "passed"
   },
-  "p51c": {
-    "source_commit": "5154a75a8cd88980387080e6c191b03a8f92a81e",
-    "ci_run_id": 35268337848,
-    "device_status": "passed_superseded"
-  },
   "p51d": {
-    "branch": "work/zonoemenu-v1-p51d-pubgload-refactor",
-    "test_branch": "test/zonoemenu-v1-p51d-pubgload-refactor",
     "source_commit": "f9ceb7497276b3a27c84821e17010ebfb6a90e17",
-    "ci_head": "790f57176955eb292732221d842314749e8d685f",
     "ci_run_id": 35277000183,
-    "ci_status": "success",
     "device_status": "passed",
-    "device_reported_by_user": true,
-    "active_source_count": 78,
     "a_customer_artifact_id": 10520991636,
-    "a_customer_artifact_digest": "sha256:a49c57de9989e58889e32c602566611e49b4cac20ff0520daeb546f1d2e9a34c",
-    "a_customer_dylib_sha256": "10ef844d531b406b4768174d627825a20a3159d7fbe500668e8aad2aad7b7e61",
-    "b_debug_artifact_id": 10520838374,
-    "b_debug_artifact_digest": "sha256:d751a10f01bcfb31061a69645046c4590e700bb06549828c11df837fbb5bbd10"
+    "a_customer_dylib_sha256": "10ef844d531b406b4768174d627825a20a3159d7fbe500668e8aad2aad7b7e61"
   },
-  "next_task": "P51-E destructive actions and runtime toggle service-boundary refactor while preserving delete scope, deletekm behavior, exit timing, defaults keys, ImgTool side effects, and user-visible confirmations."
+  "p51e": {
+    "branch": "work/zonoemenu-v1-p51e-destructive-toggle-refactor",
+    "test_branch": "test/zonoemenu-v1-p51e-destructive-toggle-refactor",
+    "source_commit": "78c65ad571355656a5acb4cd45cdfa298646886c",
+    "ci_head": "56cbfd4629c8aa84a7d32d256254be3dbf17a047",
+    "ci_run_id": 35278168202,
+    "ci_status": "success",
+    "device_status": "pending",
+    "active_source_count": 78,
+    "a_customer_artifact_id": 10521188214,
+    "a_customer_artifact_digest": "sha256:8e9b1dbc756ab75d456dcb9f524b84290ce7e903a9272c8e7abd469add711edb",
+    "a_customer_dylib_sha256": "d5f59db6310d356d2a35b798de8ac22f938293a817fbb50648e957f4c162f6b4",
+    "b_debug_artifact_id": 10521073336,
+    "b_debug_artifact_digest": "sha256:289fd2faf8b8ad3ab2c9902045e7756f16872e8d22f552531b5ffa7a0786f463"
+  },
+  "next_task": "Real-device validate P51-E clear-game-data, clear-authorization, IAP/noads toggle, and ad-speed toggle behavior. Do not promote until explicit user PASS."
 }
