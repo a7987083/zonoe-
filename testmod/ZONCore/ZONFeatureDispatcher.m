@@ -90,67 +90,64 @@ void ZONClearGameDataPreservingTmp(void)
     });
 }
 
-void ZONPresentClearGameDataConfirmation(UIViewController *hostViewController)
+typedef void (^ZONDestructiveConfirmationHandler)(void);
+typedef void (^ZONRuntimeToggleSideEffect)(BOOL on);
+
+static void ZONPresentDestructiveConfirmation(UIViewController *hostViewController,
+                                              NSString *title,
+                                              NSString *message,
+                                              ZONDestructiveConfirmationHandler handler)
 {
     UIAlertController *alert =
-    [UIAlertController alertControllerWithTitle:@"清除游戏数据"
-                                        message:@"此操作会清除本地游戏数据，且不可恢复。\n确定要继续吗？"
+    [UIAlertController alertControllerWithTitle:title
+                                        message:message
                                  preferredStyle:UIAlertControllerStyleAlert];
+    [alert addAction:[UIAlertAction actionWithTitle:@"取消"
+                                             style:UIAlertActionStyleCancel
+                                           handler:nil]];
+    [alert addAction:[UIAlertAction actionWithTitle:@"确定"
+                                             style:UIAlertActionStyleDestructive
+                                           handler:^(__unused UIAlertAction *action) {
+        if (handler) handler();
+    }]];
+    [hostViewController presentViewController:alert animated:YES completion:nil];
+}
 
-    UIAlertAction *cancel =
-    [UIAlertAction actionWithTitle:@"取消"
-                             style:UIAlertActionStyleCancel
-                           handler:nil];
-
-    UIAlertAction *confirm =
-    [UIAlertAction actionWithTitle:@"确定"
-                             style:UIAlertActionStyleDestructive
-                           handler:^(__unused UIAlertAction *action) {
+void ZONPresentClearGameDataConfirmation(UIViewController *hostViewController)
+{
+    ZONPresentDestructiveConfirmation(hostViewController,
+                                      @"清除游戏数据",
+                                      @"此操作会清除本地游戏数据，且不可恢复。\n确定要继续吗？",
+                                      ^{
         [SVProgressHUD showWithStatus:@"处理中..."];
         ZONClearGameDataPreservingTmp();
-    }];
-
-    [alert addAction:cancel];
-    [alert addAction:confirm];
-    [hostViewController presentViewController:alert animated:YES completion:nil];
+    });
 }
 
 void ZONPresentClearAuthorizationConfirmation(UIViewController *hostViewController)
 {
-    UIAlertController *alert =
-    [UIAlertController alertControllerWithTitle:@"清除授权记录"
-                                        message:@"此操作会删除授权信息，删除后需要重新授权。\n确定继续吗？"
-                                 preferredStyle:UIAlertControllerStyleAlert];
-
-    UIAlertAction *cancel =
-    [UIAlertAction actionWithTitle:@"取消"
-                             style:UIAlertActionStyleCancel
-                           handler:nil];
-
-    UIAlertAction *confirm =
-    [UIAlertAction actionWithTitle:@"确定"
-                             style:UIAlertActionStyleDestructive
-                           handler:^(__unused UIAlertAction *action) {
+    ZONPresentDestructiveConfirmation(hostViewController,
+                                      @"清除授权记录",
+                                      @"此操作会删除授权信息，删除后需要重新授权。\n确定继续吗？",
+                                      ^{
         [[WX_NongShiFu123 alloc] deletekm];
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)),
                        dispatch_get_main_queue(), ^{
             exit(0);
         });
-    }];
-
-    [alert addAction:cancel];
-    [alert addAction:confirm];
-    [hostViewController presentViewController:alert animated:YES completion:nil];
+    });
 }
 
-static void ZONPersistRuntimeToggle(NSUserDefaults *defaults,
-                                    NSString *integerKey,
-                                    NSString *booleanKey,
-                                    BOOL on)
+static void ZONApplyRuntimeToggle(NSUserDefaults *defaults,
+                                  NSString *integerKey,
+                                  NSString *booleanKey,
+                                  BOOL on,
+                                  ZONRuntimeToggleSideEffect sideEffect)
 {
     [defaults setInteger:on forKey:integerKey];
     [defaults setBool:on forKey:booleanKey];
     [defaults synchronize];
+    if (sideEffect) sideEffect(on);
 }
 
 static NSDictionary<NSString *, ZONFeatureActionHandler> *ZONActionRoutes(void)
@@ -207,13 +204,15 @@ static NSDictionary<NSString *, ZONFeatureToggleHandler> *ZONToggleRoutes(void)
     dispatch_once(&onceToken, ^{
         routes = @{
             @"runtime.iap-noads": ^BOOL(BOOL on) {
-                ZONPersistRuntimeToggle(NSUserDefaults.standardUserDefaults, @"NNGG", @"NNGGNNGG", on);
-                [ImgTool share].NeiGou = on;
+                ZONApplyRuntimeToggle(NSUserDefaults.standardUserDefaults,
+                                      @"NNGG", @"NNGGNNGG", on,
+                                      ^(BOOL enabled) { [ImgTool share].NeiGou = enabled; });
                 return YES;
             },
             @"runtime.ad-speed": ^BOOL(BOOL on) {
-                ZONPersistRuntimeToggle(NSUserDefaults.standardUserDefaults, @"AADD", @"AADDAADD", on);
-                [ImgTool share].ADSpeed = on;
+                ZONApplyRuntimeToggle(NSUserDefaults.standardUserDefaults,
+                                      @"AADD", @"AADDAADD", on,
+                                      ^(BOOL enabled) { [ImgTool share].ADSpeed = enabled; });
                 return YES;
             },
         };
