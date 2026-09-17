@@ -4,6 +4,9 @@
 #import "JHPP.h"
 #import "SVProgressHUD.h"
 
+typedef void (^ZONBackupDecisionCompletion)(BOOL skip);
+typedef void (^ZONBackupCopyCompletion)(void);
+
 @interface daochucd ()<UIDocumentInteractionControllerDelegate>
 @property (nonatomic, strong) UIDocumentInteractionController *docVc;
 @property (weak, nonatomic) IBOutlet UILabel *progressLabel;
@@ -128,58 +131,99 @@
 
 #pragma mark - Backup engine
 
-- (BOOL)shouldSkipBackupItemNamed:(NSString *)itemName size:(unsigned long long)size
+- (void)requestBackupDecisionForItemNamed:(NSString *)itemName
+                                      size:(unsigned long long)size
+                                completion:(ZONBackupDecisionCompletion)completion
 {
-    if (size <= 50 * 1024 * 1024) return NO;
+    if (size <= 50 * 1024 * 1024) {
+        if (completion) completion(NO);
+        return;
+    }
 
-    dispatch_semaphore_t sema = dispatch_semaphore_create(0);
-    __block BOOL skip = YES;
     dispatch_async(dispatch_get_main_queue(), ^{
+        UIViewController *host = [JHPP currentViewController];
+        if (!host) {
+            NSLog(@"⚠️ 无可用控制器展示大目录备份提示，默认跳过 %@", itemName);
+            if (completion) completion(YES);
+            return;
+        }
+
         UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"提示"
                                                                        message:[NSString stringWithFormat:@"备份 \"%@\" 大于 %.2f MB，是否跳过？", itemName, size / 1024.0 / 1024.0]
                                                                 preferredStyle:UIAlertControllerStyleAlert];
         [alert addAction:[UIAlertAction actionWithTitle:@"跳过" style:UIAlertActionStyleCancel handler:^(__unused UIAlertAction * _Nonnull action) {
-            skip = YES;
-            dispatch_semaphore_signal(sema);
+            if (completion) completion(YES);
         }]];
         [alert addAction:[UIAlertAction actionWithTitle:@"备份" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction * _Nonnull action) {
-            skip = NO;
-            dispatch_semaphore_signal(sema);
+            if (completion) completion(NO);
         }]];
-        [[JHPP currentViewController] presentViewController:alert animated:YES completion:nil];
+        [host presentViewController:alert animated:YES completion:nil];
     });
-    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
-    return skip;
+}
+
+- (void)copyBackupItems:(NSArray<NSString *> *)items
+                atIndex:(NSUInteger)index
+                   from:(NSString *)source
+                     to:(NSString *)destination
+                  label:(NSString *)label
+            fileManager:(NSFileManager *)fm
+             completion:(ZONBackupCopyCompletion)completion
+{
+    if (index >= items.count) {
+        if (completion) completion();
+        return;
+    }
+
+    NSString *item = items[index];
+    NSString *srcPath = [source stringByAppendingPathComponent:item];
+    NSString *dstPath = [destination stringByAppendingPathComponent:item];
+    unsigned long long size = [self folderSizeAtPath:srcPath];
+
+    [self requestBackupDecisionForItemNamed:item size:size completion:^(BOOL skip) {
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            @autoreleasepool {
+                if (!skip) {
+                    NSError *error = nil;
+                    if ([fm fileExistsAtPath:dstPath]) {
+                        [fm removeItemAtPath:dstPath error:nil];
+                    }
+                    [fm copyItemAtPath:srcPath toPath:dstPath error:&error];
+                    if (error) {
+                        NSLog(@"拷贝失败 %@ -> %@ : %@", srcPath, dstPath, error);
+                    }
+                }
+
+                CGFloat progress = (CGFloat)(index + 1) / items.count;
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [SVProgressHUD showProgress:progress status:[NSString stringWithFormat:@"拷贝 %@ %.0f%%", label, progress * 100]];
+                });
+
+                [self copyBackupItems:items
+                             atIndex:index + 1
+                                from:source
+                                  to:destination
+                               label:label
+                         fileManager:fm
+                          completion:completion];
+            }
+        });
+    }];
 }
 
 - (void)copyBackupTopLevelFrom:(NSString *)source
                             to:(NSString *)destination
                          label:(NSString *)label
                    fileManager:(NSFileManager *)fm
+                    completion:(ZONBackupCopyCompletion)completion
 {
-    NSArray<NSString *> *items = [fm contentsOfDirectoryAtPath:source error:nil];
-    for (NSUInteger i = 0; i < items.count; i++) {
-        NSString *item = items[i];
-        NSString *srcPath = [source stringByAppendingPathComponent:item];
-        NSString *dstPath = [destination stringByAppendingPathComponent:item];
-
-        unsigned long long size = [self folderSizeAtPath:srcPath];
-        if ([self shouldSkipBackupItemNamed:item size:size]) continue;
-
-        NSError *error = nil;
-        if ([fm fileExistsAtPath:dstPath]) {
-            [fm removeItemAtPath:dstPath error:nil];
-        }
-        [fm copyItemAtPath:srcPath toPath:dstPath error:&error];
-        if (error) {
-            NSLog(@"拷贝失败 %@ -> %@ : %@", srcPath, dstPath, error);
-        }
-
-        CGFloat progress = (CGFloat)(i + 1) / items.count;
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [SVProgressHUD showProgress:progress status:[NSString stringWithFormat:@"拷贝 %@ %.0f%%", label, progress * 100]];
-        });
-    }
+    NSArray<NSString *> *items = [fm contentsOfDirectoryAtPath:source error:nil] ?: @[];
+    [self copyBackupItems:items
+                  atIndex:0
+                     from:source
+                       to:destination
+                    label:label
+              fileManager:fm
+               completion:completion];
 }
 
 - (void)bfcundang:(NSString *)km
@@ -201,31 +245,40 @@
             [self ensureDirectoryExists:documentsTmp];
             [self ensureDirectoryExists:libraryTmp];
 
-            [self copyBackupTopLevelFrom:documentsSrc to:documentsTmp label:@"Documents" fileManager:fm];
-            [self copyBackupTopLevelFrom:librarySrc to:libraryTmp label:@"Library" fileManager:fm];
+            [self copyBackupTopLevelFrom:documentsSrc
+                                      to:documentsTmp
+                                   label:@"Documents"
+                             fileManager:fm
+                              completion:^{
+                [self copyBackupTopLevelFrom:librarySrc
+                                          to:libraryTmp
+                                       label:@"Library"
+                                 fileManager:fm
+                                  completion:^{
+                    [self clearDirectory:[libraryTmp stringByAppendingPathComponent:@"HeimdallrBU"] svProgressPrefix:@"清理 HeimdallrBU"];
+                    [self clearDirectory:[libraryTmp stringByAppendingPathComponent:@"Caches"] svProgressPrefix:@"清理 Caches"];
+                    [self clearDirectory:[libraryTmp stringByAppendingPathComponent:@"UnityCache"] svProgressPrefix:@"清理 UnityCache"];
+                    [self clearDirectory:[documentsTmp stringByAppendingPathComponent:@"zonoe"] svProgressPrefix:@"清理 zonoe"];
 
-            [self clearDirectory:[libraryTmp stringByAppendingPathComponent:@"HeimdallrBU"] svProgressPrefix:@"清理 HeimdallrBU"];
-            [self clearDirectory:[libraryTmp stringByAppendingPathComponent:@"Caches"] svProgressPrefix:@"清理 Caches"];
-            [self clearDirectory:[libraryTmp stringByAppendingPathComponent:@"UnityCache"] svProgressPrefix:@"清理 UnityCache"];
-            [self clearDirectory:[documentsTmp stringByAppendingPathComponent:@"zonoe"] svProgressPrefix:@"清理 zonoe"];
+                    NSString *saveDir = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents/zonoe"];
+                    [self ensureDirectoryExists:saveDir];
+                    NSString *zipPath = [saveDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.zip", km]];
 
-            NSString *saveDir = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents/zonoe"];
-            [self ensureDirectoryExists:saveDir];
-            NSString *zipPath = [saveDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.zip", km]];
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [SVProgressHUD showProgress:0 status:@"开始压缩..."];
+                    });
 
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [SVProgressHUD showProgress:0 status:@"开始压缩..."];
-            });
-
-            BOOL zipSuccess = [SSZipArchive createZipFileAtPath:zipPath withContentsOfDirectory:tmpBase];
-            dispatch_async(dispatch_get_main_queue(), ^{
-                if (zipSuccess) {
-                    [SVProgressHUD showSuccessWithStatus:@"备份完成"];
-                    [self fenxiang:km];
-                } else {
-                    [SVProgressHUD showErrorWithStatus:@"压缩失败"];
-                }
-            });
+                    BOOL zipSuccess = [SSZipArchive createZipFileAtPath:zipPath withContentsOfDirectory:tmpBase];
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        if (zipSuccess) {
+                            [SVProgressHUD showSuccessWithStatus:@"备份完成"];
+                            [self fenxiang:km];
+                        } else {
+                            [SVProgressHUD showErrorWithStatus:@"压缩失败"];
+                        }
+                    });
+                }];
+            }];
         }
     });
 }
