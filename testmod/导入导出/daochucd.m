@@ -285,14 +285,20 @@ typedef void (^ZONBackupCopyCompletion)(void);
 
 - (unsigned long long)folderSizeAtPath:(NSString *)folderPath {
     NSFileManager *fm = [NSFileManager defaultManager];
-    NSArray *files = [fm subpathsOfDirectoryAtPath:folderPath error:nil];
+    BOOL isDirectory = NO;
+    if (![fm fileExistsAtPath:folderPath isDirectory:&isDirectory]) return 0;
+
+    if (!isDirectory) {
+        NSDictionary *attributes = [fm attributesOfItemAtPath:folderPath error:nil];
+        return attributes.fileSize;
+    }
+
     unsigned long long totalSize = 0;
-    for (NSString *file in files) {
-        NSString *fullPath = [folderPath stringByAppendingPathComponent:file];
-        BOOL isDir = NO;
-        if ([fm fileExistsAtPath:fullPath isDirectory:&isDir] && !isDir) {
-            NSDictionary *attr = [fm attributesOfItemAtPath:fullPath error:nil];
-            totalSize += [attr fileSize];
+    NSDirectoryEnumerator<NSString *> *enumerator = [fm enumeratorAtPath:folderPath];
+    for (__unused NSString *relativePath in enumerator) {
+        NSDictionary<NSFileAttributeKey, id> *attributes = enumerator.fileAttributes;
+        if ([attributes.fileType isEqualToString:NSFileTypeRegular]) {
+            totalSize += attributes.fileSize;
         }
     }
     return totalSize;
