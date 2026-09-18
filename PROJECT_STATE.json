@@ -7,7 +7,7 @@
   "current_test_branch": "test/zonoemenu-v1-p56-pubgload-temp-boundary",
   "current_version": "v1_p56",
   "current_phase": "v1_p56_pubgload_temp_boundary",
-  "phase_status": "ci_passed_awaiting_device",
+  "phase_status": "device_partial_not_promoted",
   "last_device_verified_code_commit": "cdc4e6857f6f658dd0b6b4f42ee47470ea851d3a",
   "last_device_verified_version": "v1_p55",
   "last_ci_run_id": 35324208182,
@@ -35,7 +35,9 @@
     "ci_head": "3b6c4643f62f7a89f6cfe362c28137f6ae2f99fa",
     "ci_run_id": 35324208182,
     "ci_status": "success",
-    "device_status": "pending",
+    "device_status": "partial_not_promoted",
+    "device_reported_by_user": true,
+    "device_observation": "Remote archive download works. Cloud-save check displays '未查询到数据'. Exact P55->P56 runtime diff changes only cleanupTemporaryFiles, which executes after cloud metadata JSON parsing and entitlement validation; therefore this symptom is not directly caused by the P56 temp-boundary change.",
     "active_source_count": 78,
     "a_customer_artifact_id": 10539115576,
     "a_customer_artifact_digest": "sha256:be0b00cc80ae80fd8183bb73b9bc6f8c0c0fc510105b94062fea645436796c07",
@@ -44,5 +46,5 @@
     "b_debug_artifact_digest": "sha256:03e480a187bb5623e32344b540f1a2895001b579d361231d1780ca8f8db8781a",
     "behavior_change": "Active PubgLoad cleanup no longer enumerates/deletes the entire app /tmp tree; it only removes /tmp/zonoe and the exact previously recorded PubgLoad ZIP when owned by the app tmp root."
   },
-  "next_task": "Real-device validate P56 remote/cloud archive download and restore, and verify unrelated files placed under app /tmp survive PubgLoad cleanup. Do not promote until explicit user PASS."
+  "next_task": "Diagnose cloud metadata response from homeurl (https://yun.zonoeios.xyz/d/a/json/<BundleID>.json). The observed '未查询到数据' maps to JSON parse failure in checkCloudSaveStatus. Verify HTTP status/content-type/body and compare current response while retaining P55 as formal rollback baseline."
 }
