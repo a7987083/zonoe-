@@ -7,9 +7,9 @@
   "current_test_branch": "test/zonoemenu-v1-p60-udid-progress-dialog",
   "current_version": "v1_p60",
   "current_phase": "v1_p60_udid_progress_dialog",
-  "phase_status": "ci_passed_awaiting_device",
-  "last_device_verified_code_commit": "3ac88531014241bf63d48c9348ca51937c9ab295",
-  "last_device_verified_version": "v1_p58",
+  "phase_status": "completed_device_passed",
+  "last_device_verified_code_commit": "a21b561890522f568e6c38bb519edf2bde490357",
+  "last_device_verified_version": "v1_p60",
   "last_ci_run_id": 35402608600,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
@@ -17,8 +17,8 @@
   "active_source_count": 78,
   "canonical_product_surface": ["testmod/", "testmod.xcodeproj"],
   "rollback_baseline": {
-    "version": "v1_p58",
-    "source_commit": "3ac88531014241bf63d48c9348ca51937c9ab295",
+    "version": "v1_p60",
+    "source_commit": "a21b561890522f568e6c38bb519edf2bde490357",
     "device_status": "passed"
   },
   "p55": {
@@ -57,7 +57,7 @@
     "ci_head": "35ee7cfaff2070faea33068f2ee18f97031b0619",
     "ci_run_id": 35400248848,
     "ci_status": "success",
-    "device_status": "passed",
+    "device_status": "passed_superseded",
     "device_reported_by_user": true,
     "device_observation": "User reported all P58 real-device checks normal.",
     "active_source_count": 78,
@@ -81,14 +81,16 @@
     "ci_head": "f10178f78dd07c6bcbbb61bc123d6974513dc649",
     "ci_run_id": 35402608600,
     "ci_status": "success",
-    "device_status": "pending",
+    "device_status": "passed",
+    "device_reported_by_user": true,
+    "device_observation": "User reported all P60 real-device checks normal.",
     "active_source_count": 78,
     "a_customer_artifact_id": 10570753666,
     "a_customer_artifact_digest": "sha256:12a88de4d70d0c513d2d5e67ed48963aa5a4dba2aa67d370d549b2815c083227",
     "a_customer_dylib_sha256": "f5f16109cf33ace7359eb61bf866f2ac7863866f504ac95e7f0b008ca4f6b14f",
     "b_debug_artifact_id": 10570918573,
     "b_debug_artifact_digest": "sha256:c61d4be98a5568bac4641d38ff2ae689c767b38f31674d047bbb37bb73c41375",
-    "behavior_change": "Zonoe-app UDID acquisition now presents an '获取UDID中' alert before opening zonoe://udid, keeps a manual '重新获取' action for a fresh nonce request, dismisses automatically when UDID arrives, and dismisses before entering the existing web fallback. P59 automatic delayed retry is not present."
+    "behavior_change": "Zonoe-app UDID acquisition presents an '获取UDID中' alert before opening zonoe://udid, keeps a manual '重新获取' action for a fresh nonce request, dismisses automatically when UDID arrives, and dismisses before entering the existing web fallback. P59 automatic delayed retry is not present."
   },
-  "next_task": "Real-device validate P60: dialog appears before Zonoe jump; returning without UDID leaves dialog visible; tapping 重新获取 starts a fresh-nonce Zonoe request; successful callback/localhost result dismisses dialog; unavailable Zonoe enters existing web fallback without leaving the dialog visible; no automatic timed retry occurs. Do not promote until explicit user PASS."
+  "next_task": "Select the next dedicated reliability/maintainability stage from the P60 device-verified baseline after source audit. Preserve the frozen startup/auth/hook boundaries unless explicitly scoped."
 }
