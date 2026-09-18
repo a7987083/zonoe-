@@ -329,6 +329,63 @@ void ZONUDIDBridgeStart(void)
 
 #pragma mark - Request
 
+static const NSTimeInterval ZONUDIDBridgeOpenRetryDelay = 3.0;
+
+static void ZONUDIDBridgeOpenRequestAttempt(dispatch_block_t _Nullable unavailableHandler,
+                                             BOOL allowRetry)
+{
+    if (ZONUDIDBridgeCurrentUDID().length > 0) return;
+
+    NSString *nonce = ZONUDIDBridgeNewNonce();
+    NSURL *requestURL = ZONUDIDBridgeRequestURLForNonce(nonce);
+    if (!requestURL) {
+        NSLog(@"[zonoemenu][WARN][udid] unable to construct zonoe://udid request; using fallback");
+        if (unavailableHandler) unavailableHandler();
+        return;
+    }
+
+    NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;
+    NSTimeInterval now = NSDate.date.timeIntervalSince1970;
+    [defaults setObject:nonce forKey:ZONUDIDBridgeRequestNonceKey];
+    [defaults setDouble:now forKey:ZONUDIDBridgeRequestTimestampKey];
+
+    NSLog(@"[zonoemenu][INFO][udid] requesting UDID through zonoe callback + nonce%@",
+          allowRetry ? @"" : @" (retry)");
+    [UIApplication.sharedApplication openURL:requestURL
+                                     options:@{}
+                           completionHandler:^(BOOL success) {
+        if (success) return;
+
+        NSString *currentNonce = [NSUserDefaults.standardUserDefaults stringForKey:ZONUDIDBridgeRequestNonceKey];
+        if (![currentNonce isEqualToString:nonce]) {
+            NSLog(@"[zonoemenu][INFO][udid] ignoring stale zonoe open failure");
+            return;
+        }
+
+        ZONUDIDBridgeClearPendingRequest();
+        if (!allowRetry) {
+            NSLog(@"[zonoemenu][WARN][udid] zonoe://udid retry failed; using web fallback");
+            if (unavailableHandler) unavailableHandler();
+            return;
+        }
+
+        NSLog(@"[zonoemenu][WARN][udid] unable to open zonoe://udid; scheduling one retry");
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW,
+                                     (int64_t)(ZONUDIDBridgeOpenRetryDelay * NSEC_PER_SEC)),
+                       dispatch_get_main_queue(), ^{
+            if (ZONUDIDBridgeCurrentUDID().length > 0) return;
+
+            NSString *pendingNonce = [NSUserDefaults.standardUserDefaults stringForKey:ZONUDIDBridgeRequestNonceKey];
+            if (ZONUDIDBridgeIsPlausibleNonce(pendingNonce)) {
+                NSLog(@"[zonoemenu][INFO][udid] retry skipped because a newer request is pending");
+                return;
+            }
+
+            ZONUDIDBridgeOpenRequestAttempt(unavailableHandler, NO);
+        });
+    }];
+}
+
 void ZONUDIDBridgeRequestIfNeededWithUnavailableHandler(dispatch_block_t _Nullable unavailableHandler)
 {
     if (ZONUDIDBridgeCurrentUDID().length > 0) return;
@@ -343,28 +400,8 @@ void ZONUDIDBridgeRequestIfNeededWithUnavailableHandler(dispatch_block_t _Nullab
     NSTimeInterval previous = [defaults doubleForKey:ZONUDIDBridgeRequestTimestampKey];
     if (previous > 0 && now - previous < 10.0) return;
 
-    NSString *nonce = ZONUDIDBridgeNewNonce();
-    NSURL *requestURL = ZONUDIDBridgeRequestURLForNonce(nonce);
-    if (!requestURL) {
-        NSLog(@"[zonoemenu][WARN][udid] unable to construct zonoe://udid request; using fallback");
-        if (unavailableHandler) unavailableHandler();
-        return;
-    }
-
     ZONUDIDBridgeStart();
-    [defaults setObject:nonce forKey:ZONUDIDBridgeRequestNonceKey];
-    [defaults setDouble:now forKey:ZONUDIDBridgeRequestTimestampKey];
-
-    NSLog(@"[zonoemenu][INFO][udid] requesting UDID through zonoe callback + nonce");
-    [UIApplication.sharedApplication openURL:requestURL
-                                     options:@{}
-                           completionHandler:^(BOOL success) {
-        if (!success) {
-            ZONUDIDBridgeClearPendingRequest();
-            NSLog(@"[zonoemenu][WARN][udid] unable to open zonoe://udid; using web fallback");
-            if (unavailableHandler) unavailableHandler();
-        }
-    }];
+    ZONUDIDBridgeOpenRequestAttempt(unavailableHandler, YES);
 }
 
 void ZONUDIDBridgeRequestIfNeeded(void)
