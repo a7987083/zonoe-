@@ -3,14 +3,14 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p56-pubgload-temp-boundary",
-  "current_test_branch": "test/zonoemenu-v1-p56-pubgload-temp-boundary",
-  "current_version": "v1_p56",
-  "current_phase": "v1_p56_pubgload_temp_boundary",
-  "phase_status": "completed_device_passed",
+  "current_work_branch": "work/zonoemenu-v1-p58-download-lifecycle",
+  "current_test_branch": "test/zonoemenu-v1-p58-download-lifecycle",
+  "current_version": "v1_p58",
+  "current_phase": "v1_p58_download_lifecycle_reliability",
+  "phase_status": "ci_passed_awaiting_device",
   "last_device_verified_code_commit": "fb119af2387d9f5deccd82abe9ca8b885e960fcb",
   "last_device_verified_version": "v1_p56",
-  "last_ci_run_id": 35324208182,
+  "last_ci_run_id": 35400248848,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
@@ -50,5 +50,21 @@
     "status": "abandoned_reverted",
     "reason": "Diagnostic stage was only needed to distinguish client behavior from server failure. User confirmed the issue was on their cloud server and P56 is fully normal. P57 work/test refs were reset to the P56 baselines and P57 is not part of the active lineage."
   },
-  "next_task": "Continue next reliability/performance stage from P56 as the formal device-verified baseline. UI remains deferred unless explicitly requested."
+  "p58": {
+    "branch": "work/zonoemenu-v1-p58-download-lifecycle",
+    "test_branch": "test/zonoemenu-v1-p58-download-lifecycle",
+    "source_commit": "3ac88531014241bf63d48c9348ca51937c9ab295",
+    "ci_head": "35ee7cfaff2070faea33068f2ee18f97031b0619",
+    "ci_run_id": 35400248848,
+    "ci_status": "success",
+    "device_status": "pending",
+    "active_source_count": 78,
+    "a_customer_artifact_id": 10570259619,
+    "a_customer_artifact_digest": "sha256:ff4c4eb2f66e7d198110d2feb0dde3bbc6c8a907b4daed7f2c39e70bfa579656",
+    "a_customer_dylib_sha256": "ac2b1b6d1f912944b62a9c73d4b66944e8074d43c018249eacbe381bc4633d26",
+    "b_debug_artifact_id": 10568884387,
+    "b_debug_artifact_digest": "sha256:4f47a488b9f7dc4002e10c278e75b5e20913c6164cda96729fd625963034d82b",
+    "behavior_change": "Archive download progress now guards NSURLSessionTransferSizeUnknown/zero totals, transport-level failures are surfaced through didCompleteWithError, downloaded temporary-file copy failures stop explicitly, and non-ZIP downloads are rejected and removed. Normal ZIP download/unzip/restore behavior is otherwise preserved."
+  },
+  "next_task": "Real-device validate P58 normal remote download, cloud-save download/restore, unknown-length download progress, interrupted network failure feedback, and non-ZIP rejection. Do not promote until explicit user PASS."
 }
