@@ -26,9 +26,7 @@ jobs:
           COUNT=$(grep -o '/\* .* in Sources \*/,' testmod.xcodeproj/project.pbxproj | wc -l | tr -d ' ')
           echo "ACTIVE_SOURCES=$COUNT"
           test "$COUNT" = "78"
-      - name: Verify P54 inherited restore reliability contract
-        run: python3 Tests/p54_restore_reliability_contract.py
-      - name: Verify P55 cleanup contract
+      - name: Verify P55 consolidated restore contract
         run: python3 Tests/p55_restore_cleanup_behavior_contract.py
 
   build:
@@ -50,9 +48,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Verify P54 inherited contract
-        run: python3 Tests/p54_restore_reliability_contract.py
-      - name: Verify P55 cleanup contract
+      - name: Verify P55 consolidated restore contract
         run: python3 Tests/p55_restore_cleanup_behavior_contract.py
       - name: Select Xcode 16.4
         run: |
