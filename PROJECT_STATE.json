@@ -3,14 +3,14 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p52-backup-nonblocking-prompt",
-  "current_test_branch": "test/zonoemenu-v1-p52-backup-nonblocking-prompt",
-  "current_version": "v1_p52",
-  "current_phase": "v1_p52_backup_nonblocking_prompt",
-  "phase_status": "completed_device_passed",
+  "current_work_branch": "work/zonoemenu-v1-p53-backup-size-scan-optimization",
+  "current_test_branch": "test/zonoemenu-v1-p53-backup-size-scan-optimization",
+  "current_version": "v1_p53",
+  "current_phase": "v1_p53_backup_size_scan_optimization",
+  "phase_status": "ci_passed_awaiting_device",
   "last_device_verified_code_commit": "88c9d2508dbf962cd9e70ea717d74c3ee167aa40",
   "last_device_verified_version": "v1_p52",
-  "last_ci_run_id": 35279828850,
+  "last_ci_run_id": 35305785715,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
@@ -21,28 +21,27 @@
     "source_commit": "88c9d2508dbf962cd9e70ea717d74c3ee167aa40",
     "device_status": "passed"
   },
-  "p51e": {
-    "source_commit": "78c65ad571355656a5acb4cd45cdfa298646886c",
-    "ci_run_id": 35278168202,
-    "device_status": "passed_superseded",
-    "a_customer_artifact_id": 10521188214,
-    "a_customer_dylib_sha256": "d5f59db6310d356d2a35b798de8ac22f938293a817fbb50648e957f4c162f6b4"
-  },
   "p52": {
-    "branch": "work/zonoemenu-v1-p52-backup-nonblocking-prompt",
-    "test_branch": "test/zonoemenu-v1-p52-backup-nonblocking-prompt",
     "source_commit": "88c9d2508dbf962cd9e70ea717d74c3ee167aa40",
-    "ci_head": "5887a317f298d666ba7c652ae9b27a69eac4470b",
     "ci_run_id": 35279828850,
-    "ci_status": "success",
     "device_status": "passed",
-    "device_reported_by_user": true,
-    "active_source_count": 78,
     "a_customer_artifact_id": 10522575693,
-    "a_customer_artifact_digest": "sha256:0a316a49ea0fadb2e2fd3cf5be14805c13757d91bfed91a342c9601519e0fd45",
-    "a_customer_dylib_sha256": "589f830a4012b2299c75928849077bd80144f59f4b58e477cf1b89782ad6e982",
-    "b_debug_artifact_id": 10522126702,
-    "b_debug_artifact_digest": "sha256:b9132a8fb9b7da4de8b2af85dbd656978c182a40685717f0c73e9ee8b5476ab2"
+    "a_customer_dylib_sha256": "589f830a4012b2299c75928849077bd80144f59f4b58e477cf1b89782ad6e982"
   },
-  "next_task": "Select the next dedicated reliability or maintainability stage from the P52 device-verified baseline. Keep UI redesign deferred and preserve frozen startup/auth/hook boundaries unless explicitly scoped."
+  "p53": {
+    "branch": "work/zonoemenu-v1-p53-backup-size-scan-optimization",
+    "test_branch": "test/zonoemenu-v1-p53-backup-size-scan-optimization",
+    "source_commit": "fa4b3b78efb3ef6490ccbf830eed7d0d15c47002",
+    "ci_head": "b8b27ec1014de4f4db4d7a474f595115579e6bed",
+    "ci_run_id": 35305785715,
+    "ci_status": "success",
+    "device_status": "pending",
+    "active_source_count": 78,
+    "a_customer_artifact_id": 10531309548,
+    "a_customer_artifact_digest": "sha256:e1a0836b3e99c80e70d361725a6c83252d0c15f9701faaaffbf086a2d40d1489",
+    "a_customer_dylib_sha256": "6485eb805a5edacbaa213f921e0af96d074483711f9504acf5510462c2288697",
+    "b_debug_artifact_id": 10531387787,
+    "b_debug_artifact_digest": "sha256:e3052eb987f2f0e05136e732f79a4f1ac233d03b18b2ff4f9c01b74df28cc8af"
+  },
+  "next_task": "Real-device validate P53 backup timing and behavior, especially exact >50 MiB prompt size, skip/backup paths, and repeated backups. Do not promote until explicit user PASS."
 }
