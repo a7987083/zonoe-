@@ -7,9 +7,9 @@
   "current_test_branch": "test/zonoemenu-v1-p53-backup-size-scan-optimization",
   "current_version": "v1_p53",
   "current_phase": "v1_p53_backup_size_scan_optimization",
-  "phase_status": "ci_passed_awaiting_device",
-  "last_device_verified_code_commit": "88c9d2508dbf962cd9e70ea717d74c3ee167aa40",
-  "last_device_verified_version": "v1_p52",
+  "phase_status": "completed_device_passed",
+  "last_device_verified_code_commit": "fa4b3b78efb3ef6490ccbf830eed7d0d15c47002",
+  "last_device_verified_version": "v1_p53",
   "last_ci_run_id": 35305785715,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
@@ -17,14 +17,14 @@
   "active_source_count": 78,
   "canonical_product_surface": ["testmod/", "testmod.xcodeproj"],
   "rollback_baseline": {
-    "version": "v1_p52",
-    "source_commit": "88c9d2508dbf962cd9e70ea717d74c3ee167aa40",
+    "version": "v1_p53",
+    "source_commit": "fa4b3b78efb3ef6490ccbf830eed7d0d15c47002",
     "device_status": "passed"
   },
   "p52": {
     "source_commit": "88c9d2508dbf962cd9e70ea717d74c3ee167aa40",
     "ci_run_id": 35279828850,
-    "device_status": "passed",
+    "device_status": "passed_superseded",
     "a_customer_artifact_id": 10522575693,
     "a_customer_dylib_sha256": "589f830a4012b2299c75928849077bd80144f59f4b58e477cf1b89782ad6e982"
   },
@@ -35,7 +35,9 @@
     "ci_head": "b8b27ec1014de4f4db4d7a474f595115579e6bed",
     "ci_run_id": 35305785715,
     "ci_status": "success",
-    "device_status": "pending",
+    "device_status": "passed",
+    "device_reported_by_user": true,
+    "device_observation": "User explicitly reported backup scanning felt faster than P52 and all tested behavior was normal.",
     "active_source_count": 78,
     "a_customer_artifact_id": 10531309548,
     "a_customer_artifact_digest": "sha256:e1a0836b3e99c80e70d361725a6c83252d0c15f9701faaaffbf086a2d40d1489",
@@ -43,5 +45,5 @@
     "b_debug_artifact_id": 10531387787,
     "b_debug_artifact_digest": "sha256:e3052eb987f2f0e05136e732f79a4f1ac233d03b18b2ff4f9c01b74df28cc8af"
   },
-  "next_task": "Real-device validate P53 backup timing and behavior, especially exact >50 MiB prompt size, skip/backup paths, and repeated backups. Do not promote until explicit user PASS."
+  "next_task": "Select the next dedicated reliability or performance stage from the P53 device-verified baseline. Keep UI redesign deferred and preserve frozen startup/auth/hook boundaries unless explicitly scoped."
 }
