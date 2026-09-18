@@ -1,0 +1,35 @@
+name: p59 Apply UDID Open Retry
+
+on:
+  push:
+    branches:
+      - work/zonoemenu-v1-p59-udid-open-retry
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      - name: Apply guarded P59 transform
+        run: python3 scripts/p59_apply_udid_open_retry.py
+      - name: Verify generated scope
+        run: |
+          set -euxo pipefail
+          git -c core.quotePath=false diff --name-only | tee /tmp/files
+          grep -Fx 'VERSION' /tmp/files
+          grep -Fx 'testmod/ZONServices/ZONUDIDBridge.m' /tmp/files
+          test "$(wc -l < /tmp/files | tr -d ' ')" = '2'
+      - name: Commit generated P59 runtime source
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add VERSION testmod/ZONServices/ZONUDIDBridge.m
+          git commit -m 'p59: retry failed zonoe UDID open once'
+          git push origin HEAD:work/zonoemenu-v1-p59-udid-open-retry
