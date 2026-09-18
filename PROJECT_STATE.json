@@ -7,9 +7,9 @@
   "current_test_branch": "test/zonoemenu-v1-p58-download-lifecycle",
   "current_version": "v1_p58",
   "current_phase": "v1_p58_download_lifecycle_reliability",
-  "phase_status": "ci_passed_awaiting_device",
-  "last_device_verified_code_commit": "fb119af2387d9f5deccd82abe9ca8b885e960fcb",
-  "last_device_verified_version": "v1_p56",
+  "phase_status": "completed_device_passed",
+  "last_device_verified_code_commit": "3ac88531014241bf63d48c9348ca51937c9ab295",
+  "last_device_verified_version": "v1_p58",
   "last_ci_run_id": 35400248848,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
@@ -17,8 +17,8 @@
   "active_source_count": 78,
   "canonical_product_surface": ["testmod/", "testmod.xcodeproj"],
   "rollback_baseline": {
-    "version": "v1_p56",
-    "source_commit": "fb119af2387d9f5deccd82abe9ca8b885e960fcb",
+    "version": "v1_p58",
+    "source_commit": "3ac88531014241bf63d48c9348ca51937c9ab295",
     "device_status": "passed"
   },
   "p55": {
@@ -35,7 +35,7 @@
     "ci_head": "3b6c4643f62f7a89f6cfe362c28137f6ae2f99fa",
     "ci_run_id": 35324208182,
     "ci_status": "success",
-    "device_status": "passed",
+    "device_status": "passed_superseded",
     "device_reported_by_user": true,
     "device_observation": "User confirmed P56 is fully normal on device. The earlier cloud-save failure was caused by the user's server returning HTTP 5xx and was not a P56 client regression.",
     "active_source_count": 78,
@@ -57,14 +57,16 @@
     "ci_head": "35ee7cfaff2070faea33068f2ee18f97031b0619",
     "ci_run_id": 35400248848,
     "ci_status": "success",
-    "device_status": "pending",
+    "device_status": "passed",
+    "device_reported_by_user": true,
+    "device_observation": "User reported all P58 real-device checks normal.",
     "active_source_count": 78,
     "a_customer_artifact_id": 10570259619,
     "a_customer_artifact_digest": "sha256:ff4c4eb2f66e7d198110d2feb0dde3bbc6c8a907b4daed7f2c39e70bfa579656",
     "a_customer_dylib_sha256": "ac2b1b6d1f912944b62a9c73d4b66944e8074d43c018249eacbe381bc4633d26",
     "b_debug_artifact_id": 10568884387,
     "b_debug_artifact_digest": "sha256:4f47a488b9f7dc4002e10c278e75b5e20913c6164cda96729fd625963034d82b",
-    "behavior_change": "Archive download progress now guards NSURLSessionTransferSizeUnknown/zero totals, transport-level failures are surfaced through didCompleteWithError, downloaded temporary-file copy failures stop explicitly, and non-ZIP downloads are rejected and removed. Normal ZIP download/unzip/restore behavior is otherwise preserved."
+    "behavior_change": "Archive download progress guards unknown/zero totals, transport failures are surfaced, downloaded temporary-file copy failures stop explicitly, and non-ZIP downloads are rejected and removed while normal ZIP download/unzip/restore is preserved."
   },
-  "next_task": "Real-device validate P58 normal remote download, cloud-save download/restore, unknown-length download progress, interrupted network failure feedback, and non-ZIP rejection. Do not promote until explicit user PASS."
+  "next_task": "P59: add a single delayed retry when the initial zonoe://udid openURL attempt reports failure. Wait about 3 seconds, retry once with a fresh nonce, and only then invoke the existing fallback if the second open still fails. Preserve successful callback/localhost paths and prevent retry loops."
 }
