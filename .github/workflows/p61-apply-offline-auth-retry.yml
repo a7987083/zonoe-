@@ -1,0 +1,58 @@
+name: p61 Apply Offline Auth Retry
+
+on:
+  push:
+    branches:
+      - work/zonoemenu-v1-p61-offline-auth-retry
+    paths:
+      - .github/workflows/p61-apply-offline-auth-retry.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply guarded P61 transform
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('testmod/Bsphp/WX_NongShiFu123.mm')
+          s = p.read_text()
+
+          old_recursion = '''    } else {\n        ConfigLog(@"网络不可用");\n        [self loada];\n        return NO;\n       \n    }'''
+          new_recursion = '''    } else {\n        ConfigLog(@"网络不可用");\n        return NO;\n       \n    }'''
+          assert s.count(old_recursion) == 1, 'getNet recursion marker mismatch'
+          s = s.replace(old_recursion, new_recursion, 1)
+
+          old_b = '''            UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"重新检查" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {\n//                BOOL NET=[self getNet];\n\n            }];'''
+          new_b = '''            UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"重新检查" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {\n                [self BSPHP];\n            }];'''
+          assert s.count(old_b) == 1, 'BSPHP retry marker mismatch'
+          s = s.replace(old_b, new_b, 1)
+
+          old_y = '''            [alert addAction:[UIAlertAction actionWithTitle:@"重新检查" style:UIAlertActionStyleDefault handler:nil]];'''
+          new_y = '''            [alert addAction:[UIAlertAction actionWithTitle:@"重新检查" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {\n                [self BSPHPy];\n            }]];'''
+          assert s.count(old_y) == 1, 'BSPHPy retry marker mismatch'
+          s = s.replace(old_y, new_y, 1)
+
+          p.write_text(s)
+          Path('VERSION').write_text('v1_p61\n')
+      - name: Verify generated behavior
+        run: |
+          set -euxo pipefail
+          ! grep -A20 -- '- (BOOL)getNet' testmod/Bsphp/WX_NongShiFu123.mm | grep -q '\[self loada\]'
+          grep -q '\[self BSPHP\];' testmod/Bsphp/WX_NongShiFu123.mm
+          grep -q '\[self BSPHPy\];' testmod/Bsphp/WX_NongShiFu123.mm
+          test "$(cat VERSION)" = 'v1_p61'
+      - name: Commit generated P61 runtime source
+        run: |
+          set -euxo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add testmod/Bsphp/WX_NongShiFu123.mm VERSION
+          git commit -m 'p61: make offline authorization retry explicit'
+          git push
