@@ -3,14 +3,14 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p60-udid-progress-dialog",
-  "current_test_branch": "test/zonoemenu-v1-p60-udid-progress-dialog",
-  "current_version": "v1_p60",
-  "current_phase": "v1_p60_udid_progress_dialog",
-  "phase_status": "completed_device_passed",
+  "current_work_branch": "work/zonoemenu-v1-p61-offline-auth-retry",
+  "current_test_branch": "test/zonoemenu-v1-p61-offline-auth-retry",
+  "current_version": "v1_p61",
+  "current_phase": "v1_p61_offline_auth_retry",
+  "phase_status": "ci_passed_awaiting_device",
   "last_device_verified_code_commit": "a21b561890522f568e6c38bb519edf2bde490357",
   "last_device_verified_version": "v1_p60",
-  "last_ci_run_id": 35402608600,
+  "last_ci_run_id": 35403378114,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
@@ -92,5 +92,21 @@
     "b_debug_artifact_digest": "sha256:c61d4be98a5568bac4641d38ff2ae689c767b38f31674d047bbb37bb73c41375",
     "behavior_change": "Zonoe-app UDID acquisition presents an '获取UDID中' alert before opening zonoe://udid, keeps a manual '重新获取' action for a fresh nonce request, dismisses automatically when UDID arrives, and dismisses before entering the existing web fallback. P59 automatic delayed retry is not present."
   },
-  "next_task": "Select the next dedicated reliability/maintainability stage from the P60 device-verified baseline after source audit. Preserve the frozen startup/auth/hook boundaries unless explicitly scoped."
+  "p61": {
+    "branch": "work/zonoemenu-v1-p61-offline-auth-retry",
+    "test_branch": "test/zonoemenu-v1-p61-offline-auth-retry",
+    "source_commit": "0f4ef2ca2172a4cf96a09a5c7227c1619804ae51",
+    "ci_head": "74c0bfad26403b2b64b2a0b8d4901e1fa03cd40b",
+    "ci_run_id": 35403378114,
+    "ci_status": "success",
+    "device_status": "pending",
+    "active_source_count": 78,
+    "a_customer_artifact_id": 10571453004,
+    "a_customer_artifact_digest": "sha256:93e2307617fd361d0741c8c771f2d8d9e0fb66ba3b8339236ae2b8227f198e7b",
+    "a_customer_dylib_sha256": "4ccabd4186109dc13e015237d58581d181d4283b3da40aec0d8db8bd7b816efc",
+    "b_debug_artifact_id": 10571765033,
+    "b_debug_artifact_digest": "sha256:383875fe82c74d868fe57acc0d303d39f130bcebc9da911f9ef9b20ac7222a17",
+    "behavior_change": "Legacy authorization reachability check no longer re-enters loada when offline. The visible 重新检查 actions now explicitly retry their original BSPHP or BSPHPy authorization path."
+  },
+  "next_task": "Real-device validate P61 with network offline/online transitions for both authorization modes. Confirm offline does not recursively schedule authorization, 重新检查 retries the same mode after connectivity returns, and P60 UDID acquisition remains normal. Do not promote until explicit user PASS."
 }
