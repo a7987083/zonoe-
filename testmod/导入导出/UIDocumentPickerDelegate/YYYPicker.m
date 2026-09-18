@@ -61,14 +61,33 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
     return [NSString stringWithFormat:@"%@%@-Inbox", tmpRoot, bundleIdentifier];
 }
 
+- (BOOL)cleanupRestorePath:(NSString *)path
+{
+    if (path.length == 0) return YES;
+
+    NSFileManager *fm = [NSFileManager defaultManager];
+    if (![fm fileExistsAtPath:path]) return YES;
+
+    NSError *error = nil;
+    BOOL removed = [fm removeItemAtPath:path error:&error];
+    if (!removed) {
+        NSLog(@"❌ 清理恢复临时路径失败 %@: %@", path, error.localizedDescription);
+    }
+    return removed;
+}
+
 - (BOOL)prepareRestoreStagingRoot:(NSString *)stagingRoot error:(NSError **)error
 {
     NSFileManager *fm = [NSFileManager defaultManager];
-    if ([fm fileExistsAtPath:stagingRoot]) {
-        if (![fm removeItemAtPath:stagingRoot error:error]) {
-            return NO;
+    if (![self cleanupRestorePath:stagingRoot]) {
+        if (error) {
+            *error = [NSError errorWithDomain:@"ZONRestore"
+                                         code:1000
+                                     userInfo:@{NSLocalizedDescriptionKey: @"无法清理恢复临时目录"}];
         }
+        return NO;
     }
+
     return [fm createDirectoryAtPath:stagingRoot
          withIntermediateDirectories:YES
                           attributes:nil
@@ -261,6 +280,8 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
         BOOL prepared = [self prepareRestoreStagingRoot:stagingRoot error:&stagingError];
         if (!prepared) {
             NSLog(@"❌ 准备恢复临时目录失败: %@", stagingError.localizedDescription);
+            [self cleanupRestorePath:stagingRoot];
+            [self cleanupRestorePath:inboxPath];
             dispatch_async(dispatch_get_main_queue(), ^{
                 [SVProgressHUD showErrorWithStatus:@"准备恢复目录失败"];
             });
@@ -270,13 +291,15 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
         BOOL isSuccess = [SSZipArchive unzipFileAtPath:archivePath toDestination:stagingRoot];
         if (!isSuccess) {
             NSLog(@"❌ 解压恢复包失败: %@", archivePath);
+            BOOL stagingCleaned = [self cleanupRestorePath:stagingRoot];
+            [self cleanupRestorePath:inboxPath];
             dispatch_async(dispatch_get_main_queue(), ^{
-                [SVProgressHUD showErrorWithStatus:@"解压失败"];
+                [SVProgressHUD showErrorWithStatus:stagingCleaned ? @"解压失败" : @"解压失败，临时文件清理失败"];
             });
             return;
         }
 
-        [[NSFileManager defaultManager] removeItemAtPath:inboxPath error:nil];
+        [self cleanupRestorePath:inboxPath];
         [self yidongwenjian];
     });
 }
@@ -324,15 +347,18 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
 - (void)yidongwenjian
 {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        BOOL restored = [self restoreBackupTreeAtRoot:[self restoreStagingRootPath]];
+        NSString *stagingRoot = [self restoreStagingRootPath];
+        BOOL restored = [self restoreBackupTreeAtRoot:stagingRoot];
+        BOOL stagingCleaned = [self cleanupRestorePath:stagingRoot];
 
         dispatch_async(dispatch_get_main_queue(), ^{
             if (!restored) {
-                [SVProgressHUD showErrorWithStatus:@"恢复失败"];
+                [SVProgressHUD showErrorWithStatus:stagingCleaned ? @"恢复失败" : @"恢复失败，临时文件清理失败"];
                 return;
             }
+
             [self reloadRestoredPreferences];
-            [SVProgressHUD showSuccessWithStatus:@"恢复完成"];
+            [SVProgressHUD showSuccessWithStatus:stagingCleaned ? @"恢复完成" : @"恢复完成，但临时文件清理失败"];
         });
     });
 }
