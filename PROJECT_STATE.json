@@ -3,14 +3,14 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p58-download-lifecycle",
-  "current_test_branch": "test/zonoemenu-v1-p58-download-lifecycle",
-  "current_version": "v1_p58",
-  "current_phase": "v1_p58_download_lifecycle_reliability",
-  "phase_status": "completed_device_passed",
+  "current_work_branch": "work/zonoemenu-v1-p59-udid-open-retry",
+  "current_test_branch": "test/zonoemenu-v1-p59-udid-open-retry",
+  "current_version": "v1_p59",
+  "current_phase": "v1_p59_udid_open_retry",
+  "phase_status": "ci_passed_awaiting_device",
   "last_device_verified_code_commit": "3ac88531014241bf63d48c9348ca51937c9ab295",
   "last_device_verified_version": "v1_p58",
-  "last_ci_run_id": 35400248848,
+  "last_ci_run_id": 35401311630,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
@@ -24,31 +24,19 @@
   "p55": {
     "source_commit": "cdc4e6857f6f658dd0b6b4f42ee47470ea851d3a",
     "ci_run_id": 35314006206,
-    "device_status": "passed_superseded",
-    "a_customer_artifact_id": 10534597704,
-    "a_customer_dylib_sha256": "9804d80cfb68f4b044f5bd708dd69674b65578e90b1f6fac79ae11fea23850a3"
+    "device_status": "passed_superseded"
   },
   "p56": {
-    "branch": "work/zonoemenu-v1-p56-pubgload-temp-boundary",
-    "test_branch": "test/zonoemenu-v1-p56-pubgload-temp-boundary",
     "source_commit": "fb119af2387d9f5deccd82abe9ca8b885e960fcb",
-    "ci_head": "3b6c4643f62f7a89f6cfe362c28137f6ae2f99fa",
     "ci_run_id": 35324208182,
-    "ci_status": "success",
     "device_status": "passed_superseded",
     "device_reported_by_user": true,
-    "device_observation": "User confirmed P56 is fully normal on device. The earlier cloud-save failure was caused by the user's server returning HTTP 5xx and was not a P56 client regression.",
-    "active_source_count": 78,
     "a_customer_artifact_id": 10539115576,
-    "a_customer_artifact_digest": "sha256:be0b00cc80ae80fd8183bb73b9bc6f8c0c0fc510105b94062fea645436796c07",
-    "a_customer_dylib_sha256": "afa1793f457c9aaed3ab80bc7911750f7a88cbb52ee50770ede5eb8bc4bcbe80",
-    "b_debug_artifact_id": 10538931067,
-    "b_debug_artifact_digest": "sha256:03e480a187bb5623e32344b540f1a2895001b579d361231d1780ca8f8db8781a",
-    "behavior_change": "Active PubgLoad cleanup no longer enumerates/deletes the entire app /tmp tree; it only removes /tmp/zonoe and the exact previously recorded PubgLoad ZIP when owned by the app tmp root."
+    "a_customer_dylib_sha256": "afa1793f457c9aaed3ab80bc7911750f7a88cbb52ee50770ede5eb8bc4bcbe80"
   },
   "p57": {
     "status": "abandoned_reverted",
-    "reason": "Diagnostic stage was only needed to distinguish client behavior from server failure. User confirmed the issue was on their cloud server and P56 is fully normal. P57 work/test refs were reset to the P56 baselines and P57 is not part of the active lineage."
+    "reason": "Diagnostic stage was reverted after the user confirmed the cloud-save symptom was caused by their server HTTP 5xx, not a client regression."
   },
   "p58": {
     "branch": "work/zonoemenu-v1-p58-download-lifecycle",
@@ -65,8 +53,23 @@
     "a_customer_artifact_digest": "sha256:ff4c4eb2f66e7d198110d2feb0dde3bbc6c8a907b4daed7f2c39e70bfa579656",
     "a_customer_dylib_sha256": "ac2b1b6d1f912944b62a9c73d4b66944e8074d43c018249eacbe381bc4633d26",
     "b_debug_artifact_id": 10568884387,
-    "b_debug_artifact_digest": "sha256:4f47a488b9f7dc4002e10c278e75b5e20913c6164cda96729fd625963034d82b",
-    "behavior_change": "Archive download progress guards unknown/zero totals, transport failures are surfaced, downloaded temporary-file copy failures stop explicitly, and non-ZIP downloads are rejected and removed while normal ZIP download/unzip/restore is preserved."
+    "b_debug_artifact_digest": "sha256:4f47a488b9f7dc4002e10c278e75b5e20913c6164cda96729fd625963034d82b"
   },
-  "next_task": "P59: add a single delayed retry when the initial zonoe://udid openURL attempt reports failure. Wait about 3 seconds, retry once with a fresh nonce, and only then invoke the existing fallback if the second open still fails. Preserve successful callback/localhost paths and prevent retry loops."
+  "p59": {
+    "branch": "work/zonoemenu-v1-p59-udid-open-retry",
+    "test_branch": "test/zonoemenu-v1-p59-udid-open-retry",
+    "source_commit": "f9bb04e9651cc8ed4c5e11c8a9b2412dadaa2a47",
+    "ci_head": "a5cfbf13acc73082a51c34e4e056eae4c0becba5",
+    "ci_run_id": 35401311630,
+    "ci_status": "success",
+    "device_status": "pending",
+    "active_source_count": 78,
+    "a_customer_artifact_id": 10571171307,
+    "a_customer_artifact_digest": "sha256:30d0cb626ca369d59dd66a8124cbc198a9ad5af96362b31b0a1fb8a0aee14f79",
+    "a_customer_dylib_sha256": "72a238cdc3c44588487344d50bacffc6968fd5c27277a643501ecfc2b13c3309",
+    "b_debug_artifact_id": 10571195568,
+    "b_debug_artifact_digest": "sha256:529546ac5f0e834125a470e69f0e6fb36dca0c8e40ca6e1e8fb8fc88511ea973",
+    "behavior_change": "When the initial zonoe://udid openURL completion reports failure, the bridge clears only the matching pending request, waits 3 seconds, and retries once with a fresh nonce. A stale first completion cannot clear a newer request. If a UDID arrives or a newer request becomes pending before the retry, the retry is skipped. Only the second open failure invokes the existing legacy fallback."
+  },
+  "next_task": "Real-device validate P59: successful first zonoe launch must not retry; first open failure should trigger exactly one retry after about 3 seconds; second open failure should enter existing legacy fallback; cached UDID and successful callback/localhost flows must remain unchanged. Do not promote until explicit user PASS."
 }
