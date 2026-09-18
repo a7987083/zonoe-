@@ -199,9 +199,8 @@ NSString* 到期时间弹窗,*UDID_IDFV,*验证版本,*验证过直播,*弹窗�
 //            [self showText:@"警告" message:@"网络连接失败" Exit:NO];
             //系统弹窗
             UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"警告" message:@"网络连接失败" preferredStyle:UIAlertControllerStyleAlert];
-            UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"重新检查" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-//                BOOL NET=[self getNet];
-
+            UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"重新检查" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
+                [self BSPHP];
             }];
             [alert addAction:okAction];
             [[JHPP currentViewController] presentViewController:alert animated:YES completion:nil];
@@ -255,7 +254,6 @@ NSString* 到期时间弹窗,*UDID_IDFV,*验证版本,*验证过直播,*弹窗�
         return YES;
     } else {
         ConfigLog(@"网络不可用");
-        [self loada];
         return NO;
        
     }
@@ -1334,7 +1332,9 @@ NSString* 到期时间弹窗,*UDID_IDFV,*验证版本,*验证过直播,*弹窗�
             UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"警告"
                                                                            message:@"网络连接失败"
                                                                     preferredStyle:UIAlertControllerStyleAlert];
-            [alert addAction:[UIAlertAction actionWithTitle:@"重新检查" style:UIAlertActionStyleDefault handler:nil]];
+            [alert addAction:[UIAlertAction actionWithTitle:@"重新检查" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
+                [self BSPHPy];
+            }]];
             [[JHPP currentViewController] presentViewController:alert animated:YES completion:nil];
             return;
         }
