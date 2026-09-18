@@ -7,7 +7,7 @@
   "current_test_branch": "test/zonoemenu-v1-p54-restore-reliability",
   "current_version": "v1_p54",
   "current_phase": "v1_p54_restore_reliability",
-  "phase_status": "ci_passed_awaiting_device",
+  "phase_status": "device_failed_not_promoted",
   "last_device_verified_code_commit": "fa4b3b78efb3ef6490ccbf830eed7d0d15c47002",
   "last_device_verified_version": "v1_p53",
   "last_ci_run_id": 35309542482,
@@ -35,7 +35,9 @@
     "ci_head": "6930b1ce1e62c0bba9312ea7d5dd8f6ff988306b",
     "ci_run_id": 35309542482,
     "ci_status": "success",
-    "device_status": "pending",
+    "device_status": "failed",
+    "device_reported_by_user": true,
+    "device_issue": "Damaged/non-ZIP restore correctly shows failure, but /tmp/zonoe remains after failure instead of being cleaned up.",
     "active_source_count": 78,
     "a_customer_artifact_id": 10532817760,
     "a_customer_artifact_digest": "sha256:2d99300c7721b224617f5894a7f2d224e630f57c233a224278b345b321e45740",
@@ -43,5 +45,5 @@
     "b_debug_artifact_id": 10532498055,
     "b_debug_artifact_digest": "sha256:0655b173b7a426fff6264f710a544d724116a466debb4098ba3c9b782654aeaf"
   },
-  "next_task": "Real-device validate P54 local restore, nested restore, failure reporting, and VIP cloud-save restore compatibility. Do not promote until explicit user PASS."
+  "next_task": "P55: fix restore staging cleanup on failure and success, then continue the next dedicated restore reliability stage. Preserve P53 as the promoted rollback/device baseline until P55 passes real-device validation."
 }
