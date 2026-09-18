@@ -3,14 +3,14 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p55-restore-cleanup-reliability",
-  "current_test_branch": "test/zonoemenu-v1-p55-restore-cleanup-reliability",
-  "current_version": "v1_p55",
-  "current_phase": "v1_p55_restore_cleanup_reliability",
-  "phase_status": "completed_device_passed",
+  "current_work_branch": "work/zonoemenu-v1-p56-pubgload-temp-boundary",
+  "current_test_branch": "test/zonoemenu-v1-p56-pubgload-temp-boundary",
+  "current_version": "v1_p56",
+  "current_phase": "v1_p56_pubgload_temp_boundary",
+  "phase_status": "ci_passed_awaiting_device",
   "last_device_verified_code_commit": "cdc4e6857f6f658dd0b6b4f42ee47470ea851d3a",
   "last_device_verified_version": "v1_p55",
-  "last_ci_run_id": 35314006206,
+  "last_ci_run_id": 35324208182,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
@@ -21,36 +21,28 @@
     "source_commit": "cdc4e6857f6f658dd0b6b4f42ee47470ea851d3a",
     "device_status": "passed"
   },
-  "p53": {
-    "source_commit": "fa4b3b78efb3ef6490ccbf830eed7d0d15c47002",
-    "ci_run_id": 35305785715,
-    "device_status": "passed_superseded",
-    "a_customer_artifact_id": 10531309548,
-    "a_customer_dylib_sha256": "6485eb805a5edacbaa213f921e0af96d074483711f9504acf5510462c2288697"
-  },
-  "p54": {
-    "source_commit": "e448f71f8def808e506068c1ba4b1c77b3a7e2c4",
-    "ci_run_id": 35309542482,
-    "ci_status": "success",
-    "device_status": "failed_superseded_by_p55",
-    "device_issue": "Damaged/non-ZIP restore showed failure but left /tmp/zonoe behind.",
-    "resolution": "Fixed and real-device verified in P55."
-  },
   "p55": {
-    "branch": "work/zonoemenu-v1-p55-restore-cleanup-reliability",
-    "test_branch": "test/zonoemenu-v1-p55-restore-cleanup-reliability",
     "source_commit": "cdc4e6857f6f658dd0b6b4f42ee47470ea851d3a",
-    "ci_head": "b8548e9cdfb6202665cf7f8d0d0e0b624b6c3d70",
     "ci_run_id": 35314006206,
-    "ci_status": "success",
     "device_status": "passed",
-    "device_reported_by_user": true,
-    "active_source_count": 78,
     "a_customer_artifact_id": 10534597704,
-    "a_customer_artifact_digest": "sha256:69251c5637ce304fb1f6dece3d4f049cdfddbae36b36bbd37430880f210b7f83",
-    "a_customer_dylib_sha256": "9804d80cfb68f4b044f5bd708dd69674b65578e90b1f6fac79ae11fea23850a3",
-    "b_debug_artifact_id": 10533778418,
-    "b_debug_artifact_digest": "sha256:e760257dc5d38b5987f6a8b5ca41b30ba84ae3270b7f98894d06f8c8798f49d7"
+    "a_customer_dylib_sha256": "9804d80cfb68f4b044f5bd708dd69674b65578e90b1f6fac79ae11fea23850a3"
   },
-  "next_task": "Select the next dedicated reliability or maintainability stage from the P55 device-verified baseline. Keep UI redesign deferred and preserve frozen startup/auth/hook boundaries unless explicitly scoped."
+  "p56": {
+    "branch": "work/zonoemenu-v1-p56-pubgload-temp-boundary",
+    "test_branch": "test/zonoemenu-v1-p56-pubgload-temp-boundary",
+    "source_commit": "fb119af2387d9f5deccd82abe9ca8b885e960fcb",
+    "ci_head": "3b6c4643f62f7a89f6cfe362c28137f6ae2f99fa",
+    "ci_run_id": 35324208182,
+    "ci_status": "success",
+    "device_status": "pending",
+    "active_source_count": 78,
+    "a_customer_artifact_id": 10539115576,
+    "a_customer_artifact_digest": "sha256:be0b00cc80ae80fd8183bb73b9bc6f8c0c0fc510105b94062fea645436796c07",
+    "a_customer_dylib_sha256": "afa1793f457c9aaed3ab80bc7911750f7a88cbb52ee50770ede5eb8bc4bcbe80",
+    "b_debug_artifact_id": 10538931067,
+    "b_debug_artifact_digest": "sha256:03e480a187bb5623e32344b540f1a2895001b579d361231d1780ca8f8db8781a",
+    "behavior_change": "Active PubgLoad cleanup no longer enumerates/deletes the entire app /tmp tree; it only removes /tmp/zonoe and the exact previously recorded PubgLoad ZIP when owned by the app tmp root."
+  },
+  "next_task": "Real-device validate P56 remote/cloud archive download and restore, and verify unrelated files placed under app /tmp survive PubgLoad cleanup. Do not promote until explicit user PASS."
 }
