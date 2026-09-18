@@ -7,9 +7,9 @@
   "current_test_branch": "test/zonoemenu-v1-p56-pubgload-temp-boundary",
   "current_version": "v1_p56",
   "current_phase": "v1_p56_pubgload_temp_boundary",
-  "phase_status": "device_partial_not_promoted",
-  "last_device_verified_code_commit": "cdc4e6857f6f658dd0b6b4f42ee47470ea851d3a",
-  "last_device_verified_version": "v1_p55",
+  "phase_status": "completed_device_passed",
+  "last_device_verified_code_commit": "fb119af2387d9f5deccd82abe9ca8b885e960fcb",
+  "last_device_verified_version": "v1_p56",
   "last_ci_run_id": 35324208182,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
@@ -17,14 +17,14 @@
   "active_source_count": 78,
   "canonical_product_surface": ["testmod/", "testmod.xcodeproj"],
   "rollback_baseline": {
-    "version": "v1_p55",
-    "source_commit": "cdc4e6857f6f658dd0b6b4f42ee47470ea851d3a",
+    "version": "v1_p56",
+    "source_commit": "fb119af2387d9f5deccd82abe9ca8b885e960fcb",
     "device_status": "passed"
   },
   "p55": {
     "source_commit": "cdc4e6857f6f658dd0b6b4f42ee47470ea851d3a",
     "ci_run_id": 35314006206,
-    "device_status": "passed",
+    "device_status": "passed_superseded",
     "a_customer_artifact_id": 10534597704,
     "a_customer_dylib_sha256": "9804d80cfb68f4b044f5bd708dd69674b65578e90b1f6fac79ae11fea23850a3"
   },
@@ -35,9 +35,9 @@
     "ci_head": "3b6c4643f62f7a89f6cfe362c28137f6ae2f99fa",
     "ci_run_id": 35324208182,
     "ci_status": "success",
-    "device_status": "partial_not_promoted",
+    "device_status": "passed",
     "device_reported_by_user": true,
-    "device_observation": "Remote archive download works. Cloud-save check displays '未查询到数据'. Exact P55->P56 runtime diff changes only cleanupTemporaryFiles, which executes after cloud metadata JSON parsing and entitlement validation; therefore this symptom is not directly caused by the P56 temp-boundary change.",
+    "device_observation": "User confirmed P56 is fully normal on device. The earlier cloud-save failure was caused by the user's server returning HTTP 5xx and was not a P56 client regression.",
     "active_source_count": 78,
     "a_customer_artifact_id": 10539115576,
     "a_customer_artifact_digest": "sha256:be0b00cc80ae80fd8183bb73b9bc6f8c0c0fc510105b94062fea645436796c07",
@@ -46,5 +46,9 @@
     "b_debug_artifact_digest": "sha256:03e480a187bb5623e32344b540f1a2895001b579d361231d1780ca8f8db8781a",
     "behavior_change": "Active PubgLoad cleanup no longer enumerates/deletes the entire app /tmp tree; it only removes /tmp/zonoe and the exact previously recorded PubgLoad ZIP when owned by the app tmp root."
   },
-  "next_task": "Diagnose cloud metadata response from homeurl (https://yun.zonoeios.xyz/d/a/json/<BundleID>.json). The observed '未查询到数据' maps to JSON parse failure in checkCloudSaveStatus. Verify HTTP status/content-type/body and compare current response while retaining P55 as formal rollback baseline."
+  "p57": {
+    "status": "abandoned_reverted",
+    "reason": "Diagnostic stage was only needed to distinguish client behavior from server failure. User confirmed the issue was on their cloud server and P56 is fully normal. P57 work/test refs were reset to the P56 baselines and P57 is not part of the active lineage."
+  },
+  "next_task": "Continue next reliability/performance stage from P56 as the formal device-verified baseline. UI remains deferred unless explicitly requested."
 }
