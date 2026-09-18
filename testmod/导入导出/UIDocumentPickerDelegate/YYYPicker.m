@@ -61,47 +61,76 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
     return [NSString stringWithFormat:@"%@%@-Inbox", tmpRoot, bundleIdentifier];
 }
 
-+ (void)recursivelyCopyContentsOfDirectory:(NSString *)sourcePath
+- (BOOL)prepareRestoreStagingRoot:(NSString *)stagingRoot error:(NSError **)error
+{
+    NSFileManager *fm = [NSFileManager defaultManager];
+    if ([fm fileExistsAtPath:stagingRoot]) {
+        if (![fm removeItemAtPath:stagingRoot error:error]) {
+            return NO;
+        }
+    }
+    return [fm createDirectoryAtPath:stagingRoot
+         withIntermediateDirectories:YES
+                          attributes:nil
+                               error:error];
+}
+
++ (BOOL)recursivelyCopyContentsOfDirectory:(NSString *)sourcePath
                                toDirectory:(NSString *)destinationPath
                                fileManager:(NSFileManager *)fm
                                  skipItems:(NSSet<NSString *> *)skipItems
                                      error:(NSError **)error
 {
     BOOL srcIsDir = NO;
-    if (![fm fileExistsAtPath:sourcePath isDirectory:&srcIsDir]) return;
+    if (![fm fileExistsAtPath:sourcePath isDirectory:&srcIsDir]) {
+        if (error) {
+            *error = [NSError errorWithDomain:@"ZONRestore"
+                                         code:1001
+                                     userInfo:@{NSLocalizedDescriptionKey: @"恢复源文件不存在"}];
+        }
+        return NO;
+    }
 
     BOOL dstExists = NO;
     BOOL dstIsDir = NO;
     dstExists = [fm fileExistsAtPath:destinationPath isDirectory:&dstIsDir];
 
     if (dstExists && (srcIsDir != dstIsDir)) {
-        [fm removeItemAtPath:destinationPath error:nil];
+        if (![fm removeItemAtPath:destinationPath error:error]) {
+            return NO;
+        }
         dstExists = NO;
     }
 
     if (srcIsDir) {
         if (!dstExists) {
-            [fm createDirectoryAtPath:destinationPath
-          withIntermediateDirectories:YES
-                           attributes:nil
-                                error:error];
+            if (![fm createDirectoryAtPath:destinationPath
+               withIntermediateDirectories:YES
+                                attributes:nil
+                                     error:error]) {
+                return NO;
+            }
         }
 
         NSArray *contents = [fm contentsOfDirectoryAtPath:sourcePath error:error];
+        if (!contents) return NO;
+
         for (NSString *item in contents) {
             if ([skipItems containsObject:item]) continue;
-            [self recursivelyCopyContentsOfDirectory:[sourcePath stringByAppendingPathComponent:item]
-                                         toDirectory:[destinationPath stringByAppendingPathComponent:item]
-                                         fileManager:fm
-                                           skipItems:skipItems
-                                               error:error];
+            BOOL copied = [self recursivelyCopyContentsOfDirectory:[sourcePath stringByAppendingPathComponent:item]
+                                                       toDirectory:[destinationPath stringByAppendingPathComponent:item]
+                                                       fileManager:fm
+                                                         skipItems:skipItems
+                                                             error:error];
+            if (!copied) return NO;
         }
-    } else {
-        if (dstExists) {
-            [fm removeItemAtPath:destinationPath error:nil];
-        }
-        [fm copyItemAtPath:sourcePath toPath:destinationPath error:error];
+        return YES;
     }
+
+    if (dstExists && ![fm removeItemAtPath:destinationPath error:error]) {
+        return NO;
+    }
+    return [fm copyItemAtPath:sourcePath toPath:destinationPath error:error];
 }
 
 - (NSString *)fixedName:(NSString *)name
@@ -144,22 +173,23 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
     return nil;
 }
 
-- (void)restoreDirectoryFrom:(NSString *)sourcePath
+- (BOOL)restoreDirectoryFrom:(NSString *)sourcePath
                toDestination:(NSString *)destinationPath
                        label:(NSString *)label
                  fileManager:(NSFileManager *)fileManager
                    skipItems:(NSSet<NSString *> *)skipItems
                        error:(NSError **)error
 {
-    if (sourcePath.length == 0 || destinationPath.length == 0) return;
+    if (sourcePath.length == 0 || destinationPath.length == 0) return YES;
 
-    [YYYPicker recursivelyCopyContentsOfDirectory:sourcePath
-                                      toDirectory:destinationPath
-                                      fileManager:fileManager
-                                        skipItems:skipItems
-                                            error:error];
+    BOOL restored = [YYYPicker recursivelyCopyContentsOfDirectory:sourcePath
+                                                       toDirectory:destinationPath
+                                                       fileManager:fileManager
+                                                         skipItems:skipItems
+                                                             error:error];
 
-    NSLog((*error) ? @"❌ %@ 复制失败" : @"✅ %@ 复制完成", label);
+    NSLog(restored ? @"✅ %@ 复制完成" : @"❌ %@ 复制失败: %@", label, restored ? @"" : (*error).localizedDescription);
+    return restored;
 }
 
 - (BOOL)restoreBackupTreeAtRoot:(NSString *)root
@@ -173,34 +203,44 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
         return NO;
     }
 
-    NSError *err = nil;
     NSSet<NSString *> *skipItems = [YYYPicker restoreSkipItems];
+    BOOL allSucceeded = YES;
 
     if (srcDoc) {
+        NSError *docError = nil;
         NSString *dstDoc = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,
                                                                 NSUserDomainMask,
                                                                 YES).firstObject;
-        [self restoreDirectoryFrom:srcDoc
-                     toDestination:dstDoc
-                             label:@"Documents"
-                       fileManager:fm
-                         skipItems:skipItems
-                             error:&err];
+        BOOL docSucceeded = [self restoreDirectoryFrom:srcDoc
+                                         toDestination:dstDoc
+                                                 label:@"Documents"
+                                           fileManager:fm
+                                             skipItems:skipItems
+                                                 error:&docError];
+        if (!docSucceeded) {
+            allSucceeded = NO;
+            NSLog(@"❌ Documents 恢复失败: %@", docError.localizedDescription);
+        }
     }
 
     if (srcLib) {
+        NSError *libError = nil;
         NSString *dstLib = NSSearchPathForDirectoriesInDomains(NSLibraryDirectory,
                                                                 NSUserDomainMask,
                                                                 YES).firstObject;
-        [self restoreDirectoryFrom:srcLib
-                     toDestination:dstLib
-                             label:@"Library"
-                       fileManager:fm
-                         skipItems:skipItems
-                             error:&err];
+        BOOL libSucceeded = [self restoreDirectoryFrom:srcLib
+                                         toDestination:dstLib
+                                                 label:@"Library"
+                                           fileManager:fm
+                                             skipItems:skipItems
+                                                 error:&libError];
+        if (!libSucceeded) {
+            allSucceeded = NO;
+            NSLog(@"❌ Library 恢复失败: %@", libError.localizedDescription);
+        }
     }
 
-    return YES;
+    return allSucceeded;
 }
 
 - (void)reloadRestoredPreferences
@@ -213,15 +253,31 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
                       stagingRoot:(NSString *)stagingRoot
 {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        [SVProgressHUD showWithStatus:@"处理中..."];
-        BOOL isSuccess = [SSZipArchive unzipFileAtPath:archivePath toDestination:stagingRoot];
-
         dispatch_async(dispatch_get_main_queue(), ^{
-            if (isSuccess) {
-                [[NSFileManager defaultManager] removeItemAtPath:inboxPath error:nil];
-                [self yidongwenjian];
-            }
+            [SVProgressHUD showWithStatus:@"处理中..."];
         });
+
+        NSError *stagingError = nil;
+        BOOL prepared = [self prepareRestoreStagingRoot:stagingRoot error:&stagingError];
+        if (!prepared) {
+            NSLog(@"❌ 准备恢复临时目录失败: %@", stagingError.localizedDescription);
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [SVProgressHUD showErrorWithStatus:@"准备恢复目录失败"];
+            });
+            return;
+        }
+
+        BOOL isSuccess = [SSZipArchive unzipFileAtPath:archivePath toDestination:stagingRoot];
+        if (!isSuccess) {
+            NSLog(@"❌ 解压恢复包失败: %@", archivePath);
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [SVProgressHUD showErrorWithStatus:@"解压失败"];
+            });
+            return;
+        }
+
+        [[NSFileManager defaultManager] removeItemAtPath:inboxPath error:nil];
+        [self yidongwenjian];
     });
 }
 
@@ -269,10 +325,14 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
 {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         BOOL restored = [self restoreBackupTreeAtRoot:[self restoreStagingRootPath]];
-        if (!restored) return;
 
         dispatch_async(dispatch_get_main_queue(), ^{
+            if (!restored) {
+                [SVProgressHUD showErrorWithStatus:@"恢复失败"];
+                return;
+            }
             [self reloadRestoredPreferences];
+            [SVProgressHUD showSuccessWithStatus:@"恢复完成"];
         });
     });
 }
