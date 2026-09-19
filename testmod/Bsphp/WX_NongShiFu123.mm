@@ -49,7 +49,37 @@ NSLog((@"ConfigLog: " fmt), ##__VA_ARGS__); \
 #define MY_NSLog_ENABLED NO
 static NSTimer*dsq;
 
+typedef NS_ENUM(NSInteger, ZONAuthorizationRetryMode) {
+    ZONAuthorizationRetryModeUnknown = 0,
+    ZONAuthorizationRetryModeAdSpeed = 1,
+    ZONAuthorizationRetryModeSoftwareSource = 2,
+};
+static ZONAuthorizationRetryMode gZONAuthorizationRetryMode = ZONAuthorizationRetryModeUnknown;
+
 @implementation WX_NongShiFu123
+
+- (void)zon_presentAuthorizationNetworkRetry
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [SVProgressHUD dismiss];
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"警告"
+                                                                       message:@"网络连接失败"
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        [alert addAction:[UIAlertAction actionWithTitle:@"重新检查"
+                                                  style:UIAlertActionStyleDefault
+                                                handler:^(__unused UIAlertAction *action) {
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.35 * NSEC_PER_SEC)),
+                           dispatch_get_main_queue(), ^{
+                if (gZONAuthorizationRetryMode == ZONAuthorizationRetryModeSoftwareSource) {
+                    [self BSPHPy];
+                } else {
+                    [self BSPHP];
+                }
+            });
+        }]];
+        [[JHPP currentViewController] presentViewController:alert animated:YES completion:nil];
+    });
+}
 
 /*
  逻辑
@@ -191,21 +221,14 @@ static NSTimer*dsq;
 #pragma mark --- 验证流程
 NSString* 到期时间弹窗,*UDID_IDFV,*验证版本,*验证过直播,*弹窗类型,*验证公告,*到期时间;
 - (void)BSPHP{
+    gZONAuthorizationRetryMode = ZONAuthorizationRetryModeAdSpeed;
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [self DSYZ];
         BOOL NET=[self getNet];
         if (!NET) {
             
 //            [self showText:@"警告" message:@"网络连接失败" Exit:NO];
-            //系统弹窗
-            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"警告" message:@"网络连接失败" preferredStyle:UIAlertControllerStyleAlert];
-            UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"重新检查" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.35 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                    [self BSPHP];
-                });
-            }];
-            [alert addAction:okAction];
-            [[JHPP currentViewController] presentViewController:alert animated:YES completion:nil];
+            [self zon_presentAuthorizationNetworkRetry];
             
         }else{
             dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
@@ -383,8 +406,8 @@ NSString* 到期时间弹窗,*UDID_IDFV,*验证版本,*验证过直播,*弹窗�
             }
         }
     } failure:^(NSError *error) {
-        [SVProgressHUD showWithStatus:@"网络失败.."];
-        [SVProgressHUD dismissWithDelay:3.0];
+        ConfigLog(@"授权初始化网络失败：%@", error);
+        [self zon_presentAuthorizationNetworkRetry];
     }];
     
 }
@@ -439,8 +462,8 @@ NSString* 到期时间弹窗,*UDID_IDFV,*验证版本,*验证过直播,*弹窗�
             
         }
     } failure:^(NSError *error) {
-        [SVProgressHUD showWithStatus:@"网络失败.."];
-        [SVProgressHUD dismissWithDelay:3.0];
+        ConfigLog(@"授权初始化网络失败：%@", error);
+        [self zon_presentAuthorizationNetworkRetry];
     }];
     
 }
@@ -1326,20 +1349,13 @@ NSString* 到期时间弹窗,*UDID_IDFV,*验证版本,*验证过直播,*弹窗�
 
 #pragma mark ---源bsphp
 - (void)BSPHPy {
+    gZONAuthorizationRetryMode = ZONAuthorizationRetryModeSoftwareSource;
     // 延迟 4 秒执行
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         
         // 1️⃣ 网络检测
         if (![self getNet]) {
-            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"警告"
-                                                                           message:@"网络连接失败"
-                                                                    preferredStyle:UIAlertControllerStyleAlert];
-            [alert addAction:[UIAlertAction actionWithTitle:@"重新检查" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.35 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                    [self BSPHPy];
-                });
-            }]];
-            [[JHPP currentViewController] presentViewController:alert animated:YES completion:nil];
+            [self zon_presentAuthorizationNetworkRetry];
             return;
         }
         
@@ -1361,6 +1377,7 @@ NSString* 到期时间弹窗,*UDID_IDFV,*验证版本,*验证过直播,*弹窗�
                         NSString *appInfoString = [NSString stringWithContentsOfURL:checkUrl encoding:NSUTF8StringEncoding error:&error];
                         if (!appInfoString || error) {
                             ConfigLog(@"❌ 获取网络数据失败: %@", error);
+                            [self zon_presentAuthorizationNetworkRetry];
                             return;
                         }
                         
