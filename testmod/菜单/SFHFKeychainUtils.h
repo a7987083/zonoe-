@@ -1,41 +1,57 @@
 //
 //  SFHFKeychainUtils.h
 //
-//  Created by Buzz Andersen on 10/20/08.
-//  Based partly on code by Jonathan Wight, Jon Crosby, and Mike Malone.
-//  Copyright 2008 Sci-Fi Hi-Fi. All rights reserved.
-//
-//  Permission is hereby granted, free of charge, to any person
-//  obtaining a copy of this software and associated documentation
-//  files (the "Software"), to deal in the Software without
-//  restriction, including without limitation the rights to use,
-//  copy, modify, merge, publish, distribute, sublicense, and/or sell
-//  copies of the Software, and to permit persons to whom the
-//  Software is furnished to do so, subject to the following
-//  conditions:
-//
-//  The above copyright notice and this permission notice shall be
-//  included in all copies or substantial portions of the Software.
-//
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-//  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-//  OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-//  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
-//  HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
-//  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-//  OTHER DEALINGS IN THE SOFTWARE.
+//  Originally created by Buzz Andersen on 10/20/08.
+//  Modernized for zonoe while preserving the legacy API contract.
 //
 
-#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
 
-@interface SFHFKeychainUtils : NSObject {
-  
-}
+FOUNDATION_EXPORT NSErrorDomain const SFHFKeychainUtilsErrorDomain;
 
-+ (NSString *) getPasswordForUsername: (NSString *) username andServiceName: (NSString *) serviceName error: (NSError **) error;
-+ (BOOL) storeUsername: (NSString *) username andPassword: (NSString *) password forServiceName: (NSString *) serviceName updateExisting: (BOOL) updateExisting error: (NSError **) error;
-+ (BOOL) deleteItemForUsername: (NSString *) username andServiceName: (NSString *) serviceName error: (NSError **) error;
+@interface SFHFKeychainUtils : NSObject
+
+#pragma mark - Modern API
+
+/// Reads a UTF-8 string from a generic-password Keychain item.
+/// Keychain identity is kSecClassGenericPassword + account + service.
++ (nullable NSString *)stringForAccount:(NSString *)account
+                                service:(NSString *)service
+                                  error:(NSError * _Nullable * _Nullable)error;
+
+/// Stores or updates a UTF-8 string in a generic-password Keychain item.
++ (BOOL)setString:(NSString *)string
+       forAccount:(NSString *)account
+          service:(NSString *)service
+            error:(NSError * _Nullable * _Nullable)error;
+
+/// Removes a generic-password Keychain item.
+/// Missing items are treated as success so reset operations are idempotent.
++ (BOOL)removeItemForAccount:(NSString *)account
+                     service:(NSString *)service
+                       error:(NSError * _Nullable * _Nullable)error;
+
+#pragma mark - Legacy compatibility API
+
+/// Compatibility wrapper. Equivalent to stringForAccount:service:error:.
++ (nullable NSString *)getPasswordForUsername:(NSString *)username
+                               andServiceName:(NSString *)serviceName
+                                        error:(NSError * _Nullable * _Nullable)error;
+
+/// Compatibility wrapper preserving the historical updateExisting behavior.
++ (BOOL)storeUsername:(NSString *)username
+          andPassword:(NSString *)password
+       forServiceName:(NSString *)serviceName
+       updateExisting:(BOOL)updateExisting
+                error:(NSError * _Nullable * _Nullable)error;
+
+/// Compatibility wrapper. Equivalent to removeItemForAccount:service:error:.
++ (BOOL)deleteItemForUsername:(NSString *)username
+               andServiceName:(NSString *)serviceName
+                        error:(NSError * _Nullable * _Nullable)error;
 
 @end
+
+NS_ASSUME_NONNULL_END
