@@ -85,7 +85,7 @@
 		7E8A58112B8E4A9C00676FE2 /* NSObject+UI.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E8A57612B8E4A9B00676FE2 /* NSObject+UI.m */; };
 		7E8A58152B8E4A9C00676FE2 /* NSObject+UI.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E8A57652B8E4A9B00676FE2 /* NSObject+UI.h */; };
 		7E8A58382B8E4A9C00676FE2 /* PubgLoad.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E8A578E2B8E4A9B00676FE2 /* PubgLoad.h */; };
-		7E8A58392B8E4A9C00676FE2 /* SFHFKeychainUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E8A578F2B8E4A9B00676FE2 /* SFHFKeychainUtils.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		7E8A58392B8E4A9C00676FE2 /* ZONKeychain.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E8A578F2B8E4A9B00676FE2 /* ZONKeychain.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		7E8A583A2B8E4A9C00676FE2 /* JHDragView.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E8A57902B8E4A9B00676FE2 /* JHDragView.m */; };
 		7E8A583B2B8E4A9C00676FE2 /* unzip.c in Sources */ = {isa = PBXBuildFile; fileRef = 7E8A57932B8E4A9B00676FE2 /* unzip.c */; };
 		7E8A583C2B8E4A9C00676FE2 /* zip.c in Sources */ = {isa = PBXBuildFile; fileRef = 7E8A57942B8E4A9B00676FE2 /* zip.c */; };
@@ -103,7 +103,7 @@
 		7E8A58482B8E4A9C00676FE2 /* JHUIViewControllerDecoupler.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E8A57A12B8E4A9B00676FE2 /* JHUIViewControllerDecoupler.m */; };
 		7E8A58492B8E4A9C00676FE2 /* JHUIViewControllerDecoupler.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E8A57A22B8E4A9B00676FE2 /* JHUIViewControllerDecoupler.h */; };
 		7E8A584A2B8E4A9C00676FE2 /* JHPP.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E8A57A32B8E4A9B00676FE2 /* JHPP.m */; };
-		7E8A584B2B8E4A9C00676FE2 /* SFHFKeychainUtils.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E8A57A42B8E4A9B00676FE2 /* SFHFKeychainUtils.h */; };
+		7E8A584B2B8E4A9C00676FE2 /* ZONKeychain.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E8A57A42B8E4A9B00676FE2 /* ZONKeychain.h */; };
 		7E8A584C2B8E4A9C00676FE2 /* PubgLoad.mm in Sources */ = {isa = PBXBuildFile; fileRef = 7E8A57A52B8E4A9B00676FE2 /* PubgLoad.mm */; };
 		7E8A584D2B8E4A9C00676FE2 /* JHDragView.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E8A57A62B8E4A9B00676FE2 /* JHDragView.h */; };
 		7E8A58512B8E4A9C00676FE2 /* NSDictionary+StichingStringkeyValue.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E8A57AB2B8E4A9B00676FE2 /* NSDictionary+StichingStringkeyValue.m */; };
@@ -256,7 +256,7 @@
 		7E8A57612B8E4A9B00676FE2 /* NSObject+UI.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSObject+UI.m"; sourceTree = "<group>"; };
 		7E8A57652B8E4A9B00676FE2 /* NSObject+UI.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSObject+UI.h"; sourceTree = "<group>"; };
 		7E8A578E2B8E4A9B00676FE2 /* PubgLoad.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PubgLoad.h; sourceTree = "<group>"; };
-		7E8A578F2B8E4A9B00676FE2 /* SFHFKeychainUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SFHFKeychainUtils.m; sourceTree = "<group>"; };
+		7E8A578F2B8E4A9B00676FE2 /* ZONKeychain.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ZONKeychain.m; sourceTree = "<group>"; };
 		7E8A57902B8E4A9B00676FE2 /* JHDragView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = JHDragView.m; sourceTree = "<group>"; };
 		7E8A57932B8E4A9B00676FE2 /* unzip.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = unzip.c; sourceTree = "<group>"; };
 		7E8A57942B8E4A9B00676FE2 /* zip.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = zip.c; sourceTree = "<group>"; };
@@ -274,7 +274,7 @@
 		7E8A57A12B8E4A9B00676FE2 /* JHUIViewControllerDecoupler.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = JHUIViewControllerDecoupler.m; sourceTree = "<group>"; };
 		7E8A57A22B8E4A9B00676FE2 /* JHUIViewControllerDecoupler.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JHUIViewControllerDecoupler.h; sourceTree = "<group>"; };
 		7E8A57A32B8E4A9B00676FE2 /* JHPP.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = JHPP.m; sourceTree = "<group>"; };
-		7E8A57A42B8E4A9B00676FE2 /* SFHFKeychainUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SFHFKeychainUtils.h; sourceTree = "<group>"; };
+		7E8A57A42B8E4A9B00676FE2 /* ZONKeychain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZONKeychain.h; sourceTree = "<group>"; };
 		7E8A57A52B8E4A9B00676FE2 /* PubgLoad.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = PubgLoad.mm; sourceTree = "<group>"; };
 		7E8A57A62B8E4A9B00676FE2 /* JHDragView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JHDragView.h; sourceTree = "<group>"; };
 		7E8A57AB2B8E4A9B00676FE2 /* NSDictionary+StichingStringkeyValue.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSDictionary+StichingStringkeyValue.m"; sourceTree = "<group>"; };
@@ -652,8 +652,8 @@
 				7ECBD4222F30EF6100C56F1C /* FoldSectionView.h */,
 				7ECBD4282F3A613C00C56F1C /* SandboxBrowserVC.h */,
 				7ECBD4262F3A613400C56F1C /* SandboxBrowserVC.m */,
-				7E8A57A42B8E4A9B00676FE2 /* SFHFKeychainUtils.h */,
-				7E8A578F2B8E4A9B00676FE2 /* SFHFKeychainUtils.m */,
+				7E8A57A42B8E4A9B00676FE2 /* ZONKeychain.h */,
+				7E8A578F2B8E4A9B00676FE2 /* ZONKeychain.m */,
 				7E8A575C2B8E4A9A00676FE2 /* 菜单UI */,
 				7E8A57A62B8E4A9B00676FE2 /* JHDragView.h */,
 				7E8A57902B8E4A9B00676FE2 /* JHDragView.m */,
@@ -803,7 +803,7 @@
 				7E8A57F12B8E4A9C00676FE2 /* SCLSwitchView.h in Headers */,
 				7E6F45472E1A8C4E00D4A46E /* JDStatusBarNotificationStyle.h in Headers */,
 				7ECF60182E157C5E00459866 /* YYYPicker.h in Headers */,
-				7E8A584B2B8E4A9C00676FE2 /* SFHFKeychainUtils.h in Headers */,
+				7E8A584B2B8E4A9C00676FE2 /* ZONKeychain.h in Headers */,
 				7E8A58152B8E4A9C00676FE2 /* NSObject+UI.h in Headers */,
 				7E8A57D12B8E4A9C00676FE2 /* AFURLSessionManager.h in Headers */,
 				7E8A57DE2B8E4A9C00676FE2 /* MBProgressHUD.h in Headers */,
@@ -1003,7 +1003,7 @@
 				7E8A583A2B8E4A9C00676FE2 /* JHDragView.m in Sources */,
 				7E8A57FE2B8E4A9C00676FE2 /* UIImage+ImageEffects.m in Sources */,
 				7E1E5F8E2BE5501A008C66BE /* HookClass.m in Sources */,
-				7E8A58392B8E4A9C00676FE2 /* SFHFKeychainUtils.m in Sources */,
+				7E8A58392B8E4A9C00676FE2 /* ZONKeychain.m in Sources */,
 				7E8A57DC2B8E4A9C00676FE2 /* MBProgressHUD.m in Sources */,
 				7E8A57F92B8E4A9C00676FE2 /* SCLTextView.m in Sources */,
 				7E8A57DD2B8E4A9C00676FE2 /* MBProgressHUD+NJ.m in Sources */,

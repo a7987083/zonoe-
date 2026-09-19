@@ -25,7 +25,7 @@
 
 
 #import "PubgLoad.h"
-#import "SFHFKeychainUtils.h"
+#import "ZONKeychain.h"
 #import "NSObject+UI.h"
 #import "JDStatusBarNotification.h"
 
@@ -1276,7 +1276,7 @@ NSString* 到期时间弹窗,*UDID_IDFV,*验证版本,*验证过直播,*弹窗�
 -(NSString*)GetIOSUDID
 {
     NSError *error;
-        NSString * string = [SFHFKeychainUtils getPasswordForUsername:@"UDID" andServiceName:@"com.china.TestKeyChain" error:&error];
+        NSString * string = [ZONKeychain stringForAccount:@"UDID" service:@"com.china.TestKeyChain" error:&error];
         if (!string) {
         }
         if(error || !string){
@@ -1284,7 +1284,7 @@ NSString* 到期时间弹窗,*UDID_IDFV,*验证版本,*验证过直播,*弹窗�
             [self saveUDID];//保存
 //            [self CodeConfig];
 
-            string = [SFHFKeychainUtils getPasswordForUsername:@"UDID" andServiceName:@"com.china.TestKeyChain" error:&error];
+            string = [ZONKeychain stringForAccount:@"UDID" service:@"com.china.TestKeyChain" error:&error];
            
         }
         else{
@@ -1307,8 +1307,10 @@ NSString* 到期时间弹窗,*UDID_IDFV,*验证版本,*验证过直播,*弹窗�
         
         if (UDID.length>10) {
 
-        BOOL saved = [SFHFKeychainUtils storeUsername:@"UDID" andPassword:UDID
-                                       forServiceName:@"com.china.TestKeyChain" updateExisting:YES error:&error];
+        BOOL saved = [ZONKeychain setString:UDID
+                    forAccount:@"UDID"
+                       service:@"com.china.TestKeyChain"
+                         error:&error];
         if (!saved) {
 //            ConfigLog(@"❌Keychain保存密码时UDID出错：%@", error);
         }else{
@@ -1333,10 +1335,10 @@ NSString* 到期时间弹窗,*UDID_IDFV,*验证版本,*验证过直播,*弹窗�
         [getKeychain removeKeychainDataForKey:key];
     }
 
-    // 删除 SFHFKeychainUtils 中的 UDID
-    BOOL deletekm = [SFHFKeychainUtils deleteItemForUsername:@"UDID"
-                                               andServiceName:@"com.china.TestKeyChain"
-                                                        error:&error];
+    // 删除独立 ZONKeychain 中的旧 UDID identity
+    BOOL deletekm = [ZONKeychain removeItemForAccount:@"UDID"
+                                      service:@"com.china.TestKeyChain"
+                                        error:&error];
     if (!deletekm) {
         ConfigLog(@"❌Keychain删除UDID时出错：%@", error);
     } else {
