@@ -3,14 +3,14 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p62-unified-auth-network-retry",
-  "current_test_branch": "test/zonoemenu-v1-p62-unified-auth-network-retry",
-  "current_version": "v1_p62",
-  "current_phase": "v1_p62_unified_auth_network_retry",
-  "phase_status": "completed_device_passed",
+  "current_work_branch": "work/zonoemenu-v1-p65-p62-maintainability-refactor",
+  "current_test_branch": "test/zonoemenu-v1-p65-p62-maintainability-refactor",
+  "current_version": "v1_p65",
+  "current_phase": "v1_p65_p62_maintainability_refactor",
+  "phase_status": "ci_passed_device_pending",
   "last_device_verified_code_commit": "a11160e70ff1163b2c462bb3ef5d539da1f489eb",
   "last_device_verified_version": "v1_p62",
-  "last_ci_run_id": 35410564486,
+  "last_ci_run_id": 35424279529,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
@@ -19,6 +19,8 @@
   "rollback_baseline": {
     "version": "v1_p62",
     "source_commit": "a11160e70ff1163b2c462bb3ef5d539da1f489eb",
+    "ci_head": "c1f1415d3787b879def387d68e2df089776dbffa",
+    "ci_run_id": 35410564486,
     "device_status": "passed"
   },
   "p61": {
@@ -26,6 +28,7 @@
     "reason": "Reachability retry UI did not cover the actual authorization HTTP failure path on device."
   },
   "p62": {
+    "status": "promoted_device_passed",
     "branch": "work/zonoemenu-v1-p62-unified-auth-network-retry",
     "test_branch": "test/zonoemenu-v1-p62-unified-auth-network-retry",
     "source_commit": "a11160e70ff1163b2c462bb3ef5d539da1f489eb",
@@ -34,22 +37,33 @@
     "ci_status": "success",
     "device_status": "passed",
     "device_reported_by_user": true,
-    "device_observation": "User reported all P62 real-device checks normal.",
     "active_source_count": 78,
     "a_customer_artifact_id": 10574157091,
-    "a_customer_artifact_digest": "sha256:4f2195f10f1bdfd242aa4ccb3effe89983e69f01384db60e1d57443cb34a291e",
-    "a_customer_dylib_sha256": "b18595538245447109468e323c336c2b36a61795ec18cc19745182ab7784b443",
     "b_debug_artifact_id": 10574166849,
-    "b_debug_artifact_digest": "sha256:3944c761966ca87d78fea2e2d05c5270c27d80be4debfa805063d0694c1cf7a2",
     "behavior_change": "Authorization network failures are unified into one UIAlert with a visible 重新检查 action. Reachability failures, getBSphpSeSsL/getXinxi HTTP failures, and BSPHPy entitlement fetch failures retry the same authorization mode without re-entering loada."
   },
   "p63": {
     "status": "abandoned_reverted",
-    "reason": "Offline authorization mode still fell back to forced network retry on device. User requested abandoning offline mode and returning to P62. Work/test refs were reset to P62 baselines."
+    "reason": "Offline authorization mode still fell back to forced network retry on device."
   },
   "p64": {
     "status": "abandoned_reverted",
-    "reason": "Follow-up offline preroute candidate was abandoned before device promotion at user request. Work/test refs were reset to P62 baselines."
+    "reason": "Follow-up offline preroute candidate was abandoned before device promotion."
   },
-  "next_task": "Continue future development from the P62 device-verified baseline. Do not reintroduce offline authorization mode unless explicitly requested again."
+  "p65": {
+    "status": "ci_passed_device_pending",
+    "work_branch": "work/zonoemenu-v1-p65-p62-maintainability-refactor",
+    "test_branch": "test/zonoemenu-v1-p65-p62-maintainability-refactor",
+    "test_head": "f5742ed68489b529169c850619cb9e1036150920",
+    "ci_run_id": 35424279529,
+    "ci_status": "success",
+    "device_status": "pending",
+    "runtime_change": "Only testmod/ZONServices/ZONAuthorizationCoordinator.m differs from the P62 runtime baseline. DZUDID and bridge-cache keys, UDID validity, keychain read, and write-verify logic were centralized into private helpers without changing authorization entry/callback/loada semantics.",
+    "active_source_count": 78,
+    "a_customer_artifact_id": 10578282908,
+    "a_customer_artifact_digest": "sha256:5e1bf17b13d03c9bcb090a535d2e0aaa3c63f9fb985a59e0eed77c6df30c6e50",
+    "b_debug_artifact_id": 10579071326,
+    "b_debug_artifact_digest": "sha256:1707e41634a956603b306e1569594942bd37a5a2281adbd68fc5e95d180de373"
+  },
+  "next_task": "Real-device regression for P65. Keep P62 as rollback baseline until P65 passes device validation. If P65 passes, proceed to P66 authorization retry ownership extraction; do not reintroduce P63/P64 offline authorization mode."
 }
