@@ -43,5 +43,13 @@
     "b_debug_artifact_digest": "sha256:3944c761966ca87d78fea2e2d05c5270c27d80be4debfa805063d0694c1cf7a2",
     "behavior_change": "Authorization network failures are unified into one UIAlert with a visible 重新检查 action. Reachability failures, getBSphpSeSsL/getXinxi HTTP failures, and BSPHPy entitlement fetch failures retry the same authorization mode without re-entering loada."
   },
-  "next_task": "Develop P63 offline authorization mode from the P62 device-verified baseline. Permit offline use only when a previously verified local authorization is still trustworthy and unexpired; otherwise require online authorization. Preserve P62 retry behavior for non-eligible offline cases."
+  "p63": {
+    "status": "abandoned_reverted",
+    "reason": "Offline authorization mode still fell back to forced network retry on device. User requested abandoning offline mode and returning to P62. Work/test refs were reset to P62 baselines."
+  },
+  "p64": {
+    "status": "abandoned_reverted",
+    "reason": "Follow-up offline preroute candidate was abandoned before device promotion at user request. Work/test refs were reset to P62 baselines."
+  },
+  "next_task": "Continue future development from the P62 device-verified baseline. Do not reintroduce offline authorization mode unless explicitly requested again."
 }
