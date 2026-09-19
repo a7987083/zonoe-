@@ -1,0 +1,121 @@
+name: p63 Apply Offline Authorized Mode
+
+on:
+  push:
+    branches:
+      - work/zonoemenu-v1-p63-offline-authorized-mode
+    paths:
+      - .github/workflows/p63-apply-offline-authorized-mode.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply guarded P63 transform
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('testmod/Bsphp/WX_NongShiFu123.mm')
+          s = p.read_text()
+
+          anchor = '''- (void)zon_presentAuthorizationNetworkRetry\n{'''
+          assert anchor in s
+          helper = r'''- (NSDate *)zon_localAuthorizationExpiryForKey:(NSString *)key
+{
+    NSString *raw = [[NSUserDefaults standardUserDefaults] stringForKey:key];
+    if (raw.length == 0) return nil;
+
+    NSArray<NSString *> *formats = @[@"yyyy-MM-dd HH:mm:ss", @"yyyy-MM-dd#HH:mm:ss", @"yyyy-MM-dd HH:mm", @"yyyy-MM-dd"];
+    for (NSString *format in formats) {
+        NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+        formatter.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
+        formatter.calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
+        formatter.dateFormat = format;
+        NSDate *date = [formatter dateFromString:raw];
+        if (date) return date;
+    }
+    return nil;
+}
+
+- (BOOL)zon_hasValidOfflineAuthorizationForMode:(ZONAuthorizationRetryMode)mode
+{
+    NSString *deviceID = [getKeychain getKeychainDataForKey:@"DZUDID"];
+    if (deviceID.length <= 16) return NO;
+
+    NSString *expiryKey = nil;
+    if (mode == ZONAuthorizationRetryModeSoftwareSource) {
+        NSString *localState = [getKeychain getKeychainDataForKey:@"rjyyz"];
+        if (![localState isEqualToString:@"ok"]) return NO;
+        expiryKey = @"解锁码到期时间";
+    } else if (mode == ZONAuthorizationRetryModeAdSpeed) {
+        NSString *card = [getKeychain getKeychainDataForKey:@"ShiSanGeDZKM"];
+        if (card.length <= 34) return NO;
+        expiryKey = @"到期时间";
+    } else {
+        return NO;
+    }
+
+    NSDate *expiry = [self zon_localAuthorizationExpiryForKey:expiryKey];
+    if (!expiry || [expiry timeIntervalSinceNow] <= 0) return NO;
+    return YES;
+}
+
+- (void)zon_activateOfflineAuthorizationForMode:(ZONAuthorizationRetryMode)mode
+{
+    验证状态 = YES;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [SVProgressHUD dismiss];
+        JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
+        [presenter dismissAnimated:YES];
+        NSString *text = (mode == ZONAuthorizationRetryModeSoftwareSource) ? @"离线模式\n软件源授权有效" : @"离线模式\n秒过广告授权有效";
+        [presenter presentWithText:text dismissAfterDelay:5 includedStyle:JDStatusBarNotificationIncludedStyleSuccess];
+        [NSObject 显示图标];
+    });
+}
+
+- (BOOL)zon_tryOfflineAuthorizationForMode:(ZONAuthorizationRetryMode)mode
+{
+    if ([self getNet]) return NO;
+    if (![self zon_hasValidOfflineAuthorizationForMode:mode]) return NO;
+    [self zon_activateOfflineAuthorizationForMode:mode];
+    return YES;
+}
+
+'''
+          s = s.replace(anchor, helper + anchor, 1)
+
+          old = '''        BOOL NET=[self getNet];\n        if (!NET) {'''
+          new = '''        BOOL NET=[self getNet];\n        if (!NET && [self zon_tryOfflineAuthorizationForMode:ZONAuthorizationRetryModeAdSpeed]) {\n            return;\n        }\n        if (!NET) {'''
+          assert old in s
+          s = s.replace(old, new, 1)
+
+          old = '''        // 1️⃣ 网络检测\n        if (![self getNet]) {'''
+          new = '''        // 1️⃣ 网络检测\n        if (![self getNet] && [self zon_tryOfflineAuthorizationForMode:ZONAuthorizationRetryModeSoftwareSource]) {\n            return;\n        }\n        if (![self getNet]) {'''
+          assert old in s
+          s = s.replace(old, new, 1)
+
+          p.write_text(s)
+      - name: Set P63 version
+        run: printf 'v1_p63\n' > VERSION
+      - name: Verify generated behavior
+        run: |
+          set -euxo pipefail
+          grep -q 'zon_tryOfflineAuthorizationForMode' testmod/Bsphp/WX_NongShiFu123.mm
+          grep -q '解锁码到期时间' testmod/Bsphp/WX_NongShiFu123.mm
+          grep -q '到期时间' testmod/Bsphp/WX_NongShiFu123.mm
+          grep -q '离线模式' testmod/Bsphp/WX_NongShiFu123.mm
+          test "$(cat VERSION)" = 'v1_p63'
+      - name: Commit generated P63 runtime source
+        run: |
+          set -euxo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add testmod/Bsphp/WX_NongShiFu123.mm VERSION
+          git commit -m 'p63: allow valid cached authorization offline'
+          git push
