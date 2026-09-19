@@ -6,6 +6,31 @@
 #import "ZONLaunchTrace.h"
 #import <objc/runtime.h>
 
+#pragma mark - Authorization state constants
+
+static NSString * const kZONAuthorizationUDIDKey = @"DZUDID";
+static NSString * const kZONBridgeUDIDValueKey = @"zonoe.udid.bridge.value";
+static NSString * const kZONBridgeUDIDSchemeKey = @"zonoe.udid.bridge.scheme";
+static NSString * const kZONBridgeRequestTimestampKey = @"zonoe.udid.bridge.requestTimestamp";
+static NSString * const kZONBridgeRequestNonceKey = @"zonoe.udid.bridge.requestNonce";
+
+static BOOL ZONAuthorizationUDIDIsValid(NSString * _Nullable udid)
+{
+    return udid.length >= 5;
+}
+
+static NSString * _Nullable ZONReadStoredAuthorizationUDID(void)
+{
+    return [getKeychain getKeychainDataForKey:kZONAuthorizationUDIDKey];
+}
+
+static NSString * _Nullable ZONPersistAndVerifyAuthorizationUDID(NSString *udid)
+{
+    [getKeychain addKeychainData:udid forKey:kZONAuthorizationUDIDKey];
+    NSString *verified = ZONReadStoredAuthorizationUDID();
+    return (ZONAuthorizationUDIDIsValid(verified) && [verified isEqualToString:udid]) ? verified : nil;
+}
+
 #pragma mark - Authorization reset compatibility
 
 static IMP gZONOriginalDeleteKM = NULL;
@@ -13,16 +38,21 @@ static IMP gZONOriginalDeleteKM = NULL;
 static void ZONClearStoredUDIDState(void)
 {
     // loada / cloud-save legacy machine-code cache.
-    [getKeychain removeKeychainDataForKey:@"DZUDID"];
+    [getKeychain removeKeychainDataForKey:kZONAuthorizationUDIDKey];
 
     // C1/v1_p3+ zonoe bridge cache. If these are left behind, A_customer would
     // simply restore DZUDID from the bridge cache on the next launch and would
     // not exercise the first-activation UDID flow again.
     NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;
-    [defaults removeObjectForKey:@"zonoe.udid.bridge.value"];
-    [defaults removeObjectForKey:@"zonoe.udid.bridge.scheme"];
-    [defaults removeObjectForKey:@"zonoe.udid.bridge.requestTimestamp"];
-    [defaults removeObjectForKey:@"zonoe.udid.bridge.requestNonce"];
+    NSArray<NSString *> *bridgeKeys = @[
+        kZONBridgeUDIDValueKey,
+        kZONBridgeUDIDSchemeKey,
+        kZONBridgeRequestTimestampKey,
+        kZONBridgeRequestNonceKey,
+    ];
+    for (NSString *key in bridgeKeys) {
+        [defaults removeObjectForKey:key];
+    }
     [defaults synchronize];
 
     NSLog(@"[zonoemenu][INFO][auth] authorization reset also cleared UDID state");
@@ -52,6 +82,8 @@ void ZONInstallAuthorizationResetExtension(void)
     });
 }
 
+#pragma mark - Customer authorization flow
+
 static void ZONShowCustomerStatus(NSString *text,
                                   JDStatusBarNotificationIncludedStyle style,
                                   NSTimeInterval delay)
@@ -65,12 +97,10 @@ static void ZONShowCustomerStatus(NSString *text,
 
 static void ZONContinueCustomerAuthorization(WX_NongShiFu123 *auth, NSString *udid, BOOL newlyFetched)
 {
-    if (udid.length < 5) return;
+    if (!ZONAuthorizationUDIDIsValid(udid)) return;
 
-    [getKeychain addKeychainData:udid forKey:@"DZUDID"];
-    NSString *verified = [getKeychain getKeychainDataForKey:@"DZUDID"];
-
-    if (verified.length < 5 || ![verified isEqualToString:udid]) {
+    NSString *verified = ZONPersistAndVerifyAuthorizationUDID(udid);
+    if (!verified) {
         ZONShowCustomerStatus(@"UDID 写入失败\n请重新启动后再试",
                               JDStatusBarNotificationIncludedStyleError,
                               5.0);
@@ -97,8 +127,8 @@ void ZONStartCustomerAuthorization(void)
 
     // Existing valid customer keychain data wins. This avoids unnecessary zonoe jumps
     // for already activated customers.
-    NSString *existing = [getKeychain getKeychainDataForKey:@"DZUDID"];
-    if (existing.length >= 5) {
+    NSString *existing = ZONReadStoredAuthorizationUDID();
+    if (ZONAuthorizationUDIDIsValid(existing)) {
         ZONLaunchTraceRecord(ZONLaunchTraceAuthorizationExistingDZUDID);
         [auth loada];
         return;
@@ -106,7 +136,7 @@ void ZONStartCustomerAuthorization(void)
 
     // Reuse the C1/v1_p3 bridge cache when available.
     NSString *cached = ZonoeCurrentUDID();
-    if (cached.length >= 5) {
+    if (ZONAuthorizationUDIDIsValid(cached)) {
         ZONLaunchTraceRecord(ZONLaunchTraceAuthorizationBridgeCache);
         ZONContinueCustomerAuthorization(auth, cached, NO);
         return;
@@ -125,4 +155,3 @@ void ZONStartCustomerAuthorization(void)
     });
     ZonoeRequestUDIDIfNeeded();
 }
- 
