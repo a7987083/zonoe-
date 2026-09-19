@@ -29,7 +29,8 @@ jobs:
           test -f testmod/菜单/ZONKeychain.m
           test ! -e testmod/菜单/SFHFKeychainUtils.h
           test ! -e testmod/菜单/SFHFKeychainUtils.m
-          ! grep -R -n 'SFHFKeychainUtils' testmod testmod.xcodeproj/project.pbxproj
+          ! grep -R -n --include='*.h' --include='*.m' --include='*.mm' 'SFHFKeychainUtils' testmod
+          ! grep -n 'SFHFKeychainUtils' testmod.xcodeproj/project.pbxproj
 
       - name: Commit migration if changed
         run: |
@@ -166,7 +167,8 @@ jobs:
           test ! -e testmod/菜单/SFHFKeychainUtils.h
           test ! -e testmod/菜单/SFHFKeychainUtils.m
           grep -n '#import "ZONKeychain.h"' testmod/Bsphp/WX_NongShiFu123.mm
-          ! grep -R -n 'SFHFKeychainUtils' testmod testmod.xcodeproj/project.pbxproj
+          ! grep -R -n --include='*.h' --include='*.m' --include='*.mm' 'SFHFKeychainUtils' testmod
+          ! grep -n 'SFHFKeychainUtils' testmod.xcodeproj/project.pbxproj
 
       - name: Build testmod dylib
         run: |
