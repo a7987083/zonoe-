@@ -1,0 +1,37 @@
+name: p64 Apply Offline Authorization Preroute
+
+on:
+  push:
+    branches:
+      - work/zonoemenu-v1-p64-offline-authorization-preroute
+    paths:
+      - .github/workflows/p64-apply-offline-authorization-preroute.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply P64 transform
+        run: python3 scripts/p64_refactor_offline_authorization_preroute.py
+      - name: Set P64 version
+        run: printf 'v1_p64\n' > VERSION
+      - name: Verify generated behavior
+        run: |
+          set -euxo pipefail
+          grep -q 'zon_validOfflineAuthorizationMode' testmod/Bsphp/WX_NongShiFu123.mm
+          grep -q 'Prefer software-source entitlement' testmod/Bsphp/WX_NongShiFu123.mm
+          grep -q 'offlineMode != ZONAuthorizationRetryModeUnknown' testmod/Bsphp/WX_NongShiFu123.mm
+          test "$(cat VERSION)" = 'v1_p64'
+      - name: Commit generated P64 runtime
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add testmod/Bsphp/WX_NongShiFu123.mm VERSION
+          git commit -m 'p64: resolve valid offline authorization before legacy routing'
+          git push
