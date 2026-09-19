@@ -1,0 +1,99 @@
+name: p62 Apply Unified Auth Network Retry
+
+on:
+  push:
+    branches:
+      - work/zonoemenu-v1-p61-offline-auth-retry
+    paths:
+      - .github/workflows/p62-apply-unified-auth-network-retry.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply guarded P62 transform
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('testmod/Bsphp/WX_NongShiFu123.mm')
+          s = p.read_text()
+
+          marker = 'static NSTimer*dsq;\n\n@implementation WX_NongShiFu123\n'
+          assert marker in s
+          helper = '''static NSTimer*dsq;\n\ntypedef NS_ENUM(NSInteger, ZONAuthorizationRetryMode) {\n    ZONAuthorizationRetryModeUnknown = 0,\n    ZONAuthorizationRetryModeAdSpeed = 1,\n    ZONAuthorizationRetryModeSoftwareSource = 2,\n};\nstatic ZONAuthorizationRetryMode gZONAuthorizationRetryMode = ZONAuthorizationRetryModeUnknown;\n\n@implementation WX_NongShiFu123\n\n- (void)zon_presentAuthorizationNetworkRetry\n{\n    dispatch_async(dispatch_get_main_queue(), ^{\n        [SVProgressHUD dismiss];\n        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"警告"\n                                                                       message:@"网络连接失败"\n                                                                preferredStyle:UIAlertControllerStyleAlert];\n        [alert addAction:[UIAlertAction actionWithTitle:@"重新检查"\n                                                  style:UIAlertActionStyleDefault\n                                                handler:^(__unused UIAlertAction *action) {\n            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.35 * NSEC_PER_SEC)),\n                           dispatch_get_main_queue(), ^{\n                if (gZONAuthorizationRetryMode == ZONAuthorizationRetryModeSoftwareSource) {\n                    [self BSPHPy];\n                } else {\n                    [self BSPHP];\n                }\n            });\n        }]];\n        [[JHPP currentViewController] presentViewController:alert animated:YES completion:nil];\n    });\n}\n'''
+          s = s.replace(marker, helper, 1)
+
+          old = '- (void)BSPHP{\n    dispatch_after('
+          new = '- (void)BSPHP{\n    gZONAuthorizationRetryMode = ZONAuthorizationRetryModeAdSpeed;\n    dispatch_after('
+          assert old in s
+          s = s.replace(old, new, 1)
+
+          old = '- (void)BSPHPy {\n    // 延迟 4 秒执行'
+          new = '- (void)BSPHPy {\n    gZONAuthorizationRetryMode = ZONAuthorizationRetryModeSoftwareSource;\n    // 延迟 4 秒执行'
+          assert old in s
+          s = s.replace(old, new, 1)
+
+          # Replace the two preflight reachability alerts with the same retry UI.
+          start = s.index('- (void)BSPHP{')
+          end = s.index('#pragma mark --- 网络状态', start)
+          block = s[start:end]
+          alert_start = block.index('            //系统弹窗\n            UIAlertController *alert')
+          alert_end = block.index('            \n        }else{', alert_start)
+          block = block[:alert_start] + '            [self zon_presentAuthorizationNetworkRetry];\n' + block[alert_end:]
+          s = s[:start] + block + s[end:]
+
+          start = s.index('- (void)BSPHPy {')
+          end = s.index('        \n        // 2️⃣ 网络成功', start)
+          block = s[start:end]
+          alert_start = block.index('            UIAlertController *alert')
+          alert_end = block.index('            return;', alert_start)
+          block = block[:alert_start] + '            [self zon_presentAuthorizationNetworkRetry];\n' + block[alert_end:]
+          s = s[:start] + block + s[end:]
+
+          # Initial authorization HTTP failures previously only showed SVProgressHUD.
+          failure = '''    } failure:^(NSError *error) {\n        [SVProgressHUD showWithStatus:@"网络失败.."];\n        [SVProgressHUD dismissWithDelay:3.0];\n    }];'''
+          positions = []
+          search_from = 0
+          while True:
+              i = s.find(failure, search_from)
+              if i < 0: break
+              positions.append(i)
+              search_from = i + len(failure)
+          assert len(positions) >= 2, len(positions)
+          # Only getBSphpSeSsL and getXinxi: first two occurrences after their method declarations.
+          for method in ['- (void)getBSphpSeSsL:', '- (void)getXinxi:']:
+              ms = s.index(method)
+              fe = s.index(failure, ms)
+              s = s[:fe] + '''    } failure:^(NSError *error) {\n        ConfigLog(@"授权初始化网络失败：%@", error);\n        [self zon_presentAuthorizationNetworkRetry];\n    }];''' + s[fe+len(failure):]
+
+          # BSPHPy's direct entitlement HTTP failure was silent; surface same retry UI.
+          old = '''                        if (!appInfoString || error) {\n                            ConfigLog(@"❌ 获取网络数据失败: %@", error);\n                            return;\n                        }'''
+          new = '''                        if (!appInfoString || error) {\n                            ConfigLog(@"❌ 获取网络数据失败: %@", error);\n                            [self zon_presentAuthorizationNetworkRetry];\n                            return;\n                        }'''
+          assert old in s
+          s = s.replace(old, new, 1)
+
+          p.write_text(s)
+      - name: Set P62 version
+        run: printf 'v1_p62\n' > VERSION
+      - name: Verify generated behavior
+        run: |
+          set -euxo pipefail
+          grep -q 'zon_presentAuthorizationNetworkRetry' testmod/Bsphp/WX_NongShiFu123.mm
+          grep -q 'ZONAuthorizationRetryModeSoftwareSource' testmod/Bsphp/WX_NongShiFu123.mm
+          grep -q 'ZONAuthorizationRetryModeAdSpeed' testmod/Bsphp/WX_NongShiFu123.mm
+          grep -q '授权初始化网络失败' testmod/Bsphp/WX_NongShiFu123.mm
+          test "$(cat VERSION)" = 'v1_p62'
+      - name: Commit generated P62 runtime source
+        run: |
+          set -euxo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add testmod/Bsphp/WX_NongShiFu123.mm VERSION
+          git commit -m 'p62: unify authorization network retry UI'
+          git push
