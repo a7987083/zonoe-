@@ -1,0 +1,48 @@
+name: p61.1 Apply Offline Auth Retry Dismiss Race Fix
+
+on:
+  push:
+    branches:
+      - work/zonoemenu-v1-p61-offline-auth-retry
+    paths:
+      - .github/workflows/p611-apply-offline-auth-retry-dismiss-race.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply guarded P61.1 retry deferral
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('testmod/Bsphp/WX_NongShiFu123.mm')
+          s = p.read_text()
+          old_a = '''UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"重新检查" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {\n                [self BSPHP];\n            }];'''
+          new_a = '''UIAlertAction *okAction = [UIAlertAction actionWithTitle:@"重新检查" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {\n                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.35 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{\n                    [self BSPHP];\n                });\n            }];'''
+          old_b = '''[alert addAction:[UIAlertAction actionWithTitle:@"重新检查" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {\n                [self BSPHPy];\n            }]];'''
+          new_b = '''[alert addAction:[UIAlertAction actionWithTitle:@"重新检查" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {\n                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.35 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{\n                    [self BSPHPy];\n                });\n            }]];'''
+          assert old_a in s, 'BSPHP retry handler marker missing'
+          assert old_b in s, 'BSPHPy retry handler marker missing'
+          s = s.replace(old_a, new_a, 1).replace(old_b, new_b, 1)
+          p.write_text(s)
+          Path('VERSION').write_text('v1_p61_1\n')
+      - name: Verify generated behavior
+        run: |
+          set -euxo pipefail
+          grep -q '0.35 \* NSEC_PER_SEC' testmod/Bsphp/WX_NongShiFu123.mm
+          test "$(grep -c '0.35 \* NSEC_PER_SEC' testmod/Bsphp/WX_NongShiFu123.mm)" -ge 2
+          test "$(cat VERSION)" = 'v1_p61_1'
+      - name: Commit generated P61.1 runtime source
+        run: |
+          set -euxo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add testmod/Bsphp/WX_NongShiFu123.mm VERSION
+          git commit -m 'p61.1: defer offline retry until alert dismissal completes'
+          git push
