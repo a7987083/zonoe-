@@ -1,20 +1,59 @@
 # ARCHITECTURE
 
 ## Canonical runtime surface
-The active product runtime is `testmod/` plus `testmod.xcodeproj`. The repository root still contains legacy/duplicate source trees with overlapping names; those copies are not assumed canonical unless PBX/call-chain evidence proves otherwise.
+The active product runtime is `testmod/` plus `testmod.xcodeproj`. PBX target membership is authoritative for compiled source. Historical/duplicate trees outside that surface are not assumed active without PBX/call-chain evidence.
+
+## Current baselines
+- Promoted/device baseline: `v1_p62` / `a11160e70ff1163b2c462bb3ef5d539da1f489eb`.
+- P62 CI head: `c1f1415d3787b879def387d68e2df089776dbffa`.
+- P62 CI Run `35410564486`: success.
+- P62 real-device validation: passed.
+- Current candidate: `v1_p65` / test head `f5742ed68489b529169c850619cb9e1036150920`.
+- P65 CI Run `35424279529`: success; device validation pending.
+- Active PBX Sources: 78.
+- Architectures: arm64 + arm64e.
 
 ## Startup / authorization
 ```text
-dyld loads testmod dylib
+dyld loads testmod.dylib
   -> testmod/Bsphp/main.m +load
-     -> authorization-reset compatibility hook
+     -> ZONInstallAuthorizationResetExtension()
      -> ZONBootstrapStart(preflight, ready)
-        -> synchronous legacy framework preflight
+        -> synchronous framework preflight
+           -> AppLovinSDK dynamic load if present
+           -> UnityFramework dynamic load if present
         -> main queue variant entry
-           -> B_debug: floating entry
-           -> A_customer: status -> keychain/UDID -> authorization loada
+           -> B_debug: floating menu entry
+           -> A_customer: ZONStartCustomerAuthorization()
+              -> existing DZUDID keychain state
+              -> ZonoeUDIDAPI bridge cache / request callback
+              -> legacy fallback adapter when required
+              -> WX_NongShiFu123::loada
+                 -> BSPHP / BSPHPy authorization modes
+                 -> NetTool / server config / activation UI
         -> ZONLoadBundledModules()
 ```
+
+P65 keeps this sequence intact. It only centralizes private persistence/validation helpers inside `ZONAuthorizationCoordinator.m`.
+
+## Identity / authorization persistence
+```text
+ZONAuthorizationCoordinator
+  -> DZUDID keychain
+  -> ZonoeUDIDAPI
+     -> ZONUDIDBridge
+        -> zonoe:// callback + nonce
+        -> localhost bridge/cache
+        -> NSUserDefaults bridge state
+  -> legacy WX_NongShiFu123 loada continuation
+```
+
+P65 centralizes the exact existing persistence keys:
+- `DZUDID`
+- `zonoe.udid.bridge.value`
+- `zonoe.udid.bridge.scheme`
+- `zonoe.udid.bridge.requestTimestamp`
+- `zonoe.udid.bridge.requestNonce`
 
 ## Menu ownership
 ```text
@@ -29,47 +68,47 @@ NSObject+UI floating entry
         -> ZONMenuEventBridge
            -> ZONFeatureDispatcher
               -> existing business handlers
+              -> NSUserDefaults / ImgTool / file operations
 ```
+
+Registry metadata remains the menu source of truth; Dispatcher owns route execution for migrated features.
 
 ## Extension module ownership
 ```text
-ZONBootstrap.m
-  -> ZONModuleLoader.m
+ZONBootstrap
+  -> ZONModuleLoader
      -> Frameworks/ZONModules + bundle/ZONModules
      -> sorted .dylib scan
-     -> path containment check
-     -> dlopen / dlsym ABI checks
+     -> standardized/resolved containment check
+     -> dlopen(RTLD_NOW | RTLD_LOCAL)
+     -> dlsym ABI / identifier / initialize
      -> module initialize(ZONHostAPI)
 ```
 
-`ZONModuleLoader` is an active runtime boundary: Bootstrap invokes `ZONLoadBundledModules()`. Before p33 its implementation lived in `ZONModuleLoader.h` and was therefore compiled transitively into callers. P33 makes that ownership explicit with an independent `.m` target source.
+Successful modules intentionally stay loaded for process lifetime. The module scan/load currently executes on the main-queue Bootstrap ready path and should not be moved asynchronously without a measured, dedicated stage.
 
-## Compilation boundary at v1_p33 candidate
-```text
-Xcode target: testmod
-  -> PopupMenuVC.m
-  -> ZONMenuCoordinator.m
-  -> ZONMenuPanelController.m
-  -> ZONMenuChromeRenderer.m
-  -> ZONFeatureRenderer.m
-  -> ZONSectionRenderer.m
-  -> ZONMenuEventBridge.m
-  -> ZONFeatureRegistry.m
-  -> ZONFeatureDispatcher.m
-  -> ZONModuleLoader.m
-  -> ZONBootstrap.m
-  -> legacy product sources
-```
+## Compilation boundary
+The Xcode `testmod` target includes the modern boundaries plus legacy product sources. Important explicit boundaries include:
+- `ZONBootstrap.m`
+- `ZONModuleLoader.m`
+- `ZONFeatureRegistry.m`
+- `ZONFeatureDispatcher.m`
+- menu coordinator/renderers/event bridge
+- `ZONAuthorizationCoordinator.m`
+- `ZonoeUDIDAPI.m`
+- `ZONUDIDBridge.m`
+- `ZONLegacyUDIDFallbackAdapter.m`
+- legacy authorization/menu/hook/storage sources
 
-Declaration-only boundaries now include `ZONFeatureRegistry.h`, `ZONFeatureDispatcher.h`, `ZONModuleLoader.h` and `ZONBootstrap.h`.
+P65 does not add/remove PBX sources; count remains 78.
 
-## Remaining implementation-heavy boundary
-`testmod/ZONServices/ZONUDIDBridge.h` still contains active callback/nonce/storage/socket/request implementation. The public `ZonoeUDIDAPI` implementation also currently lives inside `NSObject+UI.m`, mixing identity/auth plumbing with UI ownership. This is a future isolated audit/refactor candidate and is intentionally unchanged in p33.
+## Main architectural debt
+1. `WX_NongShiFu123.mm` still combines legacy authorization/network/server/UI/global-state responsibilities.
+2. Server configuration parsing assumes expected split-array shapes before indexing.
+3. Reachability helper needs isolated defensive hardening.
+4. Clear-data completion and process exit are independently scheduled for the same deadline.
+5. Startup `+load`, preflight, authorization and module loading remain order-sensitive.
+6. `ZONLaunchTrace.h` still carries static-inline implementation rather than declaration-only ownership.
+7. Dispatcher is stable but directly imports several legacy business handlers.
 
-## Runtime baselines
-- Device-verified: `v1_p32` / `84f8b3898bee9d95ed4034d12842879cc56280d3`.
-- Current CI-verified candidate: `v1_p33` / `0f12e4353e8859c585fe2975812964a28b7410d1`.
-- p33 Run `34733013479`: success.
-- p33 is not promoted until its required real-device regression passes.
-
-See `REFACTOR_REVIEW.md` for the full architecture review, risks and staged refactor plan.
+See `P65_CODEBASE_REVIEW.md`, `ROADMAP.md`, `KNOWN_ISSUES.md` and `PROJECT_STATE.json` for the staged remediation plan and current validation state.
