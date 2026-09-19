@@ -26,6 +26,7 @@
 
 #import "PubgLoad.h"
 #import "ZONKeychain.h"
+#import "../ZONServices/ZONAuthorizationResetService.h"
 #import "NSObject+UI.h"
 #import "JDStatusBarNotification.h"
 
@@ -1322,30 +1323,14 @@ NSString* 到期时间弹窗,*UDID_IDFV,*验证版本,*验证过直播,*弹窗�
 
 - (void)deletekm {
     NSError *error = nil;
-
-    // 清除 UserDefaults
-    NSArray *userDefaultsKeys = @[@"zonoeudid", @"卡密", @"已选择开启秒过广告", @"到期时间"];
-    for (NSString *key in userDefaultsKeys) {
-        [[NSUserDefaults standardUserDefaults] removeObjectForKey:key];
-    }
-
-    // 清除 Keychain 数据
-    NSArray *keychainKeys = @[@"SJUSERID", @"ShiSanGeDZKM", @"rjyyz"];
-    for (NSString *key in keychainKeys) {
-        [getKeychain removeKeychainDataForKey:key];
-    }
-
-    // 删除独立 ZONKeychain 中的旧 UDID identity
-    BOOL deletekm = [ZONKeychain removeItemForAccount:@"UDID"
-                                      service:@"com.china.TestKeyChain"
-                                        error:&error];
-    if (!deletekm) {
-        ConfigLog(@"❌Keychain删除UDID时出错：%@", error);
+    BOOL cleared = [ZONAuthorizationResetService clearAuthorizationData:&error];
+    if (!cleared) {
+        ConfigLog(@"❌清除授权信息失败：%@", error);
     } else {
-        NSString *udid = [[NSUserDefaults standardUserDefaults] objectForKey:@"zonoeudid"];
-        ConfigLog(@"✅Keychain删除UDID成功！%@", udid ?: @"(nil)");
+        ConfigLog(@"✅清除授权信息成功");
     }
 }
+
 
 
 

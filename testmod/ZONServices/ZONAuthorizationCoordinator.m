@@ -4,51 +4,16 @@
 #import "JDStatusBarNotification.h"
 #import "ZonoeUDIDAPI.h"
 #import "ZONLaunchTrace.h"
-#import <objc/runtime.h>
 
 #pragma mark - Authorization reset compatibility
 
-static IMP gZONOriginalDeleteKM = NULL;
-
-static void ZONClearStoredUDIDState(void)
-{
-    // loada / cloud-save legacy machine-code cache.
-    [getKeychain removeKeychainDataForKey:@"DZUDID"];
-
-    // C1/v1_p3+ zonoe bridge cache. If these are left behind, A_customer would
-    // simply restore DZUDID from the bridge cache on the next launch and would
-    // not exercise the first-activation UDID flow again.
-    NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;
-    [defaults removeObjectForKey:@"zonoe.udid.bridge.value"];
-    [defaults removeObjectForKey:@"zonoe.udid.bridge.scheme"];
-    [defaults removeObjectForKey:@"zonoe.udid.bridge.requestTimestamp"];
-    [defaults removeObjectForKey:@"zonoe.udid.bridge.requestNonce"];
-    [defaults synchronize];
-
-    NSLog(@"[zonoemenu][INFO][auth] authorization reset also cleared UDID state");
-}
-
-static void ZONDeleteKMAndUDID(id self, SEL _cmd)
-{
-    if (gZONOriginalDeleteKM) {
-        ((void (*)(id, SEL))gZONOriginalDeleteKM)(self, _cmd);
-    }
-    ZONClearStoredUDIDState();
-}
-
 void ZONInstallAuthorizationResetExtension(void)
 {
+    // Kept as a compatibility startup hook. Reset ownership now lives in
+    // ZONAuthorizationResetService and WX_NongShiFu123::deletekm forwards to it.
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        Class authClass = NSClassFromString(@"WX_NongShiFu123");
-        Method method = class_getInstanceMethod(authClass, @selector(deletekm));
-        if (!method) {
-            NSLog(@"[zonoemenu][WARN][auth] deletekm not found; UDID reset extension unavailable");
-            return;
-        }
-
-        gZONOriginalDeleteKM = method_setImplementation(method, (IMP)ZONDeleteKMAndUDID);
-        NSLog(@"[zonoemenu][INFO][auth] authorization reset now includes UDID state");
+        NSLog(@"[zonoemenu][INFO][auth] authorization reset service installed");
     });
 }
 
