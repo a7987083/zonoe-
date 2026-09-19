@@ -1,0 +1,59 @@
+name: p63 Offline Authorized Mode
+
+on:
+  push:
+    branches:
+      - test/zonoemenu-v1-p63-offline-authorized-mode
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify P63 runtime scope
+        run: |
+          set -euxo pipefail
+          git diff --name-only a11160e70ff1163b2c462bb3ef5d539da1f489eb...HEAD | grep -E '^testmod/' | sort -u > /tmp/runtime.txt || true
+          cat /tmp/runtime.txt
+          test "$(cat /tmp/runtime.txt)" = 'testmod/Bsphp/WX_NongShiFu123.mm'
+      - name: Verify P63 behavior contract
+        run: python3 Tests/p63_offline_authorized_mode_contract.py
+
+  build:
+    needs: contract
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: A_customer
+            debug: '0'
+          - variant: B_debug
+            debug: '1'
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode 16.4
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+      - name: Verify P63 contract
+        run: python3 Tests/p63_offline_authorized_mode_contract.py
+      - name: Configure build variant
+        run: |
+          echo "P63 build variant: ${{ matrix.variant }}"
+      - name: Build testmod dylib
+        run: |
+          set -euxo pipefail
+          xcodebuild -project testmod.xcodeproj -target testmod -configuration Release -sdk iphoneos CODE_SIGNING_ALLOWED=NO ARCHS='arm64 arm64e' ONLY_ACTIVE_ARCH=NO build
+      - name: Locate dylib
+        run: |
+          set -euxo pipefail
+          find ~/Library/Developer/Xcode/DerivedData -name 'testmod.dylib' -type f -print -quit > /tmp/dylib_path
+          test -s /tmp/dylib_path
+          file "$(cat /tmp/dylib_path)"
+      - name: Upload P63 candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: p63-offline-authorized-mode-${{ matrix.variant }}
+          path: ${{ github.workspace }}/build/Release-iphoneos/testmod.dylib
+          if-no-files-found: error
