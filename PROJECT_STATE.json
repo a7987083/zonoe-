@@ -3,19 +3,25 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p61-offline-auth-retry",
-  "current_test_branch": "test/zonoemenu-v1-p61-offline-auth-retry",
-  "current_version": "v1_p61",
-  "current_phase": "v1_p61_offline_auth_retry",
+  "current_work_branch": "work/zonoemenu-v1-p62-unified-auth-network-retry",
+  "current_test_branch": "test/zonoemenu-v1-p62-unified-auth-network-retry",
+  "current_version": "v1_p62",
+  "current_phase": "v1_p62_unified_auth_network_retry",
   "phase_status": "ci_passed_awaiting_device",
   "last_device_verified_code_commit": "a21b561890522f568e6c38bb519edf2bde490357",
   "last_device_verified_version": "v1_p60",
-  "last_ci_run_id": 35403378114,
+  "last_ci_run_id": 35410564486,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
-  "architectures": ["arm64", "arm64e"],
+  "architectures": [
+    "arm64",
+    "arm64e"
+  ],
   "active_source_count": 78,
-  "canonical_product_surface": ["testmod/", "testmod.xcodeproj"],
+  "canonical_product_surface": [
+    "testmod/",
+    "testmod.xcodeproj"
+  ],
   "rollback_baseline": {
     "version": "v1_p60",
     "source_commit": "a21b561890522f568e6c38bb519edf2bde490357",
@@ -99,14 +105,31 @@
     "ci_head": "74c0bfad26403b2b64b2a0b8d4901e1fa03cd40b",
     "ci_run_id": 35403378114,
     "ci_status": "success",
-    "device_status": "pending",
+    "device_status": "failed_not_promoted",
     "active_source_count": 78,
     "a_customer_artifact_id": 10571453004,
     "a_customer_artifact_digest": "sha256:93e2307617fd361d0741c8c771f2d8d9e0fb66ba3b8339236ae2b8227f198e7b",
     "a_customer_dylib_sha256": "4ccabd4186109dc13e015237d58581d181d4283b3da40aec0d8db8bd7b816efc",
     "b_debug_artifact_id": 10571765033,
     "b_debug_artifact_digest": "sha256:383875fe82c74d868fe57acc0d303d39f130bcebc9da911f9ef9b20ac7222a17",
-    "behavior_change": "Legacy authorization reachability check no longer re-enters loada when offline. The visible 重新检查 actions now explicitly retry their original BSPHP or BSPHPy authorization path."
+    "behavior_change": "Legacy authorization reachability check no longer re-enters loada when offline. The visible 重新检查 actions now explicitly retry their original BSPHP or BSPHPy authorization path.",
+    "device_observation": "User observed only one network-failure notice and no visible recheck window. Root cause: actual authorization HTTP failure paths still used SVProgressHUD/silent return, while only reachability failure had the recheck UIAlert. P61 was not promoted."
   },
-  "next_task": "Real-device validate P61 with network offline/online transitions for both authorization modes. Confirm offline does not recursively schedule authorization, 重新检查 retries the same mode after connectivity returns, and P60 UDID acquisition remains normal. Do not promote until explicit user PASS."
+  "next_task": "Real-device validate P62: offline or authorization HTTP failure must show 警告/网络连接失败 with visible 重新检查; tapping it retries the same BSPHP/BSPHPy mode, and restoring connectivity continues authorization. P60 remains rollback baseline until explicit PASS.",
+  "p62": {
+    "branch": "work/zonoemenu-v1-p62-unified-auth-network-retry",
+    "test_branch": "test/zonoemenu-v1-p62-unified-auth-network-retry",
+    "source_commit": "a11160e70ff1163b2c462bb3ef5d539da1f489eb",
+    "ci_head": "c1f1415d3787b879def387d68e2df089776dbffa",
+    "ci_run_id": 35410564486,
+    "ci_status": "success",
+    "device_status": "pending",
+    "active_source_count": 78,
+    "a_customer_artifact_id": 10574157091,
+    "a_customer_artifact_digest": "sha256:4f2195f10f1bdfd242aa4ccb3effe89983e69f01384db60e1d57443cb34a291e",
+    "a_customer_dylib_sha256": "b18595538245447109468e323c336c2b36a61795ec18cc19745182ab7784b443",
+    "b_debug_artifact_id": 10574166849,
+    "b_debug_artifact_digest": "sha256:3944c761966ca87d78fea2e2d05c5270c27d80be4debfa805063d0694c1cf7a2",
+    "behavior_change": "Authorization network failures are unified into one UIAlert with a visible 重新检查 action. Reachability failures, getBSphpSeSsL/getXinxi HTTP failures, and BSPHPy entitlement fetch failures retry the same authorization mode without re-entering loada."
+  }
 }
