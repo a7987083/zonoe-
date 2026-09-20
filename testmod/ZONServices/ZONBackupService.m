@@ -42,8 +42,8 @@ typedef NS_ENUM(NSInteger, ZONBackupErrorCode) {
                 underlying:(NSError *)underlying
 {
     NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
-    if (description.length > 0) userInfo[NSLocalizedDescriptionKey] = description;
-    if (underlying) userInfo[NSUnderlyingErrorKey] = underlying;
+    if (description.length > 0) [userInfo setObject:description forKey:NSLocalizedDescriptionKey];
+    if (underlying) [userInfo setObject:underlying forKey:NSUnderlyingErrorKey];
     return [NSError errorWithDomain:ZONBackupErrorDomain code:code userInfo:userInfo];
 }
 
@@ -199,7 +199,7 @@ typedef NS_ENUM(NSInteger, ZONBackupErrorCode) {
     }
 
     for (NSUInteger index = 0; index < manifest.count; index++) {
-        ZONBackupManifestItem *item = manifest[index];
+        ZONBackupManifestItem *item = [manifest objectAtIndex:index];
 
         if (item.excludedContents) {
             if (item.sourceIsDirectory) {
