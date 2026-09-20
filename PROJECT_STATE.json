@@ -3,10 +3,10 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/p62-zonkeychain-deletekm-service",
-  "current_version": "v1_p63a",
+  "current_work_branch": "work/p63b-clear-game-data-service",
+  "current_version": "v1_p63b",
   "current_phase": "p63b_clear_game_data_service",
-  "phase_status": "planned_from_promoted_p63a",
+  "phase_status": "source_ready_ci_pending",
   "last_device_verified_code_commit": "170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d",
   "last_device_verified_version": "v1_p63a",
   "last_ci_run_id": 35483209464,
@@ -21,12 +21,6 @@
     "device_status": "passed",
     "device_reported_by_user": true
   },
-  "p62": {
-    "status": "device_passed_superseded",
-    "source_commit": "a1d0f7b7ca7ea2747d7c52a2b5e002830731ffca",
-    "ci_run_id": 35480732207,
-    "device_status": "passed"
-  },
   "p63a": {
     "name": "six_button_service_boundary",
     "version": "v1_p63a",
@@ -37,30 +31,61 @@
     "device_status": "passed",
     "device_reported_by_user": true,
     "a_customer_artifact_id": 10596866163,
-    "a_customer_artifact_digest": "sha256:4770559f4d15706349e558e6b36c709e4242e0de8ae505ec9934b913d96822ae",
-    "a_customer_dylib_sha256": "2c90fed5247de6af6fe91bb6d1c57562621ff10542ae36b355924f5b78d7583b",
-    "b_debug_artifact_id": 10596501583,
-    "b_debug_artifact_digest": "sha256:c5cfe082bb2294a5eee0fc871226ee3ad9744ca3558d1d5ae5581c77ec631099",
-    "b_debug_dylib_sha256": "3063dbd4060767948686990772333f4fa2ecaa8c648252fc6d02641149e8ee6b",
-    "scope": [
-      "base.remote-download",
-      "base.cloud-save",
-      "data.backup-save",
-      "data.restore-save",
-      "data.clear-game-data",
-      "auth.clear-records"
+    "b_debug_artifact_id": 10596501583
+  },
+  "p63b": {
+    "name": "clear_game_data_dedicated_service",
+    "version": "v1_p63b",
+    "status": "source_ready_ci_pending",
+    "branch": "work/p63b-clear-game-data-service",
+    "baseline_version": "v1_p63a",
+    "baseline_source_commit": "170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d",
+    "candidate_code_commit": "5302cc4e2b0e04757b8ec4ba314c1534c57a491b",
+    "ci_build_commit": null,
+    "ci_run_id": null,
+    "ci_status": "pending",
+    "device_status": "pending",
+    "approved_behavior_changes": [
+      "remove fixed 5-second pre-clean delay",
+      "remove fixed 5-second exit timer",
+      "run destructive filesystem reset off the main queue",
+      "show real cleanup stages",
+      "exit immediately after successful reset completion",
+      "do not exit on critical cleanup or verification failure"
     ],
-    "device_observation": "User explicitly reported all six scoped button flows normal on device.",
-    "delivered": [
-      "ZONSixButtonActionService boundary added",
-      "six scoped Dispatcher routes use service boundary",
-      "legacy C dispatcher helpers retained as compatibility forwarders",
-      "clear authorization route uses ZONAuthorizationResetService behind boundary",
-      "deterministic P63A PBX migration added",
-      "P63A behavior/service/PBX contract added",
-      "A_customer arm64+arm64e build passed",
-      "B_debug arm64+arm64e build passed",
-      "six-button real-device regression passed"
+    "reset_scope": [
+      "Documents contents",
+      "Library contents",
+      "tmp contents",
+      "app NSUserDefaults persistent domain"
+    ],
+    "explicitly_out_of_scope": [
+      "Keychain and authorization storage",
+      "App Group containers",
+      "iCloud and CloudKit remote data",
+      "remote download engine",
+      "cloud save engine",
+      "backup engine",
+      "restore engine"
+    ],
+    "delivered_source": [
+      "ZONGameDataResetService pure Foundation engine",
+      "shared directory-content cleanup helper",
+      "explicit NSError propagation",
+      "final cleanup verification sweep",
+      "background clear-game-data execution",
+      "staged SVProgressHUD presentation in action layer",
+      "deterministic P63B PBX migration",
+      "P63B behavior and architecture contract",
+      "dedicated P63B A/B CI workflow"
+    ],
+    "verification_required": [
+      "PBX source membership",
+      "P63B behavior contract",
+      "A_customer arm64+arm64e build",
+      "B_debug arm64+arm64e build",
+      "dylib output verification",
+      "scoped real-device clear-game-data PASS"
     ]
   },
   "six_button_routes": {
@@ -68,23 +93,8 @@
     "base.cloud-save": "ZONSixButtonActionService -> tmp invariant -> PubgLoad::checkCloudSaveStatus",
     "data.backup-save": "ZONSixButtonActionService -> daochucd::backupasd",
     "data.restore-save": "ZONSixButtonActionService -> YYYPicker::addBtnAction",
-    "data.clear-game-data": "ZONSixButtonActionService preserving P63A destructive behavior",
+    "data.clear-game-data": "ZONSixButtonActionService -> ZONGameDataResetService",
     "auth.clear-records": "ZONSixButtonActionService -> ZONAuthorizationResetService"
-  },
-  "p63b": {
-    "name": "clear_game_data_dedicated_service",
-    "status": "planned",
-    "baseline_version": "v1_p63a",
-    "baseline_source_commit": "170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d",
-    "goal": "Extract clear-game-data implementation into a dedicated service, preserve promoted P63A behavior, remove redundant filesystem operations with equivalence evidence, and introduce explicit error handling.",
-    "verification_required": [
-      "behavior contract against P63A",
-      "PBX source membership",
-      "A_customer arm64+arm64e build",
-      "B_debug arm64+arm64e build",
-      "dylib output verification",
-      "scoped clear-game-data real-device PASS"
-    ]
   },
   "follow_on_plan": [
     "P63C backup engine extraction",
@@ -92,5 +102,5 @@
     "P63E remote-download engine extraction",
     "P63F cloud-save engine extraction"
   ],
-  "next_task": "Implement P63B clear-game-data dedicated service from promoted v1_p63a without touching the other five button engines."
+  "next_task": "Run P63B deterministic PBX migration and A_customer/B_debug CI; fix only verified failures, then deliver artifacts for scoped device validation."
 }
