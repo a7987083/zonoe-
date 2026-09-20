@@ -13,6 +13,8 @@ permissions:
 jobs:
   migrate:
     runs-on: ubuntu-latest
+    outputs:
+      migrated_sha: ${{ steps.resolve-sha.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -49,6 +51,15 @@ jobs:
           git commit -m 'refactor: extract authorization reset service'
           git push origin HEAD:work/p62-zonkeychain-deletekm-service
 
+      - name: Resolve migrated SHA
+        id: resolve-sha
+        run: |
+          set -euxo pipefail
+          git fetch origin work/p62-zonkeychain-deletekm-service
+          SHA="$(git rev-parse origin/work/p62-zonkeychain-deletekm-service)"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "MIGRATED_SHA=$SHA"
+
   build:
     needs: migrate
     runs-on: macos-15
@@ -66,7 +77,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: work/p62-zonkeychain-deletekm-service
+          ref: ${{ needs.migrate.outputs.migrated_sha }}
+
+      - name: Verify build revision and reset service membership
+        run: |
+          set -euxo pipefail
+          BUILD_HEAD="$(git rev-parse HEAD)"
+          echo "BUILD_HEAD=$BUILD_HEAD"
+          echo "EXPECTED_HEAD=${{ needs.migrate.outputs.migrated_sha }}"
+          test "$BUILD_HEAD" = "${{ needs.migrate.outputs.migrated_sha }}"
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('testmod.xcodeproj/project.pbxproj')
+          s = p.read_text(encoding='utf-8')
+          build_id = 'A17D0E012F7B100100C0FFEE'
+          file_id = 'A17D0E022F7B100100C0FFEE'
+          marker = 'ZONAuthorizationResetService.m in Sources'
+          file_marker = 'ZONAuthorizationResetService.m'
+
+          if s.count(marker) != 2:
+              raise SystemExit(f'expected exactly 2 reset-service source markers, found {s.count(marker)}')
+          if f'{build_id} /* {marker} */ = {{isa = PBXBuildFile; fileRef = {file_id} /* {file_marker} */; }};' not in s:
+              raise SystemExit('reset service PBXBuildFile declaration missing or mismatched')
+          if f'{build_id} /* {marker} */,' not in s:
+              raise SystemExit('reset service is not included in PBXSourcesBuildPhase')
+          if f'{file_id} /* {file_marker} */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc;' not in s:
+              raise SystemExit('reset service PBXFileReference missing or wrong file type')
+          print('reset service PBX membership verified')
+          PY
 
       - name: Select Xcode 16.4
         run: |
@@ -118,7 +157,7 @@ jobs:
             local dir="$1" url="$2" sha="$3"
             sudo rm -rf "$dir"
             sudo mkdir -p "$dir"
-            sudo chown "$USER":staff "$dir"
+            sudo chown -R "$USER":staff "$dir"
             git -C "$dir" init -q
             git -C "$dir" remote add origin "$url"
             git -C "$dir" fetch --depth=1 origin "$sha"
