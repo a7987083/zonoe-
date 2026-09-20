@@ -1,8 +1,8 @@
 # CHANGELOG_DEV
 
-## 2026-09-20 — v1_p63a Six Button Service Boundary — CI PASSED / DEVICE PENDING
+## 2026-09-20 — v1_p63a Six Button Service Boundary — DEVICE PASSED
 - Work branch: `work/p62-zonkeychain-deletekm-service`.
-- Candidate source commit: `170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d`.
+- Candidate/runtime source commit: `170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d`.
 - `VERSION`: `v1_p63a`.
 - CI Run `35483209464`: **success**.
 - Added `testmod/ZONServices/ZONSixButtonActionService.h/.m` as the explicit service boundary for remote download, VIP cloud save, backup save, restore save, clear game data and clear authorization records.
@@ -12,30 +12,26 @@
 - VIP cloud save still ensures the tmp directory then enters `PubgLoad::checkCloudSaveStatus` behind the boundary.
 - Backup still enters `daochucd::backupasd` behind the boundary.
 - Restore still enters `YYYPicker::addBtnAction` behind the boundary.
-- Clear-game-data behavior was moved behind the boundary while preserving the current 5-second timing, tmp preservation/recreation, Documents/Library/default-domain deletion and exit behavior; cleanup/hardening is deferred.
+- Clear-game-data behavior was moved behind the boundary while preserving the P63A comparison behavior; cleanup/hardening is deferred to P63B.
 - Clear-authorization now reaches `ZONAuthorizationResetService` through the new boundary rather than routing the button through the legacy `WX_NongShiFu123::deletekm` entry.
-- Added `tools/p63a_apply_six_button_service_boundary.py` for deterministic PBX source registration.
-- Added `Tests/p63a_six_button_service_boundary_contract.py` to lock identifiers/tags, service routing, P62 reset contract and PBX membership.
-- Added `.github/workflows/p63a-six-button-service-build.yml` with exact migrated-SHA pinning and A_customer/B_debug builds.
+- Added deterministic PBX source registration, behavior/service-boundary contracts and exact migrated-SHA CI pinning.
 - Registry/service/PBX contract: PASS.
 - A_customer `arm64 + arm64e` build/link/output: PASS.
 - B_debug `arm64 + arm64e` build/link/output: PASS.
 - A_customer artifact ID `10596866163`, digest `sha256:4770559f4d15706349e558e6b36c709e4242e0de8ae505ec9934b913d96822ae`, dylib SHA256 `2c90fed5247de6af6fe91bb6d1c57562621ff10542ae36b355924f5b78d7583b`.
 - B_debug artifact ID `10596501583`, digest `sha256:c5cfe082bb2294a5eee0fc871226ee3ad9744ca3558d1d5ae5581c77ec631099`, dylib SHA256 `3063dbd4060767948686990772333f4fa2ecaa8c648252fc6d02641149e8ee6b`.
-- P63A is **not promoted yet**; explicit six-button real-device PASS is still required.
+- User explicitly reported all six scoped buttons normal on device.
+- **P63A is promoted/device-passed and is the baseline for P63B.**
 
-## 2026-09-20 — v1_p62 Authorization Reset Service — DEVICE PASSED
+## 2026-09-20 — v1_p62 Authorization Reset Service — DEVICE PASSED / SUPERSEDED
 - Work branch: `work/p62-zonkeychain-deletekm-service`.
 - Product source commit: `a1d0f7b7ca7ea2747d7c52a2b5e002830731ffca`.
 - CI Run `35480732207`: **success**.
-- Extracted the authorization reset clear set into `testmod/ZONServices/ZONAuthorizationResetService.h/.m`.
-- `WX_NongShiFu123::deletekm` now forwards to the reset service rather than owning the clear implementation.
-- Preserved the effective P62 UserDefaults, legacy `getKeychain`, `DZUDID`, bridge-cache and `ZONKeychain` clear behavior.
-- Removed reset implementation ownership from the authorization coordinator while preserving compatibility startup behavior.
-- Fixed deterministic reset-service PBX migration and exact migrated-revision CI pinning.
+- Extracted authorization reset behavior into `ZONAuthorizationResetService`.
+- Preserved the effective P62 UserDefaults, legacy `getKeychain`, bridge-cache and `ZONKeychain` clear behavior.
 - A_customer and B_debug build/link/output verification: PASS.
 - User explicitly reported the produced dylib tests fully normal on device.
-- **P62 Authorization Reset Service is promoted/device-passed.**
+- Superseded as current runtime baseline by P63A.
 
 ## 2026-09-20 — v1_p62 ZONKeychain Migration — VERIFIED IN P62 LINE
 - Replaced the active `SFHFKeychainUtils` UDID path with `ZONKeychain`.
