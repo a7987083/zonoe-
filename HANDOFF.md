@@ -3,75 +3,94 @@
 ## Repository / source of truth
 - Repository: `a7987083/zonoe-`.
 - Canonical runtime/product surface: `testmod/` + `testmod.xcodeproj`.
-- Read in this order: `PROJECT_STATE.json` → `ROADMAP.md` → `KNOWN_ISSUES.md` → `CHANGELOG_DEV.md` → scoped stage plan/tests.
+- Read in this order: `PROJECT_STATE.json` → `ROADMAP.md` → `KNOWN_ISSUES.md` → `CHANGELOG_DEV.md` → scoped stage tests/workflow.
 
 ## Current promoted runtime baseline — v1_p63a
-- Work branch: `work/p62-zonkeychain-deletekm-service`.
-- Runtime source built by CI: `170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d`.
-- CI Run `35483209464`: **success**.
-- Real-device validation: **passed, explicitly reported by user for all six scoped buttons**.
+- Promoted runtime source: `170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d`.
+- CI Run `35483209464`: success.
+- Six-button real-device validation: passed, explicitly reported by user.
 - Architectures: `arm64 + arm64e`.
-- A_customer artifact: `10596866163`, digest `sha256:4770559f4d15706349e558e6b36c709e4242e0de8ae505ec9934b913d96822ae`.
-- A_customer dylib SHA256: `2c90fed5247de6af6fe91bb6d1c57562621ff10542ae36b355924f5b78d7583b`.
-- B_debug artifact: `10596501583`, digest `sha256:c5cfe082bb2294a5eee0fc871226ee3ad9744ca3558d1d5ae5581c77ec631099`.
-- B_debug dylib SHA256: `3063dbd4060767948686990772333f4fa2ecaa8c648252fc6d02641149e8ee6b`.
-- P63A is the promoted comparison/rollback baseline for P63B.
+- P63A remains rollback/device baseline until P63B is explicitly device-passed.
 
-## P63A architecture
-`ZONFeatureRegistry → ZONFeatureDispatcher → ZONSixButtonActionService → existing engine`
+## Current work — v1_p63b
+- Branch: `work/p63b-clear-game-data-service`.
+- Phase: `P63B Clear Game Data Dedicated Service`.
+- Status: implementation in progress; CI/device not yet promoted.
+- User explicitly approved changing the clear-game-data external behavior: remove fixed 5-second waits and exit when real cleanup finishes.
 
-Six scoped routes:
-- `base.remote-download` / tag 1 → service → `PubgLoad::yuanchengdwon`.
-- `base.cloud-save` / tag 2 → service → tmp invariant → `PubgLoad::checkCloudSaveStatus`.
-- `data.backup-save` / tag 100 → service → `daochucd::backupasd`.
-- `data.restore-save` / tag 101 → service → `YYYPicker::addBtnAction`.
-- `data.clear-game-data` / tag 102 → service-bound destructive implementation preserving P63A behavior.
-- `auth.clear-records` / tag 103 → service → `ZONAuthorizationResetService`.
+## P63B target architecture
+`ZONFeatureRegistry → ZONFeatureDispatcher → ZONSixButtonActionService → ZONGameDataResetService → Foundation filesystem/UserDefaults`
 
-`ZONFeatureDispatcher` no longer directly imports/calls `PubgLoad`, `daochucd`, `YYYPicker`, `WX_NongShiFu123` or `SVProgressHUD` for these six actions. Historical C helper functions remain as compatibility forwarders.
+Responsibilities:
+- `ZONFeatureDispatcher`: routing only.
+- `ZONSixButtonActionService`: destructive confirmation, stage text/HUD, background scheduling, success/failure UI, process exit.
+- `ZONGameDataResetService`: pure Foundation cleanup/verification/error propagation; no UIKit and no authorization storage.
 
-## Behavior that P63B must preserve initially
-Clear-game-data currently:
-- shows the existing destructive confirmation UI;
-- shows `SVProgressHUD` processing state;
-- schedules destructive work after the existing 5-second delay;
-- clears tmp children while preserving/recreating the tmp directory;
-- removes Documents and Library using the current P63A semantics;
-- clears the app UserDefaults persistent domain;
-- retains the current exit timing/behavior.
+## P63B clear-game-data definition
+Reset the main app-local data toward a reinstall/first-launch state:
+- clear `Documents/*`;
+- clear `Library/*`;
+- clear `tmp/*`;
+- remove the app `NSUserDefaults` persistent domain;
+- preserve top-level container directories;
+- do not touch Keychain/authorization data;
+- do not touch App Group containers;
+- do not delete iCloud/CloudKit remote data.
 
-P63B may improve internal implementation only after behavior-equivalence is locked. In particular, redundant remove/enumerate operations and silent `error:nil` calls may be replaced with a dedicated service and explicit error model, but the promoted P63A behavior is the comparison baseline.
+## Approved stage display
+1. `正在准备清理…`
+2. `正在清理游戏存档…`
+3. `正在清理临时文件…`
+4. `正在重置本地设置…`
+5. `正在清理游戏数据…`
+6. `正在检查清理结果…`
+7. `清理完成，正在退出…`
 
-## Protected state from earlier stages
-- `SFHFKeychainUtils` active usage remains replaced by `ZONKeychain`.
-- `ZONAuthorizationResetService` owns the authorization clear set.
-- Legacy `getKeychain` migration is a separate storage concern and must not be folded into P63B.
-- Startup/bootstrap, UDID, authorization retry and module loading behavior remain out of scope.
+## P63B implementation rules
+- No fixed 5-second pre-clean delay.
+- No fixed 5-second exit timer.
+- Filesystem cleanup runs off the main queue.
+- Successful reset exits immediately after the service completes.
+- Any critical cleanup or verification failure must not force exit.
+- Remove old redundant whole-directory delete + second enumeration behavior.
+- Use one reusable directory-content cleaner.
+- Reset engine must return observable `NSError` details.
+- One final verification sweep may remove files recreated during the still-running process.
+- Authorization reset remains independently owned by `ZONAuthorizationResetService`; its historical 3-second exit behavior is outside P63B and must not be changed here.
+- Remote download, cloud save, backup and restore engines remain untouched.
 
-## Frozen operating rules
-- Registry/Dispatcher remains the menu execution boundary.
-- Do not recouple Dispatcher to legacy implementation classes.
-- Preserve menu identifiers, legacy tags and user-facing semantics.
-- Existing release/CI semantics must not be changed outside scoped necessity.
-- A_customer + B_debug `arm64 + arm64e` builds are required for runtime candidates.
-- CI success does not equal device promotion.
-- Keep all five long-project state files synchronized at every stage transition.
+## New P63B files
+- `testmod/ZONServices/ZONGameDataResetService.h`
+- `testmod/ZONServices/ZONGameDataResetService.m`
+- `tools/p63b_apply_game_data_reset_service.py`
+- `Tests/p63b_game_data_reset_contract.py`
+- `.github/workflows/p63b-clear-game-data-service-build.yml`
 
-## Immediate Next Task — P63B Clear Game Data Dedicated Service
-Create a dedicated clear-game-data service behind `ZONSixButtonActionService`.
+## Required verification before promotion
+1. Deterministic PBX membership for `ZONGameDataResetService.m`.
+2. P63B contract passes.
+3. Six-button Dispatcher boundary remains intact.
+4. Authorization reset clear set remains unchanged.
+5. A_customer builds and links for `arm64 + arm64e`.
+6. B_debug builds and links for `arm64 + arm64e`.
+7. Dylib output validation passes.
+8. User device test confirms:
+   - stage display is visible;
+   - no artificial 5-second wait;
+   - local game data is cleared;
+   - app exits after completion;
+   - relaunch is fresh-local-state behavior;
+   - authorization remains intact;
+   - failure does not force exit.
 
-Required sequence:
-1. Lock current P63A clear-game-data behavior as the comparison contract.
-2. Move destructive implementation out of `ZONSixButtonActionService` into the dedicated service.
-3. Preserve confirmation UI and existing external timing/exit behavior.
-4. Remove redundant filesystem operations only with behavior-equivalence evidence.
-5. Replace silent filesystem failures with explicit result/error propagation where it does not change the promoted UX contract.
-6. Add PBX/behavior contracts.
-7. Build A_customer + B_debug for `arm64 + arm64e`.
-8. Perform scoped real-device destructive-data regression before promotion.
-
-## Follow-on order after P63B
+## Follow-on order after P63B promotion
 - P63C: backup engine extraction.
 - P63D: restore engine extraction.
 - P63E: remote-download engine extraction.
 - P63F: cloud-save engine extraction.
+
+## Long-project rules
+- Preserve commit history.
+- Do not silently alter release policy/semantics.
+- CI success is not device promotion.
+- Keep all five long-project state files synchronized at every stage transition.
