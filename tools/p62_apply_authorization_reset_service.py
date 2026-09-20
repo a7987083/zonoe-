@@ -68,13 +68,16 @@ build_line = f'\t\t{BUILD_ID} /* ZONAuthorizationResetService.m in Sources */ = 
 file_line = f'\t\t{FILE_ID} /* ZONAuthorizationResetService.m */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZONAuthorizationResetService.m"; sourceTree = SOURCE_ROOT; }};\n'
 source_line = f'\t\t\t\t{BUILD_ID} /* ZONAuthorizationResetService.m in Sources */,\n'
 
-if BUILD_ID not in pbx:
+# Check the actual declarations, not whether the IDs appear anywhere. BUILD_ID and
+# FILE_ID are also referenced from other PBX records, so global ID presence is not
+# sufficient to prove the declaration exists.
+if build_line not in pbx:
     anchor = '\t\t7ECBD4432F3A614B00C56F1C /* ZONAuthorizationCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4422F3A614B00C56F1C /* ZONAuthorizationCoordinator.m */; };\n'
     if pbx.count(anchor) != 1:
         raise SystemExit(f'PBX build anchor count: {pbx.count(anchor)}')
     pbx = pbx.replace(anchor, anchor + build_line, 1)
 
-if FILE_ID not in pbx:
+if file_line not in pbx:
     anchor = '\t\t7ECBD4422F3A614B00C56F1C /* ZONAuthorizationCoordinator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZONAuthorizationCoordinator.m"; sourceTree = SOURCE_ROOT; };\n'
     if pbx.count(anchor) != 1:
         raise SystemExit(f'PBX file anchor count: {pbx.count(anchor)}')
@@ -105,7 +108,15 @@ if 'method_setImplementation' in COORD.read_text(encoding='utf-8'):
     raise SystemExit('runtime deletekm swizzle still present')
 if '[ZONAuthorizationResetService clearAuthorizationData:&error]' not in WX.read_text(encoding='utf-8'):
     raise SystemExit('WX deletekm is not forwarding to reset service')
-if PBX.read_text(encoding='utf-8').count('ZONAuthorizationResetService.m in Sources') != 2:
+
+final_pbx = PBX.read_text(encoding='utf-8')
+if final_pbx.count('ZONAuthorizationResetService.m in Sources') != 2:
     raise SystemExit('unexpected PBX service source references')
+if build_line not in final_pbx:
+    raise SystemExit('reset service PBXBuildFile declaration missing')
+if file_line not in final_pbx:
+    raise SystemExit('reset service PBXFileReference declaration missing')
+if source_line not in final_pbx:
+    raise SystemExit('reset service PBXSourcesBuildPhase membership missing')
 
 print('authorization reset service migration applied')
