@@ -2,44 +2,39 @@
 
 ## Current state
 - Promoted/device baseline: `v1_p62` / `a1d0f7b7ca7ea2747d7c52a2b5e002830731ffca`.
-- Work branch: `work/p62-zonkeychain-deletekm-service`.
-- CI Run `35480732207`: success.
-- Real-device validation: passed, explicitly reported by user.
+- Current candidate: `v1_p63a` / `170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d`.
+- P63A CI Run `35483209464`: success.
+- P63A real-device validation: **pending**.
 - Architectures: `arm64 + arm64e`.
 - Canonical plan: `ROADMAP.md`.
-- Current active program: **P63A Six Button Service Boundary**.
 
 ## Open risks
 
-### Six-button business layer is only partially decoupled
-- `ZONFeatureRegistry` / `ZONFeatureDispatcher` already provide a stable routing boundary, but Dispatcher still directly references concrete legacy classes and destructive implementation details.
-- P63A must add a service/adapter layer without changing behavior.
-- The six scoped actions are remote download, VIP cloud save, backup save, restore save, clear game data and clear authorization records.
+### P63A still requires six-button real-device regression
+- Static behavior/service/PBX contracts and A_customer/B_debug builds passed.
+- P63A is not promoted until the user explicitly confirms all six scoped actions behave normally on device.
+- Any visible behavior difference from P62 is considered a P63A regression.
 
 ### `PubgLoad` remains a high-risk multi-responsibility class
-- Remote download and VIP cloud-save both route into `PubgLoad`.
-- The class mixes network access, URL handling, download delegate lifecycle, ZIP handling, filesystem staging, authorization checks, progress UI and restore-related side effects.
-- P63A may wrap the current entry points but must not deep-rewrite this class.
+- Remote download and VIP cloud save now enter through `ZONSixButtonActionService`, but their underlying engines remain in `PubgLoad`.
+- The class still mixes network access, URL handling, download delegate lifecycle, ZIP handling, filesystem staging, authorization checks, progress UI and restore-related side effects.
 - Remote-download engine extraction is deferred to P63E; cloud-save engine extraction is deferred to P63F.
 
-### `daochucd` mixes backup engine and UI
-- Backup currently combines filename prompt, filesystem scan/copy, >50 MiB decision UI, staging cleanup, ZIP creation and share UI.
-- Existing P51-B behavior is device-tested and must be preserved.
+### `daochucd` still mixes backup engine and UI
+- P63A only adds a service boundary; the existing backup engine remains inside `daochucd`.
+- Backup combines filename prompt, filesystem scan/copy, >50 MiB decision UI, staging cleanup, ZIP creation and share UI.
+- Existing device-tested backup behavior must remain the comparison baseline.
 - Backup engine extraction is deferred to P63C.
 
-### `YYYPicker` mixes document-picker UI and restore engine
-- Restore currently combines file picking, staging cleanup, ZIP extraction, nested Documents/Library discovery, recursive copy, skip rules, PreferenceManager reload and UI feedback.
+### `YYYPicker` still mixes document-picker UI and restore engine
+- P63A only adds a service boundary; the restore engine remains inside `YYYPicker`.
+- Restore combines file picking, staging cleanup, ZIP extraction, nested Documents/Library discovery, recursive copy, skip rules, PreferenceManager reload and UI feedback.
 - Restore engine extraction is deferred to P63D.
 
-### Clear-game-data destructive behavior still lives in Dispatcher
-- The current implementation clears tmp contents while preserving/recreating the tmp directory, removes Documents/Library and clears the app defaults domain before exit.
-- It uses several `error:nil` filesystem operations and contains redundant delete/enumerate behavior.
-- P63A must preserve current semantics; cleanup/error-model changes belong to dedicated P63B.
-
-### Clear-authorization route still crosses a legacy entry
-- `ZONAuthorizationResetService` already owns the effective clear set and P62 device validation passed.
-- The button route still goes through `WX_NongShiFu123::deletekm` as a compatibility entry.
-- P63A should establish a service boundary and must not duplicate or drift the P62 reset set.
+### Clear-game-data implementation needs dedicated cleanup/hardening
+- The destructive implementation is no longer owned by `ZONFeatureDispatcher`; it is now behind `ZONSixButtonActionService`.
+- P63A intentionally preserves the existing 5-second timing, tmp behavior, Documents/Library/default-domain deletion, redundant delete/enumerate flow and `error:nil` operations.
+- Dedicated service separation, error propagation and removal of redundant operations belong to P63B and must be validated against the promoted P63A behavior if P63A passes device testing.
 
 ### Legacy `getKeychain` remains active
 - `SFHFKeychainUtils` is no longer active, but `getKeychain` still stores historical authorization/device values such as `SJUSERID`, `ShiSanGeDZKM`, `DZUDID`, `ShiSanGeIDFV` and `rjyyz`.
@@ -55,25 +50,30 @@
 
 ## Closed / corrected
 
+### Dispatcher direct six-button legacy dependency — CLOSED BY P63A CANDIDATE / DEVICE GATE PENDING
+- Six scoped routes now call `ZONSixButtonActionService`.
+- Dispatcher no longer directly imports/calls `PubgLoad`, `daochucd`, `YYYPicker`, `WX_NongShiFu123` or `SVProgressHUD` for those six actions.
+- CI contract verifies the boundary. Runtime closure depends on the pending device gate.
+
+### Clear-authorization button crossing legacy deletekm entry — CLOSED BY P63A CANDIDATE / DEVICE GATE PENDING
+- Button routing now reaches `ZONAuthorizationResetService` through the P63A service boundary.
+- The P62 reset clear-set contract is retained and checked in CI.
+- Runtime closure depends on the pending device gate.
+
 ### P62 Authorization Reset Service — CLOSED / DEVICE PASSED
 - Source `a1d0f7b7ca7ea2747d7c52a2b5e002830731ffca`.
 - CI Run `35480732207`: success.
-- A_customer and B_debug build/link/output verification passed.
 - User explicitly reported the produced dylib tests fully normal.
-- Authorization clear ownership now lives in `ZONAuthorizationResetService`.
 
 ### P62 SFHFKeychainUtils active dependency — CLOSED
 - Active UDID storage was migrated to `ZONKeychain`.
 - Legacy `SFHFKeychainUtils.h/.m` were removed from the active project surface.
 
 ### P62 reset-service PBX nondeterminism — CLOSED
-- Migration script now verifies/inserts exact PBXBuildFile, PBXFileReference and PBXSourcesBuildPhase entries rather than relying on a global file-ID presence test.
+- Migration script verifies/inserts exact PBXBuildFile, PBXFileReference and PBXSourcesBuildPhase entries.
 
 ### P62 CI migrated-revision race — CLOSED
 - Build jobs are pinned to the exact migrated SHA and verify source membership before xcodebuild.
-
-### Prior StoreKit/App Store cleanup — CLOSED
-- Historical StoreKit/App Store residual cleanup remains covered by later device-verified baselines.
 
 ### Canonical product-source ambiguity — CORRECTED
 - `testmod/` + `testmod.xcodeproj` are canonical; PBX membership is authoritative.
