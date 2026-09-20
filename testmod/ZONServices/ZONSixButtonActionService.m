@@ -39,6 +39,54 @@ typedef void (^ZONDestructiveConfirmationHandler)(void);
     return created;
 }
 
++ (void)clearGameDataPreservingTemporaryDirectory
+{
+    // Preserve the exact promoted P62 timing and destructive-data behavior.
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(), ^{
+        NSFileManager *manager = NSFileManager.defaultManager;
+        NSString *tmpPath = [self temporaryDirectoryPath];
+
+        if ([self ensureTemporaryDirectory]) {
+            NSArray<NSString *> *tmpChildren = [manager contentsOfDirectoryAtPath:tmpPath error:nil];
+            for (NSString *child in tmpChildren) {
+                [manager removeItemAtPath:[tmpPath stringByAppendingPathComponent:child] error:nil];
+            }
+            [self ensureTemporaryDirectory];
+        }
+
+        NSString *documentsPath = [NSHomeDirectory() stringByAppendingString:@"/Documents/"];
+        NSLog(@"✈️删除 Documents, %@", documentsPath);
+        [manager removeItemAtPath:documentsPath error:nil];
+
+        NSString *libraryPath = [NSHomeDirectory() stringByAppendingString:@"/Library/"];
+        NSLog(@"✈️删除 Library, %@", libraryPath);
+        [manager removeItemAtPath:libraryPath error:nil];
+
+        NSString *appDomain = NSBundle.mainBundle.bundleIdentifier;
+        [NSUserDefaults.standardUserDefaults removePersistentDomainForName:appDomain];
+
+        NSString *documentsRoot = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
+        NSDirectoryEnumerator *documentsEnumerator = [manager enumeratorAtPath:documentsRoot];
+        for (NSString *fileName in documentsEnumerator) {
+            [manager removeItemAtPath:[documentsRoot stringByAppendingPathComponent:fileName] error:nil];
+        }
+
+        NSString *libraryRoot = [NSHomeDirectory() stringByAppendingPathComponent:@"Library"];
+        NSDirectoryEnumerator *libraryEnumerator = [manager enumeratorAtPath:libraryRoot];
+        for (NSString *fileName in libraryEnumerator) {
+            [manager removeItemAtPath:[libraryRoot stringByAppendingPathComponent:fileName] error:nil];
+        }
+
+        [self ensureTemporaryDirectory];
+    });
+
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(), ^{
+        exit(0);
+    });
+}
+
 + (void)presentDestructiveConfirmationFromViewController:(UIViewController *)hostViewController
                                                    title:(NSString *)title
                                                  message:(NSString *)message
@@ -94,51 +142,7 @@ typedef void (^ZONDestructiveConfirmationHandler)(void);
                                                    message:@"此操作会清除本地游戏数据，且不可恢复。\n确定要继续吗？"
                                                    handler:^{
         [SVProgressHUD showWithStatus:@"处理中..."];
-
-        // Preserve the exact P62 timing and destructive-data behavior in P63A.
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)),
-                       dispatch_get_main_queue(), ^{
-            NSFileManager *manager = NSFileManager.defaultManager;
-            NSString *tmpPath = [self temporaryDirectoryPath];
-
-            if ([self ensureTemporaryDirectory]) {
-                NSArray<NSString *> *tmpChildren = [manager contentsOfDirectoryAtPath:tmpPath error:nil];
-                for (NSString *child in tmpChildren) {
-                    [manager removeItemAtPath:[tmpPath stringByAppendingPathComponent:child] error:nil];
-                }
-                [self ensureTemporaryDirectory];
-            }
-
-            NSString *documentsPath = [NSHomeDirectory() stringByAppendingString:@"/Documents/"];
-            NSLog(@"✈️删除 Documents, %@", documentsPath);
-            [manager removeItemAtPath:documentsPath error:nil];
-
-            NSString *libraryPath = [NSHomeDirectory() stringByAppendingString:@"/Library/"];
-            NSLog(@"✈️删除 Library, %@", libraryPath);
-            [manager removeItemAtPath:libraryPath error:nil];
-
-            NSString *appDomain = NSBundle.mainBundle.bundleIdentifier;
-            [NSUserDefaults.standardUserDefaults removePersistentDomainForName:appDomain];
-
-            NSString *documentsRoot = [NSHomeDirectory() stringByAppendingPathComponent:@"Documents"];
-            NSDirectoryEnumerator *documentsEnumerator = [manager enumeratorAtPath:documentsRoot];
-            for (NSString *fileName in documentsEnumerator) {
-                [manager removeItemAtPath:[documentsRoot stringByAppendingPathComponent:fileName] error:nil];
-            }
-
-            NSString *libraryRoot = [NSHomeDirectory() stringByAppendingPathComponent:@"Library"];
-            NSDirectoryEnumerator *libraryEnumerator = [manager enumeratorAtPath:libraryRoot];
-            for (NSString *fileName in libraryEnumerator) {
-                [manager removeItemAtPath:[libraryRoot stringByAppendingPathComponent:fileName] error:nil];
-            }
-
-            [self ensureTemporaryDirectory];
-        });
-
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)),
-                       dispatch_get_main_queue(), ^{
-            exit(0);
-        });
+        [self clearGameDataPreservingTemporaryDirectory];
     }];
     return YES;
 }
