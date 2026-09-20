@@ -5,67 +5,65 @@
 - Canonical runtime/product surface: `testmod/` + `testmod.xcodeproj`.
 - Read in this order: `PROJECT_STATE.json` → `ROADMAP.md` → `KNOWN_ISSUES.md` → `CHANGELOG_DEV.md` → scoped stage plan/tests.
 
-## Current promoted runtime baseline
+## Promoted rollback/device baseline
 - Version: `v1_p62`.
-- Work branch: `work/p62-zonkeychain-deletekm-service`.
-- Product source: `a1d0f7b7ca7ea2747d7c52a2b5e002830731ffca`.
+- Source: `a1d0f7b7ca7ea2747d7c52a2b5e002830731ffca`.
 - CI Run `35480732207`: success.
 - Real-device validation: passed, explicitly reported by user.
+- P62 remains the promoted rollback baseline until P63A receives explicit real-device PASS.
+
+## Current candidate — v1_p63a
+- Work branch: `work/p62-zonkeychain-deletekm-service`.
+- Candidate source built by CI: `170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d`.
+- CI Run `35483209464`: **success**.
+- Candidate status: **CI passed / awaiting six-button real-device validation**.
 - Architectures: `arm64 + arm64e`.
-- A_customer artifact: `10595647289`.
-- A_customer dylib SHA256: `71f14901e140fd19cf175c0092e1cfdf46c7aefc04d2ba73b03baf83359f6962`.
-- B_debug artifact: `10595652401`.
-- B_debug dylib SHA256: `34cbcd9695c7eaad9096c606341fed008dce4e78094df1433243dd5cb9391c59`.
-- P62 Authorization Reset Service is the current rollback/device baseline for the next six-button stage.
+- A_customer artifact: `10596866163`, digest `sha256:4770559f4d15706349e558e6b36c709e4242e0de8ae505ec9934b913d96822ae`.
+- A_customer dylib SHA256: `2c90fed5247de6af6fe91bb6d1c57562621ff10542ae36b355924f5b78d7583b`.
+- B_debug artifact: `10596501583`, digest `sha256:c5cfe082bb2294a5eee0fc871226ee3ad9744ca3558d1d5ae5581c77ec631099`.
+- B_debug dylib SHA256: `3063dbd4060767948686990772333f4fa2ecaa8c648252fc6d02641149e8ee6b`.
 
-## P62 behavior/state to preserve
-- `SFHFKeychainUtils` active usage has been replaced by `ZONKeychain`; legacy SFHF files are removed from the active project.
-- `ZONAuthorizationResetService` owns the effective authorization clear set.
-- The reset service clears the preserved NSUserDefaults authorization keys, legacy keychain keys (`SJUSERID`, `ShiSanGeDZKM`, `rjyyz`, `DZUDID`), UDID bridge cache and `ZONKeychain` `UDID/com.china.TestKeyChain` item.
-- `WX_NongShiFu123::deletekm` is only a compatibility/legacy entry and must not regain ownership of reset internals.
-- P62 CI pins build jobs to the exact migrated source revision and validates PBX membership before xcodebuild.
+## P63A architecture
+`ZONFeatureRegistry → ZONFeatureDispatcher → ZONSixButtonActionService → existing engine`
 
-## Six-button execution architecture observed at P62
-`ZONFeatureRegistry` and `ZONFeatureDispatcher` are already the menu routing boundary. The six scoped actions currently route to these legacy implementations:
-- `base.remote-download` / tag 1 → `PubgLoad::yuanchengdwon`.
-- `base.cloud-save` / tag 2 → `PubgLoad::checkCloudSaveStatus`.
-- `data.backup-save` / tag 100 → `daochucd::backupasd`.
-- `data.restore-save` / tag 101 → `YYYPicker::addBtnAction`.
-- `data.clear-game-data` / tag 102 → destructive game-data implementation currently inside `ZONFeatureDispatcher.m`.
-- `auth.clear-records` / tag 103 → Dispatcher confirmation → legacy `deletekm` entry → `ZONAuthorizationResetService`.
+Six scoped routes:
+- `base.remote-download` / tag 1 → service → `PubgLoad::yuanchengdwon`.
+- `base.cloud-save` / tag 2 → service → tmp invariant → `PubgLoad::checkCloudSaveStatus`.
+- `data.backup-save` / tag 100 → service → `daochucd::backupasd`.
+- `data.restore-save` / tag 101 → service → `YYYPicker::addBtnAction`.
+- `data.clear-game-data` / tag 102 → service-bound destructive implementation preserving P62 semantics.
+- `auth.clear-records` / tag 103 → service → `ZONAuthorizationResetService`.
 
-## Current architectural risks for this program
-- `PubgLoad` mixes remote download, cloud save, network, ZIP, filesystem and UI responsibilities.
-- `daochucd` mixes backup engine, prompt/progress and share UI.
-- `YYYPicker` mixes document-picker UI with ZIP/restore/filesystem engine behavior.
-- `ZONFeatureDispatcher` still contains destructive game-data behavior instead of only routing.
-- Clear-authorization routing still passes through the legacy `WX_NongShiFu123` entry even though the service already exists.
+`ZONFeatureDispatcher` no longer directly imports/calls `PubgLoad`, `daochucd`, `YYYPicker`, `WX_NongShiFu123` or `SVProgressHUD` for these six actions. Historical C helper functions remain as compatibility forwarders.
+
+## P62 behavior/state still protected
+- `SFHFKeychainUtils` active usage is replaced by `ZONKeychain`; legacy SFHF files remain removed.
+- `ZONAuthorizationResetService` owns the authorization clear set.
+- Reset still clears the preserved NSUserDefaults authorization keys, legacy keychain keys (`SJUSERID`, `ShiSanGeDZKM`, `rjyyz`, `DZUDID`), UDID bridge cache and `ZONKeychain` `UDID/com.china.TestKeyChain` item.
+- Legacy `getKeychain` migration is a separate storage concern and is not part of P63A.
 
 ## Frozen operating rules
 - Registry/Dispatcher remains the menu execution boundary.
-- P63A is a boundary-only stage: no deep rewrite of `PubgLoad`, `daochucd`, `YYYPicker`, or unrelated `WX_NongShiFu123.mm` logic.
-- Preserve menu identifiers, legacy tags, titles and user-visible action behavior.
-- Preserve download URL semantics, ZIP behavior, backup staging/layout, restore overwrite/skip behavior, clear-game-data semantics and authorization reset clear set.
-- Active source/framework additions require PBX verification, dual-variant CI and normal promotion gates.
+- P63A is behavior-preserving; any visible difference from P62 in the six scoped actions is a regression.
+- Do not deep-rewrite `PubgLoad`, `daochucd`, `YYYPicker`, or unrelated `WX_NongShiFu123.mm` logic during P63A validation/fixes.
+- Preserve menu identifiers, legacy tags, titles, download URL semantics, ZIP behavior, backup staging/layout, restore overwrite/skip behavior, clear-game-data semantics and authorization reset clear set.
 - CI success does not equal real-device promotion.
-- Each completed runtime stage must provide the built dylib artifact(s) to the user after CI success.
-- Do not modify existing release/CI semantics unless explicitly required by the scoped stage.
+- Existing release/CI semantics must not be changed outside scoped necessity.
+- Keep all five long-project state files synchronized at every stage transition.
 
-## Immediate Next Task — P63A Six Button Service Boundary
-Create explicit service/adapter entry points for all six scoped actions and route `ZONFeatureDispatcher` through them while keeping the current engines internally unchanged.
+## Immediate Next Task — Real-device P63A gate
+Test both launch stability and the six scoped actions. Required PASS:
+1. Remote download opens/accepts input and follows the existing download/ZIP flow.
+2. VIP cloud save follows the existing entitlement/check/download behavior.
+3. Backup save preserves filename/default naming, large-item decision, ZIP output and share behavior.
+4. Restore save preserves picker/import/unzip/restore behavior.
+5. Clear game data shows the same confirmation, clears with the same semantics, exits and can relaunch normally.
+6. Clear authorization shows the same confirmation, clears P62 authorization state, exits after the existing delay and requires normal reauthorization after relaunch.
 
-Expected first-stage shape:
-`ZONFeatureRegistry → ZONFeatureDispatcher → Service Boundary → existing implementation`
-
-P63A completion requires:
-1. Service boundary source is in PBX Sources.
-2. Dispatcher no longer directly owns/knows the legacy implementation details for the six actions except through the service boundary.
-3. Behavior-contract tests validate identifiers/tags and service routing.
-4. A_customer and B_debug compile/link for `arm64 + arm64e`.
-5. User performs six-button real-device smoke test before promotion.
+Do not promote P63A or start P63B until the user explicitly reports this gate passed.
 
 ## Follow-on order after P63A promotion
-- P63B: clear-game-data service implementation extraction.
+- P63B: clear-game-data dedicated-service cleanup/hardening and error-model work.
 - P63C: backup engine extraction.
 - P63D: restore engine extraction.
 - P63E: remote-download engine extraction.
