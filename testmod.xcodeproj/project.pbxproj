@@ -145,6 +145,8 @@
 		A17D0E012F7B100100C0FFEE /* ZONAuthorizationResetService.m in Sources */ = {isa = PBXBuildFile; fileRef = A17D0E022F7B100100C0FFEE /* ZONAuthorizationResetService.m */; };
 		B63A00012F7B200100C0FFEE /* ZONSixButtonActionService.m in Sources */ = {isa = PBXBuildFile; fileRef = B63A00022F7B200100C0FFEE /* ZONSixButtonActionService.m */; };
 		B63B00012F7B300100C0FFEE /* ZONGameDataResetService.m in Sources */ = {isa = PBXBuildFile; fileRef = B63B00022F7B300100C0FFEE /* ZONGameDataResetService.m */; };
+		B65000112F7B400100C0FFEE /* ZONBackupService.m in Sources */ = {isa = PBXBuildFile; fileRef = B65000122F7B400100C0FFEE /* ZONBackupService.m */; };
+		B65000212F7B400100C0FFEE /* ZONBackupPolicy.m in Sources */ = {isa = PBXBuildFile; fileRef = B65000222F7B400100C0FFEE /* ZONBackupPolicy.m */; };
 		7ECBD4212F29099D00C56F1C /* PopupMenuVC.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECBD4202F29099D00C56F1C /* PopupMenuVC.h */; };
 		7ECBD4232F30EF6100C56F1C /* FoldSectionView.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECBD4222F30EF6100C56F1C /* FoldSectionView.h */; };
 		7ECBD4252F30EF6C00C56F1C /* FoldSectionView.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4242F30EF6C00C56F1C /* FoldSectionView.m */; };
@@ -319,6 +321,8 @@
 		A17D0E022F7B100100C0FFEE /* ZONAuthorizationResetService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZONAuthorizationResetService.m"; sourceTree = SOURCE_ROOT; };
 		B63A00022F7B200100C0FFEE /* ZONSixButtonActionService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZONSixButtonActionService.m"; sourceTree = SOURCE_ROOT; };
 		B63B00022F7B300100C0FFEE /* ZONGameDataResetService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZONGameDataResetService.m"; sourceTree = SOURCE_ROOT; };
+		B65000122F7B400100C0FFEE /* ZONBackupService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZONBackupService.m"; sourceTree = SOURCE_ROOT; };
+		B65000222F7B400100C0FFEE /* ZONBackupPolicy.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZONBackupPolicy.m"; sourceTree = SOURCE_ROOT; };
 		7ECBD4202F29099D00C56F1C /* PopupMenuVC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PopupMenuVC.h; sourceTree = "<group>"; };
 		7ECBD4222F30EF6100C56F1C /* FoldSectionView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FoldSectionView.h; sourceTree = "<group>"; };
 		7ECBD4242F30EF6C00C56F1C /* FoldSectionView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FoldSectionView.m; sourceTree = "<group>"; };
@@ -1032,6 +1036,8 @@
 				A17D0E012F7B100100C0FFEE /* ZONAuthorizationResetService.m in Sources */,
 				B63A00012F7B200100C0FFEE /* ZONSixButtonActionService.m in Sources */,
 				B63B00012F7B300100C0FFEE /* ZONGameDataResetService.m in Sources */,
+				B65000112F7B400100C0FFEE /* ZONBackupService.m in Sources */,
+				B65000212F7B400100C0FFEE /* ZONBackupPolicy.m in Sources */,
 				7E6F45522E1A8C4E00D4A46E /* JDSBNotificationViewController.m in Sources */,
 				7E8A57FA2B8E4A9C00676FE2 /* SCLSwitchView.m in Sources */,
 				7E8A57D92B8E4A9C00676FE2 /* AFNetworkReachabilityManager.m in Sources */,
