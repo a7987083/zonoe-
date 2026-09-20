@@ -3,92 +3,88 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/p63b-clear-game-data-service",
-  "current_version": "v1_p63b",
-  "current_phase": "p63b_clear_game_data_service",
+  "current_work_branch": "work/p64a-clear-game-data-runtime-directory-fix",
+  "current_version": "v1_p64a",
+  "current_phase": "p64a_clear_game_data_runtime_directory_fix",
   "phase_status": "ci_passed_awaiting_device",
   "last_device_verified_code_commit": "170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d",
-  "last_device_verified_version": "v1_p63a",
-  "last_ci_run_id": 35522283236,
+  "last_device_verified_version": "v1_p63",
+  "last_ci_run_id": 35524126925,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
   "canonical_product_surface": ["testmod/", "testmod.xcodeproj"],
+  "version_naming_rule": {
+    "new_stage": "increment numeric phase, e.g. P63 -> P64 -> P65",
+    "same_stage_fix": "append lowercase suffix, e.g. P64a -> P64b -> P64c",
+    "historical_correction": "v1_p63a maps canonically to P63; v1_p63b maps canonically to P64. History is preserved rather than rewritten."
+  },
   "rollback_baseline": {
-    "version": "v1_p63a",
+    "canonical_version": "v1_p63",
+    "historical_built_version_string": "v1_p63a",
     "source_commit": "170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d",
     "ci_run_id": 35483209464,
-    "device_status": "passed",
-    "device_reported_by_user": true
+    "device_status": "passed"
   },
-  "p63b": {
+  "p64": {
     "name": "clear_game_data_dedicated_service",
-    "version": "v1_p63b",
-    "status": "ci_passed_awaiting_device",
-    "branch": "work/p63b-clear-game-data-service",
-    "baseline_version": "v1_p63a",
-    "baseline_source_commit": "170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d",
+    "historical_built_version_string": "v1_p63b",
+    "canonical_version": "v1_p64",
     "actual_build_commit": "203b9f93d88a20f820ba35d0e3f65f16f296ce5d",
     "ci_run_id": 35522283236,
     "ci_status": "success",
+    "device_status": "failed",
+    "device_failure": "Library/Caches could not be removed while the app was alive; P64 incorrectly treated runtime directory removal/existence as fatal remaining payload.",
+    "promotion_status": "not_promoted"
+  },
+  "p64a": {
+    "name": "clear_game_data_runtime_directory_fix",
+    "version": "v1_p64a",
+    "status": "ci_passed_awaiting_device",
+    "branch": "work/p64a-clear-game-data-runtime-directory-fix",
+    "actual_build_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
+    "ci_run_id": 35524126925,
+    "ci_status": "success",
     "device_status": "pending",
-    "a_customer_artifact_id": 10608536720,
-    "a_customer_artifact_digest": "sha256:18e6378aa6251eee08f2aaa7a377d6e9d82239ddbd706c24c4c209044bcaa605",
-    "a_customer_dylib_sha256": "7c39c585dc32688ecf78613a178feabb4ea72de0944d7ff35c4f6f8eb3e7e46b",
-    "b_debug_artifact_id": 10609151564,
-    "b_debug_artifact_digest": "sha256:6488e35a58ee36a1c4ca3906c69580997674d112dc226dd022db8b0bed1e87a6",
-    "b_debug_dylib_sha256": "53e0ada0b3141e93ce70a001791c42fd57b4c440634188b15db13a33c8a1caab",
-    "approved_behavior_changes": [
-      "remove fixed 5-second pre-clean delay",
-      "remove fixed 5-second exit timer",
-      "run destructive filesystem reset off the main queue",
-      "show real cleanup stages",
-      "exit immediately after successful reset completion",
-      "do not exit on critical cleanup or verification failure"
+    "a_customer_artifact_id": 10608274021,
+    "a_customer_artifact_digest": "sha256:5cc2772e8fb2794a1301ca79526ea9a375ae5686c92e9040609eb9009ab20302",
+    "a_customer_dylib_sha256": "34ef87c5be956e81764984a524c0c04428bbc83a4949e23dbc4ba19f10cfbaf9",
+    "b_debug_artifact_id": 10608289075,
+    "b_debug_artifact_digest": "sha256:c6296cb2d5ee1114501e9f35eda7e5c9cef76e9bc2657d126accb79e9bdedff8",
+    "b_debug_dylib_sha256": "335f0e3028a6bf2f9e202681487822065bdda6598a853889f9c973cd9616b379",
+    "cleanup_policy": {
+      "documents": "strict payload cleanup; empty directory skeletons allowed",
+      "library": "recursive payload cleanup; empty directory skeletons allowed",
+      "library_caches": "volatile runtime location; cleanup attempted, runtime-created residue tolerated",
+      "tmp": "volatile runtime location; cleanup attempted, runtime-created residue tolerated",
+      "nonvolatile_files": "remaining files are fatal and prevent exit"
+    },
+    "preserved_behavior": [
+      "staged progress UI",
+      "background reset execution",
+      "no fixed five-second delay",
+      "success exits immediately after cleanup",
+      "failure does not force exit",
+      "authorization reset service is not called"
     ],
-    "reset_scope": [
-      "Documents contents",
-      "Library contents",
-      "tmp contents",
-      "app NSUserDefaults persistent domain"
-    ],
-    "explicitly_not_called_by_reset_engine": [
-      "Keychain APIs",
-      "getKeychain",
-      "ZONKeychain",
-      "ZONAuthorizationResetService"
-    ],
-    "external_storage_out_of_scope": [
-      "App Group containers",
-      "iCloud and CloudKit remote data"
-    ],
-    "authorization_note": "The reset engine does not explicitly clear Keychain authorization storage, but it resets the complete app NSUserDefaults domain. Authorization/session behavior after relaunch must therefore be observed on device rather than assumed.",
     "verification_completed": [
-      "deterministic PBX source membership",
-      "P63B behavior and architecture contract",
-      "six-button Dispatcher boundary",
-      "existing authorization reset clear-set contract",
+      "P64a runtime-directory behavior contract",
+      "six-button routing contract",
+      "reset service PBX membership",
+      "authorization reset isolation contract",
       "A_customer arm64+arm64e build",
       "B_debug arm64+arm64e build",
       "dylib output verification"
     ],
     "verification_remaining": [
-      "scoped real-device clear-game-data PASS"
+      "scoped real-device P64a clear-game-data PASS"
     ]
   },
-  "six_button_routes": {
-    "base.remote-download": "ZONSixButtonActionService -> PubgLoad::yuanchengdwon",
-    "base.cloud-save": "ZONSixButtonActionService -> tmp invariant -> PubgLoad::checkCloudSaveStatus",
-    "data.backup-save": "ZONSixButtonActionService -> daochucd::backupasd",
-    "data.restore-save": "ZONSixButtonActionService -> YYYPicker::addBtnAction",
-    "data.clear-game-data": "ZONSixButtonActionService -> ZONGameDataResetService",
-    "auth.clear-records": "ZONSixButtonActionService -> ZONAuthorizationResetService"
-  },
   "follow_on_plan": [
-    "P63C backup engine extraction",
-    "P63D restore engine extraction",
-    "P63E remote-download engine extraction",
-    "P63F cloud-save engine extraction"
+    "P65 backup engine extraction",
+    "P66 restore engine extraction",
+    "P67 remote-download engine extraction",
+    "P68 cloud-save engine extraction"
   ],
-  "next_task": "Real-device validate v1_p63b clear-game-data reset, staged UI, completion-controlled exit, relaunch state, authorization/session behavior, and smoke-test the other five routes before promotion."
+  "next_task": "Real-device validate v1_p64a, especially the previous Library/Caches failure, fresh-local-state relaunch, completion-controlled exit, and smoke-test the other five routes."
 }
