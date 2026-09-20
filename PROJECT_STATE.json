@@ -6,10 +6,10 @@
   "current_work_branch": "work/p63b-clear-game-data-service",
   "current_version": "v1_p63b",
   "current_phase": "p63b_clear_game_data_service",
-  "phase_status": "source_ready_ci_pending",
+  "phase_status": "ci_passed_awaiting_device",
   "last_device_verified_code_commit": "170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d",
   "last_device_verified_version": "v1_p63a",
-  "last_ci_run_id": 35483209464,
+  "last_ci_run_id": 35522283236,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
@@ -21,30 +21,23 @@
     "device_status": "passed",
     "device_reported_by_user": true
   },
-  "p63a": {
-    "name": "six_button_service_boundary",
-    "version": "v1_p63a",
-    "status": "promoted_device_passed",
-    "runtime_source_commit": "170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d",
-    "ci_run_id": 35483209464,
-    "ci_status": "success",
-    "device_status": "passed",
-    "device_reported_by_user": true,
-    "a_customer_artifact_id": 10596866163,
-    "b_debug_artifact_id": 10596501583
-  },
   "p63b": {
     "name": "clear_game_data_dedicated_service",
     "version": "v1_p63b",
-    "status": "source_ready_ci_pending",
+    "status": "ci_passed_awaiting_device",
     "branch": "work/p63b-clear-game-data-service",
     "baseline_version": "v1_p63a",
     "baseline_source_commit": "170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d",
-    "candidate_code_commit": "5302cc4e2b0e04757b8ec4ba314c1534c57a491b",
-    "ci_build_commit": null,
-    "ci_run_id": null,
-    "ci_status": "pending",
+    "actual_build_commit": "203b9f93d88a20f820ba35d0e3f65f16f296ce5d",
+    "ci_run_id": 35522283236,
+    "ci_status": "success",
     "device_status": "pending",
+    "a_customer_artifact_id": 10608536720,
+    "a_customer_artifact_digest": "sha256:18e6378aa6251eee08f2aaa7a377d6e9d82239ddbd706c24c4c209044bcaa605",
+    "a_customer_dylib_sha256": "7c39c585dc32688ecf78613a178feabb4ea72de0944d7ff35c4f6f8eb3e7e46b",
+    "b_debug_artifact_id": 10609151564,
+    "b_debug_artifact_digest": "sha256:6488e35a58ee36a1c4ca3906c69580997674d112dc226dd022db8b0bed1e87a6",
+    "b_debug_dylib_sha256": "53e0ada0b3141e93ce70a001791c42fd57b4c440634188b15db13a33c8a1caab",
     "approved_behavior_changes": [
       "remove fixed 5-second pre-clean delay",
       "remove fixed 5-second exit timer",
@@ -59,32 +52,27 @@
       "tmp contents",
       "app NSUserDefaults persistent domain"
     ],
-    "explicitly_out_of_scope": [
-      "Keychain and authorization storage",
+    "explicitly_not_called_by_reset_engine": [
+      "Keychain APIs",
+      "getKeychain",
+      "ZONKeychain",
+      "ZONAuthorizationResetService"
+    ],
+    "external_storage_out_of_scope": [
       "App Group containers",
-      "iCloud and CloudKit remote data",
-      "remote download engine",
-      "cloud save engine",
-      "backup engine",
-      "restore engine"
+      "iCloud and CloudKit remote data"
     ],
-    "delivered_source": [
-      "ZONGameDataResetService pure Foundation engine",
-      "shared directory-content cleanup helper",
-      "explicit NSError propagation",
-      "final cleanup verification sweep",
-      "background clear-game-data execution",
-      "staged SVProgressHUD presentation in action layer",
-      "deterministic P63B PBX migration",
+    "authorization_note": "The reset engine does not explicitly clear Keychain authorization storage, but it resets the complete app NSUserDefaults domain. Authorization/session behavior after relaunch must therefore be observed on device rather than assumed.",
+    "verification_completed": [
+      "deterministic PBX source membership",
       "P63B behavior and architecture contract",
-      "dedicated P63B A/B CI workflow"
-    ],
-    "verification_required": [
-      "PBX source membership",
-      "P63B behavior contract",
+      "six-button Dispatcher boundary",
+      "existing authorization reset clear-set contract",
       "A_customer arm64+arm64e build",
       "B_debug arm64+arm64e build",
-      "dylib output verification",
+      "dylib output verification"
+    ],
+    "verification_remaining": [
       "scoped real-device clear-game-data PASS"
     ]
   },
@@ -102,5 +90,5 @@
     "P63E remote-download engine extraction",
     "P63F cloud-save engine extraction"
   ],
-  "next_task": "Run P63B deterministic PBX migration and A_customer/B_debug CI; fix only verified failures, then deliver artifacts for scoped device validation."
+  "next_task": "Real-device validate v1_p63b clear-game-data reset, staged UI, completion-controlled exit, relaunch state, authorization/session behavior, and smoke-test the other five routes before promotion."
 }
