@@ -4,12 +4,12 @@
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
   "current_work_branch": "work/p62-zonkeychain-deletekm-service",
-  "current_version": "v1_p62",
+  "current_version": "v1_p63a",
   "current_phase": "p63a_six_button_service_boundary",
-  "phase_status": "in_progress",
+  "phase_status": "ci_passed_awaiting_device",
   "last_device_verified_code_commit": "a1d0f7b7ca7ea2747d7c52a2b5e002830731ffca",
   "last_device_verified_version": "v1_p62",
-  "last_ci_run_id": 35480732207,
+  "last_ci_run_id": 35483209464,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
@@ -33,19 +33,22 @@
     "a_customer_dylib_sha256": "71f14901e140fd19cf175c0092e1cfdf46c7aefc04d2ba73b03baf83359f6962",
     "b_debug_artifact_id": 10595652401,
     "b_debug_artifact_digest": "sha256:2a6c7aff254dd7cae378259af57ccd0683b88bf87b9cc3d8ebf9783b00c67afe",
-    "b_debug_dylib_sha256": "34cbcd9695c7eaad9096c606341fed008dce4e78094df1433243dd5cb9391c59",
-    "delivered": [
-      "active SFHFKeychainUtils UDID path replaced by ZONKeychain",
-      "SFHFKeychainUtils files removed from active project",
-      "authorization reset extracted to ZONAuthorizationResetService",
-      "deletekm retained as compatibility forwarding entry",
-      "deterministic PBX migration fixed",
-      "CI build revision pinned to migrated SHA"
-    ]
+    "b_debug_dylib_sha256": "34cbcd9695c7eaad9096c606341fed008dce4e78094df1433243dd5cb9391c59"
   },
   "p63a": {
     "name": "six_button_service_boundary",
-    "status": "in_progress",
+    "version": "v1_p63a",
+    "status": "ci_passed_awaiting_device",
+    "candidate_source_commit": "170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d",
+    "ci_run_id": 35483209464,
+    "ci_status": "success",
+    "device_status": "pending",
+    "a_customer_artifact_id": 10596866163,
+    "a_customer_artifact_digest": "sha256:4770559f4d15706349e558e6b36c709e4242e0de8ae505ec9934b913d96822ae",
+    "a_customer_dylib_sha256": "2c90fed5247de6af6fe91bb6d1c57562621ff10542ae36b355924f5b78d7583b",
+    "b_debug_artifact_id": 10596501583,
+    "b_debug_artifact_digest": "sha256:c5cfe082bb2294a5eee0fc871226ee3ad9744ca3558d1d5ae5581c77ec631099",
+    "b_debug_dylib_sha256": "3063dbd4060767948686990772333f4fa2ecaa8c648252fc6d02641149e8ee6b",
     "scope": [
       "base.remote-download",
       "base.cloud-save",
@@ -54,46 +57,34 @@
       "data.clear-game-data",
       "auth.clear-records"
     ],
-    "goal": "Route all six existing action buttons through an explicit service/adapter boundary while preserving current behavior and retaining existing legacy engines internally.",
-    "forbidden": [
-      "deep rewrite of PubgLoad",
-      "deep rewrite of daochucd",
-      "deep rewrite of YYYPicker",
-      "unrelated WX_NongShiFu123.mm refactor",
-      "menu identifier or legacy tag changes",
-      "download/ZIP/backup/restore/reset semantic changes"
+    "delivered": [
+      "ZONSixButtonActionService boundary added",
+      "six scoped Dispatcher routes use service boundary",
+      "legacy C dispatcher helpers retained as compatibility forwarders",
+      "clear authorization route uses ZONAuthorizationResetService behind boundary",
+      "deterministic P63A PBX migration added",
+      "P63A behavior/service/PBX contract added",
+      "A_customer arm64+arm64e build passed",
+      "B_debug arm64+arm64e build passed"
     ],
-    "verification_required": [
-      "behavior contract",
-      "PBX source membership",
-      "A_customer arm64+arm64e build",
-      "B_debug arm64+arm64e build",
-      "dylib output verification",
+    "verification_remaining": [
       "explicit six-button real-device smoke PASS"
     ]
   },
-  "six_button_current_routes": {
-    "base.remote-download": "PubgLoad::yuanchengdwon",
-    "base.cloud-save": "ZONEnsureTmpDirectory + PubgLoad::checkCloudSaveStatus",
-    "data.backup-save": "daochucd::backupasd",
-    "data.restore-save": "YYYPicker::addBtnAction",
-    "data.clear-game-data": "ZONFeatureDispatcher internal destructive implementation",
-    "auth.clear-records": "ZONFeatureDispatcher confirmation -> WX_NongShiFu123::deletekm -> ZONAuthorizationResetService"
+  "six_button_routes": {
+    "base.remote-download": "ZONSixButtonActionService -> PubgLoad::yuanchengdwon",
+    "base.cloud-save": "ZONSixButtonActionService -> tmp invariant -> PubgLoad::checkCloudSaveStatus",
+    "data.backup-save": "ZONSixButtonActionService -> daochucd::backupasd",
+    "data.restore-save": "ZONSixButtonActionService -> YYYPicker::addBtnAction",
+    "data.clear-game-data": "ZONSixButtonActionService preserving P62 destructive behavior",
+    "auth.clear-records": "ZONSixButtonActionService -> ZONAuthorizationResetService"
   },
   "follow_on_plan": [
-    "P63B clear-game-data service implementation extraction",
+    "P63B clear-game-data dedicated-service cleanup/hardening and error-model work",
     "P63C backup engine extraction",
     "P63D restore engine extraction",
     "P63E remote-download engine extraction",
     "P63F cloud-save engine extraction"
   ],
-  "historical_state": {
-    "p56": "device_passed",
-    "p57": "abandoned_reverted",
-    "p58": "device_passed",
-    "p59": "superseded_not_promoted",
-    "p60": "device_passed",
-    "p61": "ci_passed_superseded_by_p62_working_line"
-  },
-  "next_task": "Implement P63A service boundary only, update contracts/PBX, build A_customer and B_debug, then provide artifacts for explicit six-button device validation before promotion."
+  "next_task": "Real-device validate v1_p63a across all six scoped buttons. Do not promote P63A or begin P63B until explicit user PASS."
 }
