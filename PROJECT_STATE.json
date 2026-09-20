@@ -3,110 +3,97 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/zonoemenu-v1-p61-offline-auth-retry",
-  "current_test_branch": "test/zonoemenu-v1-p61-offline-auth-retry",
-  "current_version": "v1_p61",
-  "current_phase": "v1_p61_offline_auth_retry",
-  "phase_status": "ci_passed_awaiting_device",
-  "last_device_verified_code_commit": "a21b561890522f568e6c38bb519edf2bde490357",
-  "last_device_verified_version": "v1_p60",
-  "last_ci_run_id": 35403378114,
+  "current_work_branch": "work/p62-zonkeychain-deletekm-service",
+  "current_version": "v1_p62",
+  "current_phase": "p63a_six_button_service_boundary",
+  "phase_status": "in_progress",
+  "last_device_verified_code_commit": "a1d0f7b7ca7ea2747d7c52a2b5e002830731ffca",
+  "last_device_verified_version": "v1_p62",
+  "last_ci_run_id": 35480732207,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
-  "active_source_count": 78,
   "canonical_product_surface": ["testmod/", "testmod.xcodeproj"],
   "rollback_baseline": {
-    "version": "v1_p60",
-    "source_commit": "a21b561890522f568e6c38bb519edf2bde490357",
-    "device_status": "passed"
+    "version": "v1_p62",
+    "source_commit": "a1d0f7b7ca7ea2747d7c52a2b5e002830731ffca",
+    "ci_run_id": 35480732207,
+    "device_status": "passed",
+    "device_reported_by_user": true
   },
-  "p55": {
-    "source_commit": "cdc4e6857f6f658dd0b6b4f42ee47470ea851d3a",
-    "ci_run_id": 35314006206,
-    "device_status": "passed_superseded",
-    "a_customer_artifact_id": 10534597704,
-    "a_customer_dylib_sha256": "9804d80cfb68f4b044f5bd708dd69674b65578e90b1f6fac79ae11fea23850a3"
-  },
-  "p56": {
-    "branch": "work/zonoemenu-v1-p56-pubgload-temp-boundary",
-    "test_branch": "test/zonoemenu-v1-p56-pubgload-temp-boundary",
-    "source_commit": "fb119af2387d9f5deccd82abe9ca8b885e960fcb",
-    "ci_head": "3b6c4643f62f7a89f6cfe362c28137f6ae2f99fa",
-    "ci_run_id": 35324208182,
-    "ci_status": "success",
-    "device_status": "passed_superseded",
-    "device_reported_by_user": true,
-    "device_observation": "User confirmed P56 is fully normal on device. The earlier cloud-save failure was caused by the user's server returning HTTP 5xx and was not a P56 client regression.",
-    "active_source_count": 78,
-    "a_customer_artifact_id": 10539115576,
-    "a_customer_artifact_digest": "sha256:be0b00cc80ae80fd8183bb73b9bc6f8c0c0fc510105b94062fea645436796c07",
-    "a_customer_dylib_sha256": "afa1793f457c9aaed3ab80bc7911750f7a88cbb52ee50770ede5eb8bc4bcbe80",
-    "b_debug_artifact_id": 10538931067,
-    "b_debug_artifact_digest": "sha256:03e480a187bb5623e32344b540f1a2895001b579d361231d1780ca8f8db8781a",
-    "behavior_change": "Active PubgLoad cleanup no longer enumerates/deletes the entire app /tmp tree; it only removes /tmp/zonoe and the exact previously recorded PubgLoad ZIP when owned by the app tmp root."
-  },
-  "p57": {
-    "status": "abandoned_reverted",
-    "reason": "Diagnostic stage was only needed to distinguish client behavior from server failure. User confirmed the issue was on their cloud server and P56 is fully normal. P57 work/test refs were reset to the P56 baselines and P57 is not part of the active lineage."
-  },
-  "p58": {
-    "branch": "work/zonoemenu-v1-p58-download-lifecycle",
-    "test_branch": "test/zonoemenu-v1-p58-download-lifecycle",
-    "source_commit": "3ac88531014241bf63d48c9348ca51937c9ab295",
-    "ci_head": "35ee7cfaff2070faea33068f2ee18f97031b0619",
-    "ci_run_id": 35400248848,
-    "ci_status": "success",
-    "device_status": "passed_superseded",
-    "device_reported_by_user": true,
-    "device_observation": "User reported all P58 real-device checks normal.",
-    "active_source_count": 78,
-    "a_customer_artifact_id": 10570259619,
-    "a_customer_artifact_digest": "sha256:ff4c4eb2f66e7d198110d2feb0dde3bbc6c8a907b4daed7f2c39e70bfa579656",
-    "a_customer_dylib_sha256": "ac2b1b6d1f912944b62a9c73d4b66944e8074d43c018249eacbe381bc4633d26",
-    "b_debug_artifact_id": 10568884387,
-    "b_debug_artifact_digest": "sha256:4f47a488b9f7dc4002e10c278e75b5e20913c6164cda96729fd625963034d82b",
-    "behavior_change": "Archive download progress guards unknown/zero totals, transport failures are surfaced, downloaded temporary-file copy failures stop explicitly, and non-ZIP downloads are rejected and removed while normal ZIP download/unzip/restore is preserved."
-  },
-  "p59": {
-    "status": "superseded_not_promoted",
-    "source_commit": "f9bb04e9651cc8ed4c5e11c8a9b2412dadaa2a47",
-    "ci_run_id": 35401311630,
-    "reason": "The fixed 3-second automatic zonoe://udid retry UX was rejected before device promotion. P60 replaces it with an interactive acquisition dialog and manual retry."
-  },
-  "p60": {
-    "branch": "work/zonoemenu-v1-p60-udid-progress-dialog",
-    "test_branch": "test/zonoemenu-v1-p60-udid-progress-dialog",
-    "source_commit": "a21b561890522f568e6c38bb519edf2bde490357",
-    "ci_head": "f10178f78dd07c6bcbbb61bc123d6974513dc649",
-    "ci_run_id": 35402608600,
+  "p62": {
+    "branch": "work/p62-zonkeychain-deletekm-service",
+    "source_commit": "a1d0f7b7ca7ea2747d7c52a2b5e002830731ffca",
+    "ci_run_id": 35480732207,
     "ci_status": "success",
     "device_status": "passed",
     "device_reported_by_user": true,
-    "device_observation": "User reported all P60 real-device checks normal.",
-    "active_source_count": 78,
-    "a_customer_artifact_id": 10570753666,
-    "a_customer_artifact_digest": "sha256:12a88de4d70d0c513d2d5e67ed48963aa5a4dba2aa67d370d549b2815c083227",
-    "a_customer_dylib_sha256": "f5f16109cf33ace7359eb61bf866f2ac7863866f504ac95e7f0b008ca4f6b14f",
-    "b_debug_artifact_id": 10570918573,
-    "b_debug_artifact_digest": "sha256:c61d4be98a5568bac4641d38ff2ae689c767b38f31674d047bbb37bb73c41375",
-    "behavior_change": "Zonoe-app UDID acquisition presents an '获取UDID中' alert before opening zonoe://udid, keeps a manual '重新获取' action for a fresh nonce request, dismisses automatically when UDID arrives, and dismisses before entering the existing web fallback. P59 automatic delayed retry is not present."
+    "a_customer_artifact_id": 10595647289,
+    "a_customer_artifact_digest": "sha256:4efaadfc56a3fe1c338fb1c2b2feda87e0fc4c42c8518bc7137c11f526575ade",
+    "a_customer_dylib_sha256": "71f14901e140fd19cf175c0092e1cfdf46c7aefc04d2ba73b03baf83359f6962",
+    "b_debug_artifact_id": 10595652401,
+    "b_debug_artifact_digest": "sha256:2a6c7aff254dd7cae378259af57ccd0683b88bf87b9cc3d8ebf9783b00c67afe",
+    "b_debug_dylib_sha256": "34cbcd9695c7eaad9096c606341fed008dce4e78094df1433243dd5cb9391c59",
+    "delivered": [
+      "active SFHFKeychainUtils UDID path replaced by ZONKeychain",
+      "SFHFKeychainUtils files removed from active project",
+      "authorization reset extracted to ZONAuthorizationResetService",
+      "deletekm retained as compatibility forwarding entry",
+      "deterministic PBX migration fixed",
+      "CI build revision pinned to migrated SHA"
+    ]
   },
-  "p61": {
-    "branch": "work/zonoemenu-v1-p61-offline-auth-retry",
-    "test_branch": "test/zonoemenu-v1-p61-offline-auth-retry",
-    "source_commit": "0f4ef2ca2172a4cf96a09a5c7227c1619804ae51",
-    "ci_head": "74c0bfad26403b2b64b2a0b8d4901e1fa03cd40b",
-    "ci_run_id": 35403378114,
-    "ci_status": "success",
-    "device_status": "pending",
-    "active_source_count": 78,
-    "a_customer_artifact_id": 10571453004,
-    "a_customer_artifact_digest": "sha256:93e2307617fd361d0741c8c771f2d8d9e0fb66ba3b8339236ae2b8227f198e7b",
-    "a_customer_dylib_sha256": "4ccabd4186109dc13e015237d58581d181d4283b3da40aec0d8db8bd7b816efc",
-    "b_debug_artifact_id": 10571765033,
-    "b_debug_artifact_digest": "sha256:383875fe82c74d868fe57acc0d303d39f130bcebc9da911f9ef9b20ac7222a17",
-    "behavior_change": "Legacy authorization reachability check no longer re-enters loada when offline. The visible 重新检查 actions now explicitly retry their original BSPHP or BSPHPy authorization path."
+  "p63a": {
+    "name": "six_button_service_boundary",
+    "status": "in_progress",
+    "scope": [
+      "base.remote-download",
+      "base.cloud-save",
+      "data.backup-save",
+      "data.restore-save",
+      "data.clear-game-data",
+      "auth.clear-records"
+    ],
+    "goal": "Route all six existing action buttons through an explicit service/adapter boundary while preserving current behavior and retaining existing legacy engines internally.",
+    "forbidden": [
+      "deep rewrite of PubgLoad",
+      "deep rewrite of daochucd",
+      "deep rewrite of YYYPicker",
+      "unrelated WX_NongShiFu123.mm refactor",
+      "menu identifier or legacy tag changes",
+      "download/ZIP/backup/restore/reset semantic changes"
+    ],
+    "verification_required": [
+      "behavior contract",
+      "PBX source membership",
+      "A_customer arm64+arm64e build",
+      "B_debug arm64+arm64e build",
+      "dylib output verification",
+      "explicit six-button real-device smoke PASS"
+    ]
   },
-  "next_task": "Real-device validate P61 with network offline/online transitions for both authorization modes. Confirm offline does not recursively schedule authorization, 重新检查 retries the same mode after connectivity returns, and P60 UDID acquisition remains normal. Do not promote until explicit user PASS."
+  "six_button_current_routes": {
+    "base.remote-download": "PubgLoad::yuanchengdwon",
+    "base.cloud-save": "ZONEnsureTmpDirectory + PubgLoad::checkCloudSaveStatus",
+    "data.backup-save": "daochucd::backupasd",
+    "data.restore-save": "YYYPicker::addBtnAction",
+    "data.clear-game-data": "ZONFeatureDispatcher internal destructive implementation",
+    "auth.clear-records": "ZONFeatureDispatcher confirmation -> WX_NongShiFu123::deletekm -> ZONAuthorizationResetService"
+  },
+  "follow_on_plan": [
+    "P63B clear-game-data service implementation extraction",
+    "P63C backup engine extraction",
+    "P63D restore engine extraction",
+    "P63E remote-download engine extraction",
+    "P63F cloud-save engine extraction"
+  ],
+  "historical_state": {
+    "p56": "device_passed",
+    "p57": "abandoned_reverted",
+    "p58": "device_passed",
+    "p59": "superseded_not_promoted",
+    "p60": "device_passed",
+    "p61": "ci_passed_superseded_by_p62_working_line"
+  },
+  "next_task": "Implement P63A service boundary only, update contracts/PBX, build A_customer and B_debug, then provide artifacts for explicit six-button device validation before promotion."
 }
