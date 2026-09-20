@@ -14,6 +14,11 @@ NS_ASSUME_NONNULL_BEGIN
 + (BOOL)performClearGameDataFromViewController:(UIViewController *)hostViewController;
 + (BOOL)performClearAuthorizationFromViewController:(UIViewController *)hostViewController;
 
+/// Compatibility surface retained for the historical C dispatcher helpers.
++ (NSString *)temporaryDirectoryPath;
++ (BOOL)ensureTemporaryDirectory;
++ (void)clearGameDataPreservingTemporaryDirectory;
+
 @end
 
 NS_ASSUME_NONNULL_END
