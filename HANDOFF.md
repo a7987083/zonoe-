@@ -5,39 +5,43 @@
 - Canonical runtime/product surface: `testmod/` + `testmod.xcodeproj`.
 - Read in this order: `PROJECT_STATE.json` → `ROADMAP.md` → `KNOWN_ISSUES.md` → `CHANGELOG_DEV.md` → scoped stage tests/workflow.
 
-## Current promoted runtime baseline — v1_p63a
-- Promoted runtime source: `170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d`.
+## Promoted rollback/device baseline — v1_p63a
+- Runtime source: `170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d`.
 - CI Run `35483209464`: success.
-- Six-button real-device validation: passed, explicitly reported by user.
-- Architectures: `arm64 + arm64e`.
-- P63A remains rollback/device baseline until P63B is explicitly device-passed.
+- Six-button real-device validation: passed.
+- P63A remains promoted until P63B passes its scoped device gate.
 
-## Current work — v1_p63b
+## Current candidate — v1_p63b
 - Branch: `work/p63b-clear-game-data-service`.
-- Phase: `P63B Clear Game Data Dedicated Service`.
-- Status: implementation in progress; CI/device not yet promoted.
-- User explicitly approved changing the clear-game-data external behavior: remove fixed 5-second waits and exit when real cleanup finishes.
+- Actual migrated/build SHA: `203b9f93d88a20f820ba35d0e3f65f16f296ce5d`.
+- CI Run `35522283236`: **success**.
+- Status: **CI passed / awaiting scoped real-device validation**.
+- Architectures: `arm64 + arm64e`.
+- A_customer artifact `10608536720`, dylib SHA256 `7c39c585dc32688ecf78613a178feabb4ea72de0944d7ff35c4f6f8eb3e7e46b`.
+- B_debug artifact `10609151564`, dylib SHA256 `53e0ada0b3141e93ce70a001791c42fd57b4c440634188b15db13a33c8a1caab`.
 
-## P63B target architecture
+## P63B architecture
 `ZONFeatureRegistry → ZONFeatureDispatcher → ZONSixButtonActionService → ZONGameDataResetService → Foundation filesystem/UserDefaults`
 
 Responsibilities:
 - `ZONFeatureDispatcher`: routing only.
-- `ZONSixButtonActionService`: destructive confirmation, stage text/HUD, background scheduling, success/failure UI, process exit.
-- `ZONGameDataResetService`: pure Foundation cleanup/verification/error propagation; no UIKit and no authorization storage.
+- `ZONSixButtonActionService`: confirmation, progress/HUD, background scheduling, success/failure UI, process exit.
+- `ZONGameDataResetService`: pure Foundation cleanup/verification/error propagation; no UIKit/SVProgressHUD and no Keychain/auth-reset API calls.
 
-## P63B clear-game-data definition
-Reset the main app-local data toward a reinstall/first-launch state:
+## Clear-game-data behavior in P63B
 - clear `Documents/*`;
 - clear `Library/*`;
 - clear `tmp/*`;
-- remove the app `NSUserDefaults` persistent domain;
+- remove the entire app `NSUserDefaults` persistent domain;
 - preserve top-level container directories;
-- do not touch Keychain/authorization data;
-- do not touch App Group containers;
-- do not delete iCloud/CloudKit remote data.
+- no fixed 5-second pre-clean wait;
+- no fixed 5-second exit timer;
+- success exits immediately when cleanup/verification finishes;
+- failure does not force exit.
 
-## Approved stage display
+The service does **not explicitly clear Keychain authorization storage**, App Group containers, or iCloud/CloudKit remote data. However, because the complete app `NSUserDefaults` domain is cleared, authorization/session behavior after relaunch may still change depending on which state is mirrored in defaults. Do not assume either outcome; verify on device.
+
+## Stage display
 1. `正在准备清理…`
 2. `正在清理游戏存档…`
 3. `正在清理临时文件…`
@@ -46,44 +50,28 @@ Reset the main app-local data toward a reinstall/first-launch state:
 6. `正在检查清理结果…`
 7. `清理完成，正在退出…`
 
-## P63B implementation rules
-- No fixed 5-second pre-clean delay.
-- No fixed 5-second exit timer.
-- Filesystem cleanup runs off the main queue.
-- Successful reset exits immediately after the service completes.
-- Any critical cleanup or verification failure must not force exit.
-- Remove old redundant whole-directory delete + second enumeration behavior.
-- Use one reusable directory-content cleaner.
-- Reset engine must return observable `NSError` details.
-- One final verification sweep may remove files recreated during the still-running process.
-- Authorization reset remains independently owned by `ZONAuthorizationResetService`; its historical 3-second exit behavior is outside P63B and must not be changed here.
-- Remote download, cloud save, backup and restore engines remain untouched.
+## CI verification already passed
+- deterministic prerequisite/P63B PBX migrations;
+- P63B behavior/architecture contract;
+- exact migrated-SHA pinning;
+- A_customer Xcode build/link/output;
+- B_debug Xcode build/link/output;
+- `arm64 + arm64e` dylib output checks.
 
-## New P63B files
-- `testmod/ZONServices/ZONGameDataResetService.h`
-- `testmod/ZONServices/ZONGameDataResetService.m`
-- `tools/p63b_apply_game_data_reset_service.py`
-- `Tests/p63b_game_data_reset_contract.py`
-- `.github/workflows/p63b-clear-game-data-service-build.yml`
+## Immediate Next Task — P63B device gate
+Test the supplied `v1_p63b` candidate and confirm:
+1. confirmation UI opens normally;
+2. stage display is visible and changes during cleanup;
+3. there is no artificial five-second wait;
+4. local game data is actually reset;
+5. app exits after cleanup completes;
+6. relaunch resembles fresh local game state;
+7. observe whether authorization/session persists, rehydrates, or requires normal authorization after defaults reset;
+8. remote download, cloud save, backup, restore and clear-authorization routes still open normally.
 
-## Required verification before promotion
-1. Deterministic PBX membership for `ZONGameDataResetService.m`.
-2. P63B contract passes.
-3. Six-button Dispatcher boundary remains intact.
-4. Authorization reset clear set remains unchanged.
-5. A_customer builds and links for `arm64 + arm64e`.
-6. B_debug builds and links for `arm64 + arm64e`.
-7. Dylib output validation passes.
-8. User device test confirms:
-   - stage display is visible;
-   - no artificial 5-second wait;
-   - local game data is cleared;
-   - app exits after completion;
-   - relaunch is fresh-local-state behavior;
-   - authorization remains intact;
-   - failure does not force exit.
+Do not promote P63B or start P63C until the user explicitly reports the scoped device gate passed.
 
-## Follow-on order after P63B promotion
+## Follow-on order
 - P63C: backup engine extraction.
 - P63D: restore engine extraction.
 - P63E: remote-download engine extraction.
@@ -91,6 +79,6 @@ Reset the main app-local data toward a reinstall/first-launch state:
 
 ## Long-project rules
 - Preserve commit history.
-- Do not silently alter release policy/semantics.
+- Do not silently alter release policy.
 - CI success is not device promotion.
-- Keep all five long-project state files synchronized at every stage transition.
+- Keep all five long-project state files synchronized.
