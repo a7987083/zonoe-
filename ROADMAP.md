@@ -1,43 +1,52 @@
 # ROADMAP
 
-> Canonical refactor plan for `zonoemenu`. This file is the source of truth for stage goals, allowed scope, forbidden scope, verification gates, status, and Next Task.
+> Canonical refactor plan for `zonoemenu`. This file is the source of truth for stage goals, scope, verification gates, status, and Next Task.
 
 ## Current promoted runtime baseline
 - Device-verified version: `v1_p63a`.
 - Promoted runtime source: `170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d`.
-- Promoted CI Run `35483209464`: **success**.
-- Six-button real-device regression: **PASS, explicitly reported by user**.
+- CI Run `35483209464`: success.
+- Six-button real-device regression: PASS, explicitly reported by user.
 - Architectures: `arm64 + arm64e`.
-- P63A remains the rollback/device baseline until P63B passes CI and scoped device validation.
+- P63A remains the rollback/device baseline until P63B passes scoped device validation.
 
 ## P63A — Six Button Service Boundary — COMPLETED / DEVICE PASSED
-- Added `ZONSixButtonActionService` as the explicit boundary for remote download, VIP cloud save, backup, restore, clear game data and clear authorization.
-- `ZONFeatureDispatcher` no longer directly owns the six legacy action implementations.
-- Clear authorization reaches the existing `ZONAuthorizationResetService` behind the boundary.
+- Added `ZONSixButtonActionService` as the six-action boundary.
+- Dispatcher no longer directly owns the six legacy action implementations.
+- Clear authorization reaches `ZONAuthorizationResetService` behind the boundary.
 - A_customer + B_debug `arm64 + arm64e`: PASS.
 - Device regression: PASS.
 
-## P63B — Clear Game Data Dedicated Service — IN PROGRESS
-### Work branch
-- `work/p63b-clear-game-data-service`
-- `VERSION`: `v1_p63b`
-- Baseline: promoted `v1_p63a`.
+## P63B — Clear Game Data Dedicated Service — CI PASSED / DEVICE PENDING
+### Candidate
+- Work branch: `work/p63b-clear-game-data-service`.
+- Version: `v1_p63b`.
+- Actual migrated/build SHA: `203b9f93d88a20f820ba35d0e3f65f16f296ce5d`.
+- CI Run `35522283236`: success.
+- A_customer artifact `10608536720`, digest `sha256:18e6378aa6251eee08f2aaa7a377d6e9d82239ddbd706c24c4c209044bcaa605`.
+- A_customer dylib SHA256 `7c39c585dc32688ecf78613a178feabb4ea72de0944d7ff35c4f6f8eb3e7e46b`.
+- B_debug artifact `10609151564`, digest `sha256:6488e35a58ee36a1c4ca3906c69580997674d112dc226dd022db8b0bed1e87a6`.
+- B_debug dylib SHA256 `53e0ada0b3141e93ce70a001791c42fd57b4c440634188b15db13a33c8a1caab`.
+- Device status: pending.
 
 ### Product definition
-“清除游戏数据” means resetting the primary app data container toward a first-launch/reinstall-like state:
-- clear contents of `Documents`;
-- clear contents of `Library`;
-- clear contents of `tmp`;
+“清除游戏数据” resets the primary app-local data toward a first-launch/reinstall-like state:
+- clear `Documents/*`;
+- clear `Library/*`;
+- clear `tmp/*`;
 - clear the app `NSUserDefaults` persistent domain;
-- do **not** clear Keychain/authorization storage;
-- do **not** clear App Group containers;
-- do **not** delete iCloud/CloudKit remote data.
+- preserve top-level container directories;
+- do not explicitly clear Keychain storage;
+- do not touch App Group containers;
+- do not delete iCloud/CloudKit remote data.
+
+Important: P63B does not call the authorization-reset service or Keychain APIs, but resetting the whole app `NSUserDefaults` domain can still affect authorization/session state that is stored or mirrored there. Device validation must observe the real relaunch behavior rather than assume authorization is unchanged.
 
 ### Intentional behavior changes approved for P63B
-- Remove the historical fixed 5-second delay before cleanup.
-- Remove the historical fixed 5-second exit timer.
-- Perform filesystem cleanup on a background queue.
-- Show real cleanup stages instead of a generic waiting period:
+- Removed the fixed 5-second pre-clean delay.
+- Removed the fixed 5-second exit timer.
+- Cleanup runs on a background queue.
+- Staged progress is shown:
   1. preparing;
   2. game save/Documents;
   3. temporary files;
@@ -45,33 +54,38 @@
   5. Library/game data;
   6. verification;
   7. completed/exiting.
-- Exit immediately after the reset service reports complete success.
-- If any critical cleanup/verification step fails, do not exit; show the failure and keep diagnostic error information.
+- Success exits immediately after reset completion.
+- Critical cleanup/verification failure does not force exit and surfaces an error.
 
-### Structural goals
-- Add pure Foundation `ZONGameDataResetService` with no UIKit/SVProgressHUD dependency.
-- Keep confirmation/progress UI and process exit orchestration in `ZONSixButtonActionService`.
-- Replace duplicated Documents/Library remove-then-enumerate logic with one reusable directory-content cleaner.
-- Replace silent `error:nil` destructive operations inside the reset engine with explicit `NSError` propagation.
-- Preserve the other five button engines unchanged.
+### Structural result
+- Added pure Foundation `ZONGameDataResetService` with no UIKit/SVProgressHUD dependency.
+- Confirmation/progress/exit orchestration remains in `ZONSixButtonActionService`.
+- Replaced duplicate whole-directory delete + re-enumeration with one reusable directory-content cleaner.
+- Destructive filesystem operations in the reset engine now propagate `NSError`.
+- Added a final verification sweep for files recreated while the process is alive.
+- Other five button engines remain unchanged.
 
-### Verification gates
-- Registry identifiers/tags unchanged.
-- Six-button Dispatcher boundary preserved.
-- `ZONGameDataResetService` PBX membership verified.
-- No 5-second clear-game-data delay remains.
-- Reset engine does not depend on UIKit, SVProgressHUD, authorization-reset classes, `getKeychain`, or `ZONKeychain`.
-- P62/P63A authorization reset contract remains unchanged.
-- A_customer build/link/output: required.
-- B_debug build/link/output: required.
-- `arm64 + arm64e`: required.
-- Scoped real-device test required before promotion:
-  - staged progress is visible;
-  - cleanup completes without fixed wait;
-  - app exits after completion;
-  - relaunch behaves like fresh local game state;
-  - authorization remains intact unless the separate authorization button is used;
-  - cleanup failure must not force exit.
+### Verification completed
+- Registry identifiers/tags unchanged: PASS.
+- Six-button Dispatcher boundary: PASS.
+- `ZONGameDataResetService` PBX membership: PASS.
+- P63B behavior/architecture contract: PASS.
+- No fixed 5-second clear-game-data timing remains: PASS.
+- Reset engine has no UIKit/SVProgressHUD/auth-reset/Keychain dependency: PASS.
+- Existing authorization-reset clear-set contract: PASS.
+- A_customer xcodebuild/link/output: PASS.
+- B_debug xcodebuild/link/output: PASS.
+- `arm64 + arm64e` output verification: PASS.
+
+### Promotion gate remaining
+Scoped real-device P63B test:
+- staged progress appears;
+- no artificial 5-second wait;
+- local game data is cleared;
+- app exits when real cleanup completes;
+- relaunch resembles fresh local state;
+- observe actual authorization/session behavior after the app defaults domain reset;
+- no regression in the other five button routes.
 
 ## Follow-on stages
 - P63C — Backup engine extraction from `daochucd`.
@@ -80,12 +94,11 @@
 - P63F — Cloud Save engine extraction from `PubgLoad`.
 
 ## Frozen operating rules
-1. `testmod/` + `testmod.xcodeproj` are the canonical runtime/product surface.
-2. Preserve commit history; do not rewrite published stage history.
-3. Existing release policy/semantics must not be changed outside the scoped stage.
+1. `testmod/` + `testmod.xcodeproj` are canonical.
+2. Preserve commit history.
+3. Do not change release policy outside scoped necessity.
 4. CI success does not equal device promotion.
-5. Every runtime candidate requires A_customer + B_debug `arm64 + arm64e` validation.
-6. Keep `ROADMAP.md`, `CHANGELOG_DEV.md`, `HANDOFF.md`, `PROJECT_STATE.json`, and `KNOWN_ISSUES.md` synchronized at each stage transition.
+5. Keep the five long-project state files synchronized.
 
 # Next Task
-Complete P63B implementation, deterministic PBX migration and P63B behavior contract, then run A_customer/B_debug CI. Do not promote P63B until the user explicitly passes the scoped real-device clear-game-data regression.
+Real-device validate `v1_p63b`. Do not promote P63B or begin P63C until the user explicitly reports the scoped clear-game-data regression passed.
