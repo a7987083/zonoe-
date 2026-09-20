@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import re
 
 ROOT = Path(__file__).resolve().parents[1]
+REGISTRY = ROOT / 'testmod/ZONCore/ZONFeatureRegistry.m'
+DISPATCHER = ROOT / 'testmod/ZONCore/ZONFeatureDispatcher.m'
 ACTION_M = ROOT / 'testmod/ZONServices/ZONSixButtonActionService.m'
 RESET_H = ROOT / 'testmod/ZONServices/ZONGameDataResetService.h'
 RESET_M = ROOT / 'testmod/ZONServices/ZONGameDataResetService.m'
@@ -9,10 +12,12 @@ AUTH_RESET_M = ROOT / 'testmod/ZONServices/ZONAuthorizationResetService.m'
 PBX = ROOT / 'testmod.xcodeproj/project.pbxproj'
 VERSION = ROOT / 'VERSION'
 
-for path in (ACTION_M, RESET_H, RESET_M, AUTH_RESET_M, PBX, VERSION):
+for path in (REGISTRY, DISPATCHER, ACTION_M, RESET_H, RESET_M, AUTH_RESET_M, PBX, VERSION):
     if not path.exists():
         raise SystemExit(f'missing required file: {path.relative_to(ROOT)}')
 
+registry = REGISTRY.read_text(encoding='utf-8')
+dispatcher = DISPATCHER.read_text(encoding='utf-8')
 action = ACTION_M.read_text(encoding='utf-8')
 reset_h = RESET_H.read_text(encoding='utf-8')
 reset_m = RESET_M.read_text(encoding='utf-8')
@@ -22,6 +27,42 @@ version = VERSION.read_text(encoding='utf-8').strip()
 
 if version != 'v1_p63b':
     raise SystemExit(f'unexpected VERSION: {version}')
+
+expected_actions = {
+    'base.remote-download': 1,
+    'base.cloud-save': 2,
+    'base.local-files': 3,
+    'data.backup-save': 100,
+    'data.restore-save': 101,
+    'data.clear-game-data': 102,
+    'auth.clear-records': 103,
+}
+for identifier, tag in expected_actions.items():
+    if not re.search(rf'@"{re.escape(identifier)}".*?ZONFeatureLegacyTagKey:@{tag}\b', registry):
+        raise SystemExit(f'registry identifier/tag drift: {identifier} -> {tag}')
+
+service_routes = {
+    'base.remote-download': 'performRemoteDownloadFromViewController:',
+    'base.cloud-save': 'performCloudSaveFromViewController:',
+    'data.backup-save': 'performBackupSaveFromViewController:',
+    'data.restore-save': 'performRestoreSaveFromViewController:',
+    'data.clear-game-data': 'performClearGameDataFromViewController:',
+    'auth.clear-records': 'performClearAuthorizationFromViewController:',
+}
+for identifier, selector in service_routes.items():
+    pattern = rf'@"{re.escape(identifier)}"\s*:\s*\^BOOL\([^)]*\)\s*\{{[^}}]*ZONSixButtonActionService {re.escape(selector)}'
+    if not re.search(pattern, dispatcher, re.S):
+        raise SystemExit(f'dispatcher route drift: {identifier}')
+
+for forbidden in (
+    '#import "PubgLoad.h"',
+    '#import "daochucd.h"',
+    '#import "YYYPicker.h"',
+    '#import "WX_NongShiFu123.h"',
+    '#import "SVProgressHUD.h"',
+):
+    if forbidden in dispatcher:
+        raise SystemExit(f'legacy dependency leaked back into dispatcher: {forbidden}')
 
 for marker in (
     'ZONGameDataResetStagePreparing',
@@ -79,11 +120,13 @@ for marker in (
     if marker not in action:
         raise SystemExit(f'missing staged clear-game-data UI marker: {marker}')
 
-# Clear-game-data must not retain the old fixed five-second timing.
 if '(int64_t)(5 * NSEC_PER_SEC)' in action:
     raise SystemExit('legacy five-second clear-game-data delay still present')
 
-# Authorization reset remains independently scoped and retains its P62 clear set.
+# The authorization action remains separate; its historical delay is not part of P63B.
+if '(int64_t)(3 * NSEC_PER_SEC)' not in action:
+    raise SystemExit('authorization action timing changed unexpectedly')
+
 for marker in ('SJUSERID', 'ShiSanGeDZKM', 'rjyyz', 'DZUDID', 'zonoe.udid.bridge.value', 'com.china.TestKeyChain'):
     if marker not in auth_reset:
         raise SystemExit(f'authorization reset contract drift: {marker}')
@@ -102,6 +145,7 @@ if f'{file_id} /* {file_marker} */ = {{isa = PBXFileReference; lastKnownFileType
     raise SystemExit('P63B PBXFileReference missing')
 
 print('P63B_GAME_DATA_RESET_CONTRACT=PASS')
+print('SIX_BUTTON_BOUNDARY_PRESERVED=true')
 print('NO_FIXED_CLEAR_DELAY=true')
 print('STAGED_PROGRESS=true')
 print('BACKGROUND_RESET=true')
