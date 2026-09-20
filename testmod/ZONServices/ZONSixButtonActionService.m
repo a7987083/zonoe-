@@ -78,6 +78,7 @@ typedef void (^ZONDestructiveConfirmationHandler)(void);
         case ZONGameDataResetStageCompleted:
             return @"清理完成，正在退出…";
     }
+    return @"正在处理…";
 }
 
 #pragma mark - Existing action adapters
