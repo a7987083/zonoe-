@@ -1,5 +1,24 @@
 # CHANGELOG_DEV
 
+## 2026-09-21 — v1_p63b Clear Game Data Dedicated Service — IN PROGRESS
+- Work branch: `work/p63b-clear-game-data-service`.
+- Baseline: promoted/device-passed `v1_p63a` runtime source `170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d`.
+- `VERSION`: `v1_p63b`.
+- User-approved behavior change: remove both historical 5-second clear-game-data timers; cleanup completion now controls exit.
+- Added `testmod/ZONServices/ZONGameDataResetService.h/.m` as a pure Foundation reset engine.
+- Reset scope is primary app-local data only: `Documents/*`, `Library/*`, `tmp/*`, and the app `NSUserDefaults` persistent domain.
+- Keychain/authorization storage, App Group containers, and iCloud/CloudKit remote data are explicitly out of scope.
+- Removed the old duplicated pattern of deleting whole Documents/Library and then enumerating the same paths again.
+- Added explicit filesystem preparation, cleanup, verification and `NSError` propagation instead of silent destructive `error:nil` handling inside the reset engine.
+- Added one final verification sweep for files recreated while the process is still alive.
+- `ZONSixButtonActionService` now runs reset work on `QOS_CLASS_USER_INITIATED` instead of the main queue.
+- Added staged progress UI: preparing → game save/Documents → temporary files → local settings → Library/game data → verification → completed/exiting.
+- Success path exits immediately after reset completion; failure path does not exit and surfaces the error.
+- The other five button engines and authorization reset clear set are intentionally unchanged.
+- Added deterministic `tools/p63b_apply_game_data_reset_service.py` PBX migration.
+- Added `Tests/p63b_game_data_reset_contract.py` locking six-button routing, no fixed 5-second clear delay, staged/background reset semantics, authorization isolation and PBX membership.
+- Added dedicated `.github/workflows/p63b-clear-game-data-service-build.yml`; CI/device validation still pending.
+
 ## 2026-09-20 — v1_p63a Six Button Service Boundary — DEVICE PASSED
 - Work branch: `work/p62-zonkeychain-deletekm-service`.
 - Candidate/runtime source commit: `170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d`.
@@ -12,14 +31,9 @@
 - VIP cloud save still ensures the tmp directory then enters `PubgLoad::checkCloudSaveStatus` behind the boundary.
 - Backup still enters `daochucd::backupasd` behind the boundary.
 - Restore still enters `YYYPicker::addBtnAction` behind the boundary.
-- Clear-game-data behavior was moved behind the boundary while preserving the P63A comparison behavior; cleanup/hardening is deferred to P63B.
 - Clear-authorization now reaches `ZONAuthorizationResetService` through the new boundary rather than routing the button through the legacy `WX_NongShiFu123::deletekm` entry.
 - Added deterministic PBX source registration, behavior/service-boundary contracts and exact migrated-SHA CI pinning.
-- Registry/service/PBX contract: PASS.
-- A_customer `arm64 + arm64e` build/link/output: PASS.
-- B_debug `arm64 + arm64e` build/link/output: PASS.
-- A_customer artifact ID `10596866163`, digest `sha256:4770559f4d15706349e558e6b36c709e4242e0de8ae505ec9934b913d96822ae`, dylib SHA256 `2c90fed5247de6af6fe91bb6d1c57562621ff10542ae36b355924f5b78d7583b`.
-- B_debug artifact ID `10596501583`, digest `sha256:c5cfe082bb2294a5eee0fc871226ee3ad9744ca3558d1d5ae5581c77ec631099`, dylib SHA256 `3063dbd4060767948686990772333f4fa2ecaa8c648252fc6d02641149e8ee6b`.
+- A_customer and B_debug `arm64 + arm64e` build/link/output: PASS.
 - User explicitly reported all six scoped buttons normal on device.
 - **P63A is promoted/device-passed and is the baseline for P63B.**
 
@@ -44,36 +58,24 @@
 - Product source commit: `e8df5c72c8698eda76971ac44b44d611c6e8cbbb`.
 - CI Run `35255286856`: success.
 - Refactored duplicated Documents/Library backup loops into a shared backup helper without changing the backup entry or output contract.
-- Preserved the 50 MiB confirmation threshold, Skip/Backup choices, staging layout, cleanup paths, ZIP destination and share flow.
 - A_customer and B_debug builds passed for `arm64 + arm64e`.
 - User explicitly reported all required P51-B real-device tests normal.
-- P51-B was promoted and later superseded.
-
-## 2026-09-18 — v1_p51 Feature Execution Refactor — CI VERIFIED
-- Standardized nine feature execution routing and de-duplicated runtime-toggle persistence.
-- CI Run `35253980287`: success.
-- Device behavior is covered by later promoted baselines.
-
-## 2026-09-18 — v1_p50 Refactor Stabilization / Architecture Freeze
-- Work branch: `work/zonoemenu-v1-p50-architecture-freeze`.
-- Runtime baseline remained P49 commit `4cebe094ad7a4dd554e8266af34dcf3abe04902a`.
-- Added architecture freeze contract, final status matrix and CI guardrails.
 
 ## Earlier architecture cleanup
+- P51 Feature Execution Refactor: CI verified.
+- P50 Refactor Stabilization / Architecture Freeze: completed.
 - P49 Active Target / Dead Code / Dependency Audit: device passed.
 - P48.1 StoreKit residual cleanup: device passed.
 - P47 Repository Hygiene: CI passed.
 - P46 Startup Side-Effect Instrumentation & Launch Contract: CI passed.
 - P45 Legacy UDID Web/Profile Fallback Adapter Boundary: CI passed.
-- P44 Authorization Orchestration Boundary: CI passed; device passed.
+- P44 Authorization Orchestration Boundary: device passed.
 - P43 architecture audit: CI passed.
-- P42 Zonoe UDID API Boundary: CI passed; device passed.
-- P41 UDID Bridge Boundary: CI passed; device passed.
-
-## Later corrective stages retained in project state
+- P42 Zonoe UDID API Boundary: device passed.
+- P41 UDID Bridge Boundary: device passed.
 - P56 PubgLoad temp-boundary cleanup: device passed.
 - P57 diagnostic stage: abandoned/reverted after server-side cause was confirmed.
 - P58 download lifecycle hardening: device passed.
 - P59 automatic UDID retry UX: superseded/not promoted.
 - P60 UDID acquisition progress/manual retry: device passed.
-- P61 offline authorization retry: CI passed; working line superseded by P62.
+- P61 offline authorization retry: CI passed; superseded by P62.
