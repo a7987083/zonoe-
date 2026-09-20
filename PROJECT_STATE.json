@@ -5,10 +5,10 @@
   "production_branch": "dev/zonoemenu-production-v1",
   "current_work_branch": "work/p64a-clear-game-data-runtime-directory-fix",
   "current_version": "v1_p64a",
-  "current_phase": "p64a_clear_game_data_runtime_directory_fix",
-  "phase_status": "ci_passed_awaiting_device",
-  "last_device_verified_code_commit": "170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d",
-  "last_device_verified_version": "v1_p63",
+  "current_phase": "p65_backup_engine_refactor",
+  "phase_status": "p64a_promoted_p65_opening",
+  "last_device_verified_code_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
+  "last_device_verified_version": "v1_p64a",
   "last_ci_run_id": 35524126925,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
@@ -20,11 +20,11 @@
     "historical_correction": "v1_p63a maps canonically to P63; v1_p63b maps canonically to P64. History is preserved rather than rewritten."
   },
   "rollback_baseline": {
-    "canonical_version": "v1_p63",
-    "historical_built_version_string": "v1_p63a",
-    "source_commit": "170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d",
-    "ci_run_id": 35483209464,
-    "device_status": "passed"
+    "canonical_version": "v1_p64a",
+    "source_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
+    "ci_run_id": 35524126925,
+    "device_status": "passed",
+    "device_reported_by_user": true
   },
   "p64": {
     "name": "clear_game_data_dedicated_service",
@@ -40,51 +40,48 @@
   "p64a": {
     "name": "clear_game_data_runtime_directory_fix",
     "version": "v1_p64a",
-    "status": "ci_passed_awaiting_device",
+    "status": "promoted_device_passed",
     "branch": "work/p64a-clear-game-data-runtime-directory-fix",
     "actual_build_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
     "ci_run_id": 35524126925,
     "ci_status": "success",
-    "device_status": "pending",
+    "device_status": "passed",
+    "device_reported_by_user": true,
     "a_customer_artifact_id": 10608274021,
     "a_customer_artifact_digest": "sha256:5cc2772e8fb2794a1301ca79526ea9a375ae5686c92e9040609eb9009ab20302",
     "a_customer_dylib_sha256": "34ef87c5be956e81764984a524c0c04428bbc83a4949e23dbc4ba19f10cfbaf9",
     "b_debug_artifact_id": 10608289075,
     "b_debug_artifact_digest": "sha256:c6296cb2d5ee1114501e9f35eda7e5c9cef76e9bc2657d126accb79e9bdedff8",
-    "b_debug_dylib_sha256": "335f0e3028a6bf2f9e202681487822065bdda6598a853889f9c973cd9616b379",
-    "cleanup_policy": {
-      "documents": "strict payload cleanup; empty directory skeletons allowed",
-      "library": "recursive payload cleanup; empty directory skeletons allowed",
-      "library_caches": "volatile runtime location; cleanup attempted, runtime-created residue tolerated",
-      "tmp": "volatile runtime location; cleanup attempted, runtime-created residue tolerated",
-      "nonvolatile_files": "remaining files are fatal and prevent exit"
-    },
-    "preserved_behavior": [
-      "staged progress UI",
-      "background reset execution",
-      "no fixed five-second delay",
-      "success exits immediately after cleanup",
-      "failure does not force exit",
-      "authorization reset service is not called"
+    "b_debug_dylib_sha256": "335f0e3028a6bf2f9e202681487822065bdda6598a853889f9c973cd9616b379"
+  },
+  "p65": {
+    "name": "backup_engine_refactor",
+    "version": "v1_p65",
+    "status": "opening_audit",
+    "baseline_version": "v1_p64a",
+    "baseline_source_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
+    "goal": "Extract backup execution from daochucd behind a clean API/service boundary, remove duplicate scanning/copy/staging logic, centralize policy/error handling, and preserve compatibility with the existing restore flow.",
+    "planned_service_files": [
+      "testmod/ZONServices/ZONBackupService.h",
+      "testmod/ZONServices/ZONBackupService.m",
+      "testmod/ZONServices/ZONBackupPolicy.h",
+      "testmod/ZONServices/ZONBackupPolicy.m"
     ],
-    "verification_completed": [
-      "P64a runtime-directory behavior contract",
-      "six-button routing contract",
-      "reset service PBX membership",
-      "authorization reset isolation contract",
+    "verification_required": [
+      "current daochucd behavior/data-flow audit",
+      "backup API/service contract",
+      "existing six-button route preserved",
+      "archive compatibility with existing restore flow",
       "A_customer arm64+arm64e build",
       "B_debug arm64+arm64e build",
-      "dylib output verification"
-    ],
-    "verification_remaining": [
-      "scoped real-device P64a clear-game-data PASS"
+      "real-device backup creation",
+      "real-device restore of a P65-produced backup through existing restore path"
     ]
   },
   "follow_on_plan": [
-    "P65 backup engine extraction",
     "P66 restore engine extraction",
     "P67 remote-download engine extraction",
     "P68 cloud-save engine extraction"
   ],
-  "next_task": "Real-device validate v1_p64a, especially the previous Library/Caches failure, fresh-local-state relaunch, completion-controlled exit, and smoke-test the other five routes."
+  "next_task": "Create the P65 branch from the P64a promoted documentation closeout, deeply audit daochucd and its archive/restore compatibility, then implement the first ZONBackupService boundary."
 }
