@@ -314,6 +314,7 @@
 		7ECBD4402F3A614B00C56F1C /* ZonoeUDIDAPI.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZonoeUDIDAPI.m"; sourceTree = SOURCE_ROOT; };
 		7ECBD4442F3A614B00C56F1C /* ZONLegacyUDIDFallbackAdapter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZONLegacyUDIDFallbackAdapter.m"; sourceTree = SOURCE_ROOT; };
 		7ECBD4422F3A614B00C56F1C /* ZONAuthorizationCoordinator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZONAuthorizationCoordinator.m"; sourceTree = SOURCE_ROOT; };
+		A17D0E022F7B100100C0FFEE /* ZONAuthorizationResetService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZONAuthorizationResetService.m"; sourceTree = SOURCE_ROOT; };
 		7ECBD4202F29099D00C56F1C /* PopupMenuVC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PopupMenuVC.h; sourceTree = "<group>"; };
 		7ECBD4222F30EF6100C56F1C /* FoldSectionView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FoldSectionView.h; sourceTree = "<group>"; };
 		7ECBD4242F30EF6C00C56F1C /* FoldSectionView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FoldSectionView.m; sourceTree = "<group>"; };
