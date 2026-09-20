@@ -1,0 +1,226 @@
+name: P64A Clear Game Data Runtime Directory Fix Build
+
+on:
+  push:
+    branches:
+      - work/p64a-clear-game-data-runtime-directory-fix
+    paths:
+      - .ci-trigger-p64a-clear-game-data-runtime-directory-fix
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    outputs:
+      migrated_sha: ${{ steps.resolve-sha.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/p64a-clear-game-data-runtime-directory-fix
+          fetch-depth: 0
+
+      - name: Apply prerequisite PBX invariants
+        run: |
+          set -euxo pipefail
+          python3 tools/p62_apply_authorization_reset_service.py
+          python3 tools/p63a_apply_six_button_service_boundary.py
+          python3 tools/p63b_apply_game_data_reset_service.py
+
+      - name: Verify P64a runtime-directory reset contract
+        run: |
+          set -euxo pipefail
+          python3 Tests/p64a_game_data_runtime_directory_contract.py
+
+      - name: Commit PBX migration if changed
+        run: |
+          set -euxo pipefail
+          git add -A testmod.xcodeproj/project.pbxproj
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            echo 'No PBX migration changes to commit'
+            exit 0
+          fi
+          git diff --cached --stat
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'ci: restore p64a prerequisite source membership'
+          git push origin HEAD:work/p64a-clear-game-data-runtime-directory-fix
+
+      - name: Resolve migrated SHA
+        id: resolve-sha
+        run: |
+          set -euxo pipefail
+          git fetch origin work/p64a-clear-game-data-runtime-directory-fix
+          SHA="$(git rev-parse origin/work/p64a-clear-game-data-runtime-directory-fix)"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "MIGRATED_SHA=$SHA"
+
+  build:
+    needs: migrate
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - variant: A_customer
+            debug_macro: 0
+            cloud_testmode: NO
+          - variant: B_debug
+            debug_macro: 1
+            cloud_testmode: YES
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.migrate.outputs.migrated_sha }}
+
+      - name: Verify exact build revision
+        run: |
+          set -euxo pipefail
+          BUILD_HEAD="$(git rev-parse HEAD)"
+          echo "BUILD_HEAD=$BUILD_HEAD"
+          echo "EXPECTED_HEAD=${{ needs.migrate.outputs.migrated_sha }}"
+          test "$BUILD_HEAD" = "${{ needs.migrate.outputs.migrated_sha }}"
+
+      - name: Verify P64a behavior and PBX contract
+        run: |
+          set -euxo pipefail
+          python3 Tests/p64a_game_data_runtime_directory_contract.py
+          grep -n 'ZONGameDataResetService.m in Sources' testmod.xcodeproj/project.pbxproj
+          ! grep -n 'verifyDirectoryIsEmptyAtPath' testmod/ZONServices/ZONGameDataResetService.m
+          grep -n 'allowRuntimeResidue' testmod/ZONServices/ZONGameDataResetService.m
+          grep -n 'isEqualToString:@"Caches"' testmod/ZONServices/ZONGameDataResetService.m
+
+      - name: Select Xcode 16.4
+        run: |
+          set -euxo pipefail
+          sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Prepare dependency cache destinations
+        run: |
+          set -euxo pipefail
+          sudo mkdir -p /opt/MonkeyDev /opt/theos
+          sudo chown -R "$USER":staff /opt/MonkeyDev /opt/theos
+
+      - name: Restore legacy build dependency cache
+        id: builddeps-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            /opt/MonkeyDev
+            /opt/theos
+          key: zonoe-builddeps-${{ runner.os }}-macos15-xcode16.4-${{ hashFiles('ci/dependencies.lock') }}
+
+      - name: Install legacy build dependencies
+        run: |
+          set -euxo pipefail
+          brew install ldid dpkg || true
+          source ci/dependencies.lock
+          test -n "${MONKEYDEV_SHA:-}"
+          test -n "${THEOS_SHA:-}"
+
+          repo_at_sha() {
+            local dir="$1"
+            local sha="$2"
+            local required="$3"
+            [[ -d "$dir/.git" ]] || return 1
+            [[ "$(git -C "$dir" rev-parse HEAD 2>/dev/null || true)" == "$sha" ]] || return 1
+            [[ -e "$dir/$required" ]] || return 1
+          }
+
+          theos_at_sha() {
+            repo_at_sha /opt/theos "$THEOS_SHA" vendor/include || return 1
+            local state
+            state="$(git -C /opt/theos submodule status --recursive 2>/dev/null)" || return 1
+            if printf '%s\n' "$state" | grep -Eq '^[+-U]'; then return 1; fi
+          }
+
+          install_pinned_repo() {
+            local dir="$1" url="$2" sha="$3"
+            sudo rm -rf "$dir"
+            sudo mkdir -p "$dir"
+            sudo chown -R "$USER":staff "$dir"
+            git -C "$dir" init -q
+            git -C "$dir" remote add origin "$url"
+            git -C "$dir" fetch --depth=1 origin "$sha"
+            git -C "$dir" checkout --detach FETCH_HEAD
+          }
+
+          if ! repo_at_sha /opt/MonkeyDev "$MONKEYDEV_SHA" bin/md; then
+            install_pinned_repo /opt/MonkeyDev https://github.com/AloneMonkey/MonkeyDev.git "$MONKEYDEV_SHA"
+          fi
+          if ! theos_at_sha; then
+            install_pinned_repo /opt/theos https://github.com/theos/theos.git "$THEOS_SHA"
+            git -C /opt/theos submodule sync --recursive
+            git -C /opt/theos submodule update --init --recursive
+          fi
+
+          test -x /opt/MonkeyDev/bin/md
+          test -d /opt/theos/vendor/include
+          test "$(git -C /opt/MonkeyDev rev-parse HEAD)" = "$MONKEYDEV_SHA"
+          test "$(git -C /opt/theos rev-parse HEAD)" = "$THEOS_SHA"
+          ! git -C /opt/theos submodule status --recursive | grep -Eq '^[+-U]'
+
+      - name: Materialize pinned vendor sources
+        run: |
+          set -euxo pipefail
+          bash scripts/bootstrap_vendor.sh
+
+      - name: Configure build variant
+        run: |
+          set -euxo pipefail
+          if [[ "${{ matrix.cloud_testmode }}" == "YES" ]]; then
+            python3 - <<'PY'
+          from pathlib import Path
+          p = Path('testmod/菜单/PubgLoad.mm')
+          s = p.read_text()
+          old = 'BOOL testMode = NO; // NO = 正常验证, YES = 测试模式（绕过验证）'
+          new = 'BOOL testMode = YES; // B_debug: 云存档测试模式（绕过购买验证）'
+          if s.count(old) != 1:
+              raise SystemExit(f'expected exactly one cloud testMode switch, found {s.count(old)}')
+          p.write_text(s.replace(old, new, 1))
+          PY
+          fi
+
+      - name: Build testmod dylib
+        run: |
+          set -euxo pipefail
+          mkdir -p build/Release-iphoneos
+          xcodebuild \
+            -project testmod.xcodeproj \
+            -target testmod \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            IPHONEOS_DEPLOYMENT_TARGET=12.0 \
+            ARCHS="arm64 arm64e" \
+            ONLY_ACTIVE_ARCH=NO \
+            VALIDATE_PRODUCT=NO \
+            MonkeyDevInstallOnAnyBuild=NO \
+            MonkeyDevInstallOnProfiling=NO \
+            MonkeyDevBuildPackageOnAnyBuild=NO \
+            GCC_PREPROCESSOR_DEFINITIONS='$(inherited) ZON_BUILD_VARIANT_DEBUG=${{ matrix.debug_macro }}' \
+            CONFIGURATION_BUILD_DIR="$PWD/build/Release-iphoneos" \
+            build 2>&1 | tee build/xcodebuild.log
+
+      - name: Verify dylib output
+        run: |
+          set -euxo pipefail
+          test -f build/Release-iphoneos/testmod.dylib
+          file build/Release-iphoneos/testmod.dylib
+          lipo -info build/Release-iphoneos/testmod.dylib
+
+      - name: Upload build log and dylib
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p64a-clear-game-data-runtime-directory-fix-${{ matrix.variant }}
+          path: |
+            build/xcodebuild.log
+            build/Release-iphoneos/testmod.dylib
+          if-no-files-found: ignore
