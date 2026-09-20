@@ -1,73 +1,84 @@
 # KNOWN_ISSUES
 
 ## Current state
-- Promoted/device baseline: `v1_p48_1` / `71eddfa0600112aa56a8bef45013d73f4673794a`.
-- CI Run `35180342515`: success.
+- Promoted/device baseline: `v1_p62` / `a1d0f7b7ca7ea2747d7c52a2b5e002830731ffca`.
+- Work branch: `work/p62-zonkeychain-deletekm-service`.
+- CI Run `35480732207`: success.
 - Real-device validation: passed, explicitly reported by user.
-- Active Sources: **78**.
 - Architectures: `arm64 + arm64e`.
 - Canonical plan: `ROADMAP.md`.
+- Current active program: **P63A Six Button Service Boundary**.
 
 ## Open risks
 
-### P49 dead-code/dependency removal risk
-- P49 is the next planned stage.
-- No source, framework, library, script or historical audit asset may be removed merely because it appears old or unused.
-- Required evidence includes PBX membership, imports/callers, runtime lookup paths, symbols/load commands, build scripts/workflows and package consumers.
-- Any candidate removal must be compared against the P48.1 promoted baseline and pass both build and device gates where runtime-affecting.
+### Six-button business layer is only partially decoupled
+- `ZONFeatureRegistry` / `ZONFeatureDispatcher` already provide a stable routing boundary, but Dispatcher still directly references concrete legacy classes and destructive implementation details.
+- P63A must add a service/adapter layer without changing behavior.
+- The six scoped actions are remote download, VIP cloud save, backup save, restore save, clear game data and clear authorization records.
 
-### Global startup side effects remain order-sensitive
-- `main.m +load`, framework preflight, Bootstrap, authorization, module loading and floating-entry lifecycle remain order-sensitive.
-- Later cleanup must not alter queueing, callback order, retries, timeouts or module load timing without an explicit behavior phase.
+### `PubgLoad` remains a high-risk multi-responsibility class
+- Remote download and VIP cloud-save both route into `PubgLoad`.
+- The class mixes network access, URL handling, download delegate lifecycle, ZIP handling, filesystem staging, authorization checks, progress UI and restore-related side effects.
+- P63A may wrap the current entry points but must not deep-rewrite this class.
+- Remote-download engine extraction is deferred to P63E; cloud-save engine extraction is deferred to P63F.
 
-### `WX_NongShiFu123.mm` remains a high-risk legacy god object
-- It remains active and still owns legacy authorization/network/server state, UDID/IDFV branches, activation UI and status behavior.
-- Structural changes require narrow scope and equivalence evidence.
+### `daochucd` mixes backup engine and UI
+- Backup currently combines filename prompt, filesystem scan/copy, >50 MiB decision UI, staging cleanup, ZIP creation and share UI.
+- Existing P51-B behavior is device-tested and must be preserved.
+- Backup engine extraction is deferred to P63C.
 
-### Other large active legacy surfaces remain coupled
-- `PubgLoad.mm`, `JiangHuHook.m`, `daochucd.m`, `YYYPicker.m` and `fuhzu.m` remain candidate legacy units.
-- `JiangHuHook.m` remains a protected runtime-hook surface; opportunistic cleanup can alter behavior.
+### `YYYPicker` mixes document-picker UI and restore engine
+- Restore currently combines file picking, staging cleanup, ZIP extraction, nested Documents/Library discovery, recursive copy, skip rules, PreferenceManager reload and UI feedback.
+- Restore engine extraction is deferred to P63D.
+
+### Clear-game-data destructive behavior still lives in Dispatcher
+- The current implementation clears tmp contents while preserving/recreating the tmp directory, removes Documents/Library and clears the app defaults domain before exit.
+- It uses several `error:nil` filesystem operations and contains redundant delete/enumerate behavior.
+- P63A must preserve current semantics; cleanup/error-model changes belong to dedicated P63B.
+
+### Clear-authorization route still crosses a legacy entry
+- `ZONAuthorizationResetService` already owns the effective clear set and P62 device validation passed.
+- The button route still goes through `WX_NongShiFu123::deletekm` as a compatibility entry.
+- P63A should establish a service boundary and must not duplicate or drift the P62 reset set.
+
+### Legacy `getKeychain` remains active
+- `SFHFKeychainUtils` is no longer active, but `getKeychain` still stores historical authorization/device values such as `SJUSERID`, `ShiSanGeDZKM`, `DZUDID`, `ShiSanGeIDFV` and `rjyyz`.
+- Do not replace or migrate these values as part of the six-button program; storage migration is a separate concern.
+
+### Global startup/authorization side effects remain order-sensitive
+- Startup/bootstrap, authorization, UDID acquisition, module loading and floating-entry lifecycle remain protected behavior surfaces.
+- The six-button program must not opportunistically change their timing, retries, callbacks or persistence semantics.
 
 ### Historical CI/scripts remain intentionally tracked
 - Historical phase scripts/tests/workflows provide reproducibility and audit evidence.
-- Their age is not evidence of deadness.
+- Their age alone is not evidence that they can be removed.
 
 ## Closed / corrected
 
-### P48.1 StoreKit residual cleanup device gate — CLOSED
-- Source `71eddfa0600112aa56a8bef45013d73f4673794a`.
-- CI Run `35180342515`: success.
-- User explicitly reported real-device validation normal.
-- P48.1 is now the promoted rollback/device baseline.
+### P62 Authorization Reset Service — CLOSED / DEVICE PASSED
+- Source `a1d0f7b7ca7ea2747d7c52a2b5e002830731ffca`.
+- CI Run `35480732207`: success.
+- A_customer and B_debug build/link/output verification passed.
+- User explicitly reported the produced dylib tests fully normal.
+- Authorization clear ownership now lives in `ZONAuthorizationResetService`.
 
-### Residual StoreKit/App Store surface in YYYPicker — CLOSED BY P48.1
-- StoreKit import/protocol/product-page methods and App Store identifier path were removed.
-- Restore-save/import behavior was preserved.
-- PBX is unchanged versus P48.
-- Exported symbols are unchanged versus P48.
-- Mach-O load-library delta is exactly the removal of `StoreKit.framework`; all other libraries remain unchanged.
+### P62 SFHFKeychainUtils active dependency — CLOSED
+- Active UDID storage was migrated to `ZONKeychain`.
+- Legacy `SFHFKeychainUtils.h/.m` were removed from the active project surface.
 
-### P45/P46/P47 pending inherited device gate — SUPERSEDED/COVERED
-- Their relevant runtime behavior is now covered by later promoted real-device-passed baselines.
-- They remain historical intermediate stages and are not rollback baselines.
+### P62 reset-service PBX nondeterminism — CLOSED
+- Migration script now verifies/inserts exact PBXBuildFile, PBXFileReference and PBXSourcesBuildPhase entries rather than relying on a global file-ID presence test.
 
-### Tracked generated package ZIP — CLOSED BY P47
-- Removed after no-consumer evidence and protected by `Packages/*.zip` ignore rule.
+### P62 CI migrated-revision race — CLOSED
+- Build jobs are pinned to the exact migrated SHA and verify source membership before xcodebuild.
 
-### P44 device validation — CLOSED / SUPERSEDED
-- P44 passed real-device validation and served as rollback baseline until later promoted versions.
-
-### Authorization orchestration mixed into main.m — CLOSED
-- P44 mechanically moved the selected authorization/reset block into `ZONAuthorizationCoordinator.h/.m`.
-
-### ZonoeUDIDAPI ownership mixed with UI — CLOSED
-- Closed by P42 and covered by later device-verified baselines.
-
-### ZONUDIDBridge implementation-heavy header — CLOSED
-- Closed by P41 and covered by later device-verified baselines.
+### Prior StoreKit/App Store cleanup — CLOSED
+- Historical StoreKit/App Store residual cleanup remains covered by later device-verified baselines.
 
 ### Canonical product-source ambiguity — CORRECTED
 - `testmod/` + `testmod.xcodeproj` are canonical; PBX membership is authoritative.
 
 ## Tracking rule
-Move an open risk to fully closed only after the required CI and, where applicable, real-device gate passes. Source edits or CI success alone do not equal promotion.
+- Move an open risk to fully closed only after the required CI and, where applicable, real-device gate passes.
+- Source edits or CI success alone do not equal promotion.
+- Every stage transition must update `ROADMAP.md`, `CHANGELOG_DEV.md`, `HANDOFF.md`, `PROJECT_STATE.json` and `KNOWN_ISSUES.md` so the five long-project records remain consistent.
