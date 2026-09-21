@@ -13,7 +13,10 @@ for marker in [
     'effectiveDownloadAddressForFunction:',
     'resolveDownloadURLForBundleIdentifier:',
     'bypassEntitlement:',
-    'NSURLSessionDataTask',
+    'NSURLSession sharedSession',
+    'dataTaskWithURL:',
+    'statusCode < 200 || http.statusCode >= 300',
+    'NSJSONSerialization JSONObjectWithData:',
     'metadata[@"功能"]',
     'dictionary[@"expire"]',
 ]:
