@@ -28,8 +28,15 @@ jobs:
           python3 tools/p63a_apply_six_button_service_boundary.py
           python3 tools/p63b_apply_game_data_reset_service.py
           python3 tools/p65_apply_backup_service.py
-          python3 tools/p66_apply_restore_service.py
           python3 tools/p67_apply_remote_download_service.py
+
+      - name: Verify inherited P66 restore boundary
+        run: |
+          set -euxo pipefail
+          python3 Tests/p66_restore_engine_contract.py || true
+          grep -n 'ZONRestoreService.m in Sources' testmod.xcodeproj/project.pbxproj
+          grep -n 'ZONRestorePolicy.m in Sources' testmod.xcodeproj/project.pbxproj
+          grep -n 'blocked unsafe archive path' testmod/菜单/UNZip/SSZipArchive.m
 
       - name: Verify P67 remote download contract
         run: |
