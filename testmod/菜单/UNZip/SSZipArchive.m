@@ -216,7 +216,20 @@
 				strPath = [strPath stringByReplacingOccurrencesOfString:@"\\" withString:@"/"];
 			}
 
-			NSString *fullPath = [destination stringByAppendingPathComponent:strPath];
+			NSString *destinationRoot = [destination stringByStandardizingPath];
+			NSString *fullPath = [[destination stringByAppendingPathComponent:strPath] stringByStandardizingPath];
+			NSString *destinationPrefix = [destinationRoot stringByAppendingString:@"/"];
+			if (!([fullPath isEqualToString:destinationRoot] || [fullPath hasPrefix:destinationPrefix])) {
+				NSLog(@"[SSZipArchive] blocked unsafe archive path: %@", strPath);
+				if (error) {
+					*error = [NSError errorWithDomain:@"SSZipArchiveErrorDomain"
+					                             code:-9
+					                         userInfo:@{NSLocalizedDescriptionKey: @"unsafe archive entry path"}];
+				}
+				success = NO;
+				unzCloseCurrentFile(zip);
+				break;
+			}
 			NSError *err = nil;
 	        NSDate *modDate = [[self class] _dateWithMSDOSFormat:(UInt32)fileInfo.dosDate];
 	        NSDictionary *directoryAttr = [NSDictionary dictionaryWithObjectsAndKeys:modDate, NSFileCreationDate, modDate, NSFileModificationDate, nil];
