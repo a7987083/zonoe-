@@ -55,7 +55,7 @@ end_marker = '#pragma mark - UICollectionViewDataSource\n'
 if start_marker not in picker or end_marker not in picker:
     raise SystemExit('YYYPicker restore section markers missing')
 
-replacement = r'''#pragma mark - Restore orchestration
+replacement = '''#pragma mark - Restore orchestration
 
 - (void)reloadRestoredPreferences
 {
