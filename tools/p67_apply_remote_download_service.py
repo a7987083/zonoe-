@@ -41,7 +41,6 @@ if '#import "ZONRemoteDownloadService.h"' not in src:
     src = src.replace(anchor, anchor + '#import "ZONRemoteDownloadService.h"\n#import "ZONRestoreService.h"\n', 1)
 src = src.replace('@interface PubgLoad()<SSZipArchiveDelegate,NSURLSessionDownloadDelegate>', '@interface PubgLoad()', 1)
 
-# Old loadddd compatibility entry must never enumerate/clear the entire application tmp tree.
 legacy_tmp_start = '                            NSString *cachePath = [NSHomeDirectory() stringByAppendingString:@"/tmp/zonoe/"] ;\n'
 legacy_tmp_end = '                            NSLog(@"存档 数据");\n'
 if legacy_tmp_start in src and legacy_tmp_end in src:
@@ -126,11 +125,10 @@ replacement = r'''#pragma mark - P67 remote download orchestration
                 [SVProgressHUD showSuccessWithStatus:@"恢复完成"];
             }
 
-            // P67A_POST_RESTORE_EXIT: remote/cloud restore must restart cleanly with restored data.
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)),
-                           dispatch_get_main_queue(), ^{
-                exit(0);
-            });
+            // P67A_RESTORE_P66_POST_SUCCESS: preserve the P66/yidongwenjian success tail.
+            // PreferenceManager reloads restored preferences, synchronizes them, performs legacy cleanup,
+            // and terminates the game after successful synchronization.
+            [PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"];
         }];
      }];
 }
@@ -169,12 +167,14 @@ final_src = PUBG.read_text(encoding='utf-8')
 for marker in [
     '#import "ZONRemoteDownloadService.h"',
     '#import "ZONRestoreService.h"',
+    '#import "PreferenceManager.h"',
     '[ZONRemoteDownloadService sharedService]',
     '[ZONRestoreService sharedService]',
     'downloadArchiveFromURL:url',
     'restoreArchiveAtPath:archivePath',
     'startArchiveDownloadWithURL:downloadURL',
-    'P67A_POST_RESTORE_EXIT',
+    'P67A_RESTORE_P66_POST_SUCCESS',
+    '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]',
 ]:
     if marker not in final_src:
         raise SystemExit(f'missing P67/P67a migrated marker: {marker}')
@@ -182,8 +182,9 @@ for forbidden in [
     'downloadTask:(NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:',
     'URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didWriteData:',
     'NSDirectoryEnumerator *enumerator1 = [[NSFileManager defaultManager] enumeratorAtPath:LibraryPath]',
+    'P67A_POST_RESTORE_EXIT',
 ]:
     if forbidden in final_src:
-        raise SystemExit(f'legacy active download marker remains: {forbidden}')
+        raise SystemExit(f'legacy or incorrect P67a marker remains: {forbidden}')
 
-print('P67a remote download post-restore exit migration applied successfully')
+print('P67a remote download post-restore compatibility migration applied successfully')
