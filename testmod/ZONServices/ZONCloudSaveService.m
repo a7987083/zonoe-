@@ -86,15 +86,47 @@ NSErrorDomain const ZONCloudSaveErrorDomain = @"ZONCloudSaveErrorDomain";
     return code && [code intValue] == 1 && [msg isKindOfClass:[NSString class]] && [msg isEqualToString:@"ok"] && expire && [expire doubleValue] > [[NSDate date] timeIntervalSince1970];
 }
 
+- (void)finishResolvedURLForBundleIdentifier:(NSString *)bundleIdentifier
+                              downloadAddress:(NSString *)downloadAddress
+                         archiveBaseURLString:(NSString *)archiveBaseURLString
+                                   completion:(ZONCloudSaveDownloadResolutionCompletion)completion
+{
+    NSString *downloadURLString = nil;
+    if (downloadAddress == nil) downloadURLString = [NSString stringWithFormat:@"%@%@.zip", archiveBaseURLString, bundleIdentifier];
+    else if (downloadAddress.length == 0) {
+        [self finishOnMain:^{ if (completion) completion(nil, [self errorWithCode:ZONCloudSaveErrorInvalidDownloadURL description:@"下载地址为空" underlying:nil]); }];
+        return;
+    } else downloadURLString = downloadAddress;
+
+    NSString *encoded = [downloadURLString stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]];
+    NSURL *downloadURL = [NSURL URLWithString:encoded ?: @""];
+    if (!downloadURL) {
+        [self finishOnMain:^{ if (completion) completion(nil, [self errorWithCode:ZONCloudSaveErrorInvalidDownloadURL description:@"下载链接无效" underlying:nil]); }];
+        return;
+    }
+    [self finishOnMain:^{ if (completion) completion(downloadURL, nil); }];
+}
+
 - (void)resolveDownloadURLForBundleIdentifier:(NSString *)bundleIdentifier
                               downloadAddress:(NSString *)downloadAddress
                          archiveBaseURLString:(NSString *)archiveBaseURLString
                              deviceIdentifier:(NSString *)deviceIdentifier
                     entitlementBaseURLString:(NSString *)entitlementBaseURLString
+                           bypassEntitlement:(BOOL)bypassEntitlement
                                    completion:(ZONCloudSaveDownloadResolutionCompletion)completion
 {
-    if (bundleIdentifier.length == 0 || archiveBaseURLString.length == 0 || deviceIdentifier.length == 0 || entitlementBaseURLString.length == 0) {
+    if (bundleIdentifier.length == 0 || archiveBaseURLString.length == 0) {
         [self finishOnMain:^{ if (completion) completion(nil, [self errorWithCode:ZONCloudSaveErrorInvalidInput description:@"云存档下载参数无效" underlying:nil]); }];
+        return;
+    }
+
+    if (bypassEntitlement) {
+        [self finishResolvedURLForBundleIdentifier:bundleIdentifier downloadAddress:downloadAddress archiveBaseURLString:archiveBaseURLString completion:completion];
+        return;
+    }
+
+    if (deviceIdentifier.length == 0 || entitlementBaseURLString.length == 0) {
+        [self finishOnMain:^{ if (completion) completion(nil, [self errorWithCode:ZONCloudSaveErrorInvalidInput description:@"云存档验证参数无效" underlying:nil]); }];
         return;
     }
 
@@ -126,21 +158,7 @@ NSErrorDomain const ZONCloudSaveErrorDomain = @"ZONCloudSaveErrorDomain";
             [self finishOnMain:^{ if (completion) completion(nil, [self errorWithCode:ZONCloudSaveErrorEntitlementDenied description:@"你没有购买\n请先购买再尝试解锁" underlying:nil]); }];
             return;
         }
-
-        NSString *downloadURLString = nil;
-        if (downloadAddress == nil) downloadURLString = [NSString stringWithFormat:@"%@%@.zip", archiveBaseURLString, bundleIdentifier];
-        else if (downloadAddress.length == 0) {
-            [self finishOnMain:^{ if (completion) completion(nil, [self errorWithCode:ZONCloudSaveErrorInvalidDownloadURL description:@"下载地址为空" underlying:nil]); }];
-            return;
-        } else downloadURLString = downloadAddress;
-
-        NSString *encoded = [downloadURLString stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]];
-        NSURL *downloadURL = [NSURL URLWithString:encoded ?: @""];
-        if (!downloadURL) {
-            [self finishOnMain:^{ if (completion) completion(nil, [self errorWithCode:ZONCloudSaveErrorInvalidDownloadURL description:@"下载链接无效" underlying:nil]); }];
-            return;
-        }
-        [self finishOnMain:^{ if (completion) completion(downloadURL, nil); }];
+        [self finishResolvedURLForBundleIdentifier:bundleIdentifier downloadAddress:downloadAddress archiveBaseURLString:archiveBaseURLString completion:completion];
     }] resume];
 }
 
