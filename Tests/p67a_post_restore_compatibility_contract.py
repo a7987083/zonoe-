@@ -3,6 +3,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBG = ROOT / 'testmod/菜单/PubgLoad.mm'
+COORD = ROOT / 'testmod/ZONServices/ZONSaveTransferCoordinator.m'
 PICKER_H = ROOT / 'testmod/导入导出/UIDocumentPickerDelegate/YYYPicker.h'
 PICKER_M = ROOT / 'testmod/导入导出/UIDocumentPickerDelegate/YYYPicker.m'
 API_H = ROOT / 'testmod/ZONServices/ZONRestoreAPI.h'
@@ -11,6 +12,7 @@ PREF = ROOT / 'testmod/导入导出/PreferenceManager.m'
 PBX = ROOT / 'testmod.xcodeproj/project.pbxproj'
 
 pubg = PUBG.read_text(encoding='utf-8')
+coord = COORD.read_text(encoding='utf-8') if COORD.exists() else pubg
 picker_h = PICKER_H.read_text(encoding='utf-8')
 picker_m = PICKER_M.read_text(encoding='utf-8')
 api_h = API_H.read_text(encoding='utf-8')
@@ -39,21 +41,13 @@ if '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]' in 
     raise SystemExit('YYYPicker duplicates the post-restore lifecycle instead of using ZONRestoreAPI')
 
 for marker in ['#import "ZONRestoreAPI.h"', '[ZONRestoreAPI sharedAPI]', 'restoreArchiveAtPath:archivePath']:
-    if marker not in pubg:
-        raise SystemExit(f'PubgLoad does not route through restore API: {marker}')
+    if marker not in coord:
+        raise SystemExit(f'remote restore orchestration does not route through restore API: {marker}')
 
-start = '#pragma mark - P67 remote download orchestration'
-end = '-(void)yuanchengdwon'
-if start not in pubg or end not in pubg:
-    raise SystemExit('P67 remote restore block markers missing')
-remote_block = pubg.split(start, 1)[1].split(end, 1)[0]
-
-if '[ZONRestoreService sharedService]' in remote_block:
-    raise SystemExit('P67 remote restore block bypasses ZONRestoreAPI')
-if '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]' in remote_block:
-    raise SystemExit('P67 remote restore block duplicates P66 post-restore lifecycle')
-if 'exit(0);' in remote_block:
-    raise SystemExit('P67 remote restore block duplicates direct process termination')
+if '[ZONRestoreService sharedService]' in coord:
+    raise SystemExit('remote restore orchestration bypasses ZONRestoreAPI')
+if '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]' in coord:
+    raise SystemExit('remote restore orchestration duplicates P66 post-restore lifecycle')
 if pbx.count('ZONRestoreAPI.m in Sources') != 2:
     raise SystemExit('ZONRestoreAPI.m is not registered exactly once in PBX sources')
 
