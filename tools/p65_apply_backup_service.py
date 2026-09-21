@@ -26,6 +26,13 @@ entries = [
 build_anchor = '\t\tB63B00012F7B300100C0FFEE /* ZONGameDataResetService.m in Sources */ = {isa = PBXBuildFile; fileRef = B63B00022F7B300100C0FFEE /* ZONGameDataResetService.m */; };'
 file_anchor = '\t\tB63B00022F7B300100C0FFEE /* ZONGameDataResetService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZONGameDataResetService.m"; sourceTree = SOURCE_ROOT; };'
 source_anchor = '\t\t\t\tB63B00012F7B300100C0FFEE /* ZONGameDataResetService.m in Sources */,'
+target_prefix_anchor = '\t\t\t\tGCC_PREFIX_HEADER = "testmod/testmod-Prefix.pch";'
+service_header_search = (
+    '\t\t\t\tHEADER_SEARCH_PATHS = (\n'
+    '\t\t\t\t\t"$(inherited)",\n'
+    '\t\t\t\t\t"$(SRCROOT)/testmod/ZONServices",\n'
+    '\t\t\t\t);'
+)
 
 for required in (PBX, SERVICE_H, SERVICE_M, POLICY_H, POLICY_M):
     if not required.exists():
@@ -57,6 +64,18 @@ for entry in entries:
         pbx = pbx.replace(source_anchor, source_anchor + '\n' + source_line, 1)
         source_anchor = source_line
 
+# ZONBackupService.h / ZONBackupPolicy.h are target-private headers. They do not need
+# to be exported in PBXHeadersBuildPhase, but daochucd.m lives in another directory,
+# so the native target must explicitly expose ZONServices to quoted includes.
+if '"$(SRCROOT)/testmod/ZONServices"' not in pbx:
+    anchor_count = pbx.count(target_prefix_anchor)
+    if anchor_count != 2:
+        raise SystemExit(f'unexpected target prefix-header anchor count: {anchor_count}')
+    pbx = pbx.replace(
+        target_prefix_anchor,
+        target_prefix_anchor + '\n' + service_header_search,
+    )
+
 PBX.write_text(pbx, encoding='utf-8')
 final_pbx = PBX.read_text(encoding='utf-8')
 
@@ -64,5 +83,11 @@ for entry in entries:
     marker = f"{entry['name']} in Sources"
     if final_pbx.count(marker) != 2:
         raise SystemExit(f'unexpected marker count for {entry["name"]}: {final_pbx.count(marker)}')
+
+header_search_marker = '"$(SRCROOT)/testmod/ZONServices"'
+if final_pbx.count(header_search_marker) != 2:
+    raise SystemExit(
+        f'unexpected ZONServices header-search marker count: {final_pbx.count(header_search_marker)}'
+    )
 
 print('P65 backup service PBX migration applied successfully')
