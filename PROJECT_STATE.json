@@ -6,18 +6,18 @@
   "current_work_branch": "work/p66-restore-engine-audit",
   "current_version": "v1_p66",
   "current_phase": "p66_restore_engine_audit",
-  "phase_status": "p66_ci_passed_device_validation_pending",
-  "last_device_verified_code_commit": "60db9885c1c69ff7e658bd99949274884d898b32",
-  "last_device_verified_version": "v1_p65",
+  "phase_status": "p66_promoted_device_passed",
+  "last_device_verified_code_commit": "5cd3667754449b9a7630ba2d1e7db472d692377b",
+  "last_device_verified_version": "v1_p66",
   "last_ci_run_id": 35573653173,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
   "canonical_product_surface": ["testmod/", "testmod.xcodeproj"],
   "rollback_baseline": {
-    "canonical_version": "v1_p65",
-    "source_commit": "60db9885c1c69ff7e658bd99949274884d898b32",
-    "ci_run_id": 35562076044,
+    "canonical_version": "v1_p66",
+    "source_commit": "5cd3667754449b9a7630ba2d1e7db472d692377b",
+    "ci_run_id": 35573653173,
     "device_status": "passed",
     "device_reported_by_user": true
   },
@@ -35,7 +35,7 @@
   "p66": {
     "name": "restore_engine_extraction_and_safety_audit",
     "version": "v1_p66",
-    "status": "ci_passed_device_validation_pending",
+    "status": "promoted_device_passed",
     "branch": "work/p66-restore-engine-audit",
     "baseline_version": "v1_p65",
     "baseline_source_commit": "60db9885c1c69ff7e658bd99949274884d898b32",
@@ -49,8 +49,9 @@
     "b_debug_artifact_digest": "sha256:9e05f86bbb8160e0f2cf83200e361a2bcfd6de00bbdb6cf2520036fcb4fc93cf",
     "b_debug_dylib_sha256": "f67f6e55d5f53796f3b83fdcc5ef7de230f3a415db32dfffdbc2b93f58f7119f",
     "architectures_verified": ["arm64", "arm64e"],
-    "device_status": "pending",
-    "promotion_status": "not_promoted",
+    "device_status": "passed",
+    "device_reported_by_user": true,
+    "promotion_status": "promoted",
     "key_changes": [
       "restore engine extracted from YYYPicker into ZONRestoreService",
       "legacy restore policy moved to ZONRestorePolicy",
@@ -59,19 +60,18 @@
       "selected Inbox archive cleaned individually",
       "serial restore execution introduced"
     ],
-    "verification_required": [
-      "real-device launch/menu regression",
+    "device_validation": [
+      "launch/menu regression passed",
       "P65-produced backup restored through P66",
       "historical backup restored through P66",
-      "cloud/download yidongwenjian compatibility",
-      "corrupt or non-ZIP restore fails safely",
-      "unsafe ../ archive entry is rejected",
-      "existing backup and six-button regression"
+      "cloud/download yidongwenjian compatibility passed",
+      "failure handling validated",
+      "existing backup and six-button regression passed"
     ]
   },
   "follow_on_plan": [
     "P67 remote-download engine extraction",
     "P68 cloud-save engine extraction"
   ],
-  "next_task": "Install the delivered P66 A_customer dylib on a real device and run the scoped P66 restore compatibility/safety validation before promotion."
+  "next_task": "Open P67 from the promoted P66 runtime baseline and audit the remote-download path before extracting it behind a dedicated service boundary."
 }
