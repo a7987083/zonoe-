@@ -39,17 +39,14 @@ if '#import "ZONCloudSaveService.h"' not in src:
     if anchor not in src: raise SystemExit('P67a restore API import anchor missing')
     src = src.replace(anchor, anchor + '#import "ZONCloudSaveService.h"\n', 1)
 
-# P68: collapse historical duplicate cloud entry onto the canonical path.
 loadddd_start = '-(void)loadddd\n{'
 loadddd_end = '#pragma mark ---获取时间\n'
 if loadddd_start in src:
     before, tail = src.split(loadddd_start, 1)
     if loadddd_end not in tail: raise SystemExit('loadddd end marker missing')
     _, after = tail.split(loadddd_end, 1)
-    replacement = '''-(void)loadddd\n{\n    // Legacy compatibility entry. P68 keeps a single cloud-save orchestration path.\n    [self checkCloudSaveStatus];\n}\n'''
-    src = before + replacement + loadddd_end + after
+    src = before + '''-(void)loadddd\n{\n    // Legacy compatibility entry. P68 keeps a single cloud-save orchestration path.\n    [self checkCloudSaveStatus];\n}\n''' + loadddd_end + after
 
-# Entitlement policy now belongs to ZONCloudSaveService.
 ent_start = '- (BOOL)isCloudEntitlementValidWithCode:(NSNumber *)code\n'
 ent_end = '-(void)yuanchengdwon\n'
 if ent_start in src:
@@ -74,11 +71,8 @@ replacement = r'''- (void)checkCloudSaveStatus
         [SVProgressHUD dismiss];
         if (error || !metadata) {
             NSString *message = error.localizedDescription ?: @"未查询到数据";
-            if (error.code == ZONCloudSaveErrorNoArchive) {
-                [SVProgressHUD showWithStatus:message];
-            } else {
-                [SVProgressHUD showErrorWithStatus:message];
-            }
+            if (error.code == ZONCloudSaveErrorNoArchive) [SVProgressHUD showWithStatus:message];
+            else [SVProgressHUD showErrorWithStatus:message];
             [SVProgressHUD dismissWithDelay:3.0];
             return;
         }
@@ -109,15 +103,9 @@ replacement = r'''- (void)checkCloudSaveStatus
 
 - (void)presentCloudEntitlementDenied
 {
-    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:nil
-                                                                             message:@"你没有购买\n请先购买再尝试解锁"
-                                                                      preferredStyle:UIAlertControllerStyleAlert];
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:nil message:@"你没有购买\n请先购买再尝试解锁" preferredStyle:UIAlertControllerStyleAlert];
     [alertController addAction:[UIAlertAction actionWithTitle:@"购买解锁码" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:软件网页地址]
-                                           options:@{}
-                                 completionHandler:^(__unused BOOL success) {
-            exit(0);
-        }];
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:软件网页地址] options:@{} completionHandler:^(__unused BOOL success) { exit(0); }];
     }]];
     [alertController addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     [[JHPP currentViewController] presentViewController:alertController animated:YES completion:nil];
@@ -127,6 +115,7 @@ replacement = r'''- (void)checkCloudSaveStatus
 {
     NSString *deviceIdentifier = [getKeychain getKeychainDataForKey:@"DZUDID"] ?: @"";
     NSString *downloadAddress = [[ZONCloudSaveService sharedService] effectiveDownloadAddressForFunction:functionDictionary];
+    BOOL testMode = NO; // NO = 正常验证, YES = 测试模式（绕过验证）
 
     [[ZONCloudSaveService sharedService]
      resolveDownloadURLForBundleIdentifier:bundleIdentifier
@@ -134,22 +123,19 @@ replacement = r'''- (void)checkCloudSaveStatus
      archiveBaseURLString:homezip ?: @""
      deviceIdentifier:deviceIdentifier
      entitlementBaseURLString:@"https://app.zonoeios.xyz/index/index/apiface?udid="
+     bypassEntitlement:testMode
      completion:^(NSURL *downloadURL, NSError *error) {
         if (error || !downloadURL) {
-            if (error.code == ZONCloudSaveErrorEntitlementDenied) {
-                [self presentCloudEntitlementDenied];
-            } else {
+            if (error.code == ZONCloudSaveErrorEntitlementDenied) [self presentCloudEntitlementDenied];
+            else {
                 [SVProgressHUD showErrorWithStatus:error.localizedDescription ?: @"云存档验证失败"];
                 [SVProgressHUD dismissWithDelay:3.0];
             }
             return;
         }
-
         JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
         [presenter dismissAnimated:YES];
-        [presenter presentWithText:@"准备下载存档,请稍后."
-                 dismissAfterDelay:0
-                   includedStyle:JDStatusBarNotificationIncludedStyleWarning];
+        [presenter presentWithText:@"准备下载存档,请稍后." dismissAfterDelay:0 includedStyle:JDStatusBarNotificationIncludedStyleWarning];
         [self cleanupTemporaryFiles];
         [self startArchiveDownloadWithURL:downloadURL];
      }];
@@ -171,6 +157,8 @@ for marker in [
     'fetchMetadataForBundleIdentifier:',
     'resolveDownloadURLForBundleIdentifier:',
     'effectiveDownloadAddressForFunction:',
+    'bypassEntitlement:testMode',
+    'BOOL testMode = NO;',
     '[self checkCloudSaveStatus];',
     '[self startArchiveDownloadWithURL:downloadURL]',
 ]:
@@ -178,9 +166,8 @@ for marker in [
         raise SystemExit(f'missing P68 migrated marker: {marker}')
 for forbidden in [
     'isCloudEntitlementValidWithCode:',
-    'dataTaskWithURL:url completionHandler:',
     'stringWithContentsOfURL:checkUrl',
-    'BOOL testMode = NO;',
+    'NSDictionary* dicInfo = [NSJSONSerialization JSONObjectWithData:jsonData',
 ]:
     if forbidden in final_src:
         raise SystemExit(f'legacy cloud-save business marker remains: {forbidden}')
