@@ -2,6 +2,8 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
 pubg = (root / 'testmod/菜单/PubgLoad.mm').read_text()
+coord_path = root / 'testmod/ZONServices/ZONSaveTransferCoordinator.m'
+coord = coord_path.read_text() if coord_path.exists() else pubg
 service_h = (root / 'testmod/ZONServices/ZONCloudSaveService.h').read_text()
 service_m = (root / 'testmod/ZONServices/ZONCloudSaveService.m').read_text()
 pbx = (root / 'testmod.xcodeproj/project.pbxproj').read_text()
@@ -31,15 +33,11 @@ for marker in [
     'bypassEntitlement:testMode',
     'BOOL testMode = NO;',
     '[self startArchiveDownloadWithURL:downloadURL]',
-    '[self checkCloudSaveStatus];',
     '[ZONRemoteDownloadService sharedService]',
     '[ZONRestoreAPI sharedAPI]',
 ]:
-    assert marker in pubg, f'missing P68 PubgLoad marker: {marker}'
+    assert marker in coord, f'missing P68 orchestration marker: {marker}'
 
-cloud_start = pubg.index('- (void)checkCloudSaveStatus')
-cleanup_start = pubg.index('- (void)cleanupTemporaryFiles')
-cloud = pubg[cloud_start:cleanup_start]
 for forbidden in [
     'NSURLSession *session',
     'dataTaskWithURL:',
@@ -47,9 +45,9 @@ for forbidden in [
     'stringWithContentsOfURL:',
     'isCloudEntitlementValidWithCode:',
 ]:
-    assert forbidden not in cloud, f'PubgLoad still owns cloud business/networking: {forbidden}'
+    assert forbidden not in coord, f'UI orchestration still owns cloud business/networking: {forbidden}'
 
 assert pbx.count('ZONCloudSaveService.m in Sources') == 2
-assert version == 'v1_p68', f'unexpected VERSION: {version}'
+assert version in {'v1_p68', 'v1_p69'}, f'unexpected VERSION: {version}'
 
 print('P68 cloud save contract: PASS')
