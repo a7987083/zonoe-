@@ -6,16 +6,23 @@
   "current_work_branch": "work/p67a-remote-download-post-restore-exit-fix",
   "current_version": "v1_p67a",
   "current_phase": "p67a_restore_api_regression_fix",
-  "phase_status": "ci_passed_device_validation_pending",
+  "phase_status": "p67a_promoted_device_passed",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
-  "last_device_verified_version": "v1_p66",
-  "last_device_verified_code_commit": "5cd3667754449b9a7630ba2d1e7db472d692377b",
+  "last_device_verified_version": "v1_p67a",
+  "last_device_verified_code_commit": "0433ab7f3ce24f5a11dd3d8a4fe3be360a233d61",
   "rollback_baseline": {
-    "version": "v1_p66",
-    "source_commit": "5cd3667754449b9a7630ba2d1e7db472d692377b",
+    "version": "v1_p67a",
+    "source_commit": "0433ab7f3ce24f5a11dd3d8a4fe3be360a233d61",
+    "ci_run_id": 35578207158,
     "device_status": "passed",
     "device_reported_by_user": true
+  },
+  "previous_rollback_baseline": {
+    "version": "v1_p66",
+    "source_commit": "5cd3667754449b9a7630ba2d1e7db472d692377b",
+    "ci_run_id": 35573653173,
+    "device_status": "passed"
   },
   "p65": {
     "version": "v1_p65",
@@ -31,7 +38,7 @@
     "ci_run_id": 35573653173,
     "ci_status": "success",
     "device_status": "passed",
-    "promotion_status": "promoted"
+    "promotion_status": "promoted_superseded_by_p67a"
   },
   "p67": {
     "version": "v1_p67",
@@ -49,8 +56,9 @@
     "actual_build_commit": "0433ab7f3ce24f5a11dd3d8a4fe3be360a233d61",
     "ci_run_id": 35578207158,
     "ci_status": "success",
-    "device_status": "pending",
-    "promotion_status": "not_promoted",
+    "device_status": "passed",
+    "device_reported_by_user": true,
+    "promotion_status": "promoted",
     "architecture": ["arm64", "arm64e"],
     "a_customer_artifact_id": 10628789806,
     "a_customer_artifact_digest": "sha256:b43884d9e8e841c4a83db21f84eb488bc856c317cd04e047e5351aadb39fbd5b",
@@ -66,13 +74,14 @@
       "Route P67 remote/cloud restore through ZONRestoreAPI",
       "Preserve P66 PreferenceManager reload/synchronize/cleanup/exit success tail"
     ],
-    "verification_required": [
-      "local imported backup restore still works and game exits after successful restore",
-      "remote URL backup restore works and game exits after successful restore",
-      "cloud backup restore works and game exits after successful restore",
+    "device_validation": [
+      "local imported backup restore works and exits after successful restore",
+      "remote URL backup restore works and exits after successful restore",
+      "cloud backup restore works and exits after successful restore",
       "restored game data is correct after relaunch",
-      "failed or invalid restore does not terminate the game"
+      "failed or invalid restore does not terminate the game",
+      "baseline menu and six-button regression checks passed"
     ]
   },
-  "next_task": "Real-device validate v1_p67a. Keep v1_p66 as rollback baseline until all P67a restore paths pass."
+  "next_task": "Open P68 from promoted P67a runtime baseline and audit/extract cloud-save engine responsibilities without bypassing ZONRestoreAPI."
 }
