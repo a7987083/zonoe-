@@ -59,6 +59,6 @@ assert '[ZONRestoreService sharedService]' not in pubg
 assert '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]' not in pubg
 assert pbx.count('ZONRemoteDownloadService.m in Sources') == 2
 assert pbx.count('ZONRestoreAPI.m in Sources') == 2
-assert version in {'v1_p67', 'v1_p67a'}, f'unexpected VERSION: {version}'
+assert version in {'v1_p67', 'v1_p67a', 'v1_p68'}, f'unexpected VERSION: {version}'
 
 print('P67 remote download contract: PASS')
