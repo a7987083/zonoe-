@@ -12,7 +12,6 @@ for required in (PBX, PUBG, SERVICE_H, SERVICE_M, RESTORE_H):
     if not required.exists():
         raise SystemExit(f'missing required file: {required.relative_to(ROOT)}')
 
-# 1) Register ZONRemoteDownloadService.m in the active target.
 pbx = PBX.read_text(encoding='utf-8')
 build_id = 'B67000112F7B670100C0FFEE'
 file_id = 'B67000122F7B670100C0FFEE'
@@ -24,7 +23,6 @@ source_anchor = '\t\t\t\tB66000212F7B660100C0FFEE /* ZONRestorePolicy.m in Sourc
 build_line = f'\t\t{build_id} /* {name} in Sources */ = {{isa = PBXBuildFile; fileRef = {file_id} /* {name} */; }};'
 file_line = f'\t\t{file_id} /* {name} */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "{path}"; sourceTree = SOURCE_ROOT; }};'
 source_line = f'\t\t\t\t{build_id} /* {name} in Sources */,'
-
 if build_line not in pbx:
     if build_anchor not in pbx: raise SystemExit('P66 build anchor missing')
     pbx = pbx.replace(build_anchor, build_anchor + '\n' + build_line, 1)
@@ -36,14 +34,20 @@ if source_line not in pbx:
     pbx = pbx.replace(source_anchor, source_anchor + '\n' + source_line, 1)
 PBX.write_text(pbx, encoding='utf-8')
 
-# 2) Route PubgLoad active downloads through ZONRemoteDownloadService -> ZONRestoreService.
 src = PUBG.read_text(encoding='utf-8')
 if '#import "ZONRemoteDownloadService.h"' not in src:
     anchor = '#import "SVProgressHUD.h"\n'
     if anchor not in src: raise SystemExit('PubgLoad import anchor missing')
     src = src.replace(anchor, anchor + '#import "ZONRemoteDownloadService.h"\n#import "ZONRestoreService.h"\n', 1)
-
 src = src.replace('@interface PubgLoad()<SSZipArchiveDelegate,NSURLSessionDownloadDelegate>', '@interface PubgLoad()', 1)
+
+# Old loadddd compatibility entry must never enumerate/clear the entire application tmp tree.
+legacy_tmp_start = '                            NSString *cachePath = [NSHomeDirectory() stringByAppendingString:@"/tmp/zonoe/"] ;\n'
+legacy_tmp_end = '                            NSLog(@"存档 数据");\n'
+if legacy_tmp_start in src and legacy_tmp_end in src:
+    before, tail = src.split(legacy_tmp_start, 1)
+    _, after = tail.split(legacy_tmp_end, 1)
+    src = before + '                            [self cleanupTemporaryFiles];\n                            NSLog(@"存档 数据");\n' + after
 
 legacy_direct = '''                                 NSURL *url = [NSURL URLWithString:下载地址];
                                  NSURLSession *session = [NSURLSession sessionWithConfiguration:[NSURLSessionConfiguration defaultSessionConfiguration] delegate:self delegateQueue:[NSOperationQueue mainQueue]];
@@ -130,7 +134,6 @@ prefix, rest = src.split(start_marker, 1)
 _, suffix = rest.split(end_marker, 1)
 src = prefix + replacement + end_marker + suffix
 
-# P67 must not retain the old delegate engine or its commented duplicate example.
 cleanup_start = '- (void)cleanupTemporaryFiles {'
 if cleanup_start in src:
     before, tail = src.split(cleanup_start, 1)
@@ -151,15 +154,13 @@ if cleanup_start in src:
 }
 '''
     src = before + cleanup + '\n@end' + after_end
-
 PUBG.write_text(src, encoding='utf-8')
 
-# Final migration invariants.
 final_pbx = PBX.read_text(encoding='utf-8')
 if final_pbx.count('ZONRemoteDownloadService.m in Sources') != 2:
     raise SystemExit('P67 service PBX marker invariant failed')
 final_src = PUBG.read_text(encoding='utf-8')
-required = [
+for marker in [
     '#import "ZONRemoteDownloadService.h"',
     '#import "ZONRestoreService.h"',
     '[ZONRemoteDownloadService sharedService]',
@@ -167,8 +168,7 @@ required = [
     'downloadArchiveFromURL:url',
     'restoreArchiveAtPath:archivePath',
     'startArchiveDownloadWithURL:downloadURL',
-]
-for marker in required:
+]:
     if marker not in final_src:
         raise SystemExit(f'missing P67 migrated marker: {marker}')
 for forbidden in [
