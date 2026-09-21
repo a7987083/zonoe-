@@ -7,38 +7,74 @@ PUBG = ROOT / 'testmod/菜单/PubgLoad.mm'
 SERVICE_H = ROOT / 'testmod/ZONServices/ZONRemoteDownloadService.h'
 SERVICE_M = ROOT / 'testmod/ZONServices/ZONRemoteDownloadService.m'
 RESTORE_H = ROOT / 'testmod/ZONServices/ZONRestoreService.h'
+API_H = ROOT / 'testmod/ZONServices/ZONRestoreAPI.h'
+API_M = ROOT / 'testmod/ZONServices/ZONRestoreAPI.m'
 
-for required in (PBX, PUBG, SERVICE_H, SERVICE_M, RESTORE_H):
+for required in (PBX, PUBG, SERVICE_H, SERVICE_M, RESTORE_H, API_H, API_M):
     if not required.exists():
         raise SystemExit(f'missing required file: {required.relative_to(ROOT)}')
 
 pbx = PBX.read_text(encoding='utf-8')
-build_id = 'B67000112F7B670100C0FFEE'
-file_id = 'B67000122F7B670100C0FFEE'
-name = 'ZONRemoteDownloadService.m'
-path = 'testmod/ZONServices/ZONRemoteDownloadService.m'
-build_anchor = '\t\tB66000212F7B660100C0FFEE /* ZONRestorePolicy.m in Sources */ = {isa = PBXBuildFile; fileRef = B66000222F7B660100C0FFEE /* ZONRestorePolicy.m */; };'
-file_anchor = '\t\tB66000222F7B660100C0FFEE /* ZONRestorePolicy.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZONRestorePolicy.m"; sourceTree = SOURCE_ROOT; };'
-source_anchor = '\t\t\t\tB66000212F7B660100C0FFEE /* ZONRestorePolicy.m in Sources */,'
-build_line = f'\t\t{build_id} /* {name} in Sources */ = {{isa = PBXBuildFile; fileRef = {file_id} /* {name} */; }};'
-file_line = f'\t\t{file_id} /* {name} */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "{path}"; sourceTree = SOURCE_ROOT; }};'
-source_line = f'\t\t\t\t{build_id} /* {name} in Sources */,'
-if build_line not in pbx:
-    if build_anchor not in pbx: raise SystemExit('P66 build anchor missing')
-    pbx = pbx.replace(build_anchor, build_anchor + '\n' + build_line, 1)
-if file_line not in pbx:
-    if file_anchor not in pbx: raise SystemExit('P66 file anchor missing')
-    pbx = pbx.replace(file_anchor, file_anchor + '\n' + file_line, 1)
-if source_line not in pbx:
-    if source_anchor not in pbx: raise SystemExit('P66 sources anchor missing')
-    pbx = pbx.replace(source_anchor, source_anchor + '\n' + source_line, 1)
+
+def ensure_source(build_id, file_id, name, path, build_anchor, file_anchor, source_anchor):
+    global pbx
+    build_line = f'\t\t{build_id} /* {name} in Sources */ = {{isa = PBXBuildFile; fileRef = {file_id} /* {name} */; }};'
+    file_line = f'\t\t{file_id} /* {name} */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "{path}"; sourceTree = SOURCE_ROOT; }};'
+    source_line = f'\t\t\t\t{build_id} /* {name} in Sources */,'
+    if build_line not in pbx:
+        if build_anchor not in pbx:
+            raise SystemExit(f'PBX build anchor missing for {name}')
+        pbx = pbx.replace(build_anchor, build_anchor + '\n' + build_line, 1)
+    if file_line not in pbx:
+        if file_anchor not in pbx:
+            raise SystemExit(f'PBX file anchor missing for {name}')
+        pbx = pbx.replace(file_anchor, file_anchor + '\n' + file_line, 1)
+    if source_line not in pbx:
+        if source_anchor not in pbx:
+            raise SystemExit(f'PBX sources anchor missing for {name}')
+        pbx = pbx.replace(source_anchor, source_anchor + '\n' + source_line, 1)
+
+p66_build_anchor = '\t\tB66000212F7B660100C0FFEE /* ZONRestorePolicy.m in Sources */ = {isa = PBXBuildFile; fileRef = B66000222F7B660100C0FFEE /* ZONRestorePolicy.m */; };'
+p66_file_anchor = '\t\tB66000222F7B660100C0FFEE /* ZONRestorePolicy.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZONRestorePolicy.m"; sourceTree = SOURCE_ROOT; };'
+p66_source_anchor = '\t\t\t\tB66000212F7B660100C0FFEE /* ZONRestorePolicy.m in Sources */,'
+
+ensure_source(
+    'B67000112F7B670100C0FFEE',
+    'B67000122F7B670100C0FFEE',
+    'ZONRemoteDownloadService.m',
+    'testmod/ZONServices/ZONRemoteDownloadService.m',
+    p66_build_anchor,
+    p66_file_anchor,
+    p66_source_anchor,
+)
+
+p67_build_anchor = '\t\tB67000112F7B670100C0FFEE /* ZONRemoteDownloadService.m in Sources */ = {isa = PBXBuildFile; fileRef = B67000122F7B670100C0FFEE /* ZONRemoteDownloadService.m */; };'
+p67_file_anchor = '\t\tB67000122F7B670100C0FFEE /* ZONRemoteDownloadService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZONRemoteDownloadService.m"; sourceTree = SOURCE_ROOT; };'
+p67_source_anchor = '\t\t\t\tB67000112F7B670100C0FFEE /* ZONRemoteDownloadService.m in Sources */,'
+
+ensure_source(
+    'B67A00112F7B67A100C0FFEE',
+    'B67A00122F7B67A100C0FFEE',
+    'ZONRestoreAPI.m',
+    'testmod/ZONServices/ZONRestoreAPI.m',
+    p67_build_anchor,
+    p67_file_anchor,
+    p67_source_anchor,
+)
+
 PBX.write_text(pbx, encoding='utf-8')
 
 src = PUBG.read_text(encoding='utf-8')
 if '#import "ZONRemoteDownloadService.h"' not in src:
     anchor = '#import "SVProgressHUD.h"\n'
-    if anchor not in src: raise SystemExit('PubgLoad import anchor missing')
-    src = src.replace(anchor, anchor + '#import "ZONRemoteDownloadService.h"\n#import "ZONRestoreService.h"\n', 1)
+    if anchor not in src:
+        raise SystemExit('PubgLoad import anchor missing')
+    src = src.replace(anchor, anchor + '#import "ZONRemoteDownloadService.h"\n#import "ZONRestoreAPI.h"\n', 1)
+else:
+    if '#import "ZONRestoreAPI.h"' not in src:
+        src = src.replace('#import "ZONRemoteDownloadService.h"\n', '#import "ZONRemoteDownloadService.h"\n#import "ZONRestoreAPI.h"\n', 1)
+
+src = src.replace('#import "ZONRestoreService.h"\n', '', 1)
 src = src.replace('@interface PubgLoad()<SSZipArchiveDelegate,NSURLSessionDownloadDelegate>', '@interface PubgLoad()', 1)
 
 legacy_tmp_start = '                            NSString *cachePath = [NSHomeDirectory() stringByAppendingString:@"/tmp/zonoe/"] ;\n'
@@ -109,7 +145,7 @@ replacement = r'''#pragma mark - P67 remote download orchestration
                  dismissAfterDelay:0
                    includedStyle:JDStatusBarNotificationIncludedStyleSuccess];
 
-        [[ZONRestoreService sharedService]
+        [[ZONRestoreAPI sharedAPI]
          restoreArchiveAtPath:archivePath
          inboxPath:nil
          completion:^(BOOL success, NSError *restoreError) {
@@ -119,16 +155,14 @@ replacement = r'''#pragma mark - P67 remote download orchestration
                 [SVProgressHUD dismissWithDelay:3.0];
                 return;
             }
+
+            // Normal success exits through ZONRestoreAPI's preserved P66 tail.
+            // This is only reached when PreferenceManager returns instead of exiting.
             if (restoreError.code == ZONRestoreErrorCleanupFailed) {
                 [SVProgressHUD showSuccessWithStatus:@"恢复完成，但临时文件清理失败"];
             } else {
                 [SVProgressHUD showSuccessWithStatus:@"恢复完成"];
             }
-
-            // P67A_RESTORE_P66_POST_SUCCESS: preserve the P66/yidongwenjian success tail.
-            // PreferenceManager reloads restored preferences, synchronizes them, performs legacy cleanup,
-            // and terminates the game after successful synchronization.
-            [PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"];
         }];
      }];
 }
@@ -147,8 +181,7 @@ if cleanup_start in src:
     cleanup = r'''- (void)cleanupTemporaryFiles
 {
     // P67 intentionally does not enumerate or clear the application's entire /tmp tree.
-    // ZONRestoreService owns /tmp/zonoe and removes the selected downloaded archive after restore.
-    NSString *stagingRoot = [[ZONRestoreService sharedService] restoreStagingRootPath];
+    NSString *stagingRoot = [[ZONRestoreAPI sharedAPI] restoreStagingRootPath];
     if ([[NSFileManager defaultManager] fileExistsAtPath:stagingRoot]) {
         NSError *error = nil;
         if (![[NSFileManager defaultManager] removeItemAtPath:stagingRoot error:&error]) {
@@ -162,19 +195,18 @@ PUBG.write_text(src, encoding='utf-8')
 
 final_pbx = PBX.read_text(encoding='utf-8')
 if final_pbx.count('ZONRemoteDownloadService.m in Sources') != 2:
-    raise SystemExit('P67 service PBX marker invariant failed')
+    raise SystemExit('P67 remote download service PBX marker invariant failed')
+if final_pbx.count('ZONRestoreAPI.m in Sources') != 2:
+    raise SystemExit('P67a restore API PBX marker invariant failed')
 final_src = PUBG.read_text(encoding='utf-8')
 for marker in [
     '#import "ZONRemoteDownloadService.h"',
-    '#import "ZONRestoreService.h"',
-    '#import "PreferenceManager.h"',
+    '#import "ZONRestoreAPI.h"',
     '[ZONRemoteDownloadService sharedService]',
-    '[ZONRestoreService sharedService]',
+    '[ZONRestoreAPI sharedAPI]',
     'downloadArchiveFromURL:url',
     'restoreArchiveAtPath:archivePath',
     'startArchiveDownloadWithURL:downloadURL',
-    'P67A_RESTORE_P66_POST_SUCCESS',
-    '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]',
 ]:
     if marker not in final_src:
         raise SystemExit(f'missing P67/P67a migrated marker: {marker}')
@@ -182,9 +214,11 @@ for forbidden in [
     'downloadTask:(NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:',
     'URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didWriteData:',
     'NSDirectoryEnumerator *enumerator1 = [[NSFileManager defaultManager] enumeratorAtPath:LibraryPath]',
+    '[ZONRestoreService sharedService]',
+    '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]',
     'P67A_POST_RESTORE_EXIT',
 ]:
     if forbidden in final_src:
-        raise SystemExit(f'legacy or incorrect P67a marker remains: {forbidden}')
+        raise SystemExit(f'legacy or bypassed restore marker remains: {forbidden}')
 
-print('P67a remote download post-restore compatibility migration applied successfully')
+print('P67a remote download + restore API migration applied successfully')
