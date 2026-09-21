@@ -14,17 +14,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)addBtnAction;
 
-/// Semantic entry for restoring an already-prepared staging tree.
+/// Semantic entry for restoring an already-prepared staging tree through ZONRestoreAPI.
 - (void)restorePreparedArchiveStaging;
 
-/// Legacy compatibility shim. Keep existing callers working while routing them
-/// through the semantic restore entry above.
+/// Legacy compatibility shim. Historical callers keep working, while all real
+/// restore behavior now lives behind ZONRestoreAPI.
 - (void)yidongwenjian;
-
-/// Shared legacy post-restore success tail used by local, remote and cloud
-/// restore entry points. This intentionally preserves the P66 behavior:
-/// PreferenceManager reload -> synchronize -> cleanup -> process exit.
-+ (void)completeRestoreSuccessWithError:(nullable NSError *)error;
 
 @end
 
