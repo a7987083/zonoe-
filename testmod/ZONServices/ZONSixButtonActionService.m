@@ -1,7 +1,7 @@
 #import "ZONSixButtonActionService.h"
 #import "ZONAuthorizationResetService.h"
 #import "ZONGameDataResetService.h"
-#import "PubgLoad.h"
+#import "ZONSaveTransferCoordinator.h"
 #import "daochucd.h"
 #import "YYYPicker.h"
 #import "SVProgressHUD.h"
@@ -83,16 +83,16 @@ typedef void (^ZONDestructiveConfirmationHandler)(void);
 
 #pragma mark - Existing action adapters
 
-+ (BOOL)performRemoteDownloadFromViewController:(__unused UIViewController *)hostViewController
++ (BOOL)performRemoteDownloadFromViewController:(UIViewController *)hostViewController
 {
-    [[PubgLoad alloc] yuanchengdwon];
+    [[ZONSaveTransferCoordinator sharedCoordinator] presentRemoteDownloadFromViewController:hostViewController];
     return YES;
 }
 
-+ (BOOL)performCloudSaveFromViewController:(__unused UIViewController *)hostViewController
++ (BOOL)performCloudSaveFromViewController:(UIViewController *)hostViewController
 {
     [self ensureTemporaryDirectory];
-    [[PubgLoad alloc] checkCloudSaveStatus];
+    [[ZONSaveTransferCoordinator sharedCoordinator] presentCloudSaveFromViewController:hostViewController];
     return YES;
 }
 
