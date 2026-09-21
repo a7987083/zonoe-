@@ -41,9 +41,19 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
 
 #pragma mark - Restore orchestration
 
-- (void)reloadRestoredPreferences
++ (void)completeRestoreSuccessWithError:(NSError *)error
 {
+    // Preserve the P66 success tail exactly. PreferenceManager performs:
+    // restored preference reload -> synchronize -> legacy staging cleanup -> exit(0).
     [PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"];
+
+    // Kept for behavioral compatibility if PreferenceManager ever returns instead
+    // of terminating the process (for example, synchronize failure).
+    if (error.code == ZONRestoreErrorCleanupFailed) {
+        [SVProgressHUD showSuccessWithStatus:@"恢复完成，但临时文件清理失败"];
+    } else {
+        [SVProgressHUD showSuccessWithStatus:@"恢复完成"];
+    }
 }
 
 - (void)presentRestoreResult:(BOOL)success error:(NSError *)error
@@ -54,12 +64,7 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
         return;
     }
 
-    [self reloadRestoredPreferences];
-    if (error.code == ZONRestoreErrorCleanupFailed) {
-        [SVProgressHUD showSuccessWithStatus:@"恢复完成，但临时文件清理失败"];
-    } else {
-        [SVProgressHUD showSuccessWithStatus:@"恢复完成"];
-    }
+    [[self class] completeRestoreSuccessWithError:error];
 }
 
 - (void)handlePickedRestoreURL:(NSURL *)fileUrl
@@ -102,13 +107,19 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
     });
 }
 
-- (void)yidongwenjian
+- (void)restorePreparedArchiveStaging
 {
     ZONRestoreService *service = [ZONRestoreService sharedService];
     NSString *stagingRoot = [service restoreStagingRootPath];
     [service restorePreparedStagingAtPath:stagingRoot completion:^(BOOL success, NSError *error) {
         [self presentRestoreResult:success error:error];
     }];
+}
+
+- (void)yidongwenjian
+{
+    // Legacy compatibility entry retained for historical callers.
+    [self restorePreparedArchiveStaging];
 }
 
 #pragma mark - UICollectionViewDataSource
@@ -150,7 +161,7 @@ minimumInteritemSpacingForSectionAtIndex:(NSInteger)section
 
 - (CGFloat)collectionView:(UICollectionView *)collectionView
                    layout:(UICollectionViewLayout *)collectionViewLayout
-minimumLineSpacingForSectionAtIndex:(NSInteger)section
+minimumLineSpacingForSectionAtIndexPath:(NSIndexPath *)indexPath
 {
     return 5;
 }
@@ -160,7 +171,7 @@ minimumLineSpacingForSectionAtIndex:(NSInteger)section
     return 1;
 }
 
-- (id<QLPreviewItem>)previewController:(QLPreviewController *)controller previewItemAtIndex:(NSInteger)index
+- (id<QLPreviewItem>)previewController:(QLPreviewController *)controller previewItemAtIndexPath:(NSIndexPath *)indexPath
 {
     NSURL *documentsDirectoryURL = [NSURL fileURLWithPath:self.seleFileM.filePath];
     return documentsDirectoryURL;
