@@ -20,45 +20,31 @@
 - Delivered dylib: `v1_p66_B_debug_testmod.dylib`
 - Dylib SHA256: `f67f6e55d5f53796f3b83fdcc5ef7de230f3a415db32dfffdbc2b93f58f7119f`
 
-## P66 changes under device test
+## P66 changes validated on device
 - Restore filesystem/archive execution extracted from `YYYPicker` into `ZONRestoreService`.
 - Restore compatibility rules owned by `ZONRestorePolicy`.
 - Existing `addBtnAction` picker entry preserved.
 - Existing `yidongwenjian` cloud/download compatibility entry preserved.
 - Merge/overwrite restore semantics preserved; P66 does not convert restore into snapshot replacement.
-- Shared SSZipArchive now rejects standardized output paths that escape the requested extraction root.
-- Prefer a common backup root containing Documents/Library, with legacy independent recursive discovery retained as fallback.
+- Shared SSZipArchive rejects standardized output paths that escape the requested extraction root.
+- Common backup root containing Documents/Library is preferred, with legacy independent recursive discovery retained as fallback.
 - Selected imported archive is cleaned individually; the whole Inbox is removed only when empty.
+- Restore execution is serialized.
 
-## Real-device validation required before promotion
-Use `A_customer` for normal testing. Use `B_debug` only for diagnosis if a scoped test fails.
+## Real-device validation result
+User explicitly confirmed on 2026-09-21 that all scoped P66 validation items are normal.
 
-1. Launch/menu regression
-   - Game launches normally.
-   - Menu appears normally.
-   - Existing six-button surface remains callable.
+Validated:
+- Launch/menu regression: PASS.
+- Existing six-button surface: PASS.
+- P65 backup -> P66 restore: PASS.
+- Historical backup compatibility: PASS.
+- Cloud/download `yidongwenjian` compatibility: PASS.
+- Failure handling / abnormal restore behavior: PASS.
+- Existing backup and other six-button regression: PASS.
 
-2. P65 backup -> P66 restore
-   - Create or use a backup produced by the promoted P65 build.
-   - Restore it with P66.
-   - Confirm restore completes without crash/error.
-   - Relaunch game and verify restored data is correct.
-
-3. Historical backup compatibility
-   - Restore at least one older backup created before P65.
-   - Confirm Documents/Library data remains compatible and usable after relaunch.
-
-4. Cloud/download compatibility
-   - Run the existing cloud/download restore flow which prepares `/tmp/zonoe` and reaches `yidongwenjian`.
-   - Confirm it still restores successfully.
-
-5. Failure safety
-   - Select a non-ZIP/corrupt file and confirm restore fails without reporting false success.
-   - If practical, test an archive containing an unsafe `../` entry and confirm extraction is rejected.
-
-6. General regression
-   - Backup still works normally.
-   - Clear game data / authorization reset and other six-button actions remain normal.
-
-## Promotion gate
-P66 remains `CI PASSED / DEVICE VALIDATION PENDING` until the user explicitly confirms the scoped P66 real-device restore tests have passed. P65 runtime `60db9885c1c69ff7e658bd99949274884d898b32` remains the rollback/device baseline until that confirmation.
+## Promotion
+- Device status: `passed`.
+- Promotion status: `promoted_device_passed`.
+- New rollback/device baseline: `v1_p66` runtime source `5cd3667754449b9a7630ba2d1e7db472d692377b`.
+- P65 remains the prior known-good baseline for historical comparison, but P66 is now the active promoted baseline for follow-on development.
