@@ -12,9 +12,8 @@
 #import <QuickLook/QuickLook.h>
 #import "SVProgressHUD.h"
 #import "SSZipArchive.h"
-#import "PreferenceManager.h"
 #import "jhpp.h"
-#import "ZONRestoreService.h"
+#import "ZONRestoreAPI.h"
 
 #define screenW [[UIScreen mainScreen] bounds].size.width
 #define screenH [[UIScreen mainScreen] bounds].size.height
@@ -41,21 +40,6 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
 
 #pragma mark - Restore orchestration
 
-+ (void)completeRestoreSuccessWithError:(NSError *)error
-{
-    // Preserve the P66 success tail exactly. PreferenceManager performs:
-    // restored preference reload -> synchronize -> legacy staging cleanup -> exit(0).
-    [PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"];
-
-    // Kept for behavioral compatibility if PreferenceManager ever returns instead
-    // of terminating the process (for example, synchronize failure).
-    if (error.code == ZONRestoreErrorCleanupFailed) {
-        [SVProgressHUD showSuccessWithStatus:@"恢复完成，但临时文件清理失败"];
-    } else {
-        [SVProgressHUD showSuccessWithStatus:@"恢复完成"];
-    }
-}
-
 - (void)presentRestoreResult:(BOOL)success error:(NSError *)error
 {
     if (!success) {
@@ -64,7 +48,13 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
         return;
     }
 
-    [[self class] completeRestoreSuccessWithError:error];
+    // A successful restore normally terminates through ZONRestoreAPI's preserved
+    // P66 post-success tail. This is only a fallback if PreferenceManager returns.
+    if (error.code == ZONRestoreErrorCleanupFailed) {
+        [SVProgressHUD showSuccessWithStatus:@"恢复完成，但临时文件清理失败"];
+    } else {
+        [SVProgressHUD showSuccessWithStatus:@"恢复完成"];
+    }
 }
 
 - (void)handlePickedRestoreURL:(NSURL *)fileUrl
@@ -73,8 +63,8 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
 
     NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
     NSString *bundleIdentifier = [infoDictionary objectForKey:@"CFBundleIdentifier"];
-    ZONRestoreService *service = [ZONRestoreService sharedService];
-    NSString *inboxPath = [service restoreInboxPathForBundleIdentifier:bundleIdentifier];
+    ZONRestoreAPI *api = [ZONRestoreAPI sharedAPI];
+    NSString *inboxPath = [api restoreInboxPathForBundleIdentifier:bundleIdentifier];
     NSString *archivePath = fileUrl.path;
 
     if (![[NSFileManager defaultManager] fileExistsAtPath:archivePath]) {
@@ -86,7 +76,7 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
     [self.collectionView reloadData];
     [SVProgressHUD showWithStatus:@"处理中..."];
 
-    [service restoreArchiveAtPath:archivePath inboxPath:inboxPath completion:^(BOOL success, NSError *error) {
+    [api restoreArchiveAtPath:archivePath inboxPath:inboxPath completion:^(BOOL success, NSError *error) {
         [self presentRestoreResult:success error:error];
     }];
 }
@@ -109,9 +99,9 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
 
 - (void)restorePreparedArchiveStaging
 {
-    ZONRestoreService *service = [ZONRestoreService sharedService];
-    NSString *stagingRoot = [service restoreStagingRootPath];
-    [service restorePreparedStagingAtPath:stagingRoot completion:^(BOOL success, NSError *error) {
+    ZONRestoreAPI *api = [ZONRestoreAPI sharedAPI];
+    NSString *stagingRoot = [api restoreStagingRootPath];
+    [api restorePreparedStagingAtPath:stagingRoot completion:^(BOOL success, NSError *error) {
         [self presentRestoreResult:success error:error];
     }];
 }
@@ -161,7 +151,7 @@ minimumInteritemSpacingForSectionAtIndex:(NSInteger)section
 
 - (CGFloat)collectionView:(UICollectionView *)collectionView
                    layout:(UICollectionViewLayout *)collectionViewLayout
-minimumLineSpacingForSectionAtIndexPath:(NSIndexPath *)indexPath
+minimumLineSpacingForSectionAtIndex:(NSInteger)section
 {
     return 5;
 }
@@ -171,7 +161,7 @@ minimumLineSpacingForSectionAtIndexPath:(NSIndexPath *)indexPath
     return 1;
 }
 
-- (id<QLPreviewItem>)previewController:(QLPreviewController *)controller previewItemAtIndexPath:(NSIndexPath *)indexPath
+- (id<QLPreviewItem>)previewController:(QLPreviewController *)controller previewItemAtIndex:(NSInteger)index
 {
     NSURL *documentsDirectoryURL = [NSURL fileURLWithPath:self.seleFileM.filePath];
     return documentsDirectoryURL;
