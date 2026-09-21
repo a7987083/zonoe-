@@ -48,14 +48,17 @@ Artifacts:
 - B_debug artifact `10627714943`
 - B_debug dylib SHA-256 `57c585ec57f6109bf03e6c522a440474e68256e9e1491d65ad5cedfdfca20594`
 
-## Device gate
+## Device validation
 
-P67a is CI-passed but must not be promoted until real-device validation confirms:
+Status: **PASSED / PROMOTED**
 
-1. local imported ZIP restore still succeeds and exits the game;
+User reported the complete scoped real-device validation as normal:
+
+1. local imported ZIP restore succeeds and exits the game;
 2. remote URL ZIP restore succeeds and exits the game;
 3. cloud-save restore succeeds and exits the game;
 4. restored data is correct after relaunch;
-5. invalid/damaged/failed restores do not terminate the game.
+5. invalid/damaged/failed restores do not incorrectly terminate the game;
+6. baseline startup/menu/six-button regression checks are normal.
 
-P66 remains the rollback baseline until this gate passes.
+P67a is now the promoted runtime/rollback baseline. P67 remains a non-promoted regression build. The verified runtime source remains `0433ab7f3ce24f5a11dd3d8a4fe3be360a233d61`; later documentation commits are not runtime build commits.
