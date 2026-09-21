@@ -130,12 +130,13 @@ prefix, rest = src.split(start_marker, 1)
 _, suffix = rest.split(end_marker, 1)
 src = prefix + replacement + end_marker + suffix
 
-# P67 owns download artifacts under /tmp/zonoe-download; no broad tmp cleanup is allowed.
+# P67 must not retain the old delegate engine or its commented duplicate example.
 cleanup_start = '- (void)cleanupTemporaryFiles {'
-cleanup_end = '//\n//#pragma mark - NSURLSessionDownloadDelegate\n'
-if cleanup_start in src and cleanup_end in src:
+if cleanup_start in src:
     before, tail = src.split(cleanup_start, 1)
-    _, after = tail.split(cleanup_end, 1)
+    if '\n@end' not in tail:
+        raise SystemExit('PubgLoad @end missing after cleanupTemporaryFiles')
+    _, after_end = tail.split('\n@end', 1)
     cleanup = r'''- (void)cleanupTemporaryFiles
 {
     // P67 intentionally does not enumerate or clear the application's entire /tmp tree.
@@ -148,9 +149,8 @@ if cleanup_start in src and cleanup_end in src:
         }
     }
 }
-
 '''
-    src = before + cleanup + cleanup_end + after
+    src = before + cleanup + '\n@end' + after_end
 
 PUBG.write_text(src, encoding='utf-8')
 
