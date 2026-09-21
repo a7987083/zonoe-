@@ -32,6 +32,7 @@ typedef void (^ZONCloudSaveDownloadResolutionCompletion)(NSURL * _Nullable downl
                          archiveBaseURLString:(NSString *)archiveBaseURLString
                              deviceIdentifier:(NSString *)deviceIdentifier
                     entitlementBaseURLString:(NSString *)entitlementBaseURLString
+                           bypassEntitlement:(BOOL)bypassEntitlement
                                    completion:(ZONCloudSaveDownloadResolutionCompletion)completion;
 
 @end
