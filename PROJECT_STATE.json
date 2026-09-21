@@ -3,85 +3,76 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/p64a-clear-game-data-runtime-directory-fix",
-  "current_version": "v1_p64a",
-  "current_phase": "p65_backup_engine_refactor",
-  "phase_status": "p64a_promoted_p65_opening",
-  "last_device_verified_code_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
-  "last_device_verified_version": "v1_p64a",
-  "last_ci_run_id": 35524126925,
-  "last_ci_status": "success",
+  "current_work_branch": "work/p67a-remote-download-post-restore-exit-fix",
+  "current_version": "v1_p67a",
+  "current_phase": "p67a_restore_api_regression_fix",
+  "phase_status": "ci_passed_device_validation_pending",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
-  "canonical_product_surface": ["testmod/", "testmod.xcodeproj"],
-  "version_naming_rule": {
-    "new_stage": "increment numeric phase, e.g. P63 -> P64 -> P65",
-    "same_stage_fix": "append lowercase suffix, e.g. P64a -> P64b -> P64c",
-    "historical_correction": "v1_p63a maps canonically to P63; v1_p63b maps canonically to P64. History is preserved rather than rewritten."
-  },
+  "last_device_verified_version": "v1_p66",
+  "last_device_verified_code_commit": "5cd3667754449b9a7630ba2d1e7db472d692377b",
   "rollback_baseline": {
-    "canonical_version": "v1_p64a",
-    "source_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
-    "ci_run_id": 35524126925,
+    "version": "v1_p66",
+    "source_commit": "5cd3667754449b9a7630ba2d1e7db472d692377b",
     "device_status": "passed",
     "device_reported_by_user": true
   },
-  "p64": {
-    "name": "clear_game_data_dedicated_service",
-    "historical_built_version_string": "v1_p63b",
-    "canonical_version": "v1_p64",
-    "actual_build_commit": "203b9f93d88a20f820ba35d0e3f65f16f296ce5d",
-    "ci_run_id": 35522283236,
-    "ci_status": "success",
-    "device_status": "failed",
-    "device_failure": "Library/Caches could not be removed while the app was alive; P64 incorrectly treated runtime directory removal/existence as fatal remaining payload.",
-    "promotion_status": "not_promoted"
-  },
-  "p64a": {
-    "name": "clear_game_data_runtime_directory_fix",
-    "version": "v1_p64a",
-    "status": "promoted_device_passed",
-    "branch": "work/p64a-clear-game-data-runtime-directory-fix",
-    "actual_build_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
-    "ci_run_id": 35524126925,
+  "p65": {
+    "version": "v1_p65",
+    "actual_build_commit": "60db9885c1c69ff7e658bd99949274884d898b32",
+    "ci_run_id": 35562076044,
     "ci_status": "success",
     "device_status": "passed",
-    "device_reported_by_user": true,
-    "a_customer_artifact_id": 10608274021,
-    "a_customer_artifact_digest": "sha256:5cc2772e8fb2794a1301ca79526ea9a375ae5686c92e9040609eb9009ab20302",
-    "a_customer_dylib_sha256": "34ef87c5be956e81764984a524c0c04428bbc83a4949e23dbc4ba19f10cfbaf9",
-    "b_debug_artifact_id": 10608289075,
-    "b_debug_artifact_digest": "sha256:c6296cb2d5ee1114501e9f35eda7e5c9cef76e9bc2657d126accb79e9bdedff8",
-    "b_debug_dylib_sha256": "335f0e3028a6bf2f9e202681487822065bdda6598a853889f9c973cd9616b379"
+    "promotion_status": "promoted"
   },
-  "p65": {
-    "name": "backup_engine_refactor",
-    "version": "v1_p65",
-    "status": "opening_audit",
-    "baseline_version": "v1_p64a",
-    "baseline_source_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
-    "goal": "Extract backup execution from daochucd behind a clean API/service boundary, remove duplicate scanning/copy/staging logic, centralize policy/error handling, and preserve compatibility with the existing restore flow.",
-    "planned_service_files": [
-      "testmod/ZONServices/ZONBackupService.h",
-      "testmod/ZONServices/ZONBackupService.m",
-      "testmod/ZONServices/ZONBackupPolicy.h",
-      "testmod/ZONServices/ZONBackupPolicy.m"
+  "p66": {
+    "version": "v1_p66",
+    "actual_build_commit": "5cd3667754449b9a7630ba2d1e7db472d692377b",
+    "ci_run_id": 35573653173,
+    "ci_status": "success",
+    "device_status": "passed",
+    "promotion_status": "promoted"
+  },
+  "p67": {
+    "version": "v1_p67",
+    "actual_build_commit": "71410f993dc9c00d16586af75c7d8e05bcdc8307",
+    "ci_run_id": 35574929300,
+    "ci_status": "success",
+    "device_status": "failed",
+    "device_failure": "Remote-download and cloud-save restores completed, but the game did not terminate after a successful restore because P67 bypassed the P66 yidongwenjian post-success PreferenceManager tail.",
+    "promotion_status": "not_promoted"
+  },
+  "p67a": {
+    "version": "v1_p67a",
+    "name": "restore_api_and_post_restore_compatibility_fix",
+    "branch": "work/p67a-remote-download-post-restore-exit-fix",
+    "actual_build_commit": "0433ab7f3ce24f5a11dd3d8a4fe3be360a233d61",
+    "ci_run_id": 35578207158,
+    "ci_status": "success",
+    "device_status": "pending",
+    "promotion_status": "not_promoted",
+    "architecture": ["arm64", "arm64e"],
+    "a_customer_artifact_id": 10628789806,
+    "a_customer_artifact_digest": "sha256:b43884d9e8e841c4a83db21f84eb488bc856c317cd04e047e5351aadb39fbd5b",
+    "a_customer_dylib_sha256": "e36ff45ad1191528856cc8c1ba92d4d17e5eb098c0bf50c6889a6d324744a7f6",
+    "b_debug_artifact_id": 10627714943,
+    "b_debug_artifact_digest": "sha256:5598af018f697a370f1b2974e5c681b0c3407b930c25d9e9d2ef73f9668fa68b",
+    "b_debug_dylib_sha256": "57c585ec57f6109bf03e6c522a440474e68256e9e1491d65ad5cedfdfca20594",
+    "changes": [
+      "Add ZONRestoreAPI as the single complete restore business entry point",
+      "Keep ZONRestoreService focused on archive/filesystem work",
+      "Route YYYPicker local restore through ZONRestoreAPI",
+      "Refactor yidongwenjian into a compatibility shim",
+      "Route P67 remote/cloud restore through ZONRestoreAPI",
+      "Preserve P66 PreferenceManager reload/synchronize/cleanup/exit success tail"
     ],
     "verification_required": [
-      "current daochucd behavior/data-flow audit",
-      "backup API/service contract",
-      "existing six-button route preserved",
-      "archive compatibility with existing restore flow",
-      "A_customer arm64+arm64e build",
-      "B_debug arm64+arm64e build",
-      "real-device backup creation",
-      "real-device restore of a P65-produced backup through existing restore path"
+      "local imported backup restore still works and game exits after successful restore",
+      "remote URL backup restore works and game exits after successful restore",
+      "cloud backup restore works and game exits after successful restore",
+      "restored game data is correct after relaunch",
+      "failed or invalid restore does not terminate the game"
     ]
   },
-  "follow_on_plan": [
-    "P66 restore engine extraction",
-    "P67 remote-download engine extraction",
-    "P68 cloud-save engine extraction"
-  ],
-  "next_task": "Create the P65 branch from the P64a promoted documentation closeout, deeply audit daochucd and its archive/restore compatibility, then implement the first ZONBackupService boundary."
+  "next_task": "Real-device validate v1_p67a. Keep v1_p66 as rollback baseline until all P67a restore paths pass."
 }
