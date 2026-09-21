@@ -125,6 +125,12 @@ replacement = r'''#pragma mark - P67 remote download orchestration
             } else {
                 [SVProgressHUD showSuccessWithStatus:@"恢复完成"];
             }
+
+            // P67A_POST_RESTORE_EXIT: remote/cloud restore must restart cleanly with restored data.
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)),
+                           dispatch_get_main_queue(), ^{
+                exit(0);
+            });
         }];
      }];
 }
@@ -168,9 +174,10 @@ for marker in [
     'downloadArchiveFromURL:url',
     'restoreArchiveAtPath:archivePath',
     'startArchiveDownloadWithURL:downloadURL',
+    'P67A_POST_RESTORE_EXIT',
 ]:
     if marker not in final_src:
-        raise SystemExit(f'missing P67 migrated marker: {marker}')
+        raise SystemExit(f'missing P67/P67a migrated marker: {marker}')
 for forbidden in [
     'downloadTask:(NSURLSessionDownloadTask *)downloadTask didFinishDownloadingToURL:',
     'URLSession:(NSURLSession *)session downloadTask:(NSURLSessionDownloadTask *)downloadTask didWriteData:',
@@ -179,4 +186,4 @@ for forbidden in [
     if forbidden in final_src:
         raise SystemExit(f'legacy active download marker remains: {forbidden}')
 
-print('P67 remote download service migration applied successfully')
+print('P67a remote download post-restore exit migration applied successfully')
