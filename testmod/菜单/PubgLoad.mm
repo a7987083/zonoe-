@@ -16,6 +16,7 @@
 #import "SVProgressHUD.h"
 #import "ZONRemoteDownloadService.h"
 #import "ZONRestoreAPI.h"
+#import "ZONCloudSaveService.h"
 
 @interface PubgLoad()
 @property (nonatomic, strong) dispatch_source_t timer;
@@ -114,116 +115,8 @@ static BOOL MenDeal;
 
 -(void)loadddd
 {
-//    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        //解析服务器版本
-        NSError *error;
-        //获取应用ID
-        //获取info.plist
-        NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
-        NSString *BundID = [infoDictionary objectForKey:@"CFBundleIdentifier"];
-        NSLog(@"🆚BundID=\n%@\n",BundID);
-        NSString *txturl = [NSString stringWithFormat:@"%@%@.json",homeurl,BundID];
-        NSData *data = [NSData dataWithContentsOfURL:[NSURL URLWithString:txturl]];
-        json = [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:&error];
-
-
-        if ([json[@"code"] integerValue] == 500|| data==nil){
-     
-            
-                 [SVProgressHUD showWithStatus:@"未查询到有云存档\n..."];
-                [SVProgressHUD dismissWithDelay:3.0];
-         }else{
-        if (error==nil) {
- 
-    
-            NSString *主标题 = [json objectForKey:@"主标题"];//主功能
-            NSString *副标题 = [json objectForKey:@"副标题"];//主功能
-//            NSString *取消 = [json objectForKey:@"取消"];//主功能
-            NSArray *功能 = [json objectForKey:@"功能"];
-            UIAlertController *alert = [UIAlertController alertControllerWithTitle:主标题 message:副标题 preferredStyle:UIAlertControllerStyleAlert];
-
-            for (int i =0; i< 功能.count; i++) {
-                NSDictionary*功能数组=功能[i];
-                //                NSLog(@"功能数组=%@",功能数组);
-                NSString *按钮名字 = [功能数组 objectForKey:@"按钮名字"];
-                //                NSString *解压目录 = [功能数组 objectForKey:@"解压目录"];
-                NSString *urldz=[功能数组 objectForKey:@"下载地址"];
-                NSString *下载地址啊 = [urldz stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
-                
-                NSString *url= [NSString stringWithFormat:@"%@%@.zip",homezip,BundID];
-                NSString *下载地址 = [url stringByAddingPercentEncodingWithAllowedCharacters:[NSCharacterSet URLQueryAllowedCharacterSet]];
-                
-                
-                                UIAlertAction *okAction = [UIAlertAction actionWithTitle:按钮名字 style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-     
-                
-                if([按钮名字 containsString:@"数据"] || [按钮名字 containsString:@"解说"] || [按钮名字 containsString:@"存档"]){
-                    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-//                    NSString * rjyyz=[getKeychain getKeychainDataForKey:@"rjyyz"];
-                    设备特征码=[getKeychain getKeychainDataForKey:@"DZUDID"];
-                    // MARK: 拼接链接、转换成URL
-                    NSString *checkUrlString = [NSString stringWithFormat:@"https://app.zonoeios.xyz/index/index/apiface?udid=%@",设备特征码];
-                    NSURL *checkUrl = [NSURL URLWithString:checkUrlString];
-                    NSLog(@"URL 返回的 strarr字符串：%@", checkUrl);
-                    // MARK: 获取网络数据AppStore上app的信息
-                    NSString *appInfoString = [NSString stringWithContentsOfURL:checkUrl encoding:NSUTF8StringEncoding error:nil];
-                    
-                    // MARK: 字符串转json转字典
-                    NSData *JSONData = [appInfoString dataUsingEncoding:NSUTF8StringEncoding];
-                    NSDictionary* dicInfo = [NSJSONSerialization JSONObjectWithData:JSONData options:0 error:nil];
-                        
-                    static dispatch_once_t onceToken;
-                    dispatch_once(&onceToken, ^{
-                    if (dicInfo) {
-                        软件信息=dicInfo[@"msg"];
-//                        NSLog(@"%@dd",软件信息);
-                        if ([软件信息 containsString:@"ok"]  ) {
-                            [self cleanupTemporaryFiles];
-                            NSLog(@"存档 数据");
-                            dispatch_async(dispatch_get_main_queue(), ^{
-                                JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
-                                [presenter dismissAnimated:YES]; // 或者 YES，取决于你的需求
-                                [presenter presentWithText:@"准备下载存档,请稍后." dismissAfterDelay:0 includedStyle:JDStatusBarNotificationIncludedStyleWarning];
-                            });
-                            
-                                 NSURL *url = [NSURL URLWithString:下载地址];
-                                 [self startArchiveDownloadWithURL:url];
-                         
-                         
-
-                        }else{
-                            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                            UIAlertController *alertController = [UIAlertController alertControllerWithTitle:nil message:@"你没有购买\n请先购买再尝试解锁" preferredStyle:UIAlertControllerStyleAlert];
-                            [alertController addAction:[UIAlertAction actionWithTitle:@"购买解锁码" style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-                           
-                               
-                                [[UIApplication sharedApplication] openURL:[NSURL URLWithString:软件网页地址] options:@{} completionHandler:^(BOOL success) {
-                                    exit(0);
-                                }];
-                               
-
-                            }]];
-                       
-                            [[JHPP currentViewController] presentViewController:alertController animated:YES completion:nil];
-                            });
-                        }
-                    }
-                     });
-                    
-                });
-                }
-                
-                                }];
-                                  [alert addAction:okAction];
-             }
-
-            [[JHPP currentViewController] presentViewController:alert animated:YES completion:nil];
-            }
-        
-        }
-    });
+    // Legacy compatibility entry. P68 keeps a single cloud-save orchestration path.
+    [self checkCloudSaveStatus];
 }
 #pragma mark ---获取时间
 - (NSString *)getSystemDates{
@@ -305,17 +198,6 @@ static BOOL MenDeal;
      }];
 }
 
-- (BOOL)isCloudEntitlementValidWithCode:(NSNumber *)code
-                                    msg:(NSString *)msg
-                                 expire:(NSNumber *)expire
-                               testMode:(BOOL)testMode
-{
-    NSTimeInterval now = [[NSDate date] timeIntervalSince1970];
-    return testMode || (code && [code intValue] == 1 &&
-                        msg && [msg isEqualToString:@"ok"] &&
-                        expire && [expire doubleValue] > now);
-}
-
 -(void)yuanchengdwon
 {
 
@@ -368,266 +250,85 @@ static BOOL MenDeal;
 
 
 // 此方法可以在视图出现时或应用启动时调用
-- (void)checkCloudSaveStatus {
-    // 显示加载指示器
+- (void)checkCloudSaveStatus
+{
     [SVProgressHUD showWithStatus:@"正在检查云存档文件..."];
-//    NSString *rjyyz=[getKeychain getKeychainDataForKey:@"rjyyz"];
-//    NSLog(@"rjyyz信息：%@", rjyyz);
-    NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
-    NSString *bundleID = [infoDictionary objectForKey:@"CFBundleIdentifier"];
-//    NSLog(@"🆚BundleID=\n%@\n", bundleID);
-
-    NSString *jsonURLString = [NSString stringWithFormat:@"%@%@.json", homeurl, bundleID];
-    NSURL *url = [NSURL URLWithString:jsonURLString];
-
-    if (!url) {
-        NSLog(@"错误：无效的 JSON URL: %@", jsonURLString);
-        [SVProgressHUD showErrorWithStatus:@"URL错误"];
-        [SVProgressHUD dismissWithDelay:2.0];
-        return;
-    }
-    
-  
-
-    NSURLSession *session = [NSURLSession sharedSession];
-    NSURLSessionDataTask *dataTask = [session dataTaskWithURL:url completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [SVProgressHUD dismiss]; // 隐藏加载指示器
-
-            if (error) {
-                NSLog(@"获取 JSON 错误：%@", error);
-                [SVProgressHUD showErrorWithStatus:@"网络连接失败，请检查网络"];
-                [SVProgressHUD dismissWithDelay:3.0];
-                return;
-            }
-
-            if (!data) {
-                NSLog(@"错误：未从服务器接收到数据。");
-                [SVProgressHUD showErrorWithStatus:@"未获取到服务器数据"];
-                [SVProgressHUD dismissWithDelay:3.0];
-                return;
-            }
-
-            NSError *jsonError;
-            id jsonObject = [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:&jsonError];
-
-            if (jsonError) {
-                NSLog(@"解析 JSON 错误：%@", jsonError);
-                [SVProgressHUD showErrorWithStatus:@"未查询到数据"];
-                [SVProgressHUD dismissWithDelay:3.0];
-                return;
-            }
-
-            if (![jsonObject isKindOfClass:[NSDictionary class]]) {
-                NSLog(@"错误：JSON 不是字典类型。");
-                [SVProgressHUD showErrorWithStatus:@"服务器数据格式错误"];
-                [SVProgressHUD dismissWithDelay:3.0];
-                return;
-            }
-
-            NSDictionary *json = (NSDictionary *)jsonObject;
-
-            if ([json[@"code"] integerValue] == 500) {
-                [SVProgressHUD showWithStatus:@"未查询到有云存档\n..."];
-                [SVProgressHUD dismissWithDelay:3.0];
-            } else {
-                [self presentCloudSaveAlertWithJSON:json];
-            }
-        });
-    }];
-    [dataTask resume];
+    NSString *bundleID = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleIdentifier"];
+    [[ZONCloudSaveService sharedService]
+     fetchMetadataForBundleIdentifier:bundleID ?: @""
+     metadataBaseURLString:homeurl ?: @""
+     completion:^(NSDictionary *metadata, NSError *error) {
+        [SVProgressHUD dismiss];
+        if (error || !metadata) {
+            NSString *message = error.localizedDescription ?: @"未查询到数据";
+            if (error.code == ZONCloudSaveErrorNoArchive) [SVProgressHUD showWithStatus:message];
+            else [SVProgressHUD showErrorWithStatus:message];
+            [SVProgressHUD dismissWithDelay:3.0];
+            return;
+        }
+        [self presentCloudSaveAlertWithJSON:metadata];
+     }];
 }
 
-- (void)presentCloudSaveAlertWithJSON:(NSDictionary *)json {
-    NSString *mainTitle = [json objectForKey:@"主标题"];
-    NSString *subTitle = [json objectForKey:@"副标题"];
-    NSArray *functions = [json objectForKey:@"功能"];
+- (void)presentCloudSaveAlertWithJSON:(NSDictionary *)metadata
+{
+    NSString *mainTitle = [metadata[@"主标题"] isKindOfClass:[NSString class]] ? metadata[@"主标题"] : @"云存档";
+    NSString *subTitle = [metadata[@"副标题"] isKindOfClass:[NSString class]] ? metadata[@"副标题"] : nil;
+    NSArray *functions = [metadata[@"功能"] isKindOfClass:[NSArray class]] ? metadata[@"功能"] : @[];
+    NSString *bundleID = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleIdentifier"] ?: @"";
 
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:mainTitle message:subTitle preferredStyle:UIAlertControllerStyleAlert];
-
-    for (NSDictionary *functionDict in functions) {
-
-        NSString *buttonName = functionDict[@"按钮名字"];
-        NSString *downloadAddress = functionDict[@"下载地址"];
-
-        // ✅ 防止 Block 捕获 bug
-        NSString *safeName = [buttonName copy];
-        NSString *safeURL  = [downloadAddress copy];
-
-        UIAlertAction *action =
-        [UIAlertAction actionWithTitle:safeName
-                                 style:UIAlertActionStyleDefault
-                               handler:^(UIAlertAction * _Nonnull action) {
-
-            // ✅ 存档类按钮 → 默认 homezip + bundleID.zip
-            if ([safeName containsString:@"数据"] ||
-                [safeName containsString:@"解说"] ||
-                [safeName containsString:@"存档"]) {
-
-//                NSLog(@"📌 存档按钮：走默认 bundleID.zip");
-
-                // ⚠️ 传 nil 表示使用默认方式
-                [self handleDownloadActionForBundleID:BundID
-                                     downloadAddress:nil];
-
-            } else {
-
-                // ✅ 其他按钮 → 走 JSON 的 downloadAddress
-//                NSLog(@"📌 普通按钮：走 JSON 地址 %@", safeURL);
-
-                [self handleDownloadActionForBundleID:BundID
-                                     downloadAddress:safeURL];
-            }
+    for (id object in functions) {
+        if (![object isKindOfClass:[NSDictionary class]]) continue;
+        NSDictionary *functionDictionary = (NSDictionary *)object;
+        NSString *buttonName = [functionDictionary[@"按钮名字"] isKindOfClass:[NSString class]] ? functionDictionary[@"按钮名字"] : @"云存档";
+        UIAlertAction *action = [UIAlertAction actionWithTitle:buttonName style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
+            [self handleCloudFunction:functionDictionary bundleIdentifier:bundleID];
         }];
-
         [alert addAction:action];
     }
-
-
-    // 如果需要，添加取消动作
     [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
-
     [[JHPP currentViewController] presentViewController:alert animated:YES completion:nil];
 }
 
- - (void)handleDownloadActionForBundleID:(NSString *)bundleID downloadAddress:(NSString *)downloadAddress {
-    // 在后台线程执行购买检查
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-        NSString *deviceUDID = [getKeychain getKeychainDataForKey:@"DZUDID"];
-//        NSLog(@"rjyyz信息：%@", rjyyz);
-        NSString *checkUrlString = [NSString stringWithFormat:@"https://app.zonoeios.xyz/index/index/apiface?udid=%@", deviceUDID];
-        NSURL *checkUrl = [NSURL URLWithString:checkUrlString];
+- (void)presentCloudEntitlementDenied
+{
+    UIAlertController *alertController = [UIAlertController alertControllerWithTitle:nil message:@"你没有购买\n请先购买再尝试解锁" preferredStyle:UIAlertControllerStyleAlert];
+    [alertController addAction:[UIAlertAction actionWithTitle:@"购买解锁码" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:软件网页地址] options:@{} completionHandler:^(__unused BOOL success) { exit(0); }];
+    }]];
+    [alertController addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
+    [[JHPP currentViewController] presentViewController:alertController animated:YES completion:nil];
+}
 
-        if (!checkUrl) {
-//            NSLog(@"错误：无效的检查 URL: %@", checkUrlString);
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [SVProgressHUD showErrorWithStatus:@"验证链接错误"];
-                [SVProgressHUD dismissWithDelay:2.0];
-            });
-            return;
-        }
+- (void)handleCloudFunction:(NSDictionary *)functionDictionary bundleIdentifier:(NSString *)bundleIdentifier
+{
+    NSString *deviceIdentifier = [getKeychain getKeychainDataForKey:@"DZUDID"] ?: @"";
+    NSString *downloadAddress = [[ZONCloudSaveService sharedService] effectiveDownloadAddressForFunction:functionDictionary];
+    BOOL testMode = NO; // NO = 正常验证, YES = 测试模式（绕过验证）
 
-        NSError *appInfoError;
-        NSString *appInfoString = [NSString stringWithContentsOfURL:checkUrl encoding:NSUTF8StringEncoding error:&appInfoError];
-
-        if (appInfoError) {
-//            NSLog(@"获取应用信息错误：%@", appInfoError);
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [SVProgressHUD showErrorWithStatus:@"无法验证购买信息，请检查网络"];
+    [[ZONCloudSaveService sharedService]
+     resolveDownloadURLForBundleIdentifier:bundleIdentifier
+     downloadAddress:downloadAddress
+     archiveBaseURLString:homezip ?: @""
+     deviceIdentifier:deviceIdentifier
+     entitlementBaseURLString:@"https://app.zonoeios.xyz/index/index/apiface?udid="
+     bypassEntitlement:testMode
+     completion:^(NSURL *downloadURL, NSError *error) {
+        if (error || !downloadURL) {
+            if (error.code == ZONCloudSaveErrorEntitlementDenied) [self presentCloudEntitlementDenied];
+            else {
+                [SVProgressHUD showErrorWithStatus:error.localizedDescription ?: @"云存档验证失败"];
                 [SVProgressHUD dismissWithDelay:3.0];
-            });
-            return;
-        }
-
-        NSData *jsonData = [appInfoString dataUsingEncoding:NSUTF8StringEncoding];
-        if (!jsonData) {
-//            NSLog(@"错误：无法将应用信息字符串转换为数据。");
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [SVProgressHUD showErrorWithStatus:@"购买信息数据错误"];
-                [SVProgressHUD dismissWithDelay:3.0];
-            });
-            return;
-        }
-
-        NSError *dicInfoError;
-        NSDictionary *dicInfo = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&dicInfoError];
-
-        if (dicInfoError) {
-//            NSLog(@"解析购买检查 JSON 错误：%@", dicInfoError);
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [SVProgressHUD showErrorWithStatus:@"购买信息解析失败"];
-                [SVProgressHUD dismissWithDelay:3.0];
-            });
-            return;
-        }
-
- 
-//        NSLog(@"软件信息：%@", softwareInfo);
-//        if(kmm.length>34 || [kmm containsString:@"mg"] || [rjyyz containsString:@"未查到解锁记录"] )
-
-//        if (checkUrlString != nil ) {
-        
-        NSNumber *code = dicInfo[@"code"];
-        NSString *msg = dicInfo[@"msg"];
-        NSNumber *expire = dicInfo[@"expire"];
-        BOOL testMode = NO; // NO = 正常验证, YES = 测试模式（绕过验证）
-
-        if ([self isCloudEntitlementValidWithCode:code
-                                              msg:msg
-                                           expire:expire
-                                         testMode:testMode]) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
-                [presenter dismissAnimated:YES]; // 或者 YES，取决于你的需求
-                [presenter presentWithText:@"准备下载存档,请稍后." dismissAfterDelay:0 includedStyle:JDStatusBarNotificationIncludedStyleWarning];
-            });
-            
-            // 下载前清理临时文件
-            [self cleanupTemporaryFiles];
-            
-            // ✅ 最关键：选择下载地址（反向逻辑）
-            // ==================================================
-            NSString *downloadURLString = nil;
-            
-            // =======================================================
-            // ✅ 情况1：downloadAddress == nil → 存档按钮 → 默认下载
-            // =======================================================
-            if (downloadAddress == nil) {
-                
-                downloadURLString =
-                [NSString stringWithFormat:@"%@%@.zip", homezip, bundleID];
-                
-                //                NSLog(@"✅ 存档按钮：使用默认 bundleID.zip");
-                
-                // =======================================================
-                // ✅ 情况2：downloadAddress 是空字符串 → 禁止下载
-                // =======================================================
-            } else if (downloadAddress.length == 0) {
-                
-                //                NSLog(@"❌ JSON 下载地址为空，禁止下载");
-                
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
-                    
-                    [presenter dismissAnimated:YES]; // 或者 YES，取决于你的需求
-                    [presenter presentWithText:@"下载地址为空." dismissAfterDelay:2 includedStyle:JDStatusBarNotificationIncludedStyleWarning];
-                });
-                
-                return;
-                
-                // =======================================================
-                // ✅ 情况3：downloadAddress 有值 → 普通按钮下载 JSON 地址
-                // =======================================================
-            } else {
-                
-                downloadURLString = downloadAddress;
-                
-                //                NSLog(@"✅ 普通按钮：使用 JSON 地址 %@", downloadURLString);
             }
-            
-            
-            // ==================================================
-            // ✅ 创建 URL
-            // ==================================================
-            NSURL *downloadURL =
-            [NSURL URLWithString:[downloadURLString
-                                  stringByAddingPercentEncodingWithAllowedCharacters:
-                                      [NSCharacterSet URLQueryAllowedCharacterSet]]];
-            
-            if (!downloadURL) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    [SVProgressHUD showErrorWithStatus:@"下载链接无效"];
-                    [SVProgressHUD dismissWithDelay:2.0];
-                });
-                return;
-            }
-            
-            // ==================================================
-            // ✅ 开始下载
-            // ==================================================
-            [self startArchiveDownloadWithURL:downloadURL];
+            return;
         }
-    });
+        JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
+        [presenter dismissAnimated:YES];
+        [presenter presentWithText:@"准备下载存档,请稍后." dismissAfterDelay:0 includedStyle:JDStatusBarNotificationIncludedStyleWarning];
+        [self cleanupTemporaryFiles];
+        [self startArchiveDownloadWithURL:downloadURL];
+     }];
 }
 
 - (void)cleanupTemporaryFiles
