@@ -58,12 +58,19 @@ for marker in [
 ]:
     if marker not in pubg:
         raise SystemExit(f'PubgLoad does not route through restore API: {marker}')
-if '[ZONRestoreService sharedService]' in pubg:
-    raise SystemExit('PubgLoad bypasses ZONRestoreAPI')
-if '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]' in pubg:
-    raise SystemExit('PubgLoad duplicates P66 post-restore lifecycle')
-if 'exit(0);' in pubg:
-    raise SystemExit('PubgLoad duplicates direct process termination')
+
+start = '#pragma mark - P67 remote download orchestration'
+end = '- (BOOL)isCloudEntitlementValidWithCode:'
+if start not in pubg or end not in pubg:
+    raise SystemExit('P67 remote restore block markers missing')
+remote_block = pubg.split(start, 1)[1].split(end, 1)[0]
+
+if '[ZONRestoreService sharedService]' in remote_block:
+    raise SystemExit('P67 remote restore block bypasses ZONRestoreAPI')
+if '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]' in remote_block:
+    raise SystemExit('P67 remote restore block duplicates P66 post-restore lifecycle')
+if 'exit(0);' in remote_block:
+    raise SystemExit('P67 remote restore block duplicates direct process termination')
 
 if pbx.count('ZONRestoreAPI.m in Sources') != 2:
     raise SystemExit('ZONRestoreAPI.m is not registered exactly once in PBX sources')
