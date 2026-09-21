@@ -7,8 +7,25 @@
 //
 
 #import <UIKit/UIKit.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
 @interface YYYPicker : UIViewController
+
 - (void)addBtnAction;
--(void)yidongwenjian;
+
+/// Semantic entry for restoring an already-prepared staging tree.
+- (void)restorePreparedArchiveStaging;
+
+/// Legacy compatibility shim. Keep existing callers working while routing them
+/// through the semantic restore entry above.
+- (void)yidongwenjian;
+
+/// Shared legacy post-restore success tail used by local, remote and cloud
+/// restore entry points. This intentionally preserves the P66 behavior:
+/// PreferenceManager reload -> synchronize -> cleanup -> process exit.
++ (void)completeRestoreSuccessWithError:(nullable NSError *)error;
+
 @end
 
+NS_ASSUME_NONNULL_END
