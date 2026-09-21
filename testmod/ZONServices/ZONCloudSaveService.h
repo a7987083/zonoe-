@@ -24,10 +24,14 @@ typedef void (^ZONCloudSaveDownloadResolutionCompletion)(NSURL * _Nullable downl
                     metadataBaseURLString:(NSString *)metadataBaseURLString
                                completion:(ZONCloudSaveMetadataCompletion)completion;
 
+/// Returns nil for the historical save/archive buttons which use homezip + bundleID.zip.
+- (nullable NSString *)effectiveDownloadAddressForFunction:(NSDictionary *)functionDictionary;
+
 - (void)resolveDownloadURLForBundleIdentifier:(NSString *)bundleIdentifier
                               downloadAddress:(nullable NSString *)downloadAddress
                          archiveBaseURLString:(NSString *)archiveBaseURLString
-                        entitlementURLString:(NSString *)entitlementURLString
+                             deviceIdentifier:(NSString *)deviceIdentifier
+                    entitlementBaseURLString:(NSString *)entitlementBaseURLString
                                    completion:(ZONCloudSaveDownloadResolutionCompletion)completion;
 
 @end
