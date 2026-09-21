@@ -18,12 +18,7 @@ api_m = API_M.read_text(encoding='utf-8')
 pref = PREF.read_text(encoding='utf-8')
 pbx = PBX.read_text(encoding='utf-8')
 
-for marker in [
-    '@interface ZONRestoreAPI',
-    '+ (instancetype)sharedAPI;',
-    'restoreArchiveAtPath:',
-    'restorePreparedStagingAtPath:',
-]:
+for marker in ['@interface ZONRestoreAPI', '+ (instancetype)sharedAPI;', 'restoreArchiveAtPath:', 'restorePreparedStagingAtPath:']:
     if marker not in api_h:
         raise SystemExit(f'missing restore API declaration: {marker}')
 
@@ -32,35 +27,23 @@ if '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]' not
 if 'exit(0);' not in pref:
     raise SystemExit('PreferenceManager no longer contains the P66 post-restore exit behavior')
 
-for marker in [
-    '- (void)restorePreparedArchiveStaging;',
-    '- (void)yidongwenjian;',
-]:
+for marker in ['- (void)restorePreparedArchiveStaging;', '- (void)yidongwenjian;']:
     if marker not in picker_h:
         raise SystemExit(f'missing YYYPicker compatibility declaration: {marker}')
-
-for marker in [
-    '[ZONRestoreAPI sharedAPI]',
-    '[self restorePreparedArchiveStaging];',
-]:
+for marker in ['[ZONRestoreAPI sharedAPI]', '[self restorePreparedArchiveStaging];']:
     if marker not in picker_m:
         raise SystemExit(f'missing YYYPicker restore API shim marker: {marker}')
-
 if '[ZONRestoreService sharedService]' in picker_m:
     raise SystemExit('YYYPicker bypasses ZONRestoreAPI and directly calls ZONRestoreService')
 if '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]' in picker_m:
     raise SystemExit('YYYPicker duplicates the post-restore lifecycle instead of using ZONRestoreAPI')
 
-for marker in [
-    '#import "ZONRestoreAPI.h"',
-    '[ZONRestoreAPI sharedAPI]',
-    'restoreArchiveAtPath:archivePath',
-]:
+for marker in ['#import "ZONRestoreAPI.h"', '[ZONRestoreAPI sharedAPI]', 'restoreArchiveAtPath:archivePath']:
     if marker not in pubg:
         raise SystemExit(f'PubgLoad does not route through restore API: {marker}')
 
 start = '#pragma mark - P67 remote download orchestration'
-end = '- (BOOL)isCloudEntitlementValidWithCode:'
+end = '-(void)yuanchengdwon'
 if start not in pubg or end not in pubg:
     raise SystemExit('P67 remote restore block markers missing')
 remote_block = pubg.split(start, 1)[1].split(end, 1)[0]
@@ -71,7 +54,6 @@ if '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]' in 
     raise SystemExit('P67 remote restore block duplicates P66 post-restore lifecycle')
 if 'exit(0);' in remote_block:
     raise SystemExit('P67 remote restore block duplicates direct process termination')
-
 if pbx.count('ZONRestoreAPI.m in Sources') != 2:
     raise SystemExit('ZONRestoreAPI.m is not registered exactly once in PBX sources')
 
