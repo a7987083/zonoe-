@@ -129,6 +129,13 @@ for name in ('ZONBackupService.m', 'ZONBackupPolicy.m'):
     if pbx.count(marker) != 2:
         raise SystemExit(f'expected exactly 2 PBX markers for {name}, found {pbx.count(marker)}')
 
+# Both target configurations must expose the internal ZONServices headers.
+header_search_marker = '"$(SRCROOT)/testmod/ZONServices"'
+if pbx.count(header_search_marker) != 2:
+    raise SystemExit(
+        f'expected ZONServices target header-search path in Release+Debug, found {pbx.count(header_search_marker)}'
+    )
+
 print('P65_BACKUP_ENGINE_CONTRACT=PASS')
 print('VERSION=v1_p65')
 print('BACKUP_BUTTON_ROUTE_PRESERVED=true')
@@ -136,3 +143,4 @@ print('BACKUP_ENGINE_UI_FREE=true')
 print('DUPLICATE_DAOCHUCD_COPY_ENGINE_REMOVED=true')
 print('POLICY_CENTRALIZED=true')
 print('RESTORE_DOCUMENTS_LIBRARY_COMPATIBILITY_LOCKED=true')
+print('ZONSERVICES_HEADER_SEARCH_LOCKED=true')
