@@ -4,13 +4,15 @@
 
 - Version: `v1_p68`
 - Branch: `work/p68-cloud-save-engine-audit`
-- Device baseline: `v1_p67a`
-- Device-baseline build SHA: `0433ab7f3ce24f5a11dd3d8a4fe3be360a233d61`
+- Previous device baseline: `v1_p67a`
+- Previous device-baseline build SHA: `0433ab7f3ce24f5a11dd3d8a4fe3be360a233d61`
 - P68 actual migrated/build SHA: `57492160450673f9ea17e69b9d4776668db32773`
 - CI Run: `35665082142`
 - CI status: `success`
-- Device status: `pending`
-- Promotion status: `not_promoted`
+- Device status: `passed`
+- Promotion status: `promoted_device_passed`
+- User device confirmation: `全部正常`
+- Recorded date: `2026-09-22`
 
 ## CI artifacts
 
@@ -26,7 +28,7 @@
 
 Both variants passed the real Xcode build, dylib output verification, and artifact upload.
 
-## P68 scope under test
+## P68 scope
 
 P68 extracts cloud-save business logic from `PubgLoad` into `ZONCloudSaveService` while preserving the P67/P67a download and restore engines:
 
@@ -45,19 +47,30 @@ P67/P67a behavior remains inherited:
 - complete restore lifecycle stays in `ZONRestoreAPI`;
 - successful restore continues through the verified PreferenceManager synchronization/cleanup/exit tail.
 
-## Real-device validation required
+## Real-device result
 
-Use `A_customer` first.
+The user explicitly confirmed all scoped P68 validation items were normal.
 
-1. Launch / menu / six-button regression.
-2. Cloud-save metadata query shows the expected title, subtitle, and buttons.
-3. A purchased/authorized cloud-save item resolves, downloads, restores, and closes the game after success; relaunch and verify restored data.
-4. An unauthorized entitlement shows the existing purchase prompt and does not start the archive download.
-5. A cloud function using the default archive policy still resolves to the historical `homezip + bundleID.zip` behavior.
-6. A cloud function with a JSON-provided download address still uses that address.
-7. Empty/invalid download address is rejected and does not falsely report success.
-8. Remote manual ZIP download remains functional and successful restore still closes the game.
-9. Local restore and backup remain functional.
-10. No regressions in the existing menu actions.
+Validated:
+1. Launch / menu / six-button regression: PASS.
+2. Cloud-save metadata query and UI: PASS.
+3. Authorized cloud-save download -> restore -> automatic game close -> relaunch data verification: PASS.
+4. Unauthorized entitlement handling / no unintended archive download: PASS.
+5. Historical default `homezip + bundleID.zip` policy: PASS.
+6. JSON-provided download address path: PASS.
+7. Empty/invalid address failure handling: PASS.
+8. Remote manual ZIP download regression: PASS.
+9. Local restore and backup regression: PASS.
+10. Existing menu actions regression: PASS.
 
-P68 must not be promoted until the user explicitly confirms the scoped device validation passes.
+## Promotion
+
+P68 is promoted as the current verified runtime / rollback baseline.
+
+- Version: `v1_p68`
+- Runtime/source SHA: `57492160450673f9ea17e69b9d4776668db32773`
+- CI Run: `35665082142`
+- Device status: `passed`
+- Promotion: `promoted_device_passed`
+
+P67a remains the previous known-good historical baseline.
