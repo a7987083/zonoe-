@@ -3,26 +3,69 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBG = ROOT / 'testmod/菜单/PubgLoad.mm'
+PICKER_H = ROOT / 'testmod/导入导出/UIDocumentPickerDelegate/YYYPicker.h'
+PICKER_M = ROOT / 'testmod/导入导出/UIDocumentPickerDelegate/YYYPicker.m'
+API_H = ROOT / 'testmod/ZONServices/ZONRestoreAPI.h'
+API_M = ROOT / 'testmod/ZONServices/ZONRestoreAPI.m'
 PREF = ROOT / 'testmod/导入导出/PreferenceManager.m'
+PBX = ROOT / 'testmod.xcodeproj/project.pbxproj'
 
-src = PUBG.read_text(encoding='utf-8')
+pubg = PUBG.read_text(encoding='utf-8')
+picker_h = PICKER_H.read_text(encoding='utf-8')
+picker_m = PICKER_M.read_text(encoding='utf-8')
+api_h = API_H.read_text(encoding='utf-8')
+api_m = API_M.read_text(encoding='utf-8')
 pref = PREF.read_text(encoding='utf-8')
+pbx = PBX.read_text(encoding='utf-8')
 
-required = [
-    'P67A_RESTORE_P66_POST_SUCCESS',
-    '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]',
-    'restoreArchiveAtPath:archivePath',
-]
-for marker in required:
-    if marker not in src:
-        raise SystemExit(f'missing P67a compatibility marker: {marker}')
+for marker in [
+    '@interface ZONRestoreAPI',
+    '+ (instancetype)sharedAPI;',
+    'restoreArchiveAtPath:',
+    'restorePreparedStagingAtPath:',
+]:
+    if marker not in api_h:
+        raise SystemExit(f'missing restore API declaration: {marker}')
 
-# Preserve the existing P66/P67a behavior source of process termination.
+if '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]' not in api_m:
+    raise SystemExit('restore API does not preserve the P66 post-success PreferenceManager tail')
 if 'exit(0);' not in pref:
-    raise SystemExit('PreferenceManager no longer contains the legacy post-restore exit behavior')
+    raise SystemExit('PreferenceManager no longer contains the P66 post-restore exit behavior')
 
-# P67a must not duplicate process termination in PubgLoad; it must reuse the P66 success tail.
-if 'exit(0);' in src:
-    raise SystemExit('PubgLoad contains a duplicated direct exit(0); expected PreferenceManager tail only')
+for marker in [
+    '- (void)restorePreparedArchiveStaging;',
+    '- (void)yidongwenjian;',
+]:
+    if marker not in picker_h:
+        raise SystemExit(f'missing YYYPicker compatibility declaration: {marker}')
 
-print('P67a post-restore compatibility contract passed')
+for marker in [
+    '[ZONRestoreAPI sharedAPI]',
+    '[self restorePreparedArchiveStaging];',
+]:
+    if marker not in picker_m:
+        raise SystemExit(f'missing YYYPicker restore API shim marker: {marker}')
+
+if '[ZONRestoreService sharedService]' in picker_m:
+    raise SystemExit('YYYPicker bypasses ZONRestoreAPI and directly calls ZONRestoreService')
+if '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]' in picker_m:
+    raise SystemExit('YYYPicker duplicates the post-restore lifecycle instead of using ZONRestoreAPI')
+
+for marker in [
+    '#import "ZONRestoreAPI.h"',
+    '[ZONRestoreAPI sharedAPI]',
+    'restoreArchiveAtPath:archivePath',
+]:
+    if marker not in pubg:
+        raise SystemExit(f'PubgLoad does not route through restore API: {marker}')
+if '[ZONRestoreService sharedService]' in pubg:
+    raise SystemExit('PubgLoad bypasses ZONRestoreAPI')
+if '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]' in pubg:
+    raise SystemExit('PubgLoad duplicates P66 post-restore lifecycle')
+if 'exit(0);' in pubg:
+    raise SystemExit('PubgLoad duplicates direct process termination')
+
+if pbx.count('ZONRestoreAPI.m in Sources') != 2:
+    raise SystemExit('ZONRestoreAPI.m is not registered exactly once in PBX sources')
+
+print('P67a restore API / yidongwenjian compatibility contract passed')
