@@ -6,25 +6,31 @@
   "current_work_branch": "work/p65-backup-engine-refactor",
   "current_version": "v1_p65",
   "current_phase": "p65_backup_engine_refactor",
-  "phase_status": "p65_ci_passed_device_validation_pending",
-  "last_device_verified_code_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
-  "last_device_verified_version": "v1_p64a",
+  "phase_status": "p65_promoted_device_passed",
+  "last_device_verified_code_commit": "60db9885c1c69ff7e658bd99949274884d898b32",
+  "last_device_verified_version": "v1_p65",
   "last_ci_run_id": 35562076044,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
   "canonical_product_surface": ["testmod/", "testmod.xcodeproj"],
   "version_naming_rule": {
-    "new_stage": "increment numeric phase, e.g. P63 -> P64 -> P65",
+    "new_stage": "increment numeric phase, e.g. P63 -> P64 -> P65 -> P66",
     "same_stage_fix": "append lowercase suffix, e.g. P64a -> P64b -> P64c",
     "historical_correction": "v1_p63a maps canonically to P63; v1_p63b maps canonically to P64. History is preserved rather than rewritten."
   },
   "rollback_baseline": {
+    "canonical_version": "v1_p65",
+    "source_commit": "60db9885c1c69ff7e658bd99949274884d898b32",
+    "ci_run_id": 35562076044,
+    "device_status": "passed",
+    "device_reported_by_user": true
+  },
+  "previous_rollback_baseline": {
     "canonical_version": "v1_p64a",
     "source_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
     "ci_run_id": 35524126925,
-    "device_status": "passed",
-    "device_reported_by_user": true
+    "device_status": "passed"
   },
   "p64": {
     "name": "clear_game_data_dedicated_service",
@@ -40,7 +46,7 @@
   "p64a": {
     "name": "clear_game_data_runtime_directory_fix",
     "version": "v1_p64a",
-    "status": "promoted_device_passed",
+    "status": "promoted_device_passed_superseded",
     "branch": "work/p64a-clear-game-data-runtime-directory-fix",
     "actual_build_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
     "ci_run_id": 35524126925,
@@ -57,7 +63,7 @@
   "p65": {
     "name": "backup_engine_refactor",
     "version": "v1_p65",
-    "status": "ci_passed_device_validation_pending",
+    "status": "promoted_device_passed",
     "branch": "work/p65-backup-engine-refactor",
     "baseline_version": "v1_p64a",
     "baseline_source_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
@@ -71,22 +77,23 @@
     "b_debug_artifact_digest": "sha256:ca401df58423154f61af2eb16f2eff3e534fbac364b77967565420abfee366bd",
     "b_debug_dylib_sha256": "849760004323c613d63c58c1b516141a732ece72603f2e19927327bebcaf8839",
     "architectures_verified": ["arm64", "arm64e"],
-    "device_status": "pending",
-    "promotion_status": "not_promoted",
-    "goal": "Extract backup execution from daochucd behind a clean API/service boundary, remove duplicate scanning/copy/staging logic, centralize policy/error handling, and preserve compatibility with the existing restore flow.",
-    "verification_required": [
-      "real-device launch with A_customer dylib",
-      "existing six-button route regression",
-      "real-device backup creation",
-      "backup archive/share output sanity",
-      "real-device restore of a P65-produced backup through existing restore path",
-      "post-restore game data sanity"
-    ]
+    "device_status": "passed",
+    "device_reported_by_user": true,
+    "device_validation_summary": [
+      "launch/injection normal",
+      "existing six-button surface normal",
+      "P65 backup creation normal",
+      "backup output/share behavior normal",
+      "P65-produced backup restored successfully through existing pre-P66 restore path",
+      "post-restore behavior/data normal"
+    ],
+    "promotion_status": "promoted",
+    "goal": "Extract backup execution from daochucd behind a clean API/service boundary, remove duplicate scanning/copy/staging logic, centralize policy/error handling, and preserve compatibility with the existing restore flow."
   },
   "follow_on_plan": [
     "P66 restore engine extraction",
     "P67 remote-download engine extraction",
     "P68 cloud-save engine extraction"
   ],
-  "next_task": "Install the delivered P65 A_customer dylib on a real device, create a backup, restore that exact P65-produced backup through the existing restore path, and report the scoped device-validation results before promotion."
+  "next_task": "Open P66 from the promoted P65 runtime baseline and extract the existing restore execution from YYYPicker behind a dedicated restore service while preserving P65 backup compatibility."
 }
