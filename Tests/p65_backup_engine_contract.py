@@ -28,7 +28,7 @@ policy_m = POLICY_M.read_text(encoding='utf-8')
 restore = RESTORE.read_text(encoding='utf-8')
 pbx = PBX.read_text(encoding='utf-8')
 
-if version not in {'v1_p65', 'v1_p66', 'v1_p67', 'v1_p67a', 'v1_p68', 'v1_p69', 'v1_p70'}:
+if version not in {'v1_p65', 'v1_p66', 'v1_p67', 'v1_p67a', 'v1_p68', 'v1_p69', 'v1_p70', 'v1_p71'}:
     raise SystemExit(f'unexpected VERSION: {version}')
 
 for marker in (
@@ -58,13 +58,13 @@ for marker in (
     if marker not in policy_m and marker not in policy_h:
         raise SystemExit(f'missing backup policy marker: {marker}')
 
-if version == 'v1_p70':
+if version in {'v1_p70', 'v1_p71'}:
     for marker in ('#import "ZONBackupCoordinator.h"', '[ZONBackupCoordinator sharedCoordinator]', 'presentBackupFromViewController:hostViewController'):
         if marker not in action:
-            raise SystemExit(f'P70 backup route missing: {marker}')
+            raise SystemExit(f'P70+ backup route missing: {marker}')
     for marker in ('#import "ZONBackupService.h"', 'createBackupNamed:', 'requestBackupDecisionForRelativePath:', 'shareArchiveAtURL:'):
         if marker not in coord:
-            raise SystemExit(f'P70 coordinator missing inherited backup UI behavior: {marker}')
+            raise SystemExit(f'P70+ coordinator missing inherited backup UI behavior: {marker}')
     for forbidden in ('ZONBackupService', 'SVProgressHUD', 'UIDocumentInteractionController', 'cleanupBackupArtifacts', 'requestBackupDecisionForRelativePath:'):
         if forbidden in legacy:
             raise SystemExit(f'legacy daochucd still owns backup orchestration: {forbidden}')
@@ -82,7 +82,7 @@ for name in ('ZONBackupService.m', 'ZONBackupPolicy.m'):
     if pbx.count(marker) != 2:
         raise SystemExit(f'expected exactly 2 PBX markers for {name}, found {pbx.count(marker)}')
 
-if version == 'v1_p70' and pbx.count('ZONBackupCoordinator.m in Sources') != 2:
+if version in {'v1_p70', 'v1_p71'} and pbx.count('ZONBackupCoordinator.m in Sources') != 2:
     raise SystemExit('ZONBackupCoordinator.m is not registered exactly once in PBX sources')
 
 header_search_marker = '"$(SRCROOT)/testmod/ZONServices"'
