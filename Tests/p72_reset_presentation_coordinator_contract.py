@@ -82,8 +82,10 @@ for marker in [
     '[home stringByAppendingPathComponent:@"tmp"]',
     'removePersistentDomainForName:bundleIdentifier',
     'persistentDomainForName:bundleIdentifier',
-    'verifyDirectoryIsEmptyAtPath:',
-    'clearContentsOfDirectoryAtPath:',
+    'isDirectoryEmptyAtPath:',
+    'clearDirectoryContentsAtPath:',
+    'directoryContainsPayloadAtPath:',
+    'verifyPayloadClearedAtPath:',
 ]:
     assert marker in game_m, f'game reset engine drift: {marker}'
 
