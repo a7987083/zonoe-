@@ -42,6 +42,6 @@ assert '[ZONRestoreService sharedService]' not in coord
 assert '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]' not in coord
 assert pbx.count('ZONRemoteDownloadService.m in Sources') == 2
 assert pbx.count('ZONRestoreAPI.m in Sources') == 2
-assert version in {'v1_p67', 'v1_p67a', 'v1_p68', 'v1_p69', 'v1_p70', 'v1_p71'}, f'unexpected VERSION: {version}'
+assert version in {'v1_p67', 'v1_p67a', 'v1_p68', 'v1_p69', 'v1_p70', 'v1_p71', 'v1_p72'}, f'unexpected VERSION: {version}'
 
 print('P67 remote download contract: PASS')
