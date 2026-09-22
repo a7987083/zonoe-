@@ -5,17 +5,23 @@
   "current_work_branch": "work/p72-reset-presentation-coordinator",
   "current_version": "v1_p72",
   "current_phase": "p72_reset_presentation_coordinator",
-  "phase_status": "p72_ci_passed_device_validation_pending",
+  "phase_status": "p72_device_passed_promoted",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
-  "last_device_verified_version": "v1_p71",
-  "last_device_verified_code_commit": "ef556183635b6d7256bb33eac456eff9bccae190",
+  "last_device_verified_version": "v1_p72",
+  "last_device_verified_code_commit": "56dbaa0c9c2d3a065dc4e01709f980254a754e2b",
   "rollback_baseline": {
+    "canonical_version": "v1_p72",
+    "source_commit": "56dbaa0c9c2d3a065dc4e01709f980254a754e2b",
+    "ci_run_id": 35692335444,
+    "device_status": "passed",
+    "device_reported_by_user": true
+  },
+  "previous_device_verified_baseline": {
     "canonical_version": "v1_p71",
     "source_commit": "ef556183635b6d7256bb33eac456eff9bccae190",
     "ci_run_id": 35690162490,
-    "device_status": "passed",
-    "device_reported_by_user": true
+    "device_status": "passed"
   },
   "p67": {
     "version": "v1_p67",
@@ -76,9 +82,9 @@
     "actual_build_commit": "56dbaa0c9c2d3a065dc4e01709f980254a754e2b",
     "ci_run_id": 35692335444,
     "ci_status": "success",
-    "device_status": "pending",
-    "device_reported_by_user": false,
-    "promotion_status": "not_promoted",
+    "device_status": "passed",
+    "device_reported_by_user": true,
+    "promotion_status": "promoted",
     "a_customer_artifact_id": 10679661035,
     "a_customer_artifact_digest": "sha256:04a8264086cbdbbb53a25a6d508c06550286974661ea40832c7de62b4bba8773",
     "a_customer_dylib_sha256": "2df04dfe5e91987a90be781641b11d80c777d9a17619c1d7009a4d1625100a3b",
@@ -87,5 +93,5 @@
     "b_debug_dylib_sha256": "fd90ebd7cfd4ce3ba6a182d974ffbfab26e95e6d2dedc94d3dde33aacd7487e5",
     "architecture": "ZONSixButtonActionService -> ZONResetCoordinator -> { ZONGameDataResetService, ZONAuthorizationResetService }; SixButton keeps routing/compatibility surface only"
   },
-  "next_task": "Run P72 scoped real-device validation using A_customer first. Keep P71 as rollback baseline until explicit user confirmation."
+  "next_task": "Start P73 architecture audit from the P72 device-verified runtime SHA 56dbaa0c9c2d3a065dc4e01709f980254a754e2b."
 }
