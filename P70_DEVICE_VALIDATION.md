@@ -3,13 +3,14 @@
 ## Candidate
 - Version: `v1_p70`
 - Branch: `work/p70-backup-presentation-coordinator`
-- Device baseline: `v1_p69`
-- Device-baseline build SHA: `1e8240e66ddf95fcfeebe970417a5b8721908cd8`
+- Previous device baseline: `v1_p69`
+- Previous device-baseline build SHA: `1e8240e66ddf95fcfeebe970417a5b8721908cd8`
 - P70 actual migrated/build SHA: `a8a6316b0490bbbfcdd9e98d1feb78bdfa56a82c`
 - CI Run: `35678277659`
 - CI status: `success`
-- Device status: `pending`
-- Promotion status: `not_promoted`
+- Device status: `passed`
+- Promotion status: `promoted_device_passed`
+- Device reported by user: `true`
 
 ## Artifacts
 ### A_customer
@@ -29,17 +30,26 @@ P70 moves backup presentation/orchestration out of `daochucd` into `ZONBackupCoo
 
 `daochucd::backupasd` remains only as a legacy compatibility shim. The P65 backup engine/policy are reused.
 
-## Required real-device validation
-Use A_customer first.
+## Real-device validation result
+The user explicitly reported all scoped P70 real-device validation as normal.
 
-1. Launch, menu and six-button regression.
-2. Backup button shows the existing backup-name alert.
-3. Empty backup name still uses the app bundle ID.
-4. Normal backup completes, HUD stages are sensible, and share/options menu appears.
-5. For an item larger than 50 MB, both `跳过` and `备份` decisions behave correctly.
-6. Dismissing the share/options menu cleans backup output/staging without breaking a second backup attempt.
-7. A P70-created ZIP restores successfully through the current restore path; successful restore still closes the game and restored data is correct after relaunch.
-8. Local restore, remote ZIP restore and cloud-save restore remain normal.
-9. Invalid/failure paths do not falsely report backup/restore success.
+Validated scope:
+1. Launch, menu and six-button regression: passed.
+2. Backup-name alert presentation: passed.
+3. Empty backup name fallback to app bundle ID: passed.
+4. Normal backup, progress HUD, and share/options menu: passed.
+5. >50 MB `跳过` / `备份` decision paths: passed.
+6. Share/options dismissal cleanup and subsequent backup attempt: passed.
+7. P70-created ZIP restore, successful process exit, and restored data after relaunch: passed.
+8. Local restore, remote ZIP restore and cloud-save restore regression: passed.
+9. Failure paths do not falsely report success: passed.
 
-P70 must not be promoted until the user explicitly confirms the scoped real-device validation passes.
+## Promotion
+P70 is now the promoted runtime/device baseline.
+
+- Promoted version: `v1_p70`
+- Promoted runtime SHA: `a8a6316b0490bbbfcdd9e98d1feb78bdfa56a82c`
+- Promoted CI Run: `35678277659`
+- Previous verified rollback baseline: `v1_p69` / `1e8240e66ddf95fcfeebe970417a5b8721908cd8`
+
+Later documentation-only commits must not be confused with the verified P70 runtime SHA above.
