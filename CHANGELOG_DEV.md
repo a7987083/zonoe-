@@ -1,64 +1,33 @@
 # CHANGELOG_DEV
 
-## 2026-09-21 — v1_p64a Runtime Directory Cleanup Fix — DEVICE PASSED / PROMOTED
-- Branch: `work/p64a-clear-game-data-runtime-directory-fix`.
-- Actual build SHA: `010f383da7f1429c4db93bfda559431e3c4080f9`.
-- CI Run `35524126925`: success.
-- Fixed P64 device failure where `Library/Caches` could not be removed while the process was alive.
-- Replaced the invalid success criterion “Library/tmp must contain zero child directories” with payload-aware verification.
-- Standard/runtime directory skeletons may remain when empty.
-- `Library/Caches` and `tmp` are volatile runtime locations: cleanup is attempted, but runtime-created cache residue is not treated as user/game payload.
-- Non-volatile business files still produce a real failure if they remain after cleanup/verification.
-- `Documents` payload deletion remains strict.
-- Existing stage display, background execution, no-5-second behavior, completion-controlled exit and error reporting are preserved.
-- Added `Tests/p64a_game_data_runtime_directory_contract.py`.
-- Added dedicated P64a A/B CI workflow.
-- A_customer `arm64 + arm64e`: PASS. Artifact `10608274021`, digest `sha256:5cc2772e8fb2794a1301ca79526ea9a375ae5686c92e9040609eb9009ab20302`, dylib SHA256 `34ef87c5be956e81764984a524c0c04428bbc83a4949e23dbc4ba19f10cfbaf9`.
-- B_debug `arm64 + arm64e`: PASS. Artifact `10608289075`, digest `sha256:c6296cb2d5ee1114501e9f35eda7e5c9cef76e9bc2657d126accb79e9bdedff8`, dylib SHA256 `335f0e3028a6bf2f9e202681487822065bdda6598a853889f9c973cd9616b379`.
-- User explicitly reported the P64a real-device regression fully normal.
-- **P64a is promoted/device-passed and is the baseline for P65.**
+## 2026-09-22 — v1_p70 Backup Presentation Coordinator — CI PASSED / DEVICE PENDING
+- Branch: `work/p70-backup-presentation-coordinator`.
+- Baseline: promoted P69 runtime `1e8240e66ddf95fcfeebe970417a5b8721908cd8`.
+- Actual migrated/build SHA: `a8a6316b0490bbbfcdd9e98d1feb78bdfa56a82c`.
+- CI Run `35678277659`: success.
+- Added `ZONBackupCoordinator` as the backup presentation/orchestration boundary.
+- `ZONSixButtonActionService` now passes its existing host view controller directly to the coordinator.
+- `daochucd::backupasd` is retained only as a compatibility shim.
+- `ZONBackupService` / `ZONBackupPolicy` remain the existing pure backup core; archive layout and backup policy were not intentionally changed.
+- Preserved backup-name alert, blank-name bundle-ID fallback, >50 MB decision prompt, stage HUD, share/options UI and post-options cleanup.
+- Inherited P65/P67/P67a/P68/P69 contracts plus P70 contract passed.
+- A_customer and B_debug Xcode 16.4 arm64+arm64e builds passed.
+- Device promotion remains blocked pending scoped real-device validation.
 
-## 2026-09-21 — P64 Clear Game Data Dedicated Service — CI PASSED / DEVICE FAILED
-- Historical built VERSION string: `v1_p63b`; this was a naming error. Canonical stage is P64.
-- Actual build SHA: `203b9f93d88a20f820ba35d0e3f65f16f296ce5d`.
-- CI Run `35522283236`: success.
-- Added `ZONGameDataResetService` as a pure Foundation reset engine.
-- Removed both historical 5-second clear-game-data timers.
-- Added background cleanup, real stage display, explicit NSError propagation, verification, and success-controlled exit.
-- Device test found that `Library/Caches` may remain/in-use while the app is alive; P64 incorrectly treated that runtime directory removal failure as fatal.
-- P64 was not promoted and is superseded by P64a.
+## 2026-09-22 — v1_p69 Save Transfer Coordinator — DEVICE PASSED / PROMOTED
+- Runtime/build SHA: `1e8240e66ddf95fcfeebe970417a5b8721908cd8`.
+- CI Run `35668507458`: success.
+- Moved remote-download/cloud-save UI orchestration from `PubgLoad` to `ZONSaveTransferCoordinator`.
+- `PubgLoad` became a legacy compatibility shim.
+- User explicitly reported the P69 real-device regression fully normal.
+- P69 is the current promoted rollback baseline for P70.
 
-## 2026-09-20 — P63 Six Button Service Boundary — DEVICE PASSED
-- Historical built VERSION string: `v1_p63a`; this was a naming error. Canonical stage is P63.
-- Runtime source commit: `170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d`.
-- CI Run `35483209464`: success.
-- Added `ZONSixButtonActionService` and routed all six scoped actions through it.
-- A_customer and B_debug `arm64 + arm64e`: PASS.
-- User explicitly reported all six scoped buttons normal on device.
-- Superseded as promoted baseline by P64a.
+## Recent completed stages
+- P68 `57492160450673f9ea17e69b9d4776668db32773`: cloud-save engine extraction; CI + device PASS.
+- P67a `0433ab7f3ce24f5a11dd3d8a4fe3be360a233d61`: restored post-success PreferenceManager/exit lifecycle; CI + device PASS.
+- P67 `71410f993dc9c00d16586af75c7d8e05bcdc8307`: CI PASS / DEVICE FAILED; not promoted.
+- P66 `5cd3667754449b9a7630ba2d1e7db472d692377b`: restore engine extraction; device PASS.
+- P65 `60db9885c1c69ff7e658bd99949274884d898b32`: backup engine refactor; device PASS.
 
-## 2026-09-20 — P62 Authorization Reset Service — DEVICE PASSED / SUPERSEDED
-- Source commit: `a1d0f7b7ca7ea2747d7c52a2b5e002830731ffca`.
-- CI Run `35480732207`: success.
-- Authorization reset extracted into `ZONAuthorizationResetService`.
-- Device validation passed; superseded by P63 and later P64a.
-
-## Version naming rule correction
-- New stage increments the number: `P63 → P64 → P65`.
-- Same-stage fixes use suffixes: `P64a → P64b → P64c`.
-- Existing commits/artifacts are not rewritten; canonical project records correct the mistaken historical P63a/P63b labels.
-
-## Next development stage — P65 Backup Engine Refactor
-- Goal: extract backup execution from `daochucd` behind a clean API/service boundary.
-- Planned cleanup: duplicate Documents/Library traversal/copy loops, repeated stat/size checks, scattered staging lifecycle, scattered include/exclude policy and silent filesystem failures.
-- Preserve existing backup UX, ZIP compatibility and restore compatibility before changing P66 restore behavior.
-- First P65 action is a full source/data-flow audit of `daochucd`, then behavior-locking tests before implementation cleanup.
-
-## Earlier architecture cleanup
-- P60 UDID acquisition progress/manual retry: device passed.
-- P58 download lifecycle hardening: device passed.
-- P56 PubgLoad temp-boundary cleanup: device passed.
-- P51/P51-B feature routing and backup refactor: device passed.
-- P50 architecture freeze: completed.
-- P49 active-target/dependency audit: device passed.
-- P48.1 StoreKit residual cleanup: device passed.
+## Operating rule
+CI success alone does not equal device promotion. Runtime/build SHA, artifact SHA and documentation-only HEADs must remain distinguishable.
