@@ -3,6 +3,7 @@
 #import "ZONBackupCoordinator.h"
 #import "ZONLocalRestoreCoordinator.h"
 #import "ZONResetCoordinator.h"
+#import "ZONRuntimeDirectoryService.h"
 
 
 @implementation ZONSixButtonActionService
@@ -11,29 +12,12 @@
 
 + (NSString *)temporaryDirectoryPath
 {
-    return [NSHomeDirectory() stringByAppendingPathComponent:@"tmp"];
+    return [ZONRuntimeDirectoryService temporaryDirectoryPath];
 }
 
 + (BOOL)ensureTemporaryDirectory
 {
-    NSFileManager *manager = NSFileManager.defaultManager;
-    NSString *tmpPath = [self temporaryDirectoryPath];
-    BOOL isDirectory = NO;
-
-    if ([manager fileExistsAtPath:tmpPath isDirectory:&isDirectory]) {
-        if (isDirectory) return YES;
-        [manager removeItemAtPath:tmpPath error:nil];
-    }
-
-    NSError *error = nil;
-    BOOL created = [manager createDirectoryAtPath:tmpPath
-                      withIntermediateDirectories:YES
-                                       attributes:nil
-                                            error:&error];
-    if (!created) {
-        NSLog(@"❌ 创建 tmp 目录失败 %@: %@", tmpPath, error.localizedDescription);
-    }
-    return created;
+    return [ZONRuntimeDirectoryService ensureTemporaryDirectory];
 }
 
 
@@ -47,7 +31,6 @@
 
 + (BOOL)performCloudSaveFromViewController:(UIViewController *)hostViewController
 {
-    [self ensureTemporaryDirectory];
     [[ZONSaveTransferCoordinator sharedCoordinator] presentCloudSaveFromViewController:hostViewController];
     return YES;
 }

@@ -2,6 +2,7 @@
 #import "ZONRemoteDownloadService.h"
 #import "ZONRestoreAPI.h"
 #import "ZONCloudSaveService.h"
+#import "ZONRuntimeDirectoryService.h"
 #import "getKeychain.h"
 #import "WX_NongShiFu123.h"
 #import "Config.h"
@@ -113,6 +114,7 @@
 - (void)presentCloudSaveFromViewController:(UIViewController *)hostViewController
 {
     if (!hostViewController) return;
+    [ZONRuntimeDirectoryService ensureTemporaryDirectory];
     [SVProgressHUD showWithStatus:@"正在检查云存档文件..."];
     NSString *bundleID = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleIdentifier"];
     [[ZONCloudSaveService sharedService]

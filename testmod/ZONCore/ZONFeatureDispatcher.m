@@ -3,6 +3,8 @@
 #import "SandboxBrowserVC.h"
 #import "ImgTool.h"
 #import "../ZONServices/ZONSixButtonActionService.h"
+#import "../ZONServices/ZONRuntimeDirectoryService.h"
+#import "../ZONServices/ZONResetCoordinator.h"
 
 typedef BOOL (^ZONFeatureActionHandler)(UIViewController *hostViewController);
 typedef BOOL (^ZONFeatureToggleHandler)(BOOL on);
@@ -12,27 +14,27 @@ typedef void (^ZONRuntimeToggleSideEffect)(BOOL on);
 
 NSString *ZONTmpDirectoryPath(void)
 {
-    return [ZONSixButtonActionService temporaryDirectoryPath];
+    return [ZONRuntimeDirectoryService temporaryDirectoryPath];
 }
 
 BOOL ZONEnsureTmpDirectory(void)
 {
-    return [ZONSixButtonActionService ensureTemporaryDirectory];
+    return [ZONRuntimeDirectoryService ensureTemporaryDirectory];
 }
 
 void ZONClearGameDataPreservingTmp(void)
 {
-    [ZONSixButtonActionService clearGameDataPreservingTemporaryDirectory];
+    [[ZONResetCoordinator sharedCoordinator] resetGameDataWithoutConfirmation];
 }
 
 void ZONPresentClearGameDataConfirmation(UIViewController *hostViewController)
 {
-    [ZONSixButtonActionService performClearGameDataFromViewController:hostViewController];
+    [[ZONResetCoordinator sharedCoordinator] presentClearGameDataFromViewController:hostViewController];
 }
 
 void ZONPresentClearAuthorizationConfirmation(UIViewController *hostViewController)
 {
-    [ZONSixButtonActionService performClearAuthorizationFromViewController:hostViewController];
+    [[ZONResetCoordinator sharedCoordinator] presentClearAuthorizationFromViewController:hostViewController];
 }
 
 #pragma mark - Runtime toggles
