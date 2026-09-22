@@ -31,6 +31,6 @@ for forbidden in ['NSURLSession *session', 'dataTaskWithURL:', 'NSJSONSerializat
     assert forbidden not in coord, f'UI orchestration still owns cloud business/networking: {forbidden}'
 
 assert pbx.count('ZONCloudSaveService.m in Sources') == 2
-assert version in {'v1_p68', 'v1_p69', 'v1_p70', 'v1_p71'}, f'unexpected VERSION: {version}'
+assert version in {'v1_p68', 'v1_p69', 'v1_p70', 'v1_p71', 'v1_p72'}, f'unexpected VERSION: {version}'
 
 print('P68 cloud save contract: PASS')
