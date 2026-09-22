@@ -6,9 +6,9 @@
   "current_work_branch": "work/p69-save-transfer-coordinator",
   "current_version": "v1_p69",
   "current_phase": "p69_save_transfer_coordinator",
-  "phase_status": "p69_ci_passed_device_validation_pending",
-  "last_device_verified_code_commit": "57492160450673f9ea17e69b9d4776668db32773",
-  "last_device_verified_version": "v1_p68",
+  "phase_status": "p69_device_passed_promoted",
+  "last_device_verified_code_commit": "1e8240e66ddf95fcfeebe970417a5b8721908cd8",
+  "last_device_verified_version": "v1_p69",
   "last_ci_run_id": 35668507458,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
@@ -21,29 +21,12 @@
     "device_status": "passed",
     "device_reported_by_user": true
   },
-  "p65": {
-    "version": "v1_p65",
-    "actual_build_commit": "60db9885c1c69ff7e658bd99949274884d898b32",
-    "ci_run_id": 35562076044,
-    "ci_status": "success",
-    "device_status": "passed",
-    "promotion_status": "promoted"
-  },
-  "p66": {
-    "version": "v1_p66",
-    "actual_build_commit": "5cd3667754449b9a7630ba2d1e7db472d692377b",
-    "ci_run_id": 35573653173,
-    "ci_status": "success",
-    "device_status": "passed",
-    "promotion_status": "promoted"
-  },
   "p67": {
     "version": "v1_p67",
     "actual_build_commit": "71410f993dc9c00d16586af75c7d8e05bcdc8307",
     "ci_run_id": 35574929300,
     "ci_status": "success",
     "device_status": "failed",
-    "device_failure": "Remote/cloud restore completed but the P66 post-restore PreferenceManager/exit tail was bypassed.",
     "promotion_status": "not_promoted"
   },
   "p67a": {
@@ -52,8 +35,7 @@
     "ci_run_id": 35578207158,
     "ci_status": "success",
     "device_status": "passed",
-    "promotion_status": "promoted",
-    "architecture": "ZONRestoreAPI -> ZONRestoreService -> PreferenceManager post-success tail"
+    "promotion_status": "promoted"
   },
   "p68": {
     "version": "v1_p68",
@@ -61,7 +43,6 @@
     "ci_run_id": 35665082142,
     "ci_status": "success",
     "device_status": "passed",
-    "device_reported_by_user": true,
     "promotion_status": "promoted",
     "architecture": "PubgLoad UI -> ZONCloudSaveService -> ZONRemoteDownloadService -> ZONRestoreAPI"
   },
@@ -74,16 +55,16 @@
     "actual_build_commit": "1e8240e66ddf95fcfeebe970417a5b8721908cd8",
     "ci_run_id": 35668507458,
     "ci_status": "success",
-    "device_status": "pending",
-    "device_reported_by_user": false,
-    "promotion_status": "not_promoted",
+    "device_status": "passed",
+    "device_reported_by_user": true,
+    "promotion_status": "promoted",
     "a_customer_artifact_id": 10670576190,
     "a_customer_artifact_digest": "sha256:5978d27119c39697231b1edf3c6a061b20d1fc82dd917696a7ab55c8a341032e",
     "a_customer_dylib_sha256": "475d6721881ea69d1aebb131449ad66038342040fe98dcc9886207c167419574",
     "b_debug_artifact_id": 10670576184,
     "b_debug_artifact_digest": "sha256:a901681c897f10da2d3d20e2e68a32dffd4af310b4a1ff6cfb0344838932a79f",
     "b_debug_dylib_sha256": "23a07b9272cb6ce5f591d95d35c253858914d470918e3f9b5bcac865e0407615",
-    "architecture": "ZONFeatureDispatcher -> ZONSixButtonActionService -> ZONSaveTransferCoordinator -> P67/P67a/P68 service stack; PubgLoad is compatibility shim only"
+    "architecture": "ZONFeatureDispatcher -> ZONSixButtonActionService -> ZONSaveTransferCoordinator -> P67/P67a/P68 service stack; PubgLoad compatibility shim only"
   },
-  "next_task": "Run P69 scoped real-device validation using A_customer first. Do not promote P69 until explicit user confirmation."
+  "next_task": "Use v1_p69 / 1e8240e66ddf95fcfeebe970417a5b8721908cd8 as the next development baseline. Audit remaining high-value mixed responsibilities before defining P70."
 }
