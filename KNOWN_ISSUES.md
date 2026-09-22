@@ -1,72 +1,35 @@
 # KNOWN_ISSUES
 
 ## Current state
-- Promoted/device baseline: `v1_p64a` / runtime source `010f383da7f1429c4db93bfda559431e3c4080f9`.
-- P64a CI Run `35524126925`: success.
-- P64a real-device validation: passed, explicitly reported by user.
+- Promoted/device baseline: `v1_p69` / runtime source `1e8240e66ddf95fcfeebe970417a5b8721908cd8`.
+- P69 CI Run `35668507458`: success; real-device validation passed.
+- Current candidate: `v1_p70` / runtime source `a8a6316b0490bbbfcdd9e98d1feb78bdfa56a82c`.
+- P70 CI Run `35678277659`: success; device validation pending.
 - Architectures: `arm64 + arm64e`.
-- Next development stage: P65 backup engine refactor.
 
 ## Open risks
 
-### `daochucd` still mixes UI, filesystem traversal, archive work and sharing
-- The current backup entry is still `daochucd::backupasd` behind `ZONSixButtonActionService`.
-- UI presentation, path enumeration, size checks, large-file decisions, staging-directory work, copy logic, ZIP creation and share presentation are coupled.
-- P65 must separate the backup engine from presentation without breaking existing behavior.
+### P70 backup presentation relocation needs device proof
+- The backup engine itself remains `ZONBackupService`/`ZONBackupPolicy`, but alert/HUD/share orchestration moved from `daochucd` to `ZONBackupCoordinator`.
+- Validate presentation from the active menu host, especially the name alert and share/options controller.
+- Validate >50 MB skip/backup prompt behavior.
+- Validate cleanup after dismissing the share/options menu does not affect a subsequent backup.
 
-### Backup format compatibility must be preserved during P65
-- P65 changes the implementation boundary before P66 changes restore.
-- A P65-produced backup must remain restorable by the existing restore path.
-- Include/exclude rules, relative paths, archive layout and naming behavior must be audited before cleanup.
+### Backup/restore compatibility remains a promotion gate
+- P70 intentionally does not change archive format, but the produced ZIP must still be restored successfully through the current `ZONRestoreAPI` path before promotion.
+- Successful restore must retain the verified PreferenceManager/cleanup/exit lifecycle.
 
-### Duplicate traversal/copy logic may hide behavior differences
-- Documents and Library paths may currently be handled by similar but not perfectly identical code.
-- Do not blindly merge loops until the audit records all conditionals, exclusions, size handling and output mapping.
-
-### Backup cache/temp exclusion policy needs explicit ownership
-- Cache/temp/runtime-only paths should not be scattered through ad-hoc `if` conditions.
-- P65 should centralize them in a backup policy boundary while preserving any compatibility-critical legacy inclusions.
-
-### Staging/workspace lifecycle is a failure-sensitive area
-- Temporary backup workspace creation, reuse, deletion and archive cleanup must become deterministic.
-- A partial failure must not leave stale staging data that contaminates the next backup.
-
-### Silent filesystem failures remain a backup risk
-- Existing backup code may still use `error:nil` or continue after individual copy failures.
-- P65 should surface actionable errors while preserving current UX semantics where possible.
-
-### `YYYPicker` still mixes picker UI and restore engine
-- Restore extraction is planned for P66.
-
-### `PubgLoad` remains a high-risk multi-responsibility class
-- Remote download extraction is planned for P67.
-- Cloud save extraction is planned for P68.
+### YYYPicker remains UI-heavy
+- Restore core is already behind `ZONRestoreAPI`, but `YYYPicker` still combines document picker, file browsing, collection-view and QuickLook UI responsibilities.
+- Any future extraction should start only after a fresh audit from the latest device-passed runtime baseline.
 
 ## Closed / corrected
-
-### P64a runtime-directory model — CLOSED / DEVICE PASSED
-- P64a distinguishes game/user payload from runtime directory skeletons and volatile cache/temp residue.
-- `Library/Caches` no longer needs to disappear as a directory for reset to succeed.
-- CI Run `35524126925`: success.
-- User explicitly reported P64a fully normal on device.
-- P64a is now the promoted baseline.
-
-### P64 strict-empty-directory verification — CLOSED BY P64a
-- P64 failed because runtime directory removal/existence was treated as fatal.
-- Payload-aware verification replaced the old strict-empty model.
-
-### P63 six-button service boundary — CLOSED / DEVICE PASSED
-- Historical built VERSION string `v1_p63a`; canonical stage is P63.
-- Runtime source `170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d`.
-- CI Run `35483209464`: success.
-- User explicitly reported all six scoped buttons normal on device.
-
-### Version naming drift — CORRECTED IN PROJECT RECORDS
-- New stages increment numeric phase.
-- Same-stage fixes use `a/b/c/d` suffixes.
-- Historical commits/artifacts are preserved; only canonical project records are corrected.
+- P69 save-transfer coordinator: CLOSED / DEVICE PASSED. `PubgLoad` is compatibility shim only.
+- P68 cloud-save engine extraction: CLOSED / DEVICE PASSED.
+- P67 post-restore regression: CLOSED by P67a; P67 itself remains not promoted.
+- P65 backup engine duplication/policy ownership: CLOSED by `ZONBackupService` + `ZONBackupPolicy`.
 
 ## Tracking rule
 - CI success alone does not equal promotion.
-- P65 must preserve current backup/restore compatibility and pass scoped real-device backup + restore validation before promotion.
-- Every stage transition must update `ROADMAP.md`, `CHANGELOG_DEV.md`, `HANDOFF.md`, `PROJECT_STATE.json` and `KNOWN_ISSUES.md` together.
+- P69 stays rollback baseline until explicit P70 device confirmation.
+- Every stage transition must keep `ROADMAP.md`, `CHANGELOG_DEV.md`, `HANDOFF.md`, `PROJECT_STATE.json` and `KNOWN_ISSUES.md` synchronized.
