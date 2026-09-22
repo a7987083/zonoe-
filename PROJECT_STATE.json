@@ -5,17 +5,24 @@
   "current_work_branch": "work/p74-feature-dispatcher-boundary",
   "current_version": "v1_p74",
   "current_phase": "p74_local_files_coordinator",
-  "phase_status": "p74_ci_passed_device_validation_pending",
+  "phase_status": "p74_promoted_device_passed",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
-  "last_device_verified_version": "v1_p73",
-  "last_device_verified_code_commit": "4a81c201556fa1c371f5a258b82b08322d34c649",
+  "last_device_verified_version": "v1_p74",
+  "last_device_verified_code_commit": "47840ad17fb4780dff4294adf162cb08a02bb6dc",
+  "last_ci_run_id": 35695305509,
   "rollback_baseline": {
-    "canonical_version": "v1_p73",
-    "source_commit": "4a81c201556fa1c371f5a258b82b08322d34c649",
-    "ci_run_id": 35693629736,
+    "canonical_version": "v1_p74",
+    "source_commit": "47840ad17fb4780dff4294adf162cb08a02bb6dc",
+    "ci_run_id": 35695305509,
     "device_status": "passed",
     "device_reported_by_user": true
+  },
+  "previous_known_good_baseline": {
+    "version": "v1_p73",
+    "source_commit": "4a81c201556fa1c371f5a258b82b08322d34c649",
+    "ci_run_id": 35693629736,
+    "device_status": "passed"
   },
   "p67": {
     "version": "v1_p67",
@@ -80,7 +87,7 @@
     "ci_status": "success",
     "device_status": "passed",
     "device_reported_by_user": true,
-    "promotion_status": "promoted",
+    "promotion_status": "promoted_historical",
     "architecture": "ZONFeatureDispatcher compatibility -> ZONRuntimeDirectoryService / ZONResetCoordinator; ZONSixButtonActionService action core remains coordinator routing only"
   },
   "p74": {
@@ -92,9 +99,10 @@
     "actual_build_commit": "47840ad17fb4780dff4294adf162cb08a02bb6dc",
     "ci_run_id": 35695305509,
     "ci_status": "success",
-    "device_status": "pending",
-    "device_reported_by_user": false,
-    "promotion_status": "not_promoted",
+    "device_status": "passed",
+    "device_reported_by_user": true,
+    "device_confirmation": "全能正常",
+    "promotion_status": "promoted",
     "a_customer_artifact_id": 10680137532,
     "a_customer_artifact_digest": "sha256:8122ac384972969a886b40a2a6d8fea55250b5c16bf6c969d02c1172e4b011fb",
     "a_customer_dylib_sha256": "3fed6bf8cfc198c78254fa020d990d9b04e448535dd3938b58e23fc97e3e6d3f",
@@ -103,5 +111,5 @@
     "b_debug_dylib_sha256": "2c9d6e77ab0561ba74246db9367ffab005a687082935c0aea5e845fea6c9866a",
     "architecture": "ZONFeatureDispatcher -> ZONLocalFilesCoordinator -> SandboxBrowserVC / UINavigationController; runtime toggles intentionally unchanged"
   },
-  "next_task": "Run P74 scoped real-device validation using A_customer first. Keep P73 as rollback baseline until explicit user confirmation."
+  "next_task": "Start P75 from the verified P74 runtime baseline. Audit and isolate runtime toggle side effects (NNGG/NNGGNNGG/NeiGou and AADD/AADDAADD/ADSpeed) without mixing unrelated presentation or restore changes."
 }
