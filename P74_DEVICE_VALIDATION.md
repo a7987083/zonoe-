@@ -3,13 +3,15 @@
 ## Candidate
 - Version: `v1_p74`
 - Branch: `work/p74-feature-dispatcher-boundary`
-- Device baseline: `v1_p73`
-- Device-baseline build SHA: `4a81c201556fa1c371f5a258b82b08322d34c649`
+- Previous device baseline: `v1_p73`
+- Previous device-baseline build SHA: `4a81c201556fa1c371f5a258b82b08322d34c649`
 - P74 actual migrated/build SHA: `47840ad17fb4780dff4294adf162cb08a02bb6dc`
 - CI Run: `35695305509`
 - CI status: `success`
-- Device status: `pending`
-- Promotion status: `not_promoted`
+- Device status: `passed`
+- Promotion status: `promoted_device_passed`
+- User confirmation: `全能正常`
+- Recorded date: `2026-09-22`
 
 ## Artifacts
 ### A_customer
@@ -29,20 +31,25 @@ P74 moves local-files presentation out of `ZONFeatureDispatcher` into `ZONLocalF
 
 The existing presentation behavior is preserved: iOS 13+ uses page sheet and older systems use full screen. Runtime toggle behavior (`NNGG/NNGGNNGG/NeiGou` and `AADD/AADDAADD/ADSpeed`) is intentionally unchanged in P74.
 
-## Required real-device validation
-Use A_customer first.
+## Real-device validation result
+User confirmed all scoped behavior normal on device.
 
-1. Launch, menu and six-button regression.
-2. Tap the local-files action and confirm the sandbox browser opens normally.
-3. Confirm navigation/presentation behavior matches P73 on the test device.
-4. Browse Documents and representative subdirectories; back navigation remains normal.
-5. Open/inspect a representative file if supported by the existing browser flow.
-6. Dismiss local-files and reopen it repeatedly; no stuck controller, duplicate presentation or crash.
-7. Backup creation/share remains normal.
-8. Local restore remains normal and still auto-exits after success.
-9. Remote ZIP restore and cloud-save restore remain normal and still auto-exit after success.
-10. Clear game data and clear authorization flows remain normal.
-11. Runtime iap-noads/ad-speed toggles keep the same behavior as P73 if exposed in the current menu.
-12. No route regression, false success or crash is observed.
+1. Launch, menu and six-button regression: PASS.
+2. Local-files action opens sandbox browser normally: PASS.
+3. Navigation/presentation behavior matches prior baseline: PASS.
+4. Documents/subdirectory browsing and back navigation: PASS.
+5. Representative file handling remains normal: PASS.
+6. Repeated dismiss/reopen has no stuck controller, duplicate presentation or crash: PASS.
+7. Backup creation/share regression: PASS.
+8. Local restore and post-success auto-exit regression: PASS.
+9. Remote ZIP restore and cloud-save restore regression: PASS.
+10. Clear game data and clear authorization regression: PASS.
+11. Runtime iap-noads/ad-speed behavior remains unchanged: PASS.
+12. No route regression, false success or crash observed: PASS.
 
-P74 must not be promoted until the user explicitly confirms the scoped real-device validation passes.
+## Promotion
+P74 is promoted as the current verified runtime and rollback baseline.
+
+The verified runtime/source baseline is exactly `47840ad17fb4780dff4294adf162cb08a02bb6dc`. Any later documentation-only commits on the branch are not substitutes for that tested runtime SHA.
+
+P73 remains the previous known-good historical baseline.
