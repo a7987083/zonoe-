@@ -9,8 +9,9 @@
 - P76 actual migrated/build SHA: `9e4d0a0f34a4019fc26521fafdc864e9fd0f9afd`
 - CI Run: `35698122018`
 - CI status: `success`
-- Device status: `pending`
-- Promotion status: `not_promoted`
+- Device status: `passed`
+- Device reported by user: `true`
+- Promotion status: `promoted`
 
 ## Artifacts
 ### A_customer
@@ -35,18 +36,26 @@ The router reads the existing Keychain values and preserves the established prio
 
 P76 intentionally does **not** rewrite BSPHP/BSPHPy protocol requests, heartbeat, activation-code verification, blacklist logic, runtime toggles, reset, backup or restore behavior.
 
-## Required real-device validation
-Use A_customer first.
+## Real-device validation result
+The user explicitly reported that all scoped P76 validation passed on a real device.
 
-1. Launch and normal already-authorized startup remain normal.
-2. Existing ad-speed authorization path still enters `秒过广告激活中` and completes normally.
-3. Existing software-source authorization path still enters `软件源激活中` and completes normally.
-4. Fresh/cleared authorization state still enters `首次激活` and can choose an authorization method.
-5. If DZUDID is absent/invalid, the existing UDID acquisition path still works and reaches the authorization chooser.
-6. Network-failure retry behavior remains the same for both authorization modes.
-7. Existing activation-code reuse / activation-code prompt behavior remains normal.
-8. Authorization reset still works and relaunch returns to the expected activation flow.
-9. Menu, local-files, backup, local restore, remote ZIP and cloud-save basic regression remain normal.
-10. No false authorization success, route inversion, crash or unexpected early exit is observed.
+Validated coverage includes:
 
-P76 must not be promoted until the user explicitly confirms the scoped real-device validation passes.
+1. Normal already-authorized startup.
+2. Existing ad-speed authorization path and `秒过广告激活中` route.
+3. Existing software-source authorization path and `软件源激活中` route.
+4. Fresh/cleared authorization state entering `首次激活` and authorization-method chooser.
+5. Existing UDID acquisition path when DZUDID is absent or invalid.
+6. Network-failure retry behavior for authorization modes.
+7. Activation-code reuse and activation-code prompt behavior.
+8. Authorization reset and relaunch activation flow.
+9. Menu, local-files, backup, local restore, remote ZIP and cloud-save basic regression.
+10. No false authorization success, route inversion, crash or unexpected early exit observed.
+
+## Promotion
+P76 is promoted as the current device-verified runtime baseline.
+
+- Promoted runtime SHA: `9e4d0a0f34a4019fc26521fafdc864e9fd0f9afd`
+- Previous device-verified rollback baseline: `v1_p74` / `47840ad17fb4780dff4294adf162cb08a02bb6dc`
+
+Later documentation-only commits on this branch must not be confused with the real-device-validated runtime SHA above.
