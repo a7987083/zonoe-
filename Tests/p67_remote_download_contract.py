@@ -24,28 +24,18 @@ for marker in required_orchestration:
     assert marker in coord, f'missing P67 orchestration marker: {marker}'
 
 required_service = [
-    'ZONRemoteDownloadErrorInvalidURL',
-    'ZONRemoteDownloadErrorAlreadyRunning',
-    'ZONRemoteDownloadErrorTransportFailed',
-    'ZONRemoteDownloadErrorInvalidResponse',
-    'ZONRemoteDownloadErrorInvalidArchive',
-    'NSURLSessionDownloadDelegate',
-    'activeTask',
-    'downloadArchiveFromURL:',
-    'totalBytesExpectedToWrite',
-    'statusCode < 200 || http.statusCode >= 300',
-    '@"tmp/zonoe-download"',
-    'moveItemAtURL:location',
+    'ZONRemoteDownloadErrorInvalidURL', 'ZONRemoteDownloadErrorAlreadyRunning',
+    'ZONRemoteDownloadErrorTransportFailed', 'ZONRemoteDownloadErrorInvalidResponse',
+    'ZONRemoteDownloadErrorInvalidArchive', 'NSURLSessionDownloadDelegate', 'activeTask',
+    'downloadArchiveFromURL:', 'totalBytesExpectedToWrite',
+    'statusCode < 200 || http.statusCode >= 300', '@"tmp/zonoe-download"', 'moveItemAtURL:location',
 ]
 for marker in required_service:
     assert marker in service_h or marker in service_m, f'missing P67 service marker: {marker}'
 
 required_api = [
-    '@interface ZONRestoreAPI',
-    '+ (instancetype)sharedAPI;',
-    'restoreArchiveAtPath:',
-    'restorePreparedStagingAtPath:',
-    '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]',
+    '@interface ZONRestoreAPI', '+ (instancetype)sharedAPI;', 'restoreArchiveAtPath:',
+    'restorePreparedStagingAtPath:', '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]',
 ]
 for marker in required_api:
     assert marker in api_h or marker in api_m, f'missing restore API marker: {marker}'
@@ -56,6 +46,6 @@ assert '[ZONRestoreService sharedService]' not in coord
 assert '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]' not in coord
 assert pbx.count('ZONRemoteDownloadService.m in Sources') == 2
 assert pbx.count('ZONRestoreAPI.m in Sources') == 2
-assert version in {'v1_p67', 'v1_p67a', 'v1_p68', 'v1_p69'}, f'unexpected VERSION: {version}'
+assert version in {'v1_p67', 'v1_p67a', 'v1_p68', 'v1_p69', 'v1_p70'}, f'unexpected VERSION: {version}'
 
 print('P67 remote download contract: PASS')
