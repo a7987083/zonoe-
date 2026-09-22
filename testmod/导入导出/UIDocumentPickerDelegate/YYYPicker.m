@@ -7,13 +7,9 @@
 //
 
 #import "YYYPicker.h"
-#import "NKSeleDocumentTool.h"
 #import "OtherFilesViewCell.h"
 #import <QuickLook/QuickLook.h>
-#import "SVProgressHUD.h"
-#import "SSZipArchive.h"
-#import "jhpp.h"
-#import "ZONRestoreAPI.h"
+#import "ZONLocalRestoreCoordinator.h"
 
 #define screenW [[UIScreen mainScreen] bounds].size.width
 #define screenH [[UIScreen mainScreen] bounds].size.height
@@ -38,72 +34,24 @@ static NSString *OtherFilesViewCellID = @"OtherFilesViewCell";
     return _dataArr;
 }
 
-#pragma mark - Restore orchestration
-
-- (void)presentRestoreResult:(BOOL)success error:(NSError *)error
-{
-    if (!success) {
-        NSString *message = error.localizedDescription.length ? error.localizedDescription : @"恢复失败";
-        [SVProgressHUD showErrorWithStatus:message];
-        return;
-    }
-
-    // A successful restore normally terminates through ZONRestoreAPI's preserved
-    // P66 post-success tail. This is only a fallback if PreferenceManager returns.
-    if (error.code == ZONRestoreErrorCleanupFailed) {
-        [SVProgressHUD showSuccessWithStatus:@"恢复完成，但临时文件清理失败"];
-    } else {
-        [SVProgressHUD showSuccessWithStatus:@"恢复完成"];
-    }
-}
-
-- (void)handlePickedRestoreURL:(NSURL *)fileUrl
-{
-    if (!fileUrl) return;
-
-    NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
-    NSString *bundleIdentifier = [infoDictionary objectForKey:@"CFBundleIdentifier"];
-    ZONRestoreAPI *api = [ZONRestoreAPI sharedAPI];
-    NSString *inboxPath = [api restoreInboxPathForBundleIdentifier:bundleIdentifier];
-    NSString *archivePath = fileUrl.path;
-
-    if (![[NSFileManager defaultManager] fileExistsAtPath:archivePath]) {
-        NSString *decodedFileName = [[[fileUrl absoluteString] componentsSeparatedByString:@"/"] lastObject].stringByRemovingPercentEncoding;
-        archivePath = [inboxPath stringByAppendingPathComponent:decodedFileName ?: @""];
-    }
-
-    self->_dataArr = nil;
-    [self.collectionView reloadData];
-    [SVProgressHUD showWithStatus:@"处理中..."];
-
-    [api restoreArchiveAtPath:archivePath inboxPath:inboxPath completion:^(BOOL success, NSError *error) {
-        [self presentRestoreResult:success error:error];
-    }];
-}
-
-#pragma mark - Restore UI entry
+#pragma mark - Restore compatibility surface
 
 - (void)addBtnAction
 {
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)),
-                   dispatch_get_main_queue(), ^{
-        [[NKSeleDocumentTool shareDocumentTool]
-         seleDocumentWithDocumentTypes:@[@"public.data"]
-         Mode:UIDocumentPickerModeImport
-         controller:self
-         finishBlock:^(NSArray<NSURL *> *urls) {
-            [self handlePickedRestoreURL:urls.firstObject];
-        }];
-    });
+    __weak typeof(self) weakSelf = self;
+    [[ZONLocalRestoreCoordinator sharedCoordinator]
+     presentLocalRestoreFromViewController:self
+     selectionHandler:^(__unused NSURL *selectedURL) {
+        __strong typeof(weakSelf) self = weakSelf;
+        if (!self) return;
+        self->_dataArr = nil;
+        [self.collectionView reloadData];
+    }];
 }
 
 - (void)restorePreparedArchiveStaging
 {
-    ZONRestoreAPI *api = [ZONRestoreAPI sharedAPI];
-    NSString *stagingRoot = [api restoreStagingRootPath];
-    [api restorePreparedStagingAtPath:stagingRoot completion:^(BOOL success, NSError *error) {
-        [self presentRestoreResult:success error:error];
-    }];
+    [[ZONLocalRestoreCoordinator sharedCoordinator] restorePreparedArchiveStaging];
 }
 
 - (void)yidongwenjian

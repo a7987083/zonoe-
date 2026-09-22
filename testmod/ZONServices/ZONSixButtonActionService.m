@@ -3,7 +3,7 @@
 #import "ZONGameDataResetService.h"
 #import "ZONSaveTransferCoordinator.h"
 #import "ZONBackupCoordinator.h"
-#import "YYYPicker.h"
+#import "ZONLocalRestoreCoordinator.h"
 #import "SVProgressHUD.h"
 #import <stdlib.h>
 
@@ -102,9 +102,9 @@ typedef void (^ZONDestructiveConfirmationHandler)(void);
     return YES;
 }
 
-+ (BOOL)performRestoreSaveFromViewController:(__unused UIViewController *)hostViewController
++ (BOOL)performRestoreSaveFromViewController:(UIViewController *)hostViewController
 {
-    [[YYYPicker alloc] addBtnAction];
+    [[ZONLocalRestoreCoordinator sharedCoordinator] presentLocalRestoreFromViewController:hostViewController];
     return YES;
 }
 
