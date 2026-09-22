@@ -8,8 +8,9 @@
 - P72 actual migrated/build SHA: `56dbaa0c9c2d3a065dc4e01709f980254a754e2b`
 - CI Run: `35692335444`
 - CI status: `success`
-- Device status: `pending`
-- Promotion status: `not_promoted`
+- Device status: `passed`
+- Promotion status: `promoted`
+- Device validation reported by user: `true`
 
 ## Artifacts
 ### A_customer
@@ -29,20 +30,25 @@ P72 moves reset presentation/orchestration out of `ZONSixButtonActionService` in
 
 The underlying game-data reset and authorization-reset services are unchanged. The historical `clearGameDataPreservingTemporaryDirectory` entry remains as a compatibility forwarder to the coordinator without confirmation UI.
 
-## Required real-device validation
-Use A_customer first. Back up any important local game data before testing the destructive reset actions.
+## Real-device validation result
+The user explicitly confirmed all scoped P72 validation items are normal/passed.
 
-1. Launch, menu and six-button regression.
-2. Tap **清除游戏数据** and confirm the existing destructive confirmation appears.
-3. Cancel **清除游戏数据**; no data is removed and the game stays open.
-4. Confirm **清除游戏数据**; staged HUD remains sensible, the game-data reset completes, and the game exits automatically on success.
-5. Relaunch after game-data reset and confirm the local game state is reset as expected while authorization/keychain state remains available.
-6. Tap **清除授权记录** and confirm the existing destructive confirmation appears.
-7. Cancel **清除授权记录**; authorization remains and the game does not exit.
-8. Confirm **清除授权记录**; authorization data is cleared, the historical ~3-second delayed exit still occurs, and relaunch requires authorization again.
-9. Backup creation/share from P70 remains normal.
-10. Local restore from P71 remains normal and still auto-exits after successful restore.
-11. Remote ZIP restore and cloud-save restore remain normal and still auto-exit after success.
-12. No reset/backup/restore regression or crash is observed.
+Validated scope:
+1. Launch, menu and six-button regression passed.
+2. **清除游戏数据** confirmation appears normally.
+3. Cancelling **清除游戏数据** preserves data and keeps the game open.
+4. Confirming **清除游戏数据** preserves staged HUD behavior, completes reset, and exits automatically on success.
+5. Relaunch after game-data reset shows reset local state while authorization/keychain state remains available.
+6. **清除授权记录** confirmation appears normally.
+7. Cancelling **清除授权记录** preserves authorization and does not exit.
+8. Confirming **清除授权记录** clears authorization and preserves the historical ~3-second delayed exit; relaunch requires authorization again.
+9. P70 backup creation/share regression passed.
+10. P71 local restore regression passed and successful restore still auto-exits.
+11. Remote ZIP restore and cloud-save restore regression passed and successful restore still auto-exits.
+12. No reset/backup/restore regression or crash was reported.
 
-P72 must not be promoted until the user explicitly confirms the scoped real-device validation passes.
+## Promotion
+P72 is promoted to the current device-verified runtime baseline.
+
+- Promoted runtime SHA: `56dbaa0c9c2d3a065dc4e01709f980254a754e2b`
+- Previous device-verified rollback baseline: `v1_p71` / `ef556183635b6d7256bb33eac456eff9bccae190`
