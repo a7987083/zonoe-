@@ -8,8 +8,9 @@
 - P73 actual migrated/build SHA: `4a81c201556fa1c371f5a258b82b08322d34c649`
 - CI Run: `35693629736`
 - CI status: `success`
-- Device status: `pending`
-- Promotion status: `not_promoted`
+- Device status: `passed`
+- Device reported by user: `true`
+- Promotion status: `promoted`
 
 ## Artifacts
 ### A_customer
@@ -31,19 +32,24 @@ P73 separates runtime temporary-directory compatibility from the six-button rout
 - `ZONSixButtonActionService` no longer owns filesystem implementation. Historical Objective-C helper selectors remain as thin compatibility forwarders.
 - P65 through P73 behavior contracts pass in CI.
 
-## Required real-device validation
-Use A_customer first.
+## Real-device validation result
+The user explicitly confirmed all scoped P73 tests passed.
 
+Validated:
 1. Launch, menu and six-button regression.
-2. Remote ZIP download/restore still works and successful restore still auto-exits.
-3. Cloud-save list opens normally and cloud restore still works; successful restore still auto-exits.
-4. Confirm cloud-save flow still works after a clean launch where the tmp directory may need to be prepared.
-5. Local backup creation/share remains normal.
-6. Local restore remains normal and still auto-exits after success.
-7. Clear game data confirmation/cancel/confirm behavior remains normal; authorization remains after game-data reset.
-8. Clear authorization confirmation/cancel/confirm behavior remains normal; confirmed clear retains the historical delayed exit.
-9. File-browser/local-files action remains normal.
-10. Repeat cloud-save or remote-restore once after a prior restore/reset cycle to catch tmp-directory lifecycle regressions.
-11. No crash, false success, missing HUD, or route regression is observed.
+2. Remote ZIP download/restore and successful auto-exit.
+3. Cloud-save list and cloud restore, including successful auto-exit.
+4. Cloud-save after a clean launch where tmp may need preparation.
+5. Local backup creation/share.
+6. Local restore and successful auto-exit.
+7. Clear game-data cancel/confirm flow; authorization preserved after game-data reset.
+8. Clear-authorization cancel/confirm flow; historical delayed exit preserved.
+9. File-browser/local-files action.
+10. Repeated cloud-save / remote-restore after restore/reset cycles, covering tmp-directory lifecycle.
+11. No crash, false success, missing HUD, or route regression observed.
 
-P73 must not be promoted until the user explicitly confirms the scoped real-device validation passes.
+## Promotion
+P73 is promoted as the current device-verified runtime baseline.
+
+- Promoted runtime SHA: `4a81c201556fa1c371f5a258b82b08322d34c649`
+- Previous verified rollback baseline: P72 / `56dbaa0c9c2d3a065dc4e01709f980254a754e2b`
