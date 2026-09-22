@@ -8,8 +8,9 @@
 - P71 actual migrated/build SHA: `ef556183635b6d7256bb33eac456eff9bccae190`
 - CI Run: `35690162490`
 - CI status: `success`
-- Device status: `pending`
-- Promotion status: `not_promoted`
+- Device status: `passed`
+- Device reported by user: `true`
+- Promotion status: `promoted`
 
 ## Artifacts
 ### A_customer
@@ -29,18 +30,21 @@ P71 moves local restore presentation/orchestration out of `YYYPicker` into `ZONL
 
 `YYYPicker` keeps its file browser / QuickLook responsibilities. Its historical `addBtnAction`, `restorePreparedArchiveStaging`, and `yidongwenjian` methods remain as compatibility shims. P66/P67a post-success preference reload / cleanup / process-exit behavior remains behind `ZONRestoreAPI`.
 
-## Required real-device validation
-Use A_customer first.
+## Real-device validation result
+User explicitly reported all scoped validation items as normal.
 
-1. Launch, menu and six-button regression.
-2. Tap local restore and confirm the Files document picker opens normally.
-3. Select a valid P70/P71 backup ZIP; processing HUD appears and restore succeeds.
+Validated on device:
+1. Launch, menu and six-button regression normal.
+2. Local restore opens the Files document picker normally.
+3. Valid backup ZIP restore path works with processing HUD.
 4. Successful local restore still closes the game automatically through the preserved P66/P67a tail.
-5. Relaunch and confirm restored data is correct.
-6. Cancel the document picker; no crash, false success, or unintended restore occurs.
-7. Select an invalid/non-backup file; show failure and do not falsely exit as success.
-8. Remote ZIP restore and cloud-save restore still succeed and auto-close normally.
-9. Backup creation/share flow from P70 remains normal.
-10. Repeat local restore after a previous cancelled/failed attempt to ensure the coordinator remains reusable.
+5. Relaunch confirms restored data is correct.
+6. Cancelling the document picker does not crash or falsely report success.
+7. Invalid/non-backup input does not falsely report success or exit as success.
+8. Remote ZIP restore and cloud-save restore remain normal and auto-close on success.
+9. P70 backup creation/share flow remains normal.
+10. Local restore remains reusable after prior cancelled/failed attempts.
 
-P71 must not be promoted until the user explicitly confirms the scoped real-device validation passes.
+## Promotion
+P71 is promoted as the current device-verified runtime baseline.
+Previous device-verified rollback baseline remains P70: `a8a6316b0490bbbfcdd9e98d1feb78bdfa56a82c`.
