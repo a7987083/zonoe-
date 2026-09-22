@@ -27,6 +27,7 @@
 #import "PubgLoad.h"
 #import "ZONKeychain.h"
 #import "../ZONServices/ZONAuthorizationResetService.h"
+#import "../ZONServices/ZONAuthorizationEntryRouter.h"
 #import "NSObject+UI.h"
 #import "JDStatusBarNotification.h"
 
@@ -95,71 +96,47 @@ static ZONAuthorizationRetryMode gZONAuthorizationRetryMode = ZONAuthorizationRe
 //
 //}
 - (void)loada {
- 
+    ZONAuthorizationEntrySnapshot *entry = [ZONAuthorizationEntryRouter currentSnapshot];
 
-    rjyyz=[getKeychain getKeychainDataForKey:@"rjyyz"];
-    kmm=[getKeychain getKeychainDataForKey:@"ShiSanGeDZKM"];
-    设备特征码=[getKeychain getKeychainDataForKey:@"DZUDID"];
-//    ConfigLog(@"网络%@",kmm);
-//    ConfigLog(@"网络笑脸%@",设备特征码);
-//    ConfigLog(@"网打赏%@",rjyyz);
-//    [self deletekm];
-//    NSString* UDID=[[NSUserDefaults standardUserDefaults] objectForKey:@"zonoeudid"];
-//    [getKeychain addKeychainData:@"17746f6b4fb807a78847d1e738e6aa4b9506e36b" forKey:@"DZUDID"];
+    // Preserve the legacy globals because downstream BSPHP/BSPHPy code still reads them.
+    rjyyz = entry.unlockStatus;
+    kmm = entry.activationCode;
+    设备特征码 = entry.deviceIdentifier;
 
-//    ConfigLog(@"网打赏%@",UDID);
-//    17746f6b4fb807a78847d1e738e6aa4b9506e36b
-//    [[WX_NongShiFu123 alloc] deletekm];
-    // 检查 kmm 和 设备特征码 是否都为空
-    if (设备特征码.length<5 || 设备特征码==nil || 设备特征码==NULL) {
-               
-               //ConfigLog(@"kmm 和 设备特征码 都为空。程序退出。");
-               dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                   JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
-                   [presenter dismissAnimated:YES]; // 或者 YES，取决于你的需求
-                   [presenter presentWithText:@"首次激活" dismissAfterDelay:5 includedStyle:JDStatusBarNotificationIncludedStyleSuccess];
-                   [self getUDID:^{
-                        
-                   [self shouquanjiance];
+    if (entry.mode == ZONAuthorizationEntryModeFirstActivation) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
+            [presenter dismissAnimated:YES];
+            [presenter presentWithText:@"首次激活" dismissAfterDelay:5 includedStyle:JDStatusBarNotificationIncludedStyleSuccess];
+            [self getUDID:^{
+                [self shouquanjiance];
+            }];
+        });
+        return;
+    }
 
-                   }];
-               });
-               
-           } else {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
+        [presenter dismissAnimated:YES];
 
-//               static dispatch_once_t onceToken;
-//               dispatch_once(&onceToken, ^{
-                   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                       if(  [kmm containsString:@"mg"] || [rjyyz containsString:@"未查到解锁记录"] )
-                       {
-                           //广告加速
-                           JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
-                           [presenter dismissAnimated:YES]; // 或者 YES，取决于你的需求
-                           [presenter presentWithText:@"秒过广告激活中" dismissAfterDelay:5 includedStyle:JDStatusBarNotificationIncludedStyleSuccess];
-                           [self BSPHP];
-                         }
-                       else
-                       {
-                           if(设备特征码.length>16 && [rjyyz containsString:@"ok"])
-                           {
-                               JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
-                               [presenter dismissAnimated:YES]; // 或者 YES，取决于你的需求
-                               [presenter presentWithText:@"软件源激活中" dismissAfterDelay:5 includedStyle:JDStatusBarNotificationIncludedStyleSuccess];
-                                [self BSPHPy];
-                            }else{
-                                    JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
-                                   [presenter dismissAnimated:YES]; // 或者 YES，取决于你的需求
-                                   [presenter presentWithText:@"首次激活" dismissAfterDelay:5 includedStyle:JDStatusBarNotificationIncludedStyleSuccess];
-                                       [self shouquanjiance];
-                                 
- 
-                           }
-                       }
-                       
-                   });
-//               });
-               
-           }
+        switch (entry.mode) {
+            case ZONAuthorizationEntryModeAdSpeed:
+                [presenter presentWithText:@"秒过广告激活中" dismissAfterDelay:5 includedStyle:JDStatusBarNotificationIncludedStyleSuccess];
+                [self BSPHP];
+                break;
+
+            case ZONAuthorizationEntryModeSoftwareSource:
+                [presenter presentWithText:@"软件源激活中" dismissAfterDelay:5 includedStyle:JDStatusBarNotificationIncludedStyleSuccess];
+                [self BSPHPy];
+                break;
+
+            case ZONAuthorizationEntryModeChooseMethod:
+            default:
+                [presenter presentWithText:@"首次激活" dismissAfterDelay:5 includedStyle:JDStatusBarNotificationIncludedStyleSuccess];
+                [self shouquanjiance];
+                break;
+        }
+    });
 }
 
 

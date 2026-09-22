@@ -11,7 +11,7 @@ auth_h = (root / 'testmod/ZONServices/ZONAuthorizationResetService.h').read_text
 auth_m = (root / 'testmod/ZONServices/ZONAuthorizationResetService.m').read_text()
 pbx = (root / 'testmod.xcodeproj/project.pbxproj').read_text()
 
-assert version in {'v1_p72', 'v1_p73', 'v1_p74'}, f'unexpected VERSION: {version}'
+assert version in {'v1_p72', 'v1_p73', 'v1_p74', 'v1_p76'}, f'unexpected VERSION: {version}'
 
 for marker in [
     '@interface ZONResetCoordinator',

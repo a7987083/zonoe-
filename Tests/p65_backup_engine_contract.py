@@ -28,7 +28,7 @@ policy_m = POLICY_M.read_text(encoding='utf-8')
 restore = RESTORE.read_text(encoding='utf-8')
 pbx = PBX.read_text(encoding='utf-8')
 
-if version not in {'v1_p65', 'v1_p66', 'v1_p67', 'v1_p67a', 'v1_p68', 'v1_p69', 'v1_p70', 'v1_p71', 'v1_p72', 'v1_p73', 'v1_p74'}:
+if version not in {'v1_p65', 'v1_p66', 'v1_p67', 'v1_p67a', 'v1_p68', 'v1_p69', 'v1_p70', 'v1_p71', 'v1_p72', 'v1_p73', 'v1_p74', 'v1_p76'}:
     raise SystemExit(f'unexpected VERSION: {version}')
 
 for marker in (
@@ -58,7 +58,7 @@ for marker in (
     if marker not in policy_m and marker not in policy_h:
         raise SystemExit(f'missing backup policy marker: {marker}')
 
-if version in {'v1_p70', 'v1_p71', 'v1_p72', 'v1_p73', 'v1_p74'}:
+if version in {'v1_p70', 'v1_p71', 'v1_p72', 'v1_p73', 'v1_p74', 'v1_p76'}:
     for marker in ('#import "ZONBackupCoordinator.h"', '[ZONBackupCoordinator sharedCoordinator]', 'presentBackupFromViewController:hostViewController'):
         if marker not in action:
             raise SystemExit(f'P70+ backup route missing: {marker}')
@@ -82,7 +82,7 @@ for name in ('ZONBackupService.m', 'ZONBackupPolicy.m'):
     if pbx.count(marker) != 2:
         raise SystemExit(f'expected exactly 2 PBX markers for {name}, found {pbx.count(marker)}')
 
-if version in {'v1_p70', 'v1_p71', 'v1_p72', 'v1_p73', 'v1_p74'} and pbx.count('ZONBackupCoordinator.m in Sources') != 2:
+if version in {'v1_p70', 'v1_p71', 'v1_p72', 'v1_p73', 'v1_p74', 'v1_p76'} and pbx.count('ZONBackupCoordinator.m in Sources') != 2:
     raise SystemExit('ZONBackupCoordinator.m is not registered exactly once in PBX sources')
 
 header_search_marker = '"$(SRCROOT)/testmod/ZONServices"'

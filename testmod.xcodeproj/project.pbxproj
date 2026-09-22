@@ -158,6 +158,7 @@
 		B72000112F7B720100C0FFEE /* ZONResetCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = B72000122F7B720100C0FFEE /* ZONResetCoordinator.m */; };
 		B73000112F7B730100C0FFEE /* ZONRuntimeDirectoryService.m in Sources */ = {isa = PBXBuildFile; fileRef = B73000122F7B730100C0FFEE /* ZONRuntimeDirectoryService.m */; };
 		B74000112F7B740100C0FFEE /* ZONLocalFilesCoordinator.m in Sources */ = {isa = PBXBuildFile; fileRef = B74000122F7B740100C0FFEE /* ZONLocalFilesCoordinator.m */; };
+		B76000112F7B760100C0FFEE /* ZONAuthorizationEntryRouter.m in Sources */ = {isa = PBXBuildFile; fileRef = B76000122F7B760100C0FFEE /* ZONAuthorizationEntryRouter.m */; };
 		7ECBD4212F29099D00C56F1C /* PopupMenuVC.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECBD4202F29099D00C56F1C /* PopupMenuVC.h */; };
 		7ECBD4232F30EF6100C56F1C /* FoldSectionView.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECBD4222F30EF6100C56F1C /* FoldSectionView.h */; };
 		7ECBD4252F30EF6C00C56F1C /* FoldSectionView.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD4242F30EF6C00C56F1C /* FoldSectionView.m */; };
@@ -345,6 +346,7 @@
 		B72000122F7B720100C0FFEE /* ZONResetCoordinator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZONResetCoordinator.m"; sourceTree = SOURCE_ROOT; };
 		B73000122F7B730100C0FFEE /* ZONRuntimeDirectoryService.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZONRuntimeDirectoryService.m"; sourceTree = SOURCE_ROOT; };
 		B74000122F7B740100C0FFEE /* ZONLocalFilesCoordinator.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZONLocalFilesCoordinator.m"; sourceTree = SOURCE_ROOT; };
+		B76000122F7B760100C0FFEE /* ZONAuthorizationEntryRouter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "testmod/ZONServices/ZONAuthorizationEntryRouter.m"; sourceTree = SOURCE_ROOT; };
 		7ECBD4202F29099D00C56F1C /* PopupMenuVC.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PopupMenuVC.h; sourceTree = "<group>"; };
 		7ECBD4222F30EF6100C56F1C /* FoldSectionView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FoldSectionView.h; sourceTree = "<group>"; };
 		7ECBD4242F30EF6C00C56F1C /* FoldSectionView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FoldSectionView.m; sourceTree = "<group>"; };
@@ -1071,6 +1073,7 @@
 				B72000112F7B720100C0FFEE /* ZONResetCoordinator.m in Sources */,
 				B73000112F7B730100C0FFEE /* ZONRuntimeDirectoryService.m in Sources */,
 				B74000112F7B740100C0FFEE /* ZONLocalFilesCoordinator.m in Sources */,
+				B76000112F7B760100C0FFEE /* ZONAuthorizationEntryRouter.m in Sources */,
 				7E6F45522E1A8C4E00D4A46E /* JDSBNotificationViewController.m in Sources */,
 				7E8A57FA2B8E4A9C00676FE2 /* SCLSwitchView.m in Sources */,
 				7E8A57D92B8E4A9C00676FE2 /* AFNetworkReachabilityManager.m in Sources */,
