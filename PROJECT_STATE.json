@@ -5,17 +5,23 @@
   "current_work_branch": "work/p71-local-restore-coordinator",
   "current_version": "v1_p71",
   "current_phase": "p71_local_restore_coordinator",
-  "phase_status": "p71_ci_passed_device_validation_pending",
+  "phase_status": "p71_device_passed_promoted",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
-  "last_device_verified_version": "v1_p70",
-  "last_device_verified_code_commit": "a8a6316b0490bbbfcdd9e98d1feb78bdfa56a82c",
+  "last_device_verified_version": "v1_p71",
+  "last_device_verified_code_commit": "ef556183635b6d7256bb33eac456eff9bccae190",
   "rollback_baseline": {
+    "canonical_version": "v1_p71",
+    "source_commit": "ef556183635b6d7256bb33eac456eff9bccae190",
+    "ci_run_id": 35690162490,
+    "device_status": "passed",
+    "device_reported_by_user": true
+  },
+  "previous_device_verified_baseline": {
     "canonical_version": "v1_p70",
     "source_commit": "a8a6316b0490bbbfcdd9e98d1feb78bdfa56a82c",
     "ci_run_id": 35678277659,
-    "device_status": "passed",
-    "device_reported_by_user": true
+    "device_status": "passed"
   },
   "p67": {
     "version": "v1_p67",
@@ -68,9 +74,9 @@
     "actual_build_commit": "ef556183635b6d7256bb33eac456eff9bccae190",
     "ci_run_id": 35690162490,
     "ci_status": "success",
-    "device_status": "pending",
-    "device_reported_by_user": false,
-    "promotion_status": "not_promoted",
+    "device_status": "passed",
+    "device_reported_by_user": true,
+    "promotion_status": "promoted",
     "a_customer_artifact_id": 10678023711,
     "a_customer_artifact_digest": "sha256:038f4d4a99884c459d9acb2e90d6eb1e0db6effd205cb469397deabf0484230a",
     "a_customer_dylib_sha256": "0cc598d17a7f7ba3bf396186fab7c458d6ebb9b82ab2cbd5bb5b49e1f4fb6457",
@@ -79,5 +85,5 @@
     "b_debug_dylib_sha256": "afb5edc8e789104e4b7c6c92a34653b3fb214bd0c6ba1a2beee02c28689d1abb",
     "architecture": "ZONSixButtonActionService -> ZONLocalRestoreCoordinator -> ZONRestoreAPI -> ZONRestoreService; YYYPicker retains file-browser UI and compatibility shims only"
   },
-  "next_task": "Run P71 scoped real-device validation using A_customer first. Keep P70 as rollback baseline until explicit user confirmation."
+  "next_task": "Audit remaining responsibilities from the P71 device-verified runtime baseline before defining P72."
 }
