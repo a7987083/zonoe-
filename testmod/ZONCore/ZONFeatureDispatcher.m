@@ -1,10 +1,10 @@
 #import "ZONFeatureDispatcher.h"
 #import "ZONFeatureRegistry.h"
-#import "SandboxBrowserVC.h"
 #import "ImgTool.h"
 #import "../ZONServices/ZONSixButtonActionService.h"
 #import "../ZONServices/ZONRuntimeDirectoryService.h"
 #import "../ZONServices/ZONResetCoordinator.h"
+#import "../ZONServices/ZONLocalFilesCoordinator.h"
 
 typedef BOOL (^ZONFeatureActionHandler)(UIViewController *hostViewController);
 typedef BOOL (^ZONFeatureToggleHandler)(BOOL on);
@@ -66,15 +66,7 @@ static NSDictionary<NSString *, ZONFeatureActionHandler> *ZONActionRoutes(void)
                 return [ZONSixButtonActionService performCloudSaveFromViewController:host];
             },
             @"base.local-files": ^BOOL(UIViewController *host) {
-                SandboxBrowserVC *vc = [[SandboxBrowserVC alloc] init];
-                UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
-                if (@available(iOS 13.0, *)) {
-                    nav.modalPresentationStyle = UIModalPresentationPageSheet;
-                } else {
-                    nav.modalPresentationStyle = UIModalPresentationFullScreen;
-                }
-                [host presentViewController:nav animated:YES completion:nil];
-                return YES;
+                return [[ZONLocalFilesCoordinator sharedCoordinator] presentLocalFilesFromViewController:host];
             },
             @"data.backup-save": ^BOOL(UIViewController *host) {
                 return [ZONSixButtonActionService performBackupSaveFromViewController:host];

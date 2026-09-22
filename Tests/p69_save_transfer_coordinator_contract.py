@@ -44,6 +44,6 @@ for forbidden in [
 assert 'enumeratorAtPath:' not in coord_m
 assert 'NSHomeDirectory() stringByAppendingPathComponent:@"tmp"' not in coord_m
 assert pbx.count('ZONSaveTransferCoordinator.m in Sources') == 2
-assert version in {'v1_p69', 'v1_p70', 'v1_p71', 'v1_p72', 'v1_p73'}, f'unexpected VERSION: {version}'
+assert version in {'v1_p69', 'v1_p70', 'v1_p71', 'v1_p72', 'v1_p73', 'v1_p74'}, f'unexpected VERSION: {version}'
 
 print('P69 save transfer coordinator contract: PASS')

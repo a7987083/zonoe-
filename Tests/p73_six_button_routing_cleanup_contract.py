@@ -10,7 +10,7 @@ runtime_h = (root / 'testmod/ZONServices/ZONRuntimeDirectoryService.h').read_tex
 runtime_m = (root / 'testmod/ZONServices/ZONRuntimeDirectoryService.m').read_text()
 pbx = (root / 'testmod.xcodeproj/project.pbxproj').read_text()
 
-assert version == 'v1_p73', f'unexpected VERSION: {version}'
+assert version in {'v1_p73', 'v1_p74'}, f'unexpected VERSION: {version}'
 
 for marker in [
     '@interface ZONRuntimeDirectoryService',

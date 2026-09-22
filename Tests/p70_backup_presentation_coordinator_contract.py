@@ -10,7 +10,7 @@ service_h = (root / 'testmod/ZONServices/ZONBackupService.h').read_text()
 service_m = (root / 'testmod/ZONServices/ZONBackupService.m').read_text()
 pbx = (root / 'testmod.xcodeproj/project.pbxproj').read_text()
 
-assert version in {'v1_p70', 'v1_p71', 'v1_p72', 'v1_p73'}, f'unexpected VERSION: {version}'
+assert version in {'v1_p70', 'v1_p71', 'v1_p72', 'v1_p73', 'v1_p74'}, f'unexpected VERSION: {version}'
 
 for marker in [
     '@interface ZONBackupCoordinator', '+ (instancetype)sharedCoordinator;', 'presentBackupFromViewController:',
