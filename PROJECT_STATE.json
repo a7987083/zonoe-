@@ -5,12 +5,19 @@
   "current_work_branch": "work/p73-six-button-routing-cleanup",
   "current_version": "v1_p73",
   "current_phase": "p73_six_button_routing_cleanup",
-  "phase_status": "p73_ci_passed_device_validation_pending",
+  "phase_status": "p73_device_passed_promoted",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
-  "last_device_verified_version": "v1_p72",
-  "last_device_verified_code_commit": "56dbaa0c9c2d3a065dc4e01709f980254a754e2b",
+  "last_device_verified_version": "v1_p73",
+  "last_device_verified_code_commit": "4a81c201556fa1c371f5a258b82b08322d34c649",
   "rollback_baseline": {
+    "canonical_version": "v1_p73",
+    "source_commit": "4a81c201556fa1c371f5a258b82b08322d34c649",
+    "ci_run_id": 35693629736,
+    "device_status": "passed",
+    "device_reported_by_user": true
+  },
+  "previous_verified_baseline": {
     "canonical_version": "v1_p72",
     "source_commit": "56dbaa0c9c2d3a065dc4e01709f980254a754e2b",
     "ci_run_id": 35692335444,
@@ -84,9 +91,9 @@
     "actual_build_commit": "4a81c201556fa1c371f5a258b82b08322d34c649",
     "ci_run_id": 35693629736,
     "ci_status": "success",
-    "device_status": "pending",
-    "device_reported_by_user": false,
-    "promotion_status": "not_promoted",
+    "device_status": "passed",
+    "device_reported_by_user": true,
+    "promotion_status": "promoted",
     "a_customer_artifact_id": 10679429187,
     "a_customer_artifact_digest": "sha256:4a7f29605a3e1fcd6f5951a839854d656a0ad863b66abe24a064d53eb4b284a7",
     "a_customer_dylib_sha256": "09777ffb8d2296eb8f1715a79bc1f81aa6fae71b6bb6d1f43d319a349a21341e",
@@ -95,5 +102,5 @@
     "b_debug_dylib_sha256": "f9d139288dbfe844f2732390719605ff421ab306e7c24cd4fd18bb9ae56d8d24",
     "architecture": "ZONFeatureDispatcher compatibility -> ZONRuntimeDirectoryService / ZONResetCoordinator; ZONSixButtonActionService action core remains coordinator routing only; historical Objective-C helper selectors remain thin forwarders"
   },
-  "next_task": "Run P73 scoped real-device validation using A_customer first. Keep P72 as rollback baseline until explicit user confirmation."
+  "next_task": "Start P74 architecture audit from the promoted P73 runtime SHA 4a81c201556fa1c371f5a258b82b08322d34c649. Audit remaining dispatcher/local-files/runtime-toggle responsibilities before selecting the next low-risk extraction."
 }
