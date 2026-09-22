@@ -11,7 +11,7 @@ api_h = (root / 'testmod/ZONServices/ZONRestoreAPI.h').read_text()
 api_m = (root / 'testmod/ZONServices/ZONRestoreAPI.m').read_text()
 pbx = (root / 'testmod.xcodeproj/project.pbxproj').read_text()
 
-assert version == 'v1_p71', f'unexpected VERSION: {version}'
+assert version in {'v1_p71', 'v1_p72'}, f'unexpected VERSION: {version}'
 
 for marker in [
     '@interface ZONLocalRestoreCoordinator',
