@@ -5,14 +5,21 @@
   "current_work_branch": "work/p76-authorization-entry-routing",
   "current_version": "v1_p76",
   "current_phase": "p76_authorization_entry_routing",
-  "phase_status": "p76_ci_passed_device_validation_pending",
+  "phase_status": "p76_device_passed_promoted",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
-  "last_device_verified_version": "v1_p74",
-  "last_device_verified_code_commit": "47840ad17fb4780dff4294adf162cb08a02bb6dc",
+  "last_device_verified_version": "v1_p76",
+  "last_device_verified_code_commit": "9e4d0a0f34a4019fc26521fafdc864e9fd0f9afd",
   "last_ci_run_id": 35698122018,
   "last_ci_status": "success",
   "rollback_baseline": {
+    "canonical_version": "v1_p76",
+    "source_commit": "9e4d0a0f34a4019fc26521fafdc864e9fd0f9afd",
+    "ci_run_id": 35698122018,
+    "device_status": "passed",
+    "device_reported_by_user": true
+  },
+  "previous_rollback_baseline": {
     "canonical_version": "v1_p74",
     "source_commit": "47840ad17fb4780dff4294adf162cb08a02bb6dc",
     "ci_run_id": 35695305509,
@@ -91,7 +98,7 @@
     "ci_status": "success",
     "device_status": "passed",
     "device_reported_by_user": true,
-    "promotion_status": "promoted",
+    "promotion_status": "promoted_superseded_by_p76",
     "architecture": "ZONFeatureDispatcher -> ZONLocalFilesCoordinator -> SandboxBrowserVC / UINavigationController; runtime toggles unchanged"
   },
   "p75": {
@@ -110,9 +117,9 @@
     "actual_build_commit": "9e4d0a0f34a4019fc26521fafdc864e9fd0f9afd",
     "ci_run_id": 35698122018,
     "ci_status": "success",
-    "device_status": "pending",
-    "device_reported_by_user": false,
-    "promotion_status": "not_promoted",
+    "device_status": "passed",
+    "device_reported_by_user": true,
+    "promotion_status": "promoted",
     "a_customer_artifact_id": 10681262598,
     "a_customer_artifact_digest": "sha256:a4f3da4c43104c8058a34daf2e6c78a9ce098bba449e30dc5a4f7e6239c4c752",
     "a_customer_dylib_sha256": "9e7310cc52ac44bcd34e31fcd20df28474c46f79bea675be5ae60b7306af5e2e",
@@ -121,5 +128,5 @@
     "b_debug_dylib_sha256": "ac336bad7cd75b6e197a6aa1dee65c1475adfca459f998cf5a29a5a0911d6456",
     "architecture": "WX_NongShiFu123::loada -> ZONAuthorizationEntryRouter snapshot/policy -> existing first-activation / BSPHP / BSPHPy / chooser execution; protocol bodies unchanged"
   },
-  "next_task": "Run P76 scoped real-device authorization validation using A_customer first. Keep P74 as rollback baseline until explicit user confirmation."
+  "next_task": "Open the next stage from promoted P76 runtime SHA and audit the remaining WX_NongShiFu123 authorization monolith for the next lowest-risk extraction boundary."
 }
