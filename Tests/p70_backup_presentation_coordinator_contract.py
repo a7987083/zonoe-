@@ -10,63 +10,32 @@ service_h = (root / 'testmod/ZONServices/ZONBackupService.h').read_text()
 service_m = (root / 'testmod/ZONServices/ZONBackupService.m').read_text()
 pbx = (root / 'testmod.xcodeproj/project.pbxproj').read_text()
 
-assert version == 'v1_p70', f'unexpected VERSION: {version}'
+assert version in {'v1_p70', 'v1_p71'}, f'unexpected VERSION: {version}'
 
 for marker in [
-    '@interface ZONBackupCoordinator',
-    '+ (instancetype)sharedCoordinator;',
-    'presentBackupFromViewController:',
+    '@interface ZONBackupCoordinator', '+ (instancetype)sharedCoordinator;', 'presentBackupFromViewController:',
 ]:
     assert marker in coord_h, f'missing P70 coordinator API marker: {marker}'
 
 for marker in [
-    '#import "ZONBackupService.h"',
-    'createBackupNamed:',
-    'largeItemDecision:',
-    'requestBackupDecisionForRelativePath:',
-    'ZONBackupStagePreparing',
-    'ZONBackupStageScanning',
-    'ZONBackupStageCopyingDocuments',
-    'ZONBackupStageCopyingLibrary',
-    'ZONBackupStageArchiving',
-    '@"请输入文件名字\\n直接确定是BundID名字"',
-    '@"备份完成"',
-    'UIDocumentInteractionController',
-    'presentOptionsMenuFromRect:',
-    'cleanupBackupArtifacts',
-    '@"Documents/zonoe"',
-    '@"tmp/zonoe"',
+    '#import "ZONBackupService.h"', 'createBackupNamed:', 'largeItemDecision:',
+    'requestBackupDecisionForRelativePath:', 'ZONBackupStagePreparing', 'ZONBackupStageScanning',
+    'ZONBackupStageCopyingDocuments', 'ZONBackupStageCopyingLibrary', 'ZONBackupStageArchiving',
+    '@"请输入文件名字\\n直接确定是BundID名字"', '@"备份完成"', 'UIDocumentInteractionController',
+    'presentOptionsMenuFromRect:', 'cleanupBackupArtifacts', '@"Documents/zonoe"', '@"tmp/zonoe"',
 ]:
     assert marker in coord_m, f'missing P70 coordinator behavior marker: {marker}'
 
-for marker in [
-    '#import "ZONBackupCoordinator.h"',
-    '[ZONBackupCoordinator sharedCoordinator]',
-    'presentBackupFromViewController:hostViewController',
-]:
+for marker in ['#import "ZONBackupCoordinator.h"', '[ZONBackupCoordinator sharedCoordinator]', 'presentBackupFromViewController:hostViewController']:
     assert marker in six, f'missing six-button P70 route: {marker}'
 
 assert '#import "daochucd.h"' not in six
 assert '[[daochucd alloc] backupasd]' not in six
 
-for marker in [
-    '#import "ZONBackupCoordinator.h"',
-    '[JHPP currentViewController]',
-    '[ZONBackupCoordinator sharedCoordinator]',
-    'presentBackupFromViewController:host',
-]:
+for marker in ['#import "ZONBackupCoordinator.h"', '[JHPP currentViewController]', '[ZONBackupCoordinator sharedCoordinator]', 'presentBackupFromViewController:host']:
     assert marker in legacy, f'missing legacy backup shim marker: {marker}'
 
-for forbidden in [
-    'ZONBackupService',
-    'SVProgressHUD',
-    'UIDocumentInteractionController',
-    'createBackupNamed:',
-    'requestBackupDecisionForRelativePath:',
-    'cleanupBackupArtifacts',
-    'Documents/zonoe',
-    'tmp/zonoe',
-]:
+for forbidden in ['ZONBackupService', 'SVProgressHUD', 'UIDocumentInteractionController', 'createBackupNamed:', 'requestBackupDecisionForRelativePath:', 'cleanupBackupArtifacts', 'Documents/zonoe', 'tmp/zonoe']:
     assert forbidden not in legacy, f'daochucd still owns backup orchestration: {forbidden}'
 
 for forbidden in ['UIKit', 'SVProgressHUD', 'UIAlertController', 'UIDocumentInteractionController']:
