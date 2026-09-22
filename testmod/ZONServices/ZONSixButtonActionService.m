@@ -2,7 +2,7 @@
 #import "ZONAuthorizationResetService.h"
 #import "ZONGameDataResetService.h"
 #import "ZONSaveTransferCoordinator.h"
-#import "daochucd.h"
+#import "ZONBackupCoordinator.h"
 #import "YYYPicker.h"
 #import "SVProgressHUD.h"
 #import <stdlib.h>
@@ -96,9 +96,9 @@ typedef void (^ZONDestructiveConfirmationHandler)(void);
     return YES;
 }
 
-+ (BOOL)performBackupSaveFromViewController:(__unused UIViewController *)hostViewController
++ (BOOL)performBackupSaveFromViewController:(UIViewController *)hostViewController
 {
-    [[daochucd alloc] backupasd];
+    [[ZONBackupCoordinator sharedCoordinator] presentBackupFromViewController:hostViewController];
     return YES;
 }
 
