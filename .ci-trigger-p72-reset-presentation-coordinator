@@ -1,1 +1,2 @@
 trigger p72 reset presentation coordinator build
+rerun 2 after contract alignment
