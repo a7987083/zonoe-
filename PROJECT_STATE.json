@@ -5,12 +5,19 @@
   "current_work_branch": "work/p70-backup-presentation-coordinator",
   "current_version": "v1_p70",
   "current_phase": "p70_backup_presentation_coordinator",
-  "phase_status": "p70_ci_passed_device_validation_pending",
+  "phase_status": "p70_device_passed_promoted",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
-  "last_device_verified_version": "v1_p69",
-  "last_device_verified_code_commit": "1e8240e66ddf95fcfeebe970417a5b8721908cd8",
+  "last_device_verified_version": "v1_p70",
+  "last_device_verified_code_commit": "a8a6316b0490bbbfcdd9e98d1feb78bdfa56a82c",
   "rollback_baseline": {
+    "canonical_version": "v1_p70",
+    "source_commit": "a8a6316b0490bbbfcdd9e98d1feb78bdfa56a82c",
+    "ci_run_id": 35678277659,
+    "device_status": "passed",
+    "device_reported_by_user": true
+  },
+  "previous_rollback_baseline": {
     "canonical_version": "v1_p69",
     "source_commit": "1e8240e66ddf95fcfeebe970417a5b8721908cd8",
     "ci_run_id": 35668507458,
@@ -48,7 +55,7 @@
     "ci_status": "success",
     "device_status": "passed",
     "device_reported_by_user": true,
-    "promotion_status": "promoted",
+    "promotion_status": "promoted_superseded_by_p70",
     "architecture": "ZONFeatureDispatcher -> ZONSixButtonActionService -> ZONSaveTransferCoordinator -> P67/P67a/P68 service stack; PubgLoad compatibility shim only"
   },
   "p70": {
@@ -60,9 +67,9 @@
     "actual_build_commit": "a8a6316b0490bbbfcdd9e98d1feb78bdfa56a82c",
     "ci_run_id": 35678277659,
     "ci_status": "success",
-    "device_status": "pending",
-    "device_reported_by_user": false,
-    "promotion_status": "not_promoted",
+    "device_status": "passed",
+    "device_reported_by_user": true,
+    "promotion_status": "promoted",
     "a_customer_artifact_id": 10673084097,
     "a_customer_artifact_digest": "sha256:16ba447b6c766e74b1ac9f736496981944323dff524206acbbc87b114cf859d1",
     "a_customer_dylib_sha256": "8ec75343eaba37716d2627a11ce4bbacbfbe59527065145ee75b7e131b55b064",
@@ -71,5 +78,5 @@
     "b_debug_dylib_sha256": "ec9429db69b07ae4ebc626fd66c2fa91fd41dd2939c597dfbac9e99f83d0ad64",
     "architecture": "ZONSixButtonActionService -> ZONBackupCoordinator -> ZONBackupService; daochucd compatibility shim only"
   },
-  "next_task": "Run P70 scoped real-device validation using A_customer first. Keep P69 as rollback baseline until explicit user confirmation."
+  "next_task": "Open P71 from promoted P70 runtime baseline and audit the remaining local-restore presentation/orchestration responsibilities before selecting the next extraction boundary."
 }
