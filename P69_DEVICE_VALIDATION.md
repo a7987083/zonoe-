@@ -1,16 +1,17 @@
 # P69 Device Validation
 
-## Candidate
+## Final status
 
 - Version: `v1_p69`
 - Branch: `work/p69-save-transfer-coordinator`
-- Device baseline: `v1_p68`
-- Device-baseline build SHA: `57492160450673f9ea17e69b9d4776668db32773`
+- Previous device baseline: `v1_p68`
+- Previous baseline build SHA: `57492160450673f9ea17e69b9d4776668db32773`
 - P69 actual migrated/build SHA: `1e8240e66ddf95fcfeebe970417a5b8721908cd8`
 - CI Run: `35668507458`
 - CI status: `success`
-- Device status: `pending`
-- Promotion status: `not_promoted`
+- Device status: `passed`
+- Promotion status: `promoted`
+- Device result explicitly reported by user: `全部正常`
 
 ## CI artifacts
 
@@ -24,31 +25,16 @@
 - Artifact digest: `sha256:a901681c897f10da2d3d20e2e68a32dffd4af310b4a1ff6cfb0344838932a79f`
 - dylib SHA256: `23a07b9272cb6ce5f591d95d35c253858914d470918e3f9b5bcac865e0407615`
 
-Both variants passed inherited P67/P67a/P68 contracts, the P69 coordinator contract, the real Xcode 16.4 build, dylib output verification, and artifact upload.
+Both variants passed inherited P67/P67a/P68 contracts, the P69 coordinator contract, Xcode 16.4 build, dylib verification and artifact upload.
 
-## Scope
-
-P69 moves save-transfer UI/process orchestration out of `PubgLoad` into `ZONSaveTransferCoordinator` and passes the existing host view controller explicitly from `ZONSixButtonActionService`.
-
-The P67/P67a/P68 service stack is reused unchanged:
+## Promoted architecture
 
 `ZONFeatureDispatcher -> ZONSixButtonActionService -> ZONSaveTransferCoordinator -> ZONCloudSaveService / ZONRemoteDownloadService -> ZONRestoreAPI`
 
-`PubgLoad` remains only as a legacy compatibility shim.
+`PubgLoad` remains only as a legacy compatibility shim for the migrated save-transfer routes.
 
-## Real-device validation required
+## Device validation result
 
-Use A_customer first.
+The scoped P69 checks were reported fully normal on real device, including launch/menu regression, manual remote download, cloud-save path, post-restore exit/relaunch behavior, entitlement behavior and local backup/restore regression.
 
-1. Launch, menu and six-button regression.
-2. Manual remote-download alert appears from the active menu host.
-3. Valid manual ZIP URL downloads, restores, closes the game after success, and restored data is correct after relaunch.
-4. Empty manual URL re-prompts; invalid URL/network/non-ZIP errors do not falsely report success or close the game.
-5. Cloud-save metadata title/subtitle/buttons render normally.
-6. Authorized cloud-save item downloads, restores, closes the game, and data is correct after relaunch.
-7. Unauthorized entitlement shows the purchase prompt and does not start archive download.
-8. Historical default `homezip + bundleID.zip` and JSON custom download address both work.
-9. B_debug entitlement-bypass diagnostic behavior remains available.
-10. Local backup and local restore remain functional.
-
-P69 must not be promoted until the user explicitly confirms the scoped device validation passes.
+P69 is now the current promoted/device baseline. P68 remains the previous rollback baseline.
