@@ -1,87 +1,86 @@
 {
   "project": "zonoemenu",
   "repository": "a7987083/zonoe-",
-  "stable_branch": "main",
-  "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/p64a-clear-game-data-runtime-directory-fix",
-  "current_version": "v1_p64a",
-  "current_phase": "p65_backup_engine_refactor",
-  "phase_status": "p64a_promoted_p65_opening",
-  "last_device_verified_code_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
-  "last_device_verified_version": "v1_p64a",
-  "last_ci_run_id": 35524126925,
-  "last_ci_status": "success",
+  "canonical_product_surface": ["testmod/", "testmod.xcodeproj"],
+  "current_work_branch": "work/p77-remote-restore-coordinator",
+  "current_version": "v1_p77",
+  "current_phase": "p77_remote_restore_coordinator",
+  "phase_status": "p77_ci_passed_device_validation_pending",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
-  "canonical_product_surface": ["testmod/", "testmod.xcodeproj"],
-  "version_naming_rule": {
-    "new_stage": "increment numeric phase, e.g. P63 -> P64 -> P65",
-    "same_stage_fix": "append lowercase suffix, e.g. P64a -> P64b -> P64c",
-    "historical_correction": "v1_p63a maps canonically to P63; v1_p63b maps canonically to P64. History is preserved rather than rewritten."
-  },
+  "last_device_verified_version": "v1_p76",
+  "last_device_verified_code_commit": "9e4d0a0f34a4019fc26521fafdc864e9fd0f9afd",
+  "last_ci_run_id": 35931692582,
+  "last_ci_status": "success",
   "rollback_baseline": {
-    "canonical_version": "v1_p64a",
-    "source_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
-    "ci_run_id": 35524126925,
+    "canonical_version": "v1_p76",
+    "source_commit": "9e4d0a0f34a4019fc26521fafdc864e9fd0f9afd",
+    "ci_run_id": 35698122018,
     "device_status": "passed",
     "device_reported_by_user": true
   },
-  "p64": {
-    "name": "clear_game_data_dedicated_service",
-    "historical_built_version_string": "v1_p63b",
-    "canonical_version": "v1_p64",
-    "actual_build_commit": "203b9f93d88a20f820ba35d0e3f65f16f296ce5d",
-    "ci_run_id": 35522283236,
-    "ci_status": "success",
-    "device_status": "failed",
-    "device_failure": "Library/Caches could not be removed while the app was alive; P64 incorrectly treated runtime directory removal/existence as fatal remaining payload.",
-    "promotion_status": "not_promoted"
+  "previous_rollback_baseline": {
+    "canonical_version": "v1_p74",
+    "source_commit": "47840ad17fb4780dff4294adf162cb08a02bb6dc",
+    "ci_run_id": 35695305509,
+    "device_status": "passed",
+    "device_reported_by_user": true
   },
-  "p64a": {
-    "name": "clear_game_data_runtime_directory_fix",
-    "version": "v1_p64a",
-    "status": "promoted_device_passed",
-    "branch": "work/p64a-clear-game-data-runtime-directory-fix",
-    "actual_build_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
-    "ci_run_id": 35524126925,
+  "p74": {
+    "name": "local_files_coordinator",
+    "version": "v1_p74",
+    "actual_build_commit": "47840ad17fb4780dff4294adf162cb08a02bb6dc",
+    "ci_run_id": 35695305509,
     "ci_status": "success",
     "device_status": "passed",
     "device_reported_by_user": true,
-    "a_customer_artifact_id": 10608274021,
-    "a_customer_artifact_digest": "sha256:5cc2772e8fb2794a1301ca79526ea9a375ae5686c92e9040609eb9009ab20302",
-    "a_customer_dylib_sha256": "34ef87c5be956e81764984a524c0c04428bbc83a4949e23dbc4ba19f10cfbaf9",
-    "b_debug_artifact_id": 10608289075,
-    "b_debug_artifact_digest": "sha256:c6296cb2d5ee1114501e9f35eda7e5c9cef76e9bc2657d126accb79e9bdedff8",
-    "b_debug_dylib_sha256": "335f0e3028a6bf2f9e202681487822065bdda6598a853889f9c973cd9616b379"
+    "promotion_status": "promoted_superseded_by_p76"
   },
-  "p65": {
-    "name": "backup_engine_refactor",
-    "version": "v1_p65",
-    "status": "opening_audit",
-    "baseline_version": "v1_p64a",
-    "baseline_source_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
-    "goal": "Extract backup execution from daochucd behind a clean API/service boundary, remove duplicate scanning/copy/staging logic, centralize policy/error handling, and preserve compatibility with the existing restore flow.",
-    "planned_service_files": [
-      "testmod/ZONServices/ZONBackupService.h",
-      "testmod/ZONServices/ZONBackupService.m",
-      "testmod/ZONServices/ZONBackupPolicy.h",
-      "testmod/ZONServices/ZONBackupPolicy.m"
-    ],
-    "verification_required": [
-      "current daochucd behavior/data-flow audit",
-      "backup API/service contract",
-      "existing six-button route preserved",
-      "archive compatibility with existing restore flow",
-      "A_customer arm64+arm64e build",
-      "B_debug arm64+arm64e build",
-      "real-device backup creation",
-      "real-device restore of a P65-produced backup through existing restore path"
-    ]
+  "p75": {
+    "name": "runtime_toggle_boundary",
+    "version": null,
+    "status": "skipped",
+    "reason": "Runtime toggles were already stable and small; the user explicitly chose to skip a low-value structural extraction.",
+    "runtime_behavior_changed": false
   },
-  "follow_on_plan": [
-    "P66 restore engine extraction",
-    "P67 remote-download engine extraction",
-    "P68 cloud-save engine extraction"
+  "p76": {
+    "name": "authorization_entry_routing",
+    "version": "v1_p76",
+    "branch": "work/p76-authorization-entry-routing",
+    "actual_build_commit": "9e4d0a0f34a4019fc26521fafdc864e9fd0f9afd",
+    "ci_run_id": 35698122018,
+    "ci_status": "success",
+    "device_status": "passed",
+    "device_reported_by_user": true,
+    "promotion_status": "promoted",
+    "a_customer_artifact_id": 10681262598,
+    "a_customer_dylib_sha256": "9e7310cc52ac44bcd34e31fcd20df28474c46f79bea675be5ae60b7306af5e2e",
+    "b_debug_artifact_id": 10681337287,
+    "b_debug_dylib_sha256": "ac336bad7cd75b6e197a6aa1dee65c1475adfca459f998cf5a29a5a0911d6456"
+  },
+  "p77": {
+    "name": "remote_restore_coordinator",
+    "version": "v1_p77",
+    "branch": "work/p77-remote-restore-coordinator",
+    "baseline_version": "v1_p76",
+    "baseline_source_commit": "9e4d0a0f34a4019fc26521fafdc864e9fd0f9afd",
+    "actual_build_commit": "0842910febc350908e2b61781ac396dd609c91e2",
+    "ci_run_id": 35931692582,
+    "ci_status": "success",
+    "device_status": "pending",
+    "device_reported_by_user": false,
+    "promotion_status": "not_promoted",
+    "a_customer_artifact_id": 10780389378,
+    "a_customer_artifact_digest": "sha256:42b212595d34bcd9b56582bab87b4a8b1fc705f2230eaeca530aa863ee8c7170",
+    "a_customer_dylib_sha256": "ea3075cc22fbc50233384dba3b40061c9b514760653750540ae40d5632d81d27",
+    "b_debug_artifact_id": 10781640726,
+    "b_debug_artifact_digest": "sha256:3873b91b3bb867dfd904d405cf04f9f4542ac2ca9f4b5ff7f63ef416d7d180c9",
+    "b_debug_dylib_sha256": "a0d6fce3c142bbe4d6a0ca712a970e14d466feb8fb7b42df27a84eeba4e0dab5",
+    "architecture": "remote URL / cloud resolved URL -> ZONSaveTransferCoordinator -> ZONRemoteRestoreCoordinator -> ZONRemoteDownloadService -> ZONRestoreAPI; restore engine and PreferenceManager success tail unchanged"
+  },
+  "frozen_or_skipped": [
+    "P75 runtime-toggle structural extraction skipped",
+    "WX_NongShiFu123.mm further refactor frozen by user request"
   ],
-  "next_task": "Create the P65 branch from the P64a promoted documentation closeout, deeply audit daochucd and its archive/restore compatibility, then implement the first ZONBackupService boundary."
+  "next_task": "Run P77 scoped real-device validation using A_customer first. Keep P76 as rollback baseline until explicit user confirmation."
 }
