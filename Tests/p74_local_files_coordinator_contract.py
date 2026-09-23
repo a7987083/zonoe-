@@ -7,7 +7,7 @@ coord_h = (root / 'testmod/ZONServices/ZONLocalFilesCoordinator.h').read_text()
 coord_m = (root / 'testmod/ZONServices/ZONLocalFilesCoordinator.m').read_text()
 pbx = (root / 'testmod.xcodeproj/project.pbxproj').read_text()
 
-assert version in {'v1_p74', 'v1_p76'}, f'unexpected VERSION: {version}'
+assert version in {'v1_p74', 'v1_p76', 'v1_p77'}, f'unexpected VERSION: {version}'
 
 for marker in [
     '@interface ZONLocalFilesCoordinator',

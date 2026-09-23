@@ -1,5 +1,5 @@
 #import "ZONSaveTransferCoordinator.h"
-#import "ZONRemoteDownloadService.h"
+#import "ZONRemoteRestoreCoordinator.h"
 #import "ZONRestoreAPI.h"
 #import "ZONCloudSaveService.h"
 #import "ZONRuntimeDirectoryService.h"
@@ -17,67 +17,6 @@
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{ coordinator = [[ZONSaveTransferCoordinator alloc] init]; });
     return coordinator;
-}
-
-- (void)presentRemoteDownloadProgressReceived:(int64_t)received expected:(int64_t)expected
-{
-    JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
-    if (expected > 0 && expected != NSURLSessionTransferSizeUnknown) {
-        float progress = MAX(0.0f, MIN(1.0f, (float)received / (float)expected));
-        if (progress < 1.0f) {
-            [presenter updateText:[NSString stringWithFormat:@"请耐心等待,下载中... %.0f%%", progress * 100.0f]];
-            [presenter displayProgressBarWithPercentage:progress];
-        }
-    } else {
-        double downloadedMB = (double)received / (1024.0 * 1024.0);
-        [presenter updateText:[NSString stringWithFormat:@"请耐心等待,下载中... %.1f MB", downloadedMB]];
-    }
-}
-
-- (void)startArchiveDownloadWithURL:(NSURL *)url
-{
-    if (!url) {
-        [SVProgressHUD showErrorWithStatus:@"下载链接无效"];
-        [SVProgressHUD dismissWithDelay:2.0];
-        return;
-    }
-
-    [[ZONRemoteDownloadService sharedService]
-     downloadArchiveFromURL:url
-     progress:^(int64_t receivedBytes, int64_t expectedBytes) {
-        [self presentRemoteDownloadProgressReceived:receivedBytes expected:expectedBytes];
-     }
-     completion:^(NSString *archivePath, NSError *downloadError) {
-        if (downloadError || archivePath.length == 0) {
-            [[JDStatusBarNotificationPresenter sharedPresenter] dismissAnimated:YES];
-            [SVProgressHUD showErrorWithStatus:downloadError.localizedDescription ?: @"下载失败"];
-            [SVProgressHUD dismissWithDelay:3.0];
-            return;
-        }
-
-        JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
-        [presenter presentWithText:@"下载成功，正在恢复存档..."
-                 dismissAfterDelay:0
-                     includedStyle:JDStatusBarNotificationIncludedStyleSuccess];
-
-        [[ZONRestoreAPI sharedAPI]
-         restoreArchiveAtPath:archivePath
-         inboxPath:nil
-         completion:^(BOOL success, NSError *restoreError) {
-            [presenter dismissAnimated:YES];
-            if (!success) {
-                [SVProgressHUD showErrorWithStatus:restoreError.localizedDescription ?: @"恢复失败"];
-                [SVProgressHUD dismissWithDelay:3.0];
-                return;
-            }
-
-            if (restoreError.code == ZONRestoreErrorCleanupFailed) {
-                [SVProgressHUD showSuccessWithStatus:@"恢复完成，但临时文件清理失败"];
-            } else {
-                [SVProgressHUD showSuccessWithStatus:@"恢复完成"];
-            }
-        }];
-     }];
 }
 
 - (void)presentRemoteDownloadFromViewController:(UIViewController *)hostViewController
@@ -105,7 +44,7 @@
         [presenter presentWithText:@"准备下载存档,请稍后."
                  dismissAfterDelay:10
                      includedStyle:JDStatusBarNotificationIncludedStyleWarning];
-        [self startArchiveDownloadWithURL:[NSURL URLWithString:text]];
+        [[ZONRemoteRestoreCoordinator sharedCoordinator] startArchiveDownloadWithURL:[NSURL URLWithString:text]];
     }]];
     [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     [hostViewController presentViewController:alert animated:YES completion:nil];
@@ -196,7 +135,7 @@
                  dismissAfterDelay:0
                      includedStyle:JDStatusBarNotificationIncludedStyleWarning];
         [self cleanupRestoreStaging];
-        [self startArchiveDownloadWithURL:downloadURL];
+        [[ZONRemoteRestoreCoordinator sharedCoordinator] startArchiveDownloadWithURL:downloadURL];
      }];
 }
 

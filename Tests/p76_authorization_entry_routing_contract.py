@@ -7,7 +7,7 @@ router_m = (root / 'testmod/ZONServices/ZONAuthorizationEntryRouter.m').read_tex
 legacy = (root / 'testmod/Bsphp/WX_NongShiFu123.mm').read_text()
 pbx = (root / 'testmod.xcodeproj/project.pbxproj').read_text()
 
-assert version == 'v1_p76', f'unexpected VERSION: {version}'
+assert version in {'v1_p76', 'v1_p77'}, f'unexpected VERSION: {version}'
 
 for marker in [
     'ZONAuthorizationEntryModeFirstActivation',
