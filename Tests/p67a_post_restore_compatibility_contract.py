@@ -3,7 +3,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBG = ROOT / 'testmod/菜单/PubgLoad.mm'
-REMOTE_COORD = ROOT / 'testmod/ZONServices/ZONSaveTransferCoordinator.m'
+SAVE_COORD = ROOT / 'testmod/ZONServices/ZONSaveTransferCoordinator.m'
+P77_REMOTE_COORD = ROOT / 'testmod/ZONServices/ZONRemoteRestoreCoordinator.m'
 LOCAL_COORD = ROOT / 'testmod/ZONServices/ZONLocalRestoreCoordinator.m'
 PICKER_H = ROOT / 'testmod/导入导出/UIDocumentPickerDelegate/YYYPicker.h'
 PICKER_M = ROOT / 'testmod/导入导出/UIDocumentPickerDelegate/YYYPicker.m'
@@ -13,7 +14,12 @@ PREF = ROOT / 'testmod/导入导出/PreferenceManager.m'
 PBX = ROOT / 'testmod.xcodeproj/project.pbxproj'
 
 pubg = PUBG.read_text(encoding='utf-8')
-remote_coord = REMOTE_COORD.read_text(encoding='utf-8') if REMOTE_COORD.exists() else pubg
+if P77_REMOTE_COORD.exists():
+    remote_coord = P77_REMOTE_COORD.read_text(encoding='utf-8')
+elif SAVE_COORD.exists():
+    remote_coord = SAVE_COORD.read_text(encoding='utf-8')
+else:
+    remote_coord = pubg
 local_coord = LOCAL_COORD.read_text(encoding='utf-8') if LOCAL_COORD.exists() else PICKER_M.read_text(encoding='utf-8')
 picker_h = PICKER_H.read_text(encoding='utf-8')
 picker_m = PICKER_M.read_text(encoding='utf-8')
@@ -58,5 +64,7 @@ if '[PreferenceManager loadCustomPlistIntoUserDefaults:@"MyCustomSettings"]' in 
 
 if pbx.count('ZONRestoreAPI.m in Sources') != 2:
     raise SystemExit('ZONRestoreAPI.m is not registered exactly once in PBX sources')
+if P77_REMOTE_COORD.exists() and pbx.count('ZONRemoteRestoreCoordinator.m in Sources') != 2:
+    raise SystemExit('P77 remote restore coordinator is not registered exactly once in PBX sources')
 
 print('P67a restore API / yidongwenjian compatibility contract passed')
