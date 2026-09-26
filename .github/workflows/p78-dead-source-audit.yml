@@ -15,7 +15,7 @@ jobs:
       - name: Checkout exact branch
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Verify baseline ancestry
         shell: bash
