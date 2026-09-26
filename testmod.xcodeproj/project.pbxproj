@@ -12,7 +12,6 @@
 		162639BD29190AE00021622B /* libc++.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 162639B329190AE00021622B /* libc++.tbd */; };
 		162639C329190AF40021622B /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 162639BB29190AE00021622B /* CoreGraphics.framework */; };
 		7E1E5F882BE5501A008C66BE /* ImgTool.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E1E5F7B2BE5501A008C66BE /* ImgTool.h */; };
-		7E1E5F892BE5501A008C66BE /* ZSHeader.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E1E5F7C2BE5501A008C66BE /* ZSHeader.h */; };
 		7E1E5F8A2BE5501A008C66BE /* fishhook.c in Sources */ = {isa = PBXBuildFile; fileRef = 7E1E5F7E2BE5501A008C66BE /* fishhook.c */; };
 		7E1E5F8B2BE5501A008C66BE /* fishhook.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E1E5F7F2BE5501A008C66BE /* fishhook.h */; };
 		7E1E5F8C2BE5501A008C66BE /* HookClass.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E1E5F802BE5501A008C66BE /* HookClass.h */; };
@@ -114,7 +113,6 @@
 		7E8A585C2B8E4A9C00676FE2 /* NSString+URLCode.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E8A57B62B8E4A9B00676FE2 /* NSString+URLCode.m */; };
 		7E8A585D2B8E4A9C00676FE2 /* UIDevice+VKKeychainIDFV.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E8A57B72B8E4A9B00676FE2 /* UIDevice+VKKeychainIDFV.m */; };
 		7E8A585E2B8E4A9C00676FE2 /* getKeychain.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E8A57B82B8E4A9B00676FE2 /* getKeychain.h */; };
-		7E8A58622B8E4A9C00676FE2 /* wyURLProtocol.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E8A57BC2B8E4A9B00676FE2 /* wyURLProtocol.h */; };
 		7E8A58632B8E4A9C00676FE2 /* MF_Base64Additions.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E8A57BD2B8E4A9B00676FE2 /* MF_Base64Additions.m */; };
 		7E8A58642B8E4A9C00676FE2 /* NSDictionary+StichingStringkeyValue.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E8A57BE2B8E4A9B00676FE2 /* NSDictionary+StichingStringkeyValue.h */; };
 		7E8A58672B8E4A9C00676FE2 /* NSString+MD5.m in Sources */ = {isa = PBXBuildFile; fileRef = 7E8A57C12B8E4A9B00676FE2 /* NSString+MD5.m */; };
@@ -124,7 +122,6 @@
 		7E8A586D2B8E4A9C00676FE2 /* UIDevice+VKKeychainIDFV.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E8A57C72B8E4A9B00676FE2 /* UIDevice+VKKeychainIDFV.h */; };
 		7E8A586E2B8E4A9C00676FE2 /* NSString+URLCode.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E8A57C82B8E4A9B00676FE2 /* NSString+URLCode.h */; };
 		7E97E2572C21E33700C66A9C /* ALApp.h in Headers */ = {isa = PBXBuildFile; fileRef = 7E97E2562C21E33700C66A9C /* ALApp.h */; };
-		7EA962D82F46C19000F44CCE /* BUPlayableAd.h in Headers */ = {isa = PBXBuildFile; fileRef = 7EA962D72F46C19000F44CCE /* BUPlayableAd.h */; };
 		7EC87D2A2D5A408B00DF3D9F /* MTG.h in Headers */ = {isa = PBXBuildFile; fileRef = 7EC87D292D5A408B00DF3D9F /* MTG.h */; };
 		7ECBD41B2EEB433E00C56F1C /* csj.h in Headers */ = {isa = PBXBuildFile; fileRef = 7ECBD41A2EEB433E00C56F1C /* csj.h */; };
 		7ECBD41F2F29099200C56F1C /* PopupMenuVC.m in Sources */ = {isa = PBXBuildFile; fileRef = 7ECBD41E2F29099200C56F1C /* PopupMenuVC.m */; };
@@ -200,7 +197,6 @@
 		162639B329190AE00021622B /* libc++.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = "libc++.tbd"; path = "usr/lib/libc++.tbd"; sourceTree = SDKROOT; };
 		162639BB29190AE00021622B /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		7E1E5F7B2BE5501A008C66BE /* ImgTool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ImgTool.h; sourceTree = "<group>"; };
-		7E1E5F7C2BE5501A008C66BE /* ZSHeader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ZSHeader.h; sourceTree = "<group>"; };
 		7E1E5F7E2BE5501A008C66BE /* fishhook.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = fishhook.c; sourceTree = "<group>"; };
 		7E1E5F7F2BE5501A008C66BE /* fishhook.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fishhook.h; sourceTree = "<group>"; };
 		7E1E5F802BE5501A008C66BE /* HookClass.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HookClass.h; sourceTree = "<group>"; };
@@ -302,7 +298,6 @@
 		7E8A57B62B8E4A9B00676FE2 /* NSString+URLCode.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSString+URLCode.m"; sourceTree = "<group>"; };
 		7E8A57B72B8E4A9B00676FE2 /* UIDevice+VKKeychainIDFV.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIDevice+VKKeychainIDFV.m"; sourceTree = "<group>"; };
 		7E8A57B82B8E4A9B00676FE2 /* getKeychain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = getKeychain.h; sourceTree = "<group>"; };
-		7E8A57BC2B8E4A9B00676FE2 /* wyURLProtocol.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = wyURLProtocol.h; sourceTree = "<group>"; };
 		7E8A57BD2B8E4A9B00676FE2 /* MF_Base64Additions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MF_Base64Additions.m; sourceTree = "<group>"; };
 		7E8A57BE2B8E4A9B00676FE2 /* NSDictionary+StichingStringkeyValue.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSDictionary+StichingStringkeyValue.h"; sourceTree = "<group>"; };
 		7E8A57C12B8E4A9B00676FE2 /* NSString+MD5.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSString+MD5.m"; sourceTree = "<group>"; };
@@ -312,7 +307,6 @@
 		7E8A57C72B8E4A9B00676FE2 /* UIDevice+VKKeychainIDFV.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIDevice+VKKeychainIDFV.h"; sourceTree = "<group>"; };
 		7E8A57C82B8E4A9B00676FE2 /* NSString+URLCode.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSString+URLCode.h"; sourceTree = "<group>"; };
 		7E97E2562C21E33700C66A9C /* ALApp.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ALApp.h; sourceTree = "<group>"; };
-		7EA962D72F46C19000F44CCE /* BUPlayableAd.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BUPlayableAd.h; sourceTree = "<group>"; };
 		7EC87D292D5A408B00DF3D9F /* MTG.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MTG.h; sourceTree = "<group>"; };
 		7ECBD41A2EEB433E00C56F1C /* csj.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = csj.h; sourceTree = "<group>"; };
 		7ECBD41E2F29099200C56F1C /* PopupMenuVC.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PopupMenuVC.m; sourceTree = "<group>"; };
@@ -504,7 +498,6 @@
 			isa = PBXGroup;
 			children = (
 				7E1E5F7B2BE5501A008C66BE /* ImgTool.h */,
-				7E1E5F7C2BE5501A008C66BE /* ZSHeader.h */,
 				7E1E5F7D2BE5501A008C66BE /* fishhook */,
 				7E1E5F802BE5501A008C66BE /* HookClass.h */,
 				7E1E5F812BE5501A008C66BE /* ImgTool.m */,
@@ -535,7 +528,6 @@
 				7ED8F0A02E17814300EC8727 /* ALAdView.h */,
 				7ED45B952C27D7DA00E1894D /* GAD.h */,
 				7E1E5F872BE5501A008C66BE /* JiangHuHook.m */,
-				7EA962D72F46C19000F44CCE /* BUPlayableAd.h */,
 			);
 			path = Hook;
 			sourceTree = "<group>";
@@ -746,7 +738,6 @@
 				7E8A57B62B8E4A9B00676FE2 /* NSString+URLCode.m */,
 				7E8A57B72B8E4A9B00676FE2 /* UIDevice+VKKeychainIDFV.m */,
 				7E8A57B82B8E4A9B00676FE2 /* getKeychain.h */,
-				7E8A57BC2B8E4A9B00676FE2 /* wyURLProtocol.h */,
 				7E8A57BD2B8E4A9B00676FE2 /* MF_Base64Additions.m */,
 				7E8A57BE2B8E4A9B00676FE2 /* NSDictionary+StichingStringkeyValue.h */,
 				7E8A57C12B8E4A9B00676FE2 /* NSString+MD5.m */,
@@ -828,7 +819,6 @@
 				7E8A58562B8E4A9C00676FE2 /* DES3Util.h in Headers */,
 				7ECF60362E157C5E00459866 /* SVRadialGradientLayer.h in Headers */,
 				7E97E2572C21E33700C66A9C /* ALApp.h in Headers */,
-				7EA962D82F46C19000F44CCE /* BUPlayableAd.h in Headers */,
 				7E8A58382B8E4A9C00676FE2 /* PubgLoad.h in Headers */,
 				7E8A57D22B8E4A9C00676FE2 /* AFURLRequestSerialization.h in Headers */,
 				7E8A57F52B8E4A9C00676FE2 /* SCLMacros.h in Headers */,
@@ -886,14 +876,12 @@
 				7E1E5F9B2BE5507F008C66BE /* UISlider+VDTrackHeight.h in Headers */,
 				7E8A57DB2B8E4A9C00676FE2 /* AFHTTPSessionManager.h in Headers */,
 				7E8A57FB2B8E4A9C00676FE2 /* SCLAlertViewStyleKit.h in Headers */,
-				7E8A58622B8E4A9C00676FE2 /* wyURLProtocol.h in Headers */,
 				7E8A57F62B8E4A9C00676FE2 /* UIImage+ImageEffects.h in Headers */,
 				7E8A57F02B8E4A9C00676FE2 /* WX_NongShiFu123.h in Headers */,
 				7E8A58422B8E4A9C00676FE2 /* mztools.h in Headers */,
 				7ECF602E2E157C5E00459866 /* PreferenceManager.h in Headers */,
 				7E8A58522B8E4A9C00676FE2 /* MF_Base64Additions.h in Headers */,
 				7ECF60322E157C5E00459866 /* SVIndefiniteAnimatedView.h in Headers */,
-				7E1E5F892BE5501A008C66BE /* ZSHeader.h in Headers */,
 				7E6F45432E1A8C4E00D4A46E /* JDStatusBarNotificationPresenterPrepareStyleBlock.h in Headers */,
 				7E8A57FF2B8E4A9C00676FE2 /* SCLTextView.h in Headers */,
 				7ECF60132E157C5E00459866 /* NKSeleDocumentTool.h in Headers */,
