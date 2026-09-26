@@ -1,0 +1,41 @@
+name: P78 Dead Source Audit
+
+on:
+  push:
+    branches:
+      - work/p78-dead-source-audit
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout exact branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Verify baseline ancestry
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rev-parse HEAD
+          git merge-base --is-ancestor 9e4d0a0f34a4019fc26521fafdc864e9fd0f9afd HEAD
+
+      - name: Run dead source audit
+        run: python3 tools/p78_dead_source_audit.py
+
+      - name: Show safe-delete candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed -n '/## SAFE_DELETE details/,/## COMPAT_ONLY details/p' P78_DEAD_SOURCE_AUDIT.md
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: p78-dead-source-audit
+          path: P78_DEAD_SOURCE_AUDIT.md
+          if-no-files-found: error
