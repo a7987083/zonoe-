@@ -35,12 +35,10 @@ jobs:
           project = Xcodeproj::Project.open('testmod.xcodeproj')
           target = project.targets.find { |t| t.name == 'testmod' }
           raise 'testmod target missing' unless target
-
           testmod_group = project.main_group.children.find { |g| g.respond_to?(:display_name) && g.display_name == 'testmod' }
           raise 'testmod group missing' unless testmod_group
           auth_group = testmod_group.children.find { |g| g.respond_to?(:display_name) && g.display_name == 'ZONAuthV2' }
           auth_group ||= testmod_group.new_group('ZONAuthV2', 'ZONAuthV2')
-
           files = %w[
             ZONAuthV2Storage.h ZONAuthV2Storage.m
             ZONAuthV2API.h ZONAuthV2API.m
@@ -88,6 +86,7 @@ jobs:
           set -euo pipefail
           VERSION="$(tr -d '[:space:]' < VERSION)"
           test -n "$VERSION"
+          export TESTMOD_VERSION="$VERSION"
           echo "TESTMOD_VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "TESTMOD_FILENAME=testmod_${VERSION}_A_customer.dylib" >> "$GITHUB_ENV"
           SECRET="${SECRET_PRIMARY:-}"
@@ -202,7 +201,9 @@ jobs:
         if: always()
         run: |
           echo "xcodebuild status: ${XCODEBUILD_STATUS:-unknown}"
-          grep -n -m 30 -E '(^|[[:space:]])(fatal )?error:|Undefined symbols for architecture|ld: ' build/xcodebuild.log || true
+          if [[ -f build/xcodebuild.log ]]; then
+            grep -n -m 30 -E '(^|[[:space:]])(fatal )?error:|Undefined symbols for architecture|ld: ' build/xcodebuild.log || true
+          fi
       - name: Package artifact
         if: env.XCODEBUILD_STATUS == '0'
         run: |
