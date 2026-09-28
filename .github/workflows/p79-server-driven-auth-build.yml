@@ -1,0 +1,232 @@
+name: P79 Server Driven Auth Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - work/p79-server-driven-auth-isolation-v1
+    paths:
+      - 'VERSION'
+      - 'testmod/ZONAuthV2/**'
+      - 'testmod/ZONServices/ZONAuthorizationCoordinator.m'
+      - '.github/workflows/p79-server-driven-auth-build.yml'
+
+jobs:
+  prepare-project:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify P79 isolation contract
+        run: |
+          set -euxo pipefail
+          test -f testmod/Bsphp/WX_NongShiFu123.mm
+          test -f testmod/Bsphp/WX_NongShiFu123.h
+          ! grep -q 'WX_NongShiFu123' testmod/ZONServices/ZONAuthorizationCoordinator.m
+          grep -q 'ZONAuthV2Flow' testmod/ZONServices/ZONAuthorizationCoordinator.m
+          grep -q 'ZonoeRequestUDIDIfNeeded' testmod/ZONServices/ZONAuthorizationCoordinator.m
+          grep -q 'ZONContinueCustomerAuthorization' testmod/ZONServices/ZONAuthorizationCoordinator.m
+      - name: Install xcodeproj
+        run: sudo gem install xcodeproj --no-document
+      - name: Add ZONAuthV2 files to testmod target
+        run: |
+          set -euxo pipefail
+          ruby <<'RUBY'
+          require 'xcodeproj'
+          project = Xcodeproj::Project.open('testmod.xcodeproj')
+          target = project.targets.find { |t| t.name == 'testmod' }
+          raise 'testmod target missing' unless target
+
+          testmod_group = project.main_group.children.find { |g| g.respond_to?(:display_name) && g.display_name == 'testmod' }
+          raise 'testmod group missing' unless testmod_group
+          auth_group = testmod_group.children.find { |g| g.respond_to?(:display_name) && g.display_name == 'ZONAuthV2' }
+          auth_group ||= testmod_group.new_group('ZONAuthV2', 'ZONAuthV2')
+
+          files = %w[
+            ZONAuthV2Storage.h ZONAuthV2Storage.m
+            ZONAuthV2API.h ZONAuthV2API.m
+            ZONAuthV2Flow.h ZONAuthV2Flow.m
+            ZONAuthV2Verify.h ZONAuthV2Verify.m
+          ]
+          files.each do |name|
+            ref = auth_group.files.find { |f| f.path == name }
+            ref ||= auth_group.new_file(name)
+            if name.end_with?('.m')
+              target.source_build_phase.add_file_reference(ref, true) unless target.source_build_phase.files_references.include?(ref)
+            else
+              target.headers_build_phase.add_file_reference(ref, true) unless target.headers_build_phase.files_references.include?(ref)
+            end
+          end
+          project.save
+          RUBY
+          grep -q 'ZONAuthV2Verify.m in Sources' testmod.xcodeproj/project.pbxproj
+          grep -q 'ZONAuthV2Flow.m in Sources' testmod.xcodeproj/project.pbxproj
+      - name: Upload prepared project
+        uses: actions/upload-artifact@v4
+        with:
+          name: p79-prepared-project
+          path: testmod.xcodeproj/project.pbxproj
+          if-no-files-found: error
+
+  build:
+    needs: prepare-project
+    runs-on: macos-15
+    env:
+      SECRET_PRIMARY: ${{ secrets.ZON_VERIFY_SECRET }}
+      SECRET_FALLBACK_1: ${{ secrets.VERIFY_SECRET }}
+      SECRET_FALLBACK_2: ${{ secrets.DYLIB_VERIFY_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: p79-prepared-project
+          path: /tmp/p79-project
+      - name: Apply prepared project
+        run: cp /tmp/p79-project/project.pbxproj testmod.xcodeproj/project.pbxproj
+      - name: Resolve version and secret availability
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+          test -n "$VERSION"
+          echo "TESTMOD_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "TESTMOD_FILENAME=testmod_${VERSION}_A_customer.dylib" >> "$GITHUB_ENV"
+          SECRET="${SECRET_PRIMARY:-}"
+          [[ -n "$SECRET" ]] || SECRET="${SECRET_FALLBACK_1:-}"
+          [[ -n "$SECRET" ]] || SECRET="${SECRET_FALLBACK_2:-}"
+          if [[ -n "$SECRET" ]]; then
+            echo "VERIFY_SECRET_CONFIGURED=1" >> "$GITHUB_ENV"
+            python3 - <<'PY'
+          from pathlib import Path
+          import os
+          p = Path('testmod/ZONAuthV2/ZONAuthV2Verify.m')
+          s = p.read_text()
+          secret = os.environ.get('SECRET_PRIMARY') or os.environ.get('SECRET_FALLBACK_1') or os.environ.get('SECRET_FALLBACK_2') or ''
+          if not secret:
+              raise SystemExit('no secret')
+          if '\x00' in secret or '\n' in secret or '\r' in secret:
+              raise SystemExit('Verify Secret contains unsupported control characters')
+          secret = secret.replace('\\', '\\\\').replace('"', '\\"')
+          marker = '__ZON_VERIFY_SECRET_PLACEHOLDER__'
+          if marker not in s:
+              raise SystemExit('secret placeholder missing')
+          p.write_text(s.replace(marker, secret, 1))
+          PY
+          else
+            echo "VERIFY_SECRET_CONFIGURED=0" >> "$GITHUB_ENV"
+          fi
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          p = Path('testmod/ZONAuthV2/ZONAuthV2Verify.m')
+          s = p.read_text()
+          version = os.environ['TESTMOD_VERSION']
+          old = '#define ZON_DYLIB_VERSION ""'
+          new = '#define ZON_DYLIB_VERSION "' + version.replace('\\','\\\\').replace('"','\\"') + '"'
+          if old not in s:
+              raise SystemExit('version macro placeholder missing')
+          p.write_text(s.replace(old, new, 1))
+          PY
+      - name: Select Xcode 16.4
+        run: |
+          set -euxo pipefail
+          sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
+          xcodebuild -version
+      - name: Prepare dependency cache destinations
+        run: |
+          set -euxo pipefail
+          sudo mkdir -p /opt/MonkeyDev /opt/theos
+          sudo chown -R "$USER":staff /opt/MonkeyDev /opt/theos
+      - name: Restore dependency cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            /opt/MonkeyDev
+            /opt/theos
+          key: zonoe-builddeps-${{ runner.os }}-macos15-xcode16.4-${{ hashFiles('ci/dependencies.lock') }}
+      - name: Install pinned build dependencies
+        run: |
+          set -euxo pipefail
+          brew install ldid dpkg || true
+          source ci/dependencies.lock
+          repo_at_sha() {
+            local dir="$1" sha="$2" required="$3"
+            [[ -d "$dir/.git" ]] || return 1
+            [[ "$(git -C "$dir" rev-parse HEAD 2>/dev/null || true)" == "$sha" ]] || return 1
+            [[ -e "$dir/$required" ]] || return 1
+          }
+          install_pinned_repo() {
+            local dir="$1" url="$2" sha="$3"
+            sudo rm -rf "$dir"; sudo mkdir -p "$dir"; sudo chown "$USER":staff "$dir"
+            git -C "$dir" init -q
+            git -C "$dir" remote add origin "$url"
+            git -C "$dir" fetch --depth=1 origin "$sha"
+            git -C "$dir" checkout --detach FETCH_HEAD
+          }
+          repo_at_sha /opt/MonkeyDev "$MONKEYDEV_SHA" bin/md || install_pinned_repo /opt/MonkeyDev https://github.com/AloneMonkey/MonkeyDev.git "$MONKEYDEV_SHA"
+          if ! repo_at_sha /opt/theos "$THEOS_SHA" vendor/include; then
+            install_pinned_repo /opt/theos https://github.com/theos/theos.git "$THEOS_SHA"
+            git -C /opt/theos submodule sync --recursive
+            git -C /opt/theos submodule update --init --recursive
+          fi
+          test -x /opt/MonkeyDev/bin/md
+          test -d /opt/theos/vendor/include
+      - name: Materialize pinned vendor sources
+        run: bash scripts/bootstrap_vendor.sh
+      - name: Build P79 A_customer
+        id: build
+        shell: bash
+        run: |
+          set +e
+          mkdir -p build/Release-iphoneos
+          xcodebuild \
+            -project testmod.xcodeproj \
+            -target testmod \
+            -configuration Release \
+            -sdk iphoneos \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            IPHONEOS_DEPLOYMENT_TARGET=12.0 \
+            ARCHS="arm64 arm64e" \
+            ONLY_ACTIVE_ARCH=NO \
+            VALIDATE_PRODUCT=NO \
+            MonkeyDevInstallOnAnyBuild=NO \
+            MonkeyDevInstallOnProfiling=NO \
+            MonkeyDevBuildPackageOnAnyBuild=NO \
+            GCC_PREPROCESSOR_DEFINITIONS='$(inherited) ZON_BUILD_VARIANT_DEBUG=0' \
+            CONFIGURATION_BUILD_DIR="$PWD/build/Release-iphoneos" \
+            build 2>&1 | tee build/xcodebuild.log
+          status=${PIPESTATUS[0]}
+          echo "XCODEBUILD_STATUS=$status" >> "$GITHUB_ENV"
+          exit 0
+      - name: Report first build errors
+        if: always()
+        run: |
+          echo "xcodebuild status: ${XCODEBUILD_STATUS:-unknown}"
+          grep -n -m 30 -E '(^|[[:space:]])(fatal )?error:|Undefined symbols for architecture|ld: ' build/xcodebuild.log || true
+      - name: Package artifact
+        if: env.XCODEBUILD_STATUS == '0'
+        run: |
+          set -euxo pipefail
+          SOURCE=build/Release-iphoneos/testmod.dylib
+          TARGET="build/Release-iphoneos/${TESTMOD_FILENAME}"
+          test -s "$SOURCE"
+          cp "$SOURCE" "$TARGET"
+          file "$TARGET"
+          lipo -info "$TARGET"
+          shasum -a 256 "$TARGET" | tee build/SHA256.txt
+          printf 'verify_secret_configured=%s\n' "${VERIFY_SECRET_CONFIGURED}" > build/P79_AUTH_BUILD_INFO.txt
+          printf 'version=%s\n' "${TESTMOD_VERSION}" >> build/P79_AUTH_BUILD_INFO.txt
+      - name: Upload P79 candidate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p79-server-driven-auth-A_customer
+          path: |
+            build/Release-iphoneos/${{ env.TESTMOD_FILENAME }}
+            build/SHA256.txt
+            build/P79_AUTH_BUILD_INFO.txt
+            build/xcodebuild.log
+          if-no-files-found: warn
+      - name: Fail if compile failed
+        if: env.XCODEBUILD_STATUS != '0'
+        run: exit 1
