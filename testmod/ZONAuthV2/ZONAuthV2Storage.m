@@ -7,6 +7,7 @@ static NSString * const ZONAuthV2CardAccount = @"card";
 static NSString * const ZONAuthV2LastVerifyKey = @"zonoe.auth.v2.lastVerify";
 static NSString * const ZONAuthV2LastActivationKey = @"zonoe.auth.v2.lastActivation";
 static NSString * const ZONAuthV2LastRuntimeConfigKey = @"zonoe.auth.v2.lastRuntimeConfig";
+static NSString * const ZONAuthV2LastBootstrapKey = @"zonoe.auth.v2.lastBootstrap";
 
 @implementation ZONAuthV2Storage
 
@@ -54,6 +55,11 @@ static NSString * const ZONAuthV2LastRuntimeConfigKey = @"zonoe.auth.v2.lastRunt
 + (void)setLastRuntimeConfig:(NSDictionary *)value {
     NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
     if (value) [d setObject:value forKey:ZONAuthV2LastRuntimeConfigKey]; else [d removeObjectForKey:ZONAuthV2LastRuntimeConfigKey];
+}
++ (NSDictionary *)lastBootstrap { return [NSUserDefaults.standardUserDefaults dictionaryForKey:ZONAuthV2LastBootstrapKey]; }
++ (void)setLastBootstrap:(NSDictionary *)value {
+    NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
+    if (value) [d setObject:value forKey:ZONAuthV2LastBootstrapKey]; else [d removeObjectForKey:ZONAuthV2LastBootstrapKey];
 }
 
 @end
