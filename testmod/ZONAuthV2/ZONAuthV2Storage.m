@@ -6,21 +6,19 @@ static NSString * const ZONAuthV2UDIDAccount = @"udid";
 static NSString * const ZONAuthV2CardAccount = @"card";
 static NSString * const ZONAuthV2LastVerifyKey = @"zonoe.auth.v2.lastVerify";
 static NSString * const ZONAuthV2LastActivationKey = @"zonoe.auth.v2.lastActivation";
+static NSString * const ZONAuthV2LastRuntimeConfigKey = @"zonoe.auth.v2.lastRuntimeConfig";
 
 @implementation ZONAuthV2Storage
 
 + (NSString *)stringForAccount:(NSString *)account {
     NSError *error = nil;
-    NSData *data = [ZONKeychain dataForAccount:account service:ZONAuthV2Service error:&error];
-    if (!data.length) return nil;
-    return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    return [ZONKeychain stringForAccount:account service:ZONAuthV2Service error:&error];
 }
 
 + (void)setString:(NSString *)value account:(NSString *)account {
     if (!value.length) return;
-    NSData *data = [value dataUsingEncoding:NSUTF8StringEncoding];
     NSError *error = nil;
-    [ZONKeychain setData:data account:account service:ZONAuthV2Service error:&error];
+    [ZONKeychain setString:value forAccount:account service:ZONAuthV2Service error:&error];
 }
 
 + (NSString *)udid { return [self stringForAccount:ZONAuthV2UDIDAccount]; }
@@ -31,8 +29,9 @@ static NSString * const ZONAuthV2LastActivationKey = @"zonoe.auth.v2.lastActivat
 + (void)clearCard {
     NSError *error = nil;
     [ZONKeychain removeItemForAccount:ZONAuthV2CardAccount service:ZONAuthV2Service error:&error];
-    [[NSUserDefaults standardUserDefaults] removeObjectForKey:ZONAuthV2LastVerifyKey];
-    [[NSUserDefaults standardUserDefaults] removeObjectForKey:ZONAuthV2LastActivationKey];
+    NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
+    [d removeObjectForKey:ZONAuthV2LastVerifyKey];
+    [d removeObjectForKey:ZONAuthV2LastActivationKey];
 }
 
 + (void)clearAll {
@@ -41,15 +40,20 @@ static NSString * const ZONAuthV2LastActivationKey = @"zonoe.auth.v2.lastActivat
     [ZONKeychain removeItemForAccount:ZONAuthV2UDIDAccount service:ZONAuthV2Service error:&error];
 }
 
-+ (NSDictionary *)lastVerify { return [[NSUserDefaults standardUserDefaults] dictionaryForKey:ZONAuthV2LastVerifyKey]; }
++ (NSDictionary *)lastVerify { return [NSUserDefaults.standardUserDefaults dictionaryForKey:ZONAuthV2LastVerifyKey]; }
 + (void)setLastVerify:(NSDictionary *)value {
     NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
     if (value) [d setObject:value forKey:ZONAuthV2LastVerifyKey]; else [d removeObjectForKey:ZONAuthV2LastVerifyKey];
 }
-+ (NSDictionary *)lastActivation { return [[NSUserDefaults standardUserDefaults] dictionaryForKey:ZONAuthV2LastActivationKey]; }
++ (NSDictionary *)lastActivation { return [NSUserDefaults.standardUserDefaults dictionaryForKey:ZONAuthV2LastActivationKey]; }
 + (void)setLastActivation:(NSDictionary *)value {
     NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
     if (value) [d setObject:value forKey:ZONAuthV2LastActivationKey]; else [d removeObjectForKey:ZONAuthV2LastActivationKey];
+}
++ (NSDictionary *)lastRuntimeConfig { return [NSUserDefaults.standardUserDefaults dictionaryForKey:ZONAuthV2LastRuntimeConfigKey]; }
++ (void)setLastRuntimeConfig:(NSDictionary *)value {
+    NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
+    if (value) [d setObject:value forKey:ZONAuthV2LastRuntimeConfigKey]; else [d removeObjectForKey:ZONAuthV2LastRuntimeConfigKey];
 }
 
 @end
