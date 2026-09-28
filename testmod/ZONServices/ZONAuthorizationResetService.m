@@ -1,6 +1,7 @@
 #import "ZONAuthorizationResetService.h"
 #import "../category/getKeychain.h"
 #import "../菜单/ZONKeychain.h"
+#import "../ZONAuthV2/ZONAuthV2Storage.h"
 
 @implementation ZONAuthorizationResetService
 
@@ -44,6 +45,11 @@
     for (NSString *key in bridgeKeys) {
         [defaults removeObjectForKey:key];
     }
+
+    // P79 AuthV2 reset: clear the new Keychain-backed card/UDID and
+    // authorization-derived local state. Runtime/bootstrap LKG is intentionally
+    // kept because it is transport/config cache, not a user's authorization.
+    [ZONAuthV2Storage clearAll];
 
     NSError *keychainError = nil;
     BOOL keychainOK = [ZONKeychain removeItemForAccount:@"UDID"
