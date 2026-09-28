@@ -15,6 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 + (void)setLastActivation:(nullable NSDictionary *)value;
 + (nullable NSDictionary *)lastRuntimeConfig;
 + (void)setLastRuntimeConfig:(nullable NSDictionary *)value;
++ (nullable NSDictionary *)lastBootstrap;
++ (void)setLastBootstrap:(nullable NSDictionary *)value;
 @end
 
 NS_ASSUME_NONNULL_END
