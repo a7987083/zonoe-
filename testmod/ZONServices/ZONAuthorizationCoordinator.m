@@ -1,16 +1,17 @@
 #import "ZONAuthorizationCoordinator.h"
-#import "../Bsphp/WX_NongShiFu123.h"
 #import "../category/getKeychain.h"
+#import "../ZONAuthV2/ZONAuthV2Flow.h"
 #import "JDStatusBarNotification.h"
 #import "ZonoeUDIDAPI.h"
 #import "ZONLaunchTrace.h"
+#import "JHPP.h"
 
 #pragma mark - Authorization reset compatibility
 
 void ZONInstallAuthorizationResetExtension(void)
 {
-    // Kept as a compatibility startup hook. Reset ownership now lives in
-    // ZONAuthorizationResetService and WX_NongShiFu123::deletekm forwards to it.
+    // Kept as a compatibility startup hook. Legacy Bsphp remains in-tree for reference,
+    // but P79 authorization no longer calls WX_NongShiFu123/BSPHP/BSPHPy/loada.
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         NSLog(@"[zonoemenu][INFO][auth] authorization reset service installed");
@@ -28,10 +29,12 @@ static void ZONShowCustomerStatus(NSString *text,
     });
 }
 
-static void ZONContinueCustomerAuthorization(WX_NongShiFu123 *auth, NSString *udid, BOOL newlyFetched)
+static void ZONContinueCustomerAuthorization(NSString *udid, BOOL newlyFetched)
 {
     if (udid.length < 5) return;
 
+    // Preserve the P76 UDID acquisition/storage behavior because other stable features
+    // (for example current cloud-save entitlement) still consume DZUDID in phase 1.
     [getKeychain addKeychainData:udid forKey:@"DZUDID"];
     NSString *verified = [getKeychain getKeychainDataForKey:@"DZUDID"];
 
@@ -52,28 +55,29 @@ static void ZONContinueCustomerAuthorization(WX_NongShiFu123 *auth, NSString *ud
     }
 
     ZONLaunchTraceRecord(ZONLaunchTraceAuthorizationContinue);
-    [auth loada];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        UIViewController *host = [JHPP currentViewController];
+        [[ZONAuthV2Flow sharedFlow] startFromViewController:host udid:verified];
+    });
 }
 
 void ZONStartCustomerAuthorization(void)
 {
     ZONLaunchTraceRecord(ZONLaunchTraceAuthorizationEnter);
-    WX_NongShiFu123 *auth = [WX_NongShiFu123 new];
 
-    // Existing valid customer keychain data wins. This avoids unnecessary zonoe jumps
-    // for already activated customers.
+    // Existing valid P76 DZUDID still wins. Only the authorization engine changes.
     NSString *existing = [getKeychain getKeychainDataForKey:@"DZUDID"];
     if (existing.length >= 5) {
         ZONLaunchTraceRecord(ZONLaunchTraceAuthorizationExistingDZUDID);
-        [auth loada];
+        ZONContinueCustomerAuthorization(existing, NO);
         return;
     }
 
-    // Reuse the C1/v1_p3 bridge cache when available.
+    // Reuse the existing P76 UDID bridge cache when available.
     NSString *cached = ZonoeCurrentUDID();
     if (cached.length >= 5) {
         ZONLaunchTraceRecord(ZONLaunchTraceAuthorizationBridgeCache);
-        ZONContinueCustomerAuthorization(auth, cached, NO);
+        ZONContinueCustomerAuthorization(cached, NO);
         return;
     }
 
@@ -81,13 +85,11 @@ void ZONStartCustomerAuthorization(void)
                           JDStatusBarNotificationIncludedStyleLight,
                           5.0);
 
-    // First customer activation: authorization is the only owner of UDID acquisition.
-    // No menu/icon action requests UDID anymore.
+    // Keep the exact P76 ownership model: authorization is the sole UDID acquisition owner.
     ZONLaunchTraceRecord(ZONLaunchTraceAuthorizationAwaitUDID);
     ZonoeSetUDIDCallback(^(NSString *udid) {
         ZONLaunchTraceRecord(ZONLaunchTraceAuthorizationUDIDCallback);
-        ZONContinueCustomerAuthorization(auth, udid, YES);
+        ZONContinueCustomerAuthorization(udid, YES);
     });
     ZonoeRequestUDIDIfNeeded();
 }
- 
