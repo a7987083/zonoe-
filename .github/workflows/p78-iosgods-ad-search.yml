@@ -1,0 +1,45 @@
+name: P78 iOSGods Ad Source Search
+
+on:
+  push:
+    branches:
+      - work/p78-dead-source-audit
+    paths:
+      - .github/workflows/p78-iosgods-ad-search.yml
+  workflow_dispatch:
+
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Search Objective-C sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT=P78_IOSGODS_AD_SEARCH.txt
+          : > "$OUT"
+          echo '=== Exact iOSGods variants ===' >> "$OUT"
+          find testmod -type f \( -name '*.m' -o -name '*.mm' -o -name '*.h' \) -print0 \
+            | xargs -0 grep -nEi 'iosgods|i[._ -]?o[._ -]?s[._ -]?gods|iosgods\.com|iosgod|igamegod' >> "$OUT" || true
+          echo >> "$OUT"
+          echo '=== Ad/promo/forum/banner/web/url related lines in .m/.mm ===' >> "$OUT"
+          find testmod -type f \( -name '*.m' -o -name '*.mm' \) -print0 \
+            | xargs -0 grep -nEi 'https?://|banner|promo|promotion|forum|discord|telegram|webview|广告|公告|推广|弹窗|adview|advert|sponsor|community' >> "$OUT" || true
+          echo >> "$OUT"
+          echo '=== Files containing NSURL/URLRequest/WKWebView/UIWebView/SFSafariViewController ===' >> "$OUT"
+          find testmod -type f \( -name '*.m' -o -name '*.mm' \) -print0 \
+            | xargs -0 grep -nEi 'WKWebView|UIWebView|SFSafariViewController|NSURLRequest|URLWithString' >> "$OUT" || true
+          cat "$OUT"
+
+      - name: Upload search report
+        uses: actions/upload-artifact@v4
+        with:
+          name: p78-iosgods-ad-search
+          path: P78_IOSGODS_AD_SEARCH.txt
+          if-no-files-found: error
