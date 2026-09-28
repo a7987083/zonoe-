@@ -29,17 +29,6 @@ static NSString *ZONStringValue(id value) {
     return @"";
 }
 
-static id ZONConfigValue(NSDictionary *config, NSString *key) {
-    id v = config[key];
-    if (v && v != NSNull.null) return v;
-    for (NSString *containerKey in @[@"data", @"config", @"runtime", @"result"]) {
-        NSDictionary *nested = [config[containerKey] isKindOfClass:NSDictionary.class] ? config[containerKey] : nil;
-        v = nested[key];
-        if (v && v != NSNull.null) return v;
-    }
-    return nil;
-}
-
 static NSString *ZONMainMachOUUID(void) {
     const struct mach_header *header = _dyld_get_image_header(0);
     if (!header) return @"";
@@ -128,16 +117,11 @@ static NSString *ZONHMAC(NSString *canonical, NSString *secret) {
     NSString *appBuild = ZONStringValue([bundle objectForInfoDictionaryKey:@"CFBundleVersion"]);
     NSString *appUUID = ZONMainMachOUUID();
 
-    NSString *dylibKey = ZONStringValue(ZONConfigValue(runtimeConfig, @"dylib_key"));
-    if (!dylibKey.length) dylibKey = @ZON_AUTH_BOOTSTRAP_DYLIB_KEY;
-    NSString *dylibVersion = ZONStringValue(ZONConfigValue(runtimeConfig, @"dylib_version"));
-    if (!dylibVersion.length) dylibVersion = @ZON_DYLIB_VERSION;
-    NSString *dylibBuild = ZONStringValue(ZONConfigValue(runtimeConfig, @"dylib_build"));
-    if (!dylibBuild.length) dylibBuild = @ZON_DYLIB_BUILD;
-    if (!dylibVersion.length) {
-        if (completion) completion(nil, ZONV2Error(-21, @"服务器未返回 dylib_version，且构建未注入版本"));
-        return;
-    }
+    // Match the user's known-good ZonoeServerDrivenAuthFlowV1 implementation exactly.
+    // These are server-registered protocol identity fields, not the local repository release version.
+    NSString *dylibKey = @"zonoe.main";
+    NSString *dylibVersion = @"1";
+    NSString *dylibBuild = @"";
 
     NSString *dylibSHA = ZONSHA256ForFile(ZONDylibPath());
     NSString *timestamp = [NSString stringWithFormat:@"%lld", (long long)NSDate.date.timeIntervalSince1970];
@@ -145,7 +129,7 @@ static NSString *ZONHMAC(NSString *canonical, NSString *secret) {
     NSString *protocolVersion = @"2";
 
     NSArray<NSString *> *canonicalFields = @[
-        udid ?: @"", bundleID, dylibKey, dylibVersion, dylibBuild ?: @"", dylibSHA ?: @"",
+        udid ?: @"", bundleID, dylibKey, dylibVersion, dylibBuild, dylibSHA ?: @"",
         timestamp, nonce, protocolVersion, appExecutable, appUUID, appVersion, appBuild
     ];
     NSString *canonical = [canonicalFields componentsJoinedByString:@"\n"];
@@ -156,7 +140,7 @@ static NSString *ZONHMAC(NSString *canonical, NSString *secret) {
         @"bundle_id": bundleID,
         @"dylib_key": dylibKey,
         @"dylib_version": dylibVersion,
-        @"dylib_build": dylibBuild ?: @"",
+        @"dylib_build": dylibBuild,
         @"dylib_sha256": dylibSHA ?: @"",
         @"timestamp": @([timestamp longLongValue]),
         @"nonce": nonce,
