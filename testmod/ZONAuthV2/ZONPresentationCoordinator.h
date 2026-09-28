@@ -8,6 +8,9 @@ typedef UIViewController * _Nullable (^ZONPresentationBuilder)(dispatch_block_t 
 @interface ZONPresentationCoordinator : NSObject
 + (instancetype)sharedCoordinator;
 - (void)enqueueWithKey:(NSString *)key builder:(ZONPresentationBuilder)builder;
+- (void)enqueueWithKey:(NSString *)key
+             onFailure:(nullable dispatch_block_t)onFailure
+               builder:(ZONPresentationBuilder)builder;
 - (void)cancelPendingWithKey:(NSString *)key;
 @end
 
