@@ -17,6 +17,8 @@ NS_ASSUME_NONNULL_BEGIN
 + (void)setLastRuntimeConfig:(nullable NSDictionary *)value;
 + (nullable NSDictionary *)lastBootstrap;
 + (void)setLastBootstrap:(nullable NSDictionary *)value;
++ (nullable NSString *)lastNoticeFingerprint;
++ (void)setLastNoticeFingerprint:(nullable NSString *)value;
 @end
 
 NS_ASSUME_NONNULL_END
