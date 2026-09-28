@@ -8,6 +8,7 @@ static NSString * const ZONAuthV2LastVerifyKey = @"zonoe.auth.v2.lastVerify";
 static NSString * const ZONAuthV2LastActivationKey = @"zonoe.auth.v2.lastActivation";
 static NSString * const ZONAuthV2LastRuntimeConfigKey = @"zonoe.auth.v2.lastRuntimeConfig";
 static NSString * const ZONAuthV2LastBootstrapKey = @"zonoe.auth.v2.lastBootstrap";
+static NSString * const ZONAuthV2LastNoticeFingerprintKey = @"zonoe.auth.v2.lastNoticeFingerprint";
 
 @implementation ZONAuthV2Storage
 
@@ -33,6 +34,7 @@ static NSString * const ZONAuthV2LastBootstrapKey = @"zonoe.auth.v2.lastBootstra
     NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
     [d removeObjectForKey:ZONAuthV2LastVerifyKey];
     [d removeObjectForKey:ZONAuthV2LastActivationKey];
+    [d removeObjectForKey:ZONAuthV2LastNoticeFingerprintKey];
 }
 
 + (void)clearAll {
@@ -60,6 +62,14 @@ static NSString * const ZONAuthV2LastBootstrapKey = @"zonoe.auth.v2.lastBootstra
 + (void)setLastBootstrap:(NSDictionary *)value {
     NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
     if (value) [d setObject:value forKey:ZONAuthV2LastBootstrapKey]; else [d removeObjectForKey:ZONAuthV2LastBootstrapKey];
+}
++ (NSString *)lastNoticeFingerprint {
+    id value = [NSUserDefaults.standardUserDefaults objectForKey:ZONAuthV2LastNoticeFingerprintKey];
+    return [value isKindOfClass:NSString.class] ? value : nil;
+}
++ (void)setLastNoticeFingerprint:(NSString *)value {
+    NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
+    if (value.length) [d setObject:value forKey:ZONAuthV2LastNoticeFingerprintKey]; else [d removeObjectForKey:ZONAuthV2LastNoticeFingerprintKey];
 }
 
 @end
