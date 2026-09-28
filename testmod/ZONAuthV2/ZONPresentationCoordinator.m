@@ -1,20 +1,48 @@
 #import "ZONPresentationCoordinator.h"
+#import <UIKit/UIApplication.h>
+#import <UIKit/UIWindow.h>
+#import <UIKit/UIView.h>
+#import <UIKit/UIViewController.h>
+#import <UIKit/UINavigationController.h>
+#import <UIKit/UITabBarController.h>
+#import <UIKit/UIScene.h>
+#import <UIKit/UIWindowScene.h>
 
-@interface ZONPresentationTask : NSObject
+static const NSUInteger ZONPresentationMaxRetries = 20;
+
+@interface ZONPresentationTask : NSObject {
+    NSString *_key;
+    ZONPresentationBuilder _builder;
+    dispatch_block_t _failure;
+    NSUInteger _retries;
+}
 @property (nonatomic, copy) NSString *key;
 @property (nonatomic, copy) ZONPresentationBuilder builder;
+@property (nonatomic, copy, nullable) dispatch_block_t failure;
 @property (nonatomic, assign) NSUInteger retries;
 @end
+
 @implementation ZONPresentationTask
+@synthesize key = _key;
+@synthesize builder = _builder;
+@synthesize failure = _failure;
+@synthesize retries = _retries;
 @end
 
-@interface ZONPresentationCoordinator ()
+@interface ZONPresentationCoordinator () {
+    NSMutableArray<ZONPresentationTask *> *_queue;
+    NSMutableSet<NSString *> *_keys;
+    BOOL _busy;
+}
 @property (nonatomic, strong) NSMutableArray<ZONPresentationTask *> *queue;
 @property (nonatomic, strong) NSMutableSet<NSString *> *keys;
 @property (nonatomic, assign) BOOL busy;
 @end
 
 @implementation ZONPresentationCoordinator
+@synthesize queue = _queue;
+@synthesize keys = _keys;
+@synthesize busy = _busy;
 
 + (instancetype)sharedCoordinator {
     static ZONPresentationCoordinator *c;
@@ -28,12 +56,19 @@
 }
 
 - (void)enqueueWithKey:(NSString *)key builder:(ZONPresentationBuilder)builder {
+    [self enqueueWithKey:key onFailure:nil builder:builder];
+}
+
+- (void)enqueueWithKey:(NSString *)key
+             onFailure:(dispatch_block_t)onFailure
+               builder:(ZONPresentationBuilder)builder {
     if (!key.length || !builder) return;
     dispatch_async(dispatch_get_main_queue(), ^{
         if ([self.keys containsObject:key]) return;
         ZONPresentationTask *task = [ZONPresentationTask new];
         task.key = key;
         task.builder = builder;
+        task.failure = onFailure;
         [self.keys addObject:key];
         [self.queue addObject:task];
         [self drain];
@@ -58,7 +93,9 @@
             if (scene.activationState != UISceneActivationStateForegroundActive || ![scene isKindOfClass:UIWindowScene.class]) continue;
             UIWindowScene *windowScene = (UIWindowScene *)scene;
             for (UIWindow *window in windowScene.windows) if (window.isKeyWindow) return window;
-            for (UIWindow *window in windowScene.windows) if (!window.hidden && window.alpha > 0.0 && window.windowLevel == UIWindowLevelNormal) return window;
+            for (UIWindow *window in windowScene.windows) {
+                if (!window.hidden && window.alpha > 0.0 && window.windowLevel == UIWindowLevelNormal) return window;
+            }
         }
     }
 #pragma clang diagnostic push
@@ -71,11 +108,18 @@
 
 - (UIViewController *)topControllerFrom:(UIViewController *)vc {
     if (!vc) return nil;
-    if (vc.presentedViewController && !vc.presentedViewController.isBeingDismissed) return [self topControllerFrom:vc.presentedViewController];
-    if ([vc isKindOfClass:UINavigationController.class]) return [self topControllerFrom:((UINavigationController *)vc).visibleViewController];
-    if ([vc isKindOfClass:UITabBarController.class]) return [self topControllerFrom:((UITabBarController *)vc).selectedViewController];
+    if (vc.presentedViewController && !vc.presentedViewController.isBeingDismissed) {
+        return [self topControllerFrom:vc.presentedViewController];
+    }
+    if ([vc isKindOfClass:UINavigationController.class]) {
+        return [self topControllerFrom:((UINavigationController *)vc).visibleViewController];
+    }
+    if ([vc isKindOfClass:UITabBarController.class]) {
+        return [self topControllerFrom:((UITabBarController *)vc).selectedViewController];
+    }
     for (UIViewController *child in vc.children.reverseObjectEnumerator) {
-        if (child.viewIfLoaded.window) {
+        UIView *view = child.viewIfLoaded;
+        if (view.window) {
             UIViewController *candidate = [self topControllerFrom:child];
             if (candidate) return candidate;
         }
@@ -86,7 +130,8 @@
 - (UIViewController *)currentPresenter {
     UIWindow *window = [self activeWindow];
     UIViewController *vc = [self topControllerFrom:window.rootViewController];
-    if (!vc || !vc.viewIfLoaded.window || vc.isBeingDismissed || vc.isBeingPresented) return nil;
+    UIView *view = vc.viewIfLoaded;
+    if (!vc || !view.window || vc.isBeingDismissed || vc.isBeingPresented) return nil;
     if (vc.transitionCoordinator) return nil;
     return vc;
 }
@@ -100,8 +145,18 @@
     });
 }
 
+- (void)failTask:(ZONPresentationTask *)task {
+    dispatch_block_t failure = task.failure;
+    [self finishTask:task];
+    if (failure) dispatch_async(dispatch_get_main_queue(), failure);
+}
+
 - (void)retryTask:(ZONPresentationTask *)task {
     task.retries += 1;
+    if (task.retries > ZONPresentationMaxRetries) {
+        [self failTask:task];
+        return;
+    }
     NSTimeInterval delay = MIN(0.15 + (task.retries * 0.05), 0.5);
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         self.busy = NO;
@@ -141,13 +196,7 @@
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.45 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         if (finished) return;
         if (!target.presentingViewController) {
-            if (task.retries < 20) {
-                self.busy = NO;
-                [self.queue insertObject:task atIndex:0];
-                [self drain];
-            } else {
-                finish();
-            }
+            [self retryTask:task];
         }
     });
 }
