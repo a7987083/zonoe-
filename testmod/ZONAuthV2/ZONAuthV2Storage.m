@@ -34,7 +34,6 @@ static NSString * const ZONAuthV2LastNoticeFingerprintKey = @"zonoe.auth.v2.last
     NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
     [d removeObjectForKey:ZONAuthV2LastVerifyKey];
     [d removeObjectForKey:ZONAuthV2LastActivationKey];
-    [d removeObjectForKey:ZONAuthV2LastNoticeFingerprintKey];
 }
 
 + (void)clearAll {
