@@ -44,6 +44,7 @@ jobs:
             ZONAuthV2API.h ZONAuthV2API.m
             ZONAuthV2Flow.h ZONAuthV2Flow.m
             ZONAuthV2Verify.h ZONAuthV2Verify.m
+            ZONPresentationCoordinator.h ZONPresentationCoordinator.m
           ]
           files.each do |name|
             ref = auth_group.files.find { |f| f.path == name }
@@ -58,6 +59,7 @@ jobs:
           RUBY
           grep -q 'ZONAuthV2Verify.m in Sources' testmod.xcodeproj/project.pbxproj
           grep -q 'ZONAuthV2Flow.m in Sources' testmod.xcodeproj/project.pbxproj
+          grep -q 'ZONPresentationCoordinator.m in Sources' testmod.xcodeproj/project.pbxproj
       - name: Upload prepared project
         uses: actions/upload-artifact@v4
         with:
@@ -80,13 +82,12 @@ jobs:
           path: /tmp/p79-project
       - name: Apply prepared project
         run: cp /tmp/p79-project/project.pbxproj testmod.xcodeproj/project.pbxproj
-      - name: Resolve version and secret availability
+      - name: Resolve artifact version and secret availability
         shell: bash
         run: |
           set -euo pipefail
           VERSION="$(tr -d '[:space:]' < VERSION)"
           test -n "$VERSION"
-          export TESTMOD_VERSION="$VERSION"
           echo "TESTMOD_VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "TESTMOD_FILENAME=testmod_${VERSION}_A_customer.dylib" >> "$GITHUB_ENV"
           SECRET="${SECRET_PRIMARY:-}"
@@ -105,7 +106,7 @@ jobs:
           if '\x00' in secret or '\n' in secret or '\r' in secret:
               raise SystemExit('Verify Secret contains unsupported control characters')
           secret = secret.replace('\\', '\\\\').replace('"', '\\"')
-          marker = '__ZON_VERIFY_SECRET_PLACEHOLDER__'
+          marker = 'ZON_VERIFY_SECRET_PLACEHOLDER_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
           if marker not in s:
               raise SystemExit('secret placeholder missing')
           p.write_text(s.replace(marker, secret, 1))
@@ -113,18 +114,8 @@ jobs:
           else
             echo "VERIFY_SECRET_CONFIGURED=0" >> "$GITHUB_ENV"
           fi
-          python3 - <<'PY'
-          from pathlib import Path
-          import os
-          p = Path('testmod/ZONAuthV2/ZONAuthV2Verify.m')
-          s = p.read_text()
-          version = os.environ['TESTMOD_VERSION']
-          old = '#define ZON_DYLIB_VERSION ""'
-          new = '#define ZON_DYLIB_VERSION "' + version.replace('\\','\\\\').replace('"','\\"') + '"'
-          if old not in s:
-              raise SystemExit('version macro placeholder missing')
-          p.write_text(s.replace(old, new, 1))
-          PY
+          grep -q '#define ZON_DYLIB_VERSION "1"' testmod/ZONAuthV2/ZONAuthV2Verify.m
+          grep -q '#define ZON_DYLIB_BUILD ""' testmod/ZONAuthV2/ZONAuthV2Verify.m
       - name: Select Xcode 16.4
         run: |
           set -euxo pipefail
@@ -216,7 +207,8 @@ jobs:
           lipo -info "$TARGET"
           shasum -a 256 "$TARGET" | tee build/SHA256.txt
           printf 'verify_secret_configured=%s\n' "${VERIFY_SECRET_CONFIGURED}" > build/P79_AUTH_BUILD_INFO.txt
-          printf 'version=%s\n' "${TESTMOD_VERSION}" >> build/P79_AUTH_BUILD_INFO.txt
+          printf 'artifact_version=%s\n' "${TESTMOD_VERSION}" >> build/P79_AUTH_BUILD_INFO.txt
+          printf 'protocol_dylib_key=zonoe.main\nprotocol_dylib_version=1\nprotocol_dylib_build=\n' >> build/P79_AUTH_BUILD_INFO.txt
       - name: Upload P79 candidate
         if: always()
         uses: actions/upload-artifact@v4
