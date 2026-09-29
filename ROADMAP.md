@@ -2,43 +2,50 @@
 
 > Canonical refactor plan for `zonoemenu`. New functional stages increment the numeric phase. Same-stage fixes use `a/b/c/d` suffixes.
 
-## Current active stage — P79.8b Persistence Cleanup — CI PASSED / DEVICE PENDING
-- VERSION: `v1_p79_8b`.
+## Current active stage — P79.8c Server-Driven Menu Permissions — CI PASSED / DEVICE PENDING
+- VERSION: `v1_p79_8c`.
 - Branch: `work/p79.8-udid-first-rebuild`.
-- Functional baseline: device-passed P79.8a UDID-first flow.
-- Storage contract commits: `78da327ef11946d8502e77b023d1f8b823c2fad1`, `1b099d83da7ae00a5773279f755110f0c441b4d3`.
-- Authorization cleanup integration: `d97e78c8bdedbf8efa0b87b77a0c18bf8b9266ea`.
-- Reset-service cleanup integration: `4a5888613f7c2c5b76e5191d2c42a9a60e491890`.
-- VERSION/build HEAD: `19d5d1e0204c84f56fc2ee330bb2371d3511d367`.
-- CI Run `36585791709` / run #36: success.
-- Artifact ID `11041556869`, digest `sha256:18b44f1ff221d9a2582291c30a5b145166f4e954e831158bd82bf0a41716a82a`.
-- Raw CI dylib SHA256: `b6c3333cbce0b0ff508a11ac31a6d81ce180db4c1afd3360e86d0ed5a9ce7045`.
-- Controlled final test dylib SHA256: `e363256b06e7842090103f95cc5edd14066b7eb50f144768fcd38882255bd62c`.
-- Raw CI reports placeholder Secret; controlled final artifact has placeholder `0` and Secret occurrences `2`.
+- Functional baseline: P79.8b persistence cleanup on top of device-passed P79.8a UDID-first authorization.
+- Feature permission metadata commit: `dffe27a0f5101591d0a57774cf0041b64f06349d`.
+- Menu filtering commit: `0d7c93c434084c260e240b824980cdb684fd25c9`.
+- Action enforcement commit: `dd75f3f6267390268b12e467b03efa83d78f5d7d`.
+- Fresh cloud Verify commit: `dbe02798bd0e2d5e4d55bde950100d510d40a93e`.
+- VERSION/build HEAD: `4a2c35923c646917e912ca0758294df98460cccd`.
+- CI Run `36591707184` / run #37: success.
+- Artifact ID `11043668689`, digest `sha256:c6e1f80c902508e27d527a4079f2d72ad53767438ca24278405010d93f22a66e`.
+- Raw CI dylib SHA256: `de3be9f75f5fb6639c84c283252bd5e184b1cde0d512b1cc3ca6c48ba314c153`.
+- Controlled final test dylib SHA256: `7d8c80d317810eb4331db02fa216697f3c869fdfa7cacbfb0499c936d60f1651`.
+- Final artifact: arm64 + arm64e; placeholder `0`; Verify Secret occurrences `2`.
 
-### P79.8b persistence contract
-1. `DZUDID` remains the sole long-lived device identity used by authorization.
-2. AuthV2 `udid` and `card` are session-only and are not persisted in the AuthV2 Keychain service.
-3. `lastVerify`, `lastActivation`, `lastRuntimeConfig`, and `lastBootstrap` are session-only memory caches.
-4. `zonoe.auth.v2.lastNoticeFingerprint` is the only AuthV2 `NSUserDefaults` value intentionally retained across launches, solely to suppress repeat display of the same notice.
-5. Completed UDID bridge residue (`value`, `scheme`, nonce, timestamp) is purged after `DZUDID` is durably confirmed.
-6. Legacy authorization defaults (`到期时间`, `卡密`, `公告`, `zonoeudid`, `解锁码到期时间`, `到期弹窗`) are migrated away.
-7. Existing menu/runtime `NSUserDefaults` keys are intentionally untouched.
-8. P79.8a authorization semantics are unchanged: UDID-first `/apiface` lookup, then Runtime Config + Verify when active; card prompt only for explicit missing/expired authorization.
+### Server-authoritative permission contract
+The backend `DylibRuntimeAccessService` owns the permission model:
+- `basic`: `normal_menu=true`, `extra_menu=false`, `extra_features=false`.
+- `app_plus`: `normal_menu=true`, `extra_menu=true`, `extra_features=true`.
+- `global_plus`: `normal_menu=true`, `extra_menu=true`, `extra_features=true`.
+- Client consumes `permissions`; it does not derive feature access from card scope/type.
 
-### Device gates for P79.8b
-- Upgrade from P79.8a or older and confirm old authorization/defaults residue is removed.
-- Confirm menu fold states, IAP/ad toggles, and ad-speed preference still persist exactly as before.
-- Confirm an already-activated UDID still skips card input and reaches Verify.
-- Confirm a fresh activation still succeeds, then leaves no card/Verify/RuntimeConfig/Bootstrap persistence in Preferences.
-- Confirm one notice is shown once and the same notice is not repeated after relaunch.
+### P79.8c behavior
+1. `base.cloud-save` / `VIP云存档` requires `extra_menu` to be rendered.
+2. Action dispatch independently requires `extra_features`; denied actions are handled and cannot fall through to legacy tag routes.
+3. Opening the cloud-save surface also checks the current session Verify result.
+4. Selecting a cloud-save download action performs a fresh Verify v2 request using the current Runtime Config.
+5. Download proceeds only when fresh Verify is successful and `extra_features=true`.
+6. The current cloud-save route no longer uses the legacy `https://app.zonoeios.xyz/index/index/apiface?udid=` entitlement request.
+7. Legacy Bsphp/UDID fallback code remains compiled for compatibility and may still contain the old hostname string; it is not the P79.8c cloud-save authorization route.
+8. P79.8a UDID-first startup and P79.8b persistence semantics remain unchanged.
+
+### Device gates for P79.8c
+- Verify-only / `basic`: menu opens normally but `VIP云存档` is absent; base section count is reduced accordingly.
+- `app_plus`: `VIP云存档` is visible for the matched App and opens normally.
+- `global_plus`: `VIP云存档` is visible and opens normally.
+- Revoke/downgrade permission after menu creation, then trigger cloud save: fresh Verify must deny before download.
+- P79.8b persistence cleanup and menu preference persistence must remain unchanged.
 
 ## Device-passed baseline — P79.8a
 - VERSION: `v1_p79_8a`.
-- Rebuilt directly from P79.8 commit `702f7011bda568dffbe57c1ad3ca6d7d0feebc40`.
 - CI Run `36572203902` / #32: success.
 - Controlled final dylib SHA256: `1601c8aaf55643918d4d7d6f4ea16d45c552e6fdf1ad9c8c7a2cd9152c03fbb0`.
-- Real-device validation: PASS — user confirmed fresh-App UDID-first activation behavior works correctly.
+- Real-device validation: PASS — fresh App + already-activated UDID skips card input and continues to Verify.
 
 ## Protocol baseline
 - Bootstrap: `https://raw.githubusercontent.com/a7987083/zonoemenu-config/main/bootstrap/zonoe.main.json`
@@ -55,4 +62,4 @@
 5. Never commit or print the real/test Verify Secret.
 
 # Next Task
-Install controlled `v1_p79_8b`; verify persistence cleanup while confirming P79.8a UDID-first authorization and all menu persistence remain unchanged.
+Install controlled `v1_p79_8c` and validate `basic` vs `app_plus/global_plus` menu visibility plus fresh Verify denial before cloud download.
