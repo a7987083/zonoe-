@@ -1,19 +1,36 @@
 # CHANGELOG_DEV
 
-## 2026-09-29 — v1_p79_7 Auth Semantics + Reset Scope — CI PASSED / DEVICE PENDING
+## 2026-09-29 — v1_p79_8 Same-Card/Same-UDID License Query — CI PASSED / DEVICE PENDING
+- Main P79 work branch: `work/p79-server-driven-auth-isolation-v1`.
+- Logic commit: `608a5bbb1c584e551efe6bffbce088bcf99280b2`.
+- Build/version commit: `702f7011bda568dffbe57c1ad3ca6d7d0feebc40`.
+- CI Run `36560746520` / run #27: success.
+- Artifact ID `11028839445`, digest `sha256:e76c0494f8c69668ab99001eea0a9a502ec46d47f96596742bbbeb2b8577a1f3`.
+- Raw CI dylib SHA256: `590f6a67e5e4faf9d6c9a2c6f6910884cbff4a15e5cf6c205fe3536be20fb9cc`.
+- P79.7 device result showed the same card already bound to the current UDID still returned `解锁码已使用`.
+- Root cause: P79.7 used the retired `/authorization` compatibility surface as a binding probe. It did not yield the structured Bound evidence expected by the client, so the flow fell back to `/appstore`, whose current one-time activation contract rejects any `jh=1` card as `解锁码已使用`.
+- P79.8 replaces that probe with POST `/index/index/license`; the server controller uses `AuthorizationLicense::query(code, udid)`, requiring exact `kami + udid + jh=1` and an active authorization.
+- Only that exact active binding may skip `/appstore` and continue to Runtime Config + Verify. New/unused/mismatched/expired cards retain the canonical P79.6 activation path.
+- A generic `解锁码已使用` response is never treated as authorization evidence.
+- App-mismatch prompt routing and broadened current-process-visible Keychain reset behavior from P79.7 remain in place.
+- Raw CI build reported `verify_secret_configured=0`; source remains placeholder-only.
+- Controlled final test artifact received equal-length post-build injection of the user-provided test Verify Secret into both arm64/arm64e slices: placeholder remaining `0`, Secret occurrences `2`, size unchanged, 128 bytes differ from the raw CI binary.
+- Controlled final test dylib SHA256: `12cac6f3a9b7ce9da1ad5f27f9364606c42f52eb3311dd36e2308c5cd8a8f723`.
+- Real/test Verify Secret is intentionally not committed to public Git history.
+- Device validation starts with same-card + same-UDID reuse, then wrong/unused card, App mismatch, success continuation, and authorization reset scope.
+
+## 2026-09-29 — v1_p79_7 Auth Semantics + Reset Scope — CI PASSED / DEVICE FAILED
 - Development branch: `work/p79.7-auth-semantics-reset-scope`; main P79 work branch fast-forwarded without force.
 - Source/build commit: `20cc0dc14e3157060d738ec8b66ef184284597bf`.
 - CI Run `36531465809` / run #25: success.
 - Artifact ID `11016299418`, digest `sha256:048d839f1080890618f342885f12ae2e28d30884463f3f0e29c74f20af77aa1e`.
 - Raw CI dylib SHA256: `d6c74b0cb3a7f9f9318c1f1ed805690aaecda2ef01be915b718deb9f5dc707f9`.
-- Added `ZONAuthV2BindingProbe`: before re-activating a card on an already-authorized UDID, query the compatibility `/authorization` endpoint with `code + udid`; only structured same-binding evidence may skip `/appstore` and continue to Verify. Unknown/not-bound results keep the strict P79.6 activation path.
-- `Authorization does not apply to this App` / `app_not_authorized` is now treated as a card-input validation failure: clear the saved card and return to the original card prompt instead of showing a separate terminal alert.
-- Authorization reset now deletes complete authorization-related Generic Password services visible to the current process rather than only selected accounts. This can cover records exposed through an actually shared Keychain access group, but cannot delete another App's isolated access group without matching entitlements or a server-side revoke API.
-- Raw CI build still reported `verify_secret_configured=0`; source remains placeholder-only.
-- Controlled final test artifact received equal-length post-build injection of the user-provided test Verify Secret into both arm64/arm64e slices: placeholder remaining `0`, Secret occurrences `2`, size unchanged, 128 bytes differ from raw CI binary.
+- Added `ZONAuthV2BindingProbe` using the compatibility `/authorization` endpoint. This choice was invalid for the formal auth flow and is superseded by P79.8.
+- Device failure: same card + same UDID still returned `解锁码已使用` because the probe did not confirm Bound and the flow fell back to `/appstore`.
+- `Authorization does not apply to this App` / `app_not_authorized` is treated as a card-input validation failure: clear the saved card and return to the original card prompt instead of showing a separate terminal alert.
+- Authorization reset deletes complete authorization-related Generic Password services visible to the current process rather than only selected accounts. This can cover records exposed through an actually shared Keychain access group, but cannot delete another App's isolated access group without matching entitlements or a server-side revoke API.
+- Raw CI build reported `verify_secret_configured=0`; source remained placeholder-only.
 - Controlled final test dylib SHA256: `4ea75bea7c8a1929483d9f404aa9c47ab3be6e50cf7cafca5679740b926c23b8`.
-- Real/test Verify Secret is intentionally not committed to public Git history.
-- Device validation required for: same card + same UDID reuse, wrong/nonexistent card prompt behavior, App mismatch returning to the same prompt, and authorization reset behavior across Apps/access groups.
 
 ## 2026-09-29 — v1_p79_6 Server-Driven Auth Activation Gate — CI PASSED / DEVICE PENDING
 - Main work branch: `work/p79-server-driven-auth-isolation-v1`.
@@ -33,7 +50,6 @@
 - CI reported `verify_secret_configured=0`; therefore the raw CI artifact is not the final Verify test artifact.
 - Controlled final test artifact uses equal-length post-build injection of the user-provided test Verify Secret into both arm64/arm64e slices; placeholder remaining: 0; final SHA256: `9192a214bc7a23a0fb18aadccd72529c9404e415e3c20faab3ddb36b67974080`.
 - Real/test Verify Secret is intentionally not committed to the public repository.
-- Device validation is still required before promotion.
 
 ## 2026-09-21 — v1_p64a Runtime Directory Cleanup Fix — DEVICE PASSED / PROMOTED
 - Branch: `work/p64a-clear-game-data-runtime-directory-fix`.
