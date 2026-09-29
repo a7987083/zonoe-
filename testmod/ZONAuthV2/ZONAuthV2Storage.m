@@ -10,25 +10,85 @@ static NSString * const ZONAuthV2LastRuntimeConfigKey = @"zonoe.auth.v2.lastRunt
 static NSString * const ZONAuthV2LastBootstrapKey = @"zonoe.auth.v2.lastBootstrap";
 static NSString * const ZONAuthV2LastNoticeFingerprintKey = @"zonoe.auth.v2.lastNoticeFingerprint";
 
+static NSString *gZONAuthV2SessionUDID = nil;
+static NSString *gZONAuthV2SessionCard = nil;
+static NSDictionary *gZONAuthV2SessionLastVerify = nil;
+static NSDictionary *gZONAuthV2SessionLastActivation = nil;
+static NSDictionary *gZONAuthV2SessionLastRuntimeConfig = nil;
+static NSDictionary *gZONAuthV2SessionLastBootstrap = nil;
+
 @implementation ZONAuthV2Storage
 
-+ (NSString *)stringForAccount:(NSString *)account {
++ (void)purgeLegacyPersistentState {
+    NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
+
+    // AuthV2 response/config persistence from P79.8 and earlier.
+    for (NSString *key in @[
+        ZONAuthV2LastVerifyKey,
+        ZONAuthV2LastActivationKey,
+        ZONAuthV2LastRuntimeConfigKey,
+        ZONAuthV2LastBootstrapKey,
+    ]) {
+        [d removeObjectForKey:key];
+    }
+
+    // Legacy authorization values that are no longer authoritative in the P79
+    // UDID-first flow. Menu/UI/runtime preference keys are intentionally excluded.
+    for (NSString *key in @[
+        @"到期时间",
+        @"卡密",
+        @"公告",
+        @"zonoeudid",
+        @"解锁码到期时间",
+        @"到期弹窗",
+    ]) {
+        [d removeObjectForKey:key];
+    }
+
+    // UDID bridge values are transaction/cache residue only. Once the coordinator
+    // has DZUDID, no bridge value needs to remain in Preferences.
+    for (NSString *key in @[
+        @"zonoe.udid.bridge.value",
+        @"zonoe.udid.bridge.scheme",
+        @"zonoe.udid.bridge.requestTimestamp",
+        @"zonoe.udid.bridge.requestNonce",
+    ]) {
+        [d removeObjectForKey:key];
+    }
+
+    // Remove obsolete AuthV2 Keychain copies. DZUDID is owned separately by the
+    // authorization coordinator and is deliberately not touched here.
     NSError *error = nil;
-    return [ZONKeychain stringForAccount:account service:ZONAuthV2Service error:&error];
+    [ZONKeychain removeItemForAccount:ZONAuthV2UDIDAccount service:ZONAuthV2Service error:&error];
+    error = nil;
+    [ZONKeychain removeItemForAccount:ZONAuthV2CardAccount service:ZONAuthV2Service error:&error];
 }
 
-+ (void)setString:(NSString *)value account:(NSString *)account {
-    if (!value.length) return;
-    NSError *error = nil;
-    [ZONKeychain setString:value forAccount:account service:ZONAuthV2Service error:&error];
++ (NSString *)udid {
+    @synchronized(self) { return [gZONAuthV2SessionUDID copy]; }
 }
 
-+ (NSString *)udid { return [self stringForAccount:ZONAuthV2UDIDAccount]; }
-+ (void)setUDID:(NSString *)udid { [self setString:udid account:ZONAuthV2UDIDAccount]; }
-+ (NSString *)card { return [self stringForAccount:ZONAuthV2CardAccount]; }
-+ (void)setCard:(NSString *)card { [self setString:card account:ZONAuthV2CardAccount]; }
++ (void)setUDID:(NSString *)udid {
+    @synchronized(self) { gZONAuthV2SessionUDID = [udid copy]; }
+}
+
++ (NSString *)card {
+    @synchronized(self) { return [gZONAuthV2SessionCard copy]; }
+}
+
++ (void)setCard:(NSString *)card {
+    @synchronized(self) { gZONAuthV2SessionCard = [card copy]; }
+}
 
 + (void)clearCard {
+    @synchronized(self) {
+        gZONAuthV2SessionCard = nil;
+        gZONAuthV2SessionLastVerify = nil;
+        gZONAuthV2SessionLastActivation = nil;
+    }
+
+    // Also remove obsolete persistent copies that may exist after upgrading from
+    // P79.8 or earlier.
     NSError *error = nil;
     [ZONKeychain removeItemForAccount:ZONAuthV2CardAccount service:ZONAuthV2Service error:&error];
     NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
@@ -37,38 +97,68 @@ static NSString * const ZONAuthV2LastNoticeFingerprintKey = @"zonoe.auth.v2.last
 }
 
 + (void)clearAll {
-    [self clearCard];
+    @synchronized(self) {
+        gZONAuthV2SessionUDID = nil;
+        gZONAuthV2SessionCard = nil;
+        gZONAuthV2SessionLastVerify = nil;
+        gZONAuthV2SessionLastActivation = nil;
+        gZONAuthV2SessionLastRuntimeConfig = nil;
+        gZONAuthV2SessionLastBootstrap = nil;
+    }
+
     NSError *error = nil;
+    [ZONKeychain removeItemForAccount:ZONAuthV2CardAccount service:ZONAuthV2Service error:&error];
+    error = nil;
     [ZONKeychain removeItemForAccount:ZONAuthV2UDIDAccount service:ZONAuthV2Service error:&error];
+
+    NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
+    [d removeObjectForKey:ZONAuthV2LastVerifyKey];
+    [d removeObjectForKey:ZONAuthV2LastActivationKey];
+    [d removeObjectForKey:ZONAuthV2LastRuntimeConfigKey];
+    [d removeObjectForKey:ZONAuthV2LastBootstrapKey];
 }
 
-+ (NSDictionary *)lastVerify { return [NSUserDefaults.standardUserDefaults dictionaryForKey:ZONAuthV2LastVerifyKey]; }
++ (NSDictionary *)lastVerify {
+    @synchronized(self) { return [gZONAuthV2SessionLastVerify copy]; }
+}
+
 + (void)setLastVerify:(NSDictionary *)value {
-    NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
-    if (value) [d setObject:value forKey:ZONAuthV2LastVerifyKey]; else [d removeObjectForKey:ZONAuthV2LastVerifyKey];
+    @synchronized(self) { gZONAuthV2SessionLastVerify = [value copy]; }
 }
-+ (NSDictionary *)lastActivation { return [NSUserDefaults.standardUserDefaults dictionaryForKey:ZONAuthV2LastActivationKey]; }
+
++ (NSDictionary *)lastActivation {
+    @synchronized(self) { return [gZONAuthV2SessionLastActivation copy]; }
+}
+
 + (void)setLastActivation:(NSDictionary *)value {
-    NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
-    if (value) [d setObject:value forKey:ZONAuthV2LastActivationKey]; else [d removeObjectForKey:ZONAuthV2LastActivationKey];
+    @synchronized(self) { gZONAuthV2SessionLastActivation = [value copy]; }
 }
-+ (NSDictionary *)lastRuntimeConfig { return [NSUserDefaults.standardUserDefaults dictionaryForKey:ZONAuthV2LastRuntimeConfigKey]; }
+
++ (NSDictionary *)lastRuntimeConfig {
+    @synchronized(self) { return [gZONAuthV2SessionLastRuntimeConfig copy]; }
+}
+
 + (void)setLastRuntimeConfig:(NSDictionary *)value {
-    NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
-    if (value) [d setObject:value forKey:ZONAuthV2LastRuntimeConfigKey]; else [d removeObjectForKey:ZONAuthV2LastRuntimeConfigKey];
+    @synchronized(self) { gZONAuthV2SessionLastRuntimeConfig = [value copy]; }
 }
-+ (NSDictionary *)lastBootstrap { return [NSUserDefaults.standardUserDefaults dictionaryForKey:ZONAuthV2LastBootstrapKey]; }
+
++ (NSDictionary *)lastBootstrap {
+    @synchronized(self) { return [gZONAuthV2SessionLastBootstrap copy]; }
+}
+
 + (void)setLastBootstrap:(NSDictionary *)value {
-    NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
-    if (value) [d setObject:value forKey:ZONAuthV2LastBootstrapKey]; else [d removeObjectForKey:ZONAuthV2LastBootstrapKey];
+    @synchronized(self) { gZONAuthV2SessionLastBootstrap = [value copy]; }
 }
+
 + (NSString *)lastNoticeFingerprint {
     id value = [NSUserDefaults.standardUserDefaults objectForKey:ZONAuthV2LastNoticeFingerprintKey];
     return [value isKindOfClass:NSString.class] ? value : nil;
 }
+
 + (void)setLastNoticeFingerprint:(NSString *)value {
     NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
-    if (value.length) [d setObject:value forKey:ZONAuthV2LastNoticeFingerprintKey]; else [d removeObjectForKey:ZONAuthV2LastNoticeFingerprintKey];
+    if (value.length) [d setObject:value forKey:ZONAuthV2LastNoticeFingerprintKey];
+    else [d removeObjectForKey:ZONAuthV2LastNoticeFingerprintKey];
 }
 
 @end
