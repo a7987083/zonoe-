@@ -25,6 +25,8 @@ FOUNDATION_EXPORT NSString * const ZONFeatureLegacyTagKey;
 FOUNDATION_EXPORT NSString * const ZONFeatureKindKey;
 FOUNDATION_EXPORT NSString * const ZONFeatureRiskKey;
 FOUNDATION_EXPORT NSString * const ZONFeatureMigratedKey;
+FOUNDATION_EXPORT NSString * const ZONFeatureRequiredMenuPermissionKey;
+FOUNDATION_EXPORT NSString * const ZONFeatureRequiredActionPermissionKey;
 
 FOUNDATION_EXPORT NSString * const ZONSectionIdentifierKey;
 FOUNDATION_EXPORT NSString * const ZONSectionTitleKey;
@@ -36,6 +38,10 @@ NSArray<NSDictionary<NSString *, id> *> *ZONBuiltInSectionMetadata(void);
 NSArray<NSDictionary<NSString *, id> *> *ZONBuiltInFeatureMetadata(void);
 NSDictionary<NSString *, id> * _Nullable ZONFeatureMetadataForLegacyTag(NSInteger legacyTag);
 NSArray<NSDictionary<NSString *, id> *> *ZONFeatureMetadataForSection(NSString *section);
+BOOL ZONFeatureIsVisibleWithPermissions(NSDictionary<NSString *, id> *feature,
+                                        NSDictionary<NSString *, id> * _Nullable permissions);
+BOOL ZONFeatureIsActionAllowedWithPermissions(NSDictionary<NSString *, id> *feature,
+                                              NSDictionary<NSString *, id> * _Nullable permissions);
 BOOL ZONFeatureRegistryHasUniqueIdentifiersAndTags(void);
 BOOL ZONSectionRegistryIsValid(void);
 
