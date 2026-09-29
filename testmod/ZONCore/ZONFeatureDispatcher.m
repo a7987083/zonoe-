@@ -1,6 +1,7 @@
 #import "ZONFeatureDispatcher.h"
 #import "ZONFeatureRegistry.h"
 #import "ImgTool.h"
+#import "../ZONAuthV2/ZONAuthV2Storage.h"
 #import "../ZONServices/ZONSixButtonActionService.h"
 #import "../ZONServices/ZONRuntimeDirectoryService.h"
 #import "../ZONServices/ZONResetCoordinator.h"
@@ -35,6 +36,28 @@ void ZONPresentClearGameDataConfirmation(UIViewController *hostViewController)
 void ZONPresentClearAuthorizationConfirmation(UIViewController *hostViewController)
 {
     [[ZONResetCoordinator sharedCoordinator] presentClearAuthorizationFromViewController:hostViewController];
+}
+
+#pragma mark - Permission helpers
+
+static NSDictionary<NSString *, id> *ZONCurrentServerPermissions(void)
+{
+    NSDictionary *verify = [ZONAuthV2Storage lastVerify];
+    NSDictionary *permissions = [verify[@"permissions"] isKindOfClass:NSDictionary.class] ? verify[@"permissions"] : nil;
+    return permissions ?: @{};
+}
+
+static void ZONPresentPermissionDenied(UIViewController *hostViewController, NSString *featureTitle)
+{
+    if (!hostViewController) return;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSString *message = [NSString stringWithFormat:@"当前授权不包含%@权限。", featureTitle.length ? featureTitle : @"该功能"];
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"权限不足"
+                                                                       message:message
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
+        [hostViewController presentViewController:alert animated:YES completion:nil];
+    });
 }
 
 #pragma mark - Runtime toggles
@@ -115,6 +138,17 @@ BOOL ZONDispatchMigratedActionForLegacyTag(NSInteger legacyTag,
 {
     NSDictionary<NSString *, id> *feature = ZONFeatureMetadataForLegacyTag(legacyTag);
     if (!feature || ![feature[ZONFeatureMigratedKey] boolValue]) return NO;
+
+    NSDictionary *permissions = ZONCurrentServerPermissions();
+    if (!ZONFeatureIsActionAllowedWithPermissions(feature, permissions)) {
+        NSLog(@"[zonoemenu][P79.8C_ACTION_PERMISSION] denied feature=%@ required=%@",
+              feature[ZONFeatureIdentifierKey] ?: @"",
+              feature[ZONFeatureRequiredActionPermissionKey] ?: @"");
+        ZONPresentPermissionDenied(hostViewController, feature[ZONFeatureTitleKey]);
+        // The route is handled even when denied, preventing any legacy fallback
+        // from reaching the protected action by tag.
+        return YES;
+    }
 
     NSString *identifier = feature[ZONFeatureIdentifierKey];
     ZONFeatureActionHandler handler = ZONActionRoutes()[identifier];
