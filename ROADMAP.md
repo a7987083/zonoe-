@@ -2,49 +2,54 @@
 
 > Canonical refactor plan for `zonoemenu`. New functional stages increment the numeric phase. Same-stage fixes use `a/b/c/d` suffixes.
 
-## Current active stage — P79.8c Server-Driven Menu Permissions — CI PASSED / DEVICE PENDING
-- VERSION: `v1_p79_8c`.
+## Current active stage — P79.8d Injected Passive Satella Trigger — CI PASSED / DEVICE PENDING
+- VERSION: `v1_p79_8d`.
 - Branch: `work/p79.8-udid-first-rebuild`.
-- Functional baseline: P79.8b persistence cleanup on top of device-passed P79.8a UDID-first authorization.
-- Feature permission metadata commit: `dffe27a0f5101591d0a57774cf0041b64f06349d`.
-- Menu filtering commit: `0d7c93c434084c260e240b824980cdb684fd25c9`.
-- Action enforcement commit: `dd75f3f6267390268b12e467b03efa83d78f5d7d`.
-- Fresh cloud Verify commit: `dbe02798bd0e2d5e4d55bde950100d510d40a93e`.
-- VERSION/build HEAD: `4a2c35923c646917e912ca0758294df98460cccd`.
-- CI Run `36591707184` / run #37: success.
-- Artifact ID `11043668689`, digest `sha256:c6e1f80c902508e27d527a4079f2d72ad53767438ca24278405010d93f22a66e`.
-- Raw CI dylib SHA256: `de3be9f75f5fb6639c84c283252bd5e184b1cde0d512b1cc3ca6c48ba314c153`.
-- Controlled final test dylib SHA256: `7d8c80d317810eb4331db02fa216697f3c869fdfa7cacbfb0499c936d60f1651`.
+- Functional baseline: P79.8c server-driven menu permissions + P79.8b persistence cleanup + device-passed P79.8a UDID-first authorization.
+- Trigger implementation commit: `985f85073d89cb46aff8fd940ee50f1ed6175f3f`.
+- VERSION/build HEAD: `6ab1494bb11afc228fe78cd7087b97c4c04d9b2d`.
+- CI Run `36604169367` / run #38: success.
+- Artifact ID `11050622646`, digest `sha256:16569dbb378372b5372dea8e3312549d1fe632f3b85b831dc3d8027ffb445b6e`.
+- Raw CI dylib SHA256: `1c7e788f60c79679af7cf06b8427b559364fa7c4374901f455260c0057778d35`.
+- Controlled final test dylib SHA256: `bd5b3ca738d6e8041d16b57c4515dffb6f47806da412b0b5f8bd512e1f09d6cd`.
+- Controlled final ZIP SHA256: `242a461d27a16a8758c750dbc8ac65ac12f28704996d39d8df9051e5922da3d6`.
 - Final artifact: arm64 + arm64e; placeholder `0`; Verify Secret occurrences `2`.
 
-### Server-authoritative permission contract
-The backend `DylibRuntimeAccessService` owns the permission model:
+### P79.8d passive trigger contract
+1. The menu dylib does **not** load or `dlopen` Satella; the host/injection workflow must inject it before the switch is enabled.
+2. Trigger is attached to existing `runtime.iap-noads` / `内购破解+ iGameGod去广告` toggle.
+3. Existing `NNGG`, `NNGGNNGG`, and `ImgTool.NeiGou` behavior is preserved.
+4. On toggle ON, enumerate already-loaded dyld images and accept only:
+   - `1_passive.dylib`
+   - `1_passive_zh.dylib`
+   - `SatellaJailed_passive.dylib`
+5. Validate passive build before calling:
+   - image base + `0x847C` must contain ARM64 `RET` bytes `C0 03 5F D6`;
+   - image base + `0x888C` must match the expected 16-byte init prologue.
+6. If validation succeeds, call image base + `0x888C` on the main thread.
+7. arm64e signs the raw function address with the function-pointer PAC key before invocation.
+8. The start routine is one-shot per process; later ON events return `already_started` and do not call init again.
+9. Toggle OFF does not unload or call an unknown deinitializer.
+10. Missing/invalid passive dylib does not roll back the existing iGameGod/IAP toggle; it only records a failure log.
+
+### Device gates for P79.8d
+- Inject a known matching passive dylib before opening the switch; first ON must log `validated`, `init=...`, and `started`.
+- Confirm the passive feature actually activates after the ON event.
+- Toggle OFF then ON again in the same process; init must not execute a second time and log `already_started`.
+- Run without injected passive dylib; existing IAP/iGameGod toggle must still work and log `image_not_loaded_or_invalid`.
+- Test a mismatched passive build; the trigger must fail closed at ctor/prologue validation and must not jump to `0x888C`.
+- Confirm P79.8c VIP cloud-save permissions, P79.8b persistence behavior, and P79.8a UDID-first authorization remain unchanged.
+
+## Inherited server permission contract — P79.8c
 - `basic`: `normal_menu=true`, `extra_menu=false`, `extra_features=false`.
-- `app_plus`: `normal_menu=true`, `extra_menu=true`, `extra_features=true`.
-- `global_plus`: `normal_menu=true`, `extra_menu=true`, `extra_features=true`.
-- Client consumes `permissions`; it does not derive feature access from card scope/type.
-
-### P79.8c behavior
-1. `base.cloud-save` / `VIP云存档` requires `extra_menu` to be rendered.
-2. Action dispatch independently requires `extra_features`; denied actions are handled and cannot fall through to legacy tag routes.
-3. Opening the cloud-save surface also checks the current session Verify result.
-4. Selecting a cloud-save download action performs a fresh Verify v2 request using the current Runtime Config.
-5. Download proceeds only when fresh Verify is successful and `extra_features=true`.
-6. The current cloud-save route no longer uses the legacy `https://app.zonoeios.xyz/index/index/apiface?udid=` entitlement request.
-7. Legacy Bsphp/UDID fallback code remains compiled for compatibility and may still contain the old hostname string; it is not the P79.8c cloud-save authorization route.
-8. P79.8a UDID-first startup and P79.8b persistence semantics remain unchanged.
-
-### Device gates for P79.8c
-- Verify-only / `basic`: menu opens normally but `VIP云存档` is absent; base section count is reduced accordingly.
-- `app_plus`: `VIP云存档` is visible for the matched App and opens normally.
-- `global_plus`: `VIP云存档` is visible and opens normally.
-- Revoke/downgrade permission after menu creation, then trigger cloud save: fresh Verify must deny before download.
-- P79.8b persistence cleanup and menu preference persistence must remain unchanged.
+- `app_plus`: all three permissions true.
+- `global_plus`: all three permissions true.
+- `VIP云存档` requires `extra_menu` to render and `extra_features` to execute; actual cloud download re-verifies immediately before download.
 
 ## Device-passed baseline — P79.8a
 - VERSION: `v1_p79_8a`.
 - CI Run `36572203902` / #32: success.
-- Controlled final dylib SHA256: `1601c8aaf55643918d4d7d6f4ea16d45c552e6fdf1ad9c8c7a2cd9152c03fbb0`.
+- Controlled final dylib SHA256: `1601c8aaf55643918d4d6f4ea16d45c552e6fdf1ad9c8c7a2cd9152c03fbb0`.
 - Real-device validation: PASS — fresh App + already-activated UDID skips card input and continues to Verify.
 
 ## Protocol baseline
@@ -62,4 +67,4 @@ The backend `DylibRuntimeAccessService` owns the permission model:
 5. Never commit or print the real/test Verify Secret.
 
 # Next Task
-Install controlled `v1_p79_8c` and validate `basic` vs `app_plus/global_plus` menu visibility plus fresh Verify denial before cloud download.
+Install controlled `v1_p79_8d`, inject a matching passive dylib, then validate one-shot ON-triggered init plus all inherited authorization/menu/persistence regressions.
