@@ -1,5 +1,26 @@
 # CHANGELOG_DEV
 
+## 2026-09-29 — v1_p79_8a Clean UDID-First Rebuild — CI PASSED / DEVICE PENDING
+- Branch: `work/p79.8-udid-first-rebuild`.
+- Rebuilt directly from P79.8 commit `702f7011bda568dffbe57c1ad3ca6d7d0feebc40`; P79.9/P79.10 startup experiments are not inherited.
+- Flow commit: `fdd83d6eeb562d6ba6f6d5a4afae6d09f2234a4c`.
+- Removed `ZONAuthV2BindingProbe.m` swizzle from the compiled runtime path: `dce8c905960256d6e73dcdb62d42060f56660558`.
+- VERSION commit: `bbebc59b4fb113d0bcfccdd201d889fe1bdb3442`; VERSION=`v1_p79_8a`.
+- CI enable/build HEAD: `3ab9fc3879930b7d89770ca95f6e7636dc0119d3`.
+- CI Run `36572203902` / #32: success.
+- Artifact ID `11036215202`, digest `sha256:639403f138acece3089e3460e7606752d55364115b3e1e8c404cdb8f941033b2`.
+- Raw CI dylib SHA256: `188e25b8c8d76653baffb01e01cd8931302d2ca6d0e67a07d18fee1bd80a894a`.
+- Restored the legacy-proven startup contract: obtain/persist UDID first, then query `/index/index/apiface` by UDID before consulting local card state.
+- Active device authorization is recognized from the existing signed API response contract (`code=1`, `msg=ok`, unexpired `expire`). A fresh App with an already-active UDID proceeds directly to Runtime Config + Verify and does not show a card prompt.
+- `/apiface` is only the device-activation check. Current-App applicability, `access_level` and `permissions` remain server/Verify-owned and are consumed after Verify.
+- Explicit no-record or expired authorization opens the card prompt. Network/server/unknown payloads are not treated as proof of missing activation.
+- First activation still uses `/apiface before → /appstore → /apiface after → active + stateChanged → Runtime Config → Verify`, allowing a replacement card to add authorization even when the UDID already has another active scope.
+- App-mismatch handling was moved into the direct `ZONAuthV2Flow` implementation so it no longer depends on the retired swizzle.
+- Binary validation: arm64 + arm64e; `P79.8A_UDID_GATE` present in both slices; old `P79.8_BINDING_GATE` marker count `0`; old `P79.8_LICENSE_PROBE` marker count `0`.
+- Raw CI reported `verify_secret_configured=0`; controlled final artifact uses equal-length test Verify Secret injection in both slices. Placeholder remaining `0`, Secret occurrences `2`.
+- Controlled final dylib SHA256: `1601c8aaf55643918d4d7d6f4ea16d45c552e6fdf1ad9c8c7a2cd9152c03fbb0`.
+- Device priority test: fresh App + previously activated UDID must skip card input and reach Verify.
+
 ## 2026-09-29 — v1_p79_7 Auth Semantics + Reset Scope — CI PASSED / DEVICE PENDING
 - Development branch: `work/p79.7-auth-semantics-reset-scope`; main P79 work branch fast-forwarded without force.
 - Source/build commit: `20cc0dc14e3157060d738ec8b66ef184284597bf`.
@@ -53,35 +74,10 @@
 - User explicitly reported the P64a real-device regression fully normal.
 - **P64a is promoted/device-passed and remains the last device-verified rollback baseline.**
 
-## 2026-09-21 — P64 Clear Game Data Dedicated Service — CI PASSED / DEVICE FAILED
-- Historical built VERSION string: `v1_p63b`; this was a naming error. Canonical stage is P64.
-- Actual build SHA: `203b9f93d88a20f820ba35d0e3f65f16f296ce5d`.
-- CI Run `35522283236`: success.
-- Added `ZONGameDataResetService` as a pure Foundation reset engine.
-- Removed both historical 5-second clear-game-data timers.
-- Added background cleanup, real stage display, explicit NSError propagation, verification, and success-controlled exit.
-- Device test found that `Library/Caches` may remain/in-use while the app was alive; P64 incorrectly treated that runtime directory removal failure as fatal.
-- P64 was not promoted and is superseded by P64a.
-
-## 2026-09-20 — P63 Six Button Service Boundary — DEVICE PASSED
-- Historical built VERSION string: `v1_p63a`; canonical stage is P63.
-- Runtime source commit: `170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d`.
-- CI Run `35483209464`: success.
-- Added `ZONSixButtonActionService` and routed all six scoped actions through it.
-- A_customer and B_debug `arm64 + arm64e`: PASS.
-- User explicitly reported all six scoped buttons normal on device.
-- Superseded as promoted baseline by P64a.
-
-## 2026-09-20 — P62 Authorization Reset Service — DEVICE PASSED / SUPERSEDED
-- Source commit: `a1d0f7b7ca7ea2747d7c52a2b5e002830731ffca`.
-- CI Run `35480732207`: success.
-- Authorization reset extracted into `ZONAuthorizationResetService`.
-- Device validation passed; superseded by P63 and later P64a.
-
 ## Version naming rule correction
 - New stage increments the number: `P63 → P64 → P65`.
 - Same-stage fixes use suffixes: `P64a → P64b → P64c`.
-- Existing commits/artifacts are not rewritten; canonical project records correct the mistaken historical P63a/P63b labels.
+- Existing commits/artifacts are not rewritten; canonical project records correct mistaken historical labels.
 
 ## Earlier architecture cleanup
 - P60 UDID acquisition progress/manual retry: device passed.
