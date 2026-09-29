@@ -3,53 +3,63 @@
 ## Repository / source of truth
 - Repository: `a7987083/zonoe-`.
 - Canonical runtime/product surface: `testmod/` + `testmod.xcodeproj`.
+- Current branch: `work/p79.8-udid-first-rebuild`.
 - Read in this order: `PROJECT_STATE.json` → `ROADMAP.md` → `KNOWN_ISSUES.md` → `CHANGELOG_DEV.md`.
 
-## Current work target — P79.7
-- Branch: `work/p79.7-auth-semantics-reset-scope`.
-- Main P79 branch: `work/p79-server-driven-auth-isolation-v1`.
-- VERSION: `v1_p79_7`.
-- Source/build commit: `20cc0dc14e3157060d738ec8b66ef184284597bf`.
-- CI Run `36531465809` / run #25: success.
-- Artifact ID `11016299418`.
-- Raw CI dylib SHA256: `d6c74b0cb3a7f9f9318c1f1ed805690aaecda2ef01be915b718deb9f5dc707f9`.
-- Raw CI artifact reports `verify_secret_configured=0`.
-- Controlled final test dylib has the user-provided test Verify Secret injected into both arm64/arm64e slices with equal-length replacement.
-- Placeholder remaining: `0`.
-- Controlled final test dylib SHA256: `4ea75bea7c8a1929483d9f404aa9c47ab3be6e50cf7cafca5679740b926c23b8`.
-- Do not commit the test/real Verify Secret to public Git history.
+## Current target — P79.8a
+- VERSION: `v1_p79_8a`.
+- Rebuild base: P79.8 commit `702f7011bda568dffbe57c1ad3ca6d7d0feebc40`.
+- Main flow commit: `fdd83d6eeb562d6ba6f6d5a4afae6d09f2234a4c`.
+- Removed BindingProbe swizzle from build chain: `dce8c905960256d6e73dcdb62d42060f56660558`.
+- VERSION commit: `bbebc59b4fb113d0bcfccdd201d889fe1bdb3442`.
+- CI/build HEAD: `3ab9fc3879930b7d89770ca95f6e7636dc0119d3`.
+- CI Run `36572203902` / #32: success.
+- Artifact ID `11036215202`.
+- Raw CI SHA256: `188e25b8c8d76653baffb01e01cd8931302d2ca6d0e67a07d18fee1bd80a894a`.
+- Controlled final dylib SHA256: `1601c8aaf55643918d4d7d6f4ea16d45c552e6fdf1ad9c8c7a2cd9152c03fbb0`.
+- Final artifact: arm64 + arm64e; placeholder `0`; Verify Secret occurrences `2`.
 
-## P79.7 behavior
-- Same card + same UDID: query the compatibility binding endpoint first; a confirmed same binding proceeds to Runtime Config + Verify without re-running activation.
-- Unknown/not-bound result keeps the P79.6 activation path.
-- App mismatch Verify result returns to the original card input prompt instead of ending in a separate alert.
-- Authorization reset deletes complete authorization-related Keychain services visible to the current process, not only selected accounts.
-- Cross-App deletion still depends on Keychain access-group visibility; Apps with isolated access groups cannot be cleared by another App's process.
+## Required authorization model
+1. `ZONAuthorizationCoordinator` obtains or reuses the device UDID and writes `DZUDID`.
+2. `ZONAuthV2Flow::startFromViewController:udid:` immediately queries `/index/index/apiface` using that UDID.
+3. Do not use local card presence to decide startup activation.
+4. `/apiface` is the device-activation check. Preserve the legacy working contract: `code=1`, `msg=ok`, unexpired `expire` means this UDID already has an active card.
+5. If active, skip card entry and continue to Runtime Config + Verify.
+6. Verify owns the current App decision and server-authoritative `access_level` / `permissions` result.
+7. Only an explicit no-record or expired authorization opens the card input.
+8. Network/5xx/unknown payloads are errors, not proof that activation is absent.
 
-## Verify protocol baseline
+## First activation fallback
+- Card input is only reached for a UDID without an active authorization, an expired authorization, or after Verify reports current-App mismatch and the user must provide another card.
+- Activation keeps P79.6's strict sequence: `/apiface before → /appstore → /apiface after → active + stateChanged → Runtime Config → Verify`.
+- Generic `解锁码已使用` is never converted into success.
+
+## Removed behavior
+- `ZONAuthV2BindingProbe.m` is no longer imported by `ZONAuthV2Storage.m`; its runtime swizzle does not participate in P79.8a.
+- Final binary has zero `P79.8_BINDING_GATE` and `P79.8_LICENSE_PROBE` markers.
+- P79.9/P79.10 startup experiments are not inherited into this branch.
+
+## API topology
 - Bootstrap: `https://raw.githubusercontent.com/a7987083/zonoemenu-config/main/bootstrap/zonoe.main.json`
-- Verify endpoint: `https://app3.zonoeios.xyz/index/dylib_verify/verify`
-- `dylib_key`: `zonoe.main`
-- `dylib_version`: `1`
-- `dylib_build`: empty string
-- Protocol version: `2`
+- Business API Base: `https://app3.zonoeios.xyz`
+- Device auth: `/index/index/apiface?udid=<UDID>`
+- Verify: `https://app3.zonoeios.xyz/index/dylib_verify/verify`
+- Verify request uses UDID + current App identity + dylib identity; the card is not required for an already-active UDID startup.
 
-## Required device checks
-1. Same valid card + same UDID authenticates successfully.
-2. Different used card does not pass as the existing authorization.
-3. Invalid/nonexistent card remains in the card input flow.
-4. Card for another App returns to the same card input flow with the App-mismatch message.
-5. Valid current-App card reaches success → notice → update → icon.
-6. Clear authorization removes current-App visible AuthV2/legacy state.
-7. Test App B after clearing from App A and record whether both Apps share a Keychain access group.
+## Device test order
+1. Install a fresh App on a device whose UDID already has a valid card.
+2. Confirm there is no card popup.
+3. Confirm log contains `P79.8A_UDID_GATE state=active` and then `VERIFY`.
+4. Confirm Verify returns/consumes the expected `access_level` and `permissions`.
+5. Test a UDID with no record: card popup must appear.
+6. Test expired authorization: replacement-card popup.
+7. Test new card activation and App mismatch behavior.
 
-## Last promoted/device baseline
-- P64a / `v1_p64a`.
-- Source `010f383da7f1429c4db93bfda559431e3c4080f9`.
-- CI `35524126925`: success.
-- Device: passed.
+## Rollback baseline
+- Last device-passed baseline: P64a / `v1_p64a` / `010f383da7f1429c4db93bfda559431e3c4080f9`.
 
 ## Long-project rules
 - Preserve commit history.
 - CI success is not device promotion.
-- Keep all five long-project state files synchronized.
+- Keep all five project-state files synchronized.
+- Do not commit or print the real/test Verify Secret.
