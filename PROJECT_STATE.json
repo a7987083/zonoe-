@@ -3,77 +3,74 @@
   "repository": "a7987083/zonoe-",
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
-  "current_work_branch": "work/p79-server-driven-auth-isolation-v1",
-  "current_development_branch": "work/p79.7-auth-semantics-reset-scope",
-  "current_version": "v1_p79_7",
-  "current_phase": "p79_7_auth_semantics_reset_scope",
+  "current_work_branch": "work/p79.8-udid-first-rebuild",
+  "current_version": "v1_p79_8a",
+  "current_phase": "p79_8a_clean_udid_first_rebuild",
   "phase_status": "ci_passed_device_pending",
-  "last_device_verified_code_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
-  "last_device_verified_version": "v1_p64a",
-  "last_ci_run_id": 36531465809,
+  "rebuild_base": {
+    "version": "v1_p79_8",
+    "commit": "702f7011bda568dffbe57c1ad3ca6d7d0feebc40"
+  },
+  "implementation": {
+    "flow_commit": "fdd83d6eeb562d6ba6f6d5a4afae6d09f2234a4c",
+    "storage_cleanup_commit": "dce8c905960256d6e73dcdb62d42060f56660558",
+    "version_commit": "bbebc59b4fb113d0bcfccdd201d889fe1bdb3442",
+    "ci_enable_commit": "3ab9fc3879930b7d89770ca95f6e7636dc0119d3"
+  },
+  "last_ci_run_id": 36572203902,
+  "last_ci_run_number": 32,
   "last_ci_status": "success",
+  "artifact_id": 11036215202,
+  "artifact_digest": "sha256:639403f138acece3089e3460e7606752d55364115b3e1e8c404cdb8f941033b2",
+  "raw_ci_dylib_sha256": "188e25b8c8d76653baffb01e01cd8931302d2ca6d0e67a07d18fee1bd80a894a",
+  "final_test_dylib_sha256": "1601c8aaf55643918d4d7d6f4ea16d45c552e6fdf1ad9c8c7a2cd9152c03fbb0",
+  "ci_verify_secret_configured": false,
+  "final_test_verify_secret_configured": true,
+  "placeholder_remaining": 0,
+  "secret_occurrences": 2,
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
-  "canonical_product_surface": ["testmod/", "testmod.xcodeproj"],
-  "rollback_baseline": {
-    "canonical_version": "v1_p64a",
-    "source_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
-    "ci_run_id": 35524126925,
-    "device_status": "passed",
-    "device_reported_by_user": true
+  "authorization_contract": [
+    "acquire and persist UDID first",
+    "query /index/index/apiface by UDID before consulting any locally saved card",
+    "treat code=1 + msg=ok + expire>now as an active UDID authorization, matching the legacy BSPHPy flow",
+    "active UDID authorization skips the card prompt and continues to Runtime Config + Verify",
+    "Verify is responsible for returning access_level and permissions and for current-App applicability",
+    "missing or expired active authorization opens the card prompt",
+    "network/server/unknown payloads are not treated as an unactivated UDID",
+    "first activation keeps the before-/appstore-/after authorization state-change gate"
+  ],
+  "removed_from_runtime": [
+    "P79.8 BindingProbe swizzle",
+    "P79.8 LICENSE_PROBE runtime path",
+    "savedCard-first startup decision"
+  ],
+  "protocol": {
+    "bootstrap_url": "https://raw.githubusercontent.com/a7987083/zonoemenu-config/main/bootstrap/zonoe.main.json",
+    "business_api_base": "https://app3.zonoeios.xyz",
+    "authorization_path": "/index/index/apiface",
+    "verify_endpoint": "https://app3.zonoeios.xyz/index/dylib_verify/verify",
+    "dylib_key": "zonoe.main",
+    "dylib_version": "1",
+    "dylib_build": "",
+    "protocol_version": 2
   },
-  "p79_6": {
-    "name": "server_driven_auth_activation_state_gate",
-    "version": "v1_p79_6",
-    "status": "superseded_by_p79_7_device_pending",
-    "build_commit": "ac948369ceba488ece11deb8730d8a9510687f44",
-    "ci_run_id": 36523256192,
-    "ci_status": "success",
-    "final_test_dylib_sha256": "9192a214bc7a23a0fb18aadccd72529c9404e415e3c20faab3ddb36b67974080"
+  "binary_validation": {
+    "p79_8a_udid_gate_present": true,
+    "old_p79_8_binding_gate_marker_count": 0,
+    "old_p79_8_license_probe_marker_count": 0
   },
-  "p79_7": {
-    "name": "auth_semantics_and_reset_scope",
-    "version": "v1_p79_7",
-    "status": "ci_passed_device_pending",
-    "branch": "work/p79.7-auth-semantics-reset-scope",
-    "main_work_branch": "work/p79-server-driven-auth-isolation-v1",
-    "source_build_commit": "20cc0dc14e3157060d738ec8b66ef184284597bf",
-    "ci_run_id": 36531465809,
-    "ci_run_number": 25,
-    "ci_status": "success",
-    "artifact_id": 11016299418,
-    "artifact_digest": "sha256:048d839f1080890618f342885f12ae2e28d30884463f3f0e29c74f20af77aa1e",
-    "ci_dylib_sha256": "d6c74b0cb3a7f9f9318c1f1ed805690aaecda2ef01be915b718deb9f5dc707f9",
-    "ci_verify_secret_configured": false,
-    "final_test_dylib_sha256": "4ea75bea7c8a1929483d9f404aa9c47ab3be6e50cf7cafca5679740b926c23b8",
-    "final_test_verify_secret_configured": true,
-    "placeholder_remaining": 0,
-    "secret_occurrences": 2,
-    "binary_patch_mode": "equal_length_post_build",
-    "secret_storage_policy": "test/real Verify Secret is injected only into the controlled final artifact and is not committed to the public repository",
-    "protocol": {
-      "bootstrap_url": "https://raw.githubusercontent.com/a7987083/zonoemenu-config/main/bootstrap/zonoe.main.json",
-      "verify_endpoint": "https://app3.zonoeios.xyz/index/dylib_verify/verify",
-      "dylib_key": "zonoe.main",
-      "dylib_version": "1",
-      "dylib_build": "",
-      "protocol_version": 2
-    },
-    "changes": [
-      "same card + same UDID binding probe before reactivation",
-      "App mismatch returns to existing card prompt",
-      "authorization reset deletes all authorization-related Keychain services visible to current process"
-    ],
-    "device_status": "pending",
-    "device_verification_required": [
-      "same valid card + same UDID authenticates without used-card rejection",
-      "different used card cannot borrow existing UDID authorization",
-      "invalid/nonexistent card remains in card input flow",
-      "card for another App returns to the same card prompt",
-      "valid current-App card reaches Verify then notice/update/icon",
-      "clear authorization removes current-App visible authorization records",
-      "cross-App reset behavior is verified against actual Keychain access-group entitlements"
-    ]
-  },
-  "next_task": "Install the controlled v1_p79_7 Secret-configured dylib and run the scoped real-device regression."
+  "last_device_verified_code_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
+  "last_device_verified_version": "v1_p64a",
+  "device_status": "pending",
+  "device_verification_required": [
+    "fresh App + previously activated UDID does not show card prompt",
+    "fresh App + active UDID proceeds to Verify and consumes server access_level/permissions",
+    "UDID with no activation record shows card prompt",
+    "expired UDID authorization shows replacement-card prompt",
+    "new card activation still passes before-/appstore-/after state-change gate",
+    "App mismatch returns to the same card prompt"
+  ],
+  "secret_storage_policy": "test/real Verify Secret is injected only into the controlled final artifact and is not committed to public Git history",
+  "next_task": "Install the controlled v1_p79_8a artifact and test a freshly installed App on an already-activated UDID first."
 }
