@@ -3,6 +3,8 @@
 #import "ZONRestoreAPI.h"
 #import "ZONCloudSaveService.h"
 #import "ZONRuntimeDirectoryService.h"
+#import "../ZONAuthV2/ZONAuthV2Storage.h"
+#import "../ZONAuthV2/ZONAuthV2Verify.h"
 #import "getKeychain.h"
 #import "WX_NongShiFu123.h"
 #import "Config.h"
@@ -17,6 +19,15 @@
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{ coordinator = [[ZONSaveTransferCoordinator alloc] init]; });
     return coordinator;
+}
+
+- (BOOL)cloudPermissionGrantedInVerifyResponse:(NSDictionary *)response
+{
+    if (![response isKindOfClass:NSDictionary.class] || ![response[@"ok"] boolValue]) return NO;
+    NSString *action = [response[@"action"] isKindOfClass:NSString.class] ? response[@"action"] : @"";
+    if ([action isEqualToString:@"block"] || [action isEqualToString:@"disable_feature"]) return NO;
+    NSDictionary *permissions = [response[@"permissions"] isKindOfClass:NSDictionary.class] ? response[@"permissions"] : nil;
+    return [permissions[@"extra_features"] boolValue];
 }
 
 - (void)presentRemoteDownloadProgressReceived:(int64_t)received expected:(int64_t)expected
@@ -114,6 +125,16 @@
 - (void)presentCloudSaveFromViewController:(UIViewController *)hostViewController
 {
     if (!hostViewController) return;
+
+    // UI visibility is already controlled by permissions. Keep a second local
+    // guard here so direct/programmatic calls cannot open the cloud-save surface.
+    NSDictionary *sessionVerify = [ZONAuthV2Storage lastVerify];
+    if (![self cloudPermissionGrantedInVerifyResponse:sessionVerify]) {
+        NSLog(@"[zonoemenu][P79.8C_CLOUD_PERMISSION] session permission denied before cloud menu");
+        [self presentCloudEntitlementDeniedFromViewController:hostViewController];
+        return;
+    }
+
     [ZONRuntimeDirectoryService ensureTemporaryDirectory];
     [SVProgressHUD showWithStatus:@"正在检查云存档文件..."];
     NSString *bundleID = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleIdentifier"];
@@ -156,7 +177,7 @@
 - (void)presentCloudEntitlementDeniedFromViewController:(UIViewController *)hostViewController
 {
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:nil
-                                                                   message:@"你没有购买\n请先购买再尝试解锁"
+                                                                   message:@"当前授权不包含 VIP云存档权限"
                                                             preferredStyle:UIAlertControllerStyleAlert];
     [alert addAction:[UIAlertAction actionWithTitle:@"购买解锁码" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:软件网页地址] options:@{} completionHandler:^(__unused BOOL success) { exit(0); }];
@@ -170,33 +191,67 @@
          hostViewController:(UIViewController *)hostViewController
 {
     NSString *deviceIdentifier = [getKeychain getKeychainDataForKey:@"DZUDID"] ?: @"";
-    NSString *downloadAddress = [[ZONCloudSaveService sharedService] effectiveDownloadAddressForFunction:functionDictionary];
-    BOOL testMode = NO; // NO = 正常验证, YES = 测试模式（绕过验证）
+    NSDictionary *runtimeConfig = [ZONAuthV2Storage lastRuntimeConfig];
+    if (deviceIdentifier.length < 5 || ![runtimeConfig isKindOfClass:NSDictionary.class] || runtimeConfig.count == 0) {
+        [SVProgressHUD showErrorWithStatus:@"云存档验证上下文不可用，请重新启动后再试"];
+        [SVProgressHUD dismissWithDelay:3.0];
+        return;
+    }
 
-    [[ZONCloudSaveService sharedService]
-     resolveDownloadURLForBundleIdentifier:bundleIdentifier
-     downloadAddress:downloadAddress
-     archiveBaseURLString:homezip ?: @""
-     deviceIdentifier:deviceIdentifier
-     entitlementBaseURLString:@"https://app.zonoeios.xyz/index/index/apiface?udid="
-     bypassEntitlement:testMode
-     completion:^(NSURL *downloadURL, NSError *error) {
-        if (error || !downloadURL) {
-            if (error.code == ZONCloudSaveErrorEntitlementDenied) {
-                [self presentCloudEntitlementDeniedFromViewController:hostViewController];
-            } else {
-                [SVProgressHUD showErrorWithStatus:error.localizedDescription ?: @"云存档验证失败"];
-                [SVProgressHUD dismissWithDelay:3.0];
-            }
+    NSString *downloadAddress = [[ZONCloudSaveService sharedService] effectiveDownloadAddressForFunction:functionDictionary];
+    [SVProgressHUD showWithStatus:@"正在验证云存档权限..."];
+
+    // P79.8c replaces the legacy app.zonoeios.xyz /apiface entitlement check with
+    // a fresh Verify v2 decision from the current Bootstrap/runtime-config chain.
+    [[ZONAuthV2Verify sharedVerifier]
+     verifyUDID:deviceIdentifier
+     runtimeConfig:runtimeConfig
+     completion:^(NSDictionary *response, NSError *verifyError) {
+        [SVProgressHUD dismiss];
+        BOOL allowed = [self cloudPermissionGrantedInVerifyResponse:response];
+        NSString *accessLevel = [response[@"access_level"] isKindOfClass:NSString.class] ? response[@"access_level"] : @"";
+        NSDictionary *permissions = [response[@"permissions"] isKindOfClass:NSDictionary.class] ? response[@"permissions"] : @{};
+        NSLog(@"[zonoemenu][P79.8C_CLOUD_PERMISSION] fresh_verify allowed=%d access_level=%@ extra_features=%d error=%@",
+              allowed,
+              accessLevel,
+              [permissions[@"extra_features"] boolValue],
+              verifyError ? verifyError.domain : @"none");
+
+        if (verifyError) {
+            [SVProgressHUD showErrorWithStatus:verifyError.localizedDescription ?: @"云存档权限验证失败"];
+            [SVProgressHUD dismissWithDelay:3.0];
             return;
         }
-        JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
-        [presenter dismissAnimated:YES];
-        [presenter presentWithText:@"准备下载存档,请稍后."
-                 dismissAfterDelay:0
-                     includedStyle:JDStatusBarNotificationIncludedStyleWarning];
-        [self cleanupRestoreStaging];
-        [self startArchiveDownloadWithURL:downloadURL];
+        if (!allowed) {
+            [self presentCloudEntitlementDeniedFromViewController:hostViewController];
+            return;
+        }
+
+        // Refresh session-only authorization state. Nothing is persisted to
+        // NSUserDefaults by P79.8b storage semantics.
+        [ZONAuthV2Storage setLastVerify:response];
+
+        [[ZONCloudSaveService sharedService]
+         resolveDownloadURLForBundleIdentifier:bundleIdentifier
+         downloadAddress:downloadAddress
+         archiveBaseURLString:homezip ?: @""
+         deviceIdentifier:deviceIdentifier
+         entitlementBaseURLString:@""
+         bypassEntitlement:YES
+         completion:^(NSURL *downloadURL, NSError *error) {
+            if (error || !downloadURL) {
+                [SVProgressHUD showErrorWithStatus:error.localizedDescription ?: @"云存档下载地址解析失败"];
+                [SVProgressHUD dismissWithDelay:3.0];
+                return;
+            }
+            JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
+            [presenter dismissAnimated:YES];
+            [presenter presentWithText:@"准备下载存档,请稍后."
+                     dismissAfterDelay:0
+                         includedStyle:JDStatusBarNotificationIncludedStyleWarning];
+            [self cleanupRestoreStaging];
+            [self startArchiveDownloadWithURL:downloadURL];
+         }];
      }];
 }
 
