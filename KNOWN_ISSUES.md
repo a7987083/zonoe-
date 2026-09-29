@@ -1,53 +1,53 @@
 # KNOWN_ISSUES
 
 ## Current state
-- Active test version: `v1_p79_9`.
+- Active test version: `v1_p79_10`.
 - Branch: `work/p79-server-driven-auth-isolation-v1`.
-- Logic commit: `675621f8264e228fc1d578301b17f49e9101a16b`.
-- Build commit: `77db45077f6e22e54b7fa9e8c5a0a3924a65747a`.
-- CI Run `36564346565` / #29: success.
+- Logic commit: `3177a4e8dc4ceeaabd97ecdac87a7266b201566a`.
+- Build commit: `533af1abd09bb2fcf0701ca05c4370d740129459`.
+- CI Run `36567247825` / #31: success.
 - Architectures: `arm64 + arm64e`.
-- Controlled final test dylib SHA256: `75b28c007ee6171fe506af68a76ccfd008f1dd07226deab7c227a54c3dec721b`.
+- Controlled final test dylib SHA256: `6e0a29487b5e5f8c2f9392203e306c59de8140eb2983e5f59f28821f42ebd9e5`.
 - Real-device validation: pending.
 - Last promoted/device baseline remains P64a / `010f383da7f1429c4db93bfda559431e3c4080f9`.
 
 ## Open risks
 
-### UDID-first behavior requires real-device confirmation
-- P79.9 queries `/apiface` immediately after UDID acquisition, before using local card state or presenting an activation prompt.
-- Active scope priority is source/Plus (1) → specified App (3) → verify-only (2).
-- If any supported active scope exists, the client enters Runtime Config + Verify without `/appstore`.
-- Verify on a freshly installed App that no card prompt appears for an already-authorized UDID.
+### P79.10 server access model requires real-device confirmation
+- Startup is UDID-first and queries `/index/index/apiface` before card state or prompts.
+- Client no longer interprets `scope/type/expire` to decide card class.
+- Authorization is server-authoritative through `access_level` + `permissions`.
+- Usable levels are `global_plus`, `app_plus`, `basic`; `block` is not usable.
+- Device regression must confirm an already-activated UDID receives one of the usable access levels and bypasses the card prompt.
 
-### Specified-App applicability is server/Verify-owned
-- `/apiface` authorization summaries contain scope/type/expire but not the mapped App IDs.
-- Therefore the client only prioritizes scope 3 and enters Verify; Verify must decide whether the current App is included.
-- If scope 3 does not include the current App and another valid scope exists, backend Verify behavior must be checked to ensure it selects the next applicable authorization rather than stopping on the first non-applicable scope.
+### Online `/apiface` response could not be fetched from the tool environment
+- The exact user-supplied endpoint was not reachable from the external tool environment during this change.
+- Implementation therefore follows the documented server contract supplied by the project: `global_plus > app_plus > basic > block` and client-only consumption of `access_level/permissions`.
+- Device logs now print `P79.10_UDID_GATE access_level=... authorized=... permissions_count=...` so the real server result is directly observable on-device.
+
+### `app_plus` applicability remains server/Verify-owned
+- Startup treats `app_plus` as an already-activated UDID and does not show a card prompt.
+- Whether that authorization applies to the newly installed App is resolved later by Verify using current App identity.
+- `app_not_authorized` still returns to the card prompt so another valid card can be entered.
 
 ### Lookup failure must not look like no authorization
-- Network errors and HTTP 5xx are shown as validation/server errors and must not open the card prompt.
-- Device regression should include airplane-mode or controlled endpoint failure.
-
-### App mismatch prompt routing requires confirmation
-- `app_not_authorized` / `Authorization does not apply to this App` returns to the existing card prompt.
-- Verify no separate terminal alert remains.
+- Network errors and HTTP 5xx show a validation/server error and must not open the card prompt.
 
 ### Cross-App authorization clearing remains bounded by Keychain visibility
 - Local reset deletes authorization-related Generic Password services visible to the current process.
 - Apps using separate/default Keychain access groups cannot clear each other's private entries.
 - True cross-App local reset requires shared access groups; server records require a real revoke/reset API.
-- `/unbind` remains a transfer operation, not a global revoke API.
 
 ### Raw CI artifact has no Verify Secret
-- CI Run `36564346565` reported `verify_secret_configured=0`.
-- Raw CI dylib SHA256: `57a81062e35556b7092fbabaa6d98a8a90ea3796a3cbe8c3c27a3cc39f9e06c7`.
+- CI Run `36567247825` reported `verify_secret_configured=0`.
+- Raw CI dylib SHA256: `af13c7a69f4a30cb5333d1f04917998f738ba513ca19ea94cf6a24e1dc775552`.
 - Controlled artifact uses equal-length post-build injection into both architecture slices; placeholder remaining `0`, Secret occurrences `2`, size unchanged, 128 bytes differ.
 - Public source must retain only the placeholder.
 
 ## Corrected / superseded
-- P79.8 exact card+UDID reuse is superseded by the clarified startup contract: UDID authorization must be queried first; card input is only for a UDID without active authorization.
+- P79.9 UDID-first startup direction was correct, but its client-side `scope/type/expire` parser was wrong; superseded by P79.10 server `access_level/permissions` handling.
+- P79.8 exact card+UDID startup reuse is superseded by UDID-first startup.
 - P79.7 `/authorization` probe is retired.
-- P79.6 first-activation state-change gate remains active for actual new activation.
 
 ## Tracking rule
 - CI success alone does not equal promotion.
