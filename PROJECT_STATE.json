@@ -4,44 +4,70 @@
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
   "current_work_branch": "work/p79.8-udid-first-rebuild",
-  "current_version": "v1_p79_8b",
-  "current_phase": "p79_8b_persistence_cleanup",
+  "current_version": "v1_p79_8c",
+  "current_phase": "p79_8c_server_driven_menu_permissions",
   "phase_status": "ci_passed_device_pending",
   "functional_baseline": {
-    "version": "v1_p79_8a",
-    "device_status": "passed",
-    "ci_run_id": 36572203902,
-    "final_test_dylib_sha256": "1601c8aaf55643918d4d7d6f4ea16d45c552e6fdf1ad9c8c7a2cd9152c03fbb0"
+    "authorization_version": "v1_p79_8a",
+    "authorization_device_status": "passed",
+    "persistence_version": "v1_p79_8b",
+    "persistence_device_status": "pending"
   },
   "implementation": {
-    "storage_contract_commit": "78da327ef11946d8502e77b023d1f8b823c2fad1",
-    "storage_implementation_commit": "1b099d83da7ae00a5773279f755110f0c441b4d3",
-    "authorization_cleanup_commit": "d97e78c8bdedbf8efa0b87b77a0c18bf8b9266ea",
-    "reset_cleanup_commit": "4a5888613f7c2c5b76e5191d2c42a9a60e491890",
-    "version_commit": "19d5d1e0204c84f56fc2ee330bb2371d3511d367"
+    "feature_permission_commit": "dffe27a0f5101591d0a57774cf0041b64f06349d",
+    "menu_filter_commit": "0d7c93c434084c260e240b824980cdb684fd25c9",
+    "action_permission_commit": "dd75f3f6267390268b12e467b03efa83d78f5d7d",
+    "cloud_fresh_verify_commit": "dbe02798bd0e2d5e4d55bde950100d510d40a93e",
+    "version_commit": "4a2c35923c646917e912ca0758294df98460cccd"
   },
-  "last_ci_run_id": 36585791709,
-  "last_ci_run_number": 36,
+  "last_ci_run_id": 36591707184,
+  "last_ci_run_number": 37,
   "last_ci_status": "success",
-  "artifact_id": 11041556869,
-  "artifact_digest": "sha256:18b44f1ff221d9a2582291c30a5b145166f4e954e831158bd82bf0a41716a82a",
-  "raw_ci_dylib_sha256": "b6c3333cbce0b0ff508a11ac31a6d81ce180db4c1afd3360e86d0ed5a9ce7045",
-  "final_test_dylib_sha256": "e363256b06e7842090103f95cc5edd14066b7eb50f144768fcd38882255bd62c",
+  "artifact_id": 11043668689,
+  "artifact_digest": "sha256:c6e1f80c902508e27d527a4079f2d72ad53767438ca24278405010d93f22a66e",
+  "raw_ci_dylib_sha256": "de3be9f75f5fb6639c84c283252bd5e184b1cde0d512b1cc3ca6c48ba314c153",
+  "final_test_dylib_sha256": "7d8c80d317810eb4331db02fa216697f3c869fdfa7cacbfb0499c936d60f1651",
+  "final_test_zip_sha256": "203f622b85c69703cc91d63c4820e8e975a77b9b96897b1c3256a2317da7c386",
   "ci_verify_secret_configured": false,
   "final_test_verify_secret_configured": true,
   "placeholder_remaining": 0,
   "secret_occurrences": 2,
-  "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
   "authorization_contract": [
     "acquire or reuse DZUDID first",
     "query /index/index/apiface by UDID before any card prompt",
     "active UDID authorization skips card input and proceeds to Runtime Config + Verify",
     "Verify owns current-App applicability plus access_level and permissions",
-    "only explicit missing or expired authorization opens card input",
-    "network/server/unknown payloads are not treated as missing activation",
-    "first activation retains the before-/appstore-/after state-change gate"
+    "only explicit missing or expired authorization opens card input"
   ],
+  "server_permission_model": {
+    "basic": {
+      "normal_menu": true,
+      "extra_menu": false,
+      "extra_features": false
+    },
+    "app_plus": {
+      "normal_menu": true,
+      "extra_menu": true,
+      "extra_features": true
+    },
+    "global_plus": {
+      "normal_menu": true,
+      "extra_menu": true,
+      "extra_features": true
+    }
+  },
+  "cloud_save_contract": {
+    "feature_identifier": "base.cloud-save",
+    "legacy_tag": 2,
+    "menu_permission": "extra_menu",
+    "action_permission": "extra_features",
+    "menu_permission_source": "session Verify response",
+    "action_permission_source": "session Verify response",
+    "download_permission_source": "fresh Verify v2 before archive resolution",
+    "legacy_cloud_apiface_route_active": false,
+    "legacy_old_hostname_may_remain_in_compatibility_binary": true
+  },
   "persistence_contract": {
     "long_lived_device_identity": "DZUDID Keychain",
     "session_only": [
@@ -54,18 +80,6 @@
     ],
     "persistent_auth_userdefaults": [
       "zonoe.auth.v2.lastNoticeFingerprint"
-    ],
-    "purged_legacy_defaults": [
-      "到期时间",
-      "卡密",
-      "公告",
-      "zonoeudid",
-      "解锁码到期时间",
-      "到期弹窗",
-      "zonoe.udid.bridge.value",
-      "zonoe.udid.bridge.scheme",
-      "zonoe.udid.bridge.requestTimestamp",
-      "zonoe.udid.bridge.requestNonce"
     ],
     "menu_defaults_policy": "unchanged"
   },
@@ -80,7 +94,9 @@
     "protocol_version": 2
   },
   "binary_validation": {
-    "p79_8b_persistence_marker_present": true,
+    "p79_8c_menu_permission_marker_count": 4,
+    "p79_8c_action_permission_marker_count": 2,
+    "p79_8c_cloud_permission_marker_count": 4,
     "arm64_present": true,
     "arm64e_present": true,
     "placeholder_remaining": 0,
@@ -90,12 +106,12 @@
   "last_device_verified_ci_run_id": 36572203902,
   "device_status": "pending",
   "device_verification_required": [
-    "existing active DZUDID still skips card prompt and reaches Verify",
-    "old AuthV2 and bridge persistence is removed after startup",
-    "menu fold/runtime preferences remain unchanged",
-    "fresh activation does not persist card/Verify/RuntimeConfig/Bootstrap state",
-    "same notice is not repeated after relaunch"
+    "basic/verify-only does not render VIP cloud save",
+    "app_plus matched App renders and uses VIP cloud save",
+    "global_plus renders and uses VIP cloud save",
+    "permission downgrade after menu creation is rejected by fresh Verify before download",
+    "P79.8b persistence cleanup and menu preference persistence do not regress"
   ],
   "secret_storage_policy": "test/real Verify Secret is injected only into the controlled final artifact and is not committed to public Git history",
-  "next_task": "Install controlled v1_p79_8b and verify persistence cleanup without regressing P79.8a UDID-first authorization or menu persistence."
+  "next_task": "Install controlled v1_p79_8c and test basic vs app_plus/global_plus VIP cloud-save visibility plus fresh-Verify enforcement."
 }
