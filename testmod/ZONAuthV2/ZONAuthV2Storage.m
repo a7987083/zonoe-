@@ -72,8 +72,3 @@ static NSString * const ZONAuthV2LastNoticeFingerprintKey = @"zonoe.auth.v2.last
 }
 
 @end
-
-// P79 builds use an intentionally isolated source allow-list. Keep the P79.7 compatibility
-// translation unit attached to an already-listed AuthV2 source until it graduates into the
-// canonical Xcode project source list.
-#import "ZONAuthV2BindingProbe.m"
