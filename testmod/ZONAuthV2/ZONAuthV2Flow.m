@@ -66,6 +66,24 @@ static NSString *ZONUserMessage(NSString *code, NSString *raw) {
     return raw;
 }
 
+static BOOL ZONLicenseHTTPErrorInvalidatesSavedCard(NSError *error) {
+    if (![error.domain isEqualToString:@"ZONAuthV2"]) return NO;
+    NSInteger status = error.code;
+    if (status < 400 || status >= 500) return NO;
+    // Request timeout / Too Early / rate limiting are transient and must not destroy a valid saved card.
+    return status != 408 && status != 425 && status != 429;
+}
+
+static NSString *ZONSavedCardTransientErrorMessage(NSError *error) {
+    if ([error.domain isEqualToString:NSURLErrorDomain]) {
+        return @"网络连接失败，请检查网络后重试。";
+    }
+    if ([error.domain isEqualToString:@"ZONAuthV2"] && error.code >= 500 && error.code < 600) {
+        return @"授权服务器暂时不可用，请稍后重试。";
+    }
+    return ZONUserMessage(@"", error.localizedDescription ?: @"授权验证失败，请稍后重试。");
+}
+
 @implementation ZONAuthV2Flow
 
 + (instancetype)sharedFlow {
@@ -152,7 +170,16 @@ static NSString *ZONUserMessage(NSString *code, NSString *raw) {
 - (void)verifySavedCard:(NSString *)card udid:(NSString *)udid host:(UIViewController *)host {
     [[ZONAuthV2API sharedAPI] fetchLicenseForUDID:udid completion:^(NSDictionary *license, NSError *error) {
         if (error) {
-            [self showMessage:error.localizedDescription ?: @"网络连接失败" title:@"验证失败" completion:nil];
+            NSString *raw = [license[@"message"] isKindOfClass:NSString.class] ? license[@"message"] : (error.localizedDescription ?: @"授权验证失败");
+            if (ZONLicenseHTTPErrorInvalidatesSavedCard(error)) {
+                NSLog(@"[zonoemenu][auth-v2] saved-card /apiface rejected status=%ld raw_message=%@; clearing card only", (long)error.code, raw);
+                [ZONAuthV2Storage clearCard];
+                [self presentCardPromptForUDID:udid host:nil message:ZONUserMessage(@"license_invalid", raw)];
+                return;
+            }
+
+            NSLog(@"[zonoemenu][auth-v2] saved-card /apiface transient failure domain=%@ code=%ld; preserving card", error.domain, (long)error.code);
+            [self showMessage:ZONSavedCardTransientErrorMessage(error) title:@"验证失败" completion:nil];
             return;
         }
         [self fetchConfigAndVerifyUDID:udid card:card license:license ?: @{} host:nil isNewActivation:NO];
