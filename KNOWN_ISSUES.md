@@ -1,62 +1,52 @@
 # KNOWN_ISSUES
 
 ## Current state
-- Active test version: `v1_p79_6`.
-- Main work branch: `work/p79-server-driven-auth-isolation-v1`.
-- Build commit: `ac948369ceba488ece11deb8730d8a9510687f44`.
-- CI Run `36523256192`: success.
+- Active test version: `v1_p79_7`.
+- Development branch: `work/p79.7-auth-semantics-reset-scope`.
+- Main P79 work branch: `work/p79-server-driven-auth-isolation-v1`.
+- Source/build commit: `20cc0dc14e3157060d738ec8b66ef184284597bf`.
+- CI Run `36531465809`: success.
 - Architectures: `arm64 + arm64e`.
+- Controlled final test dylib SHA256: `4ea75bea7c8a1929483d9f404aa9c47ab3be6e50cf7cafca5679740b926c23b8`.
 - Real-device validation: pending.
 - Last promoted/device rollback baseline remains `v1_p64a` / `010f383da7f1429c4db93bfda559431e3c4080f9`.
 
 ## Open risks
 
-### P79.6 still requires real-device validation
-- CI compile/package success does not prove the activation and Verify behavior on-device.
-- Required device paths: invalid card, used/mismatched card, valid new card, saved valid card, revoked/expired saved card, and transient network/server failure.
-- Promotion is blocked until the scoped P79.6 regression passes.
+### Same-card/same-UDID binding semantics require device confirmation
+- P79.7 queries the compatibility `/authorization` endpoint before re-activating an already-authorized UDID.
+- Only a structured bound result skips `/appstore`; unknown/not-bound keeps the strict P79.6 activation path.
+- Device regression must verify that the actual production response marks the same card + same UDID correctly and that a different used card is not accepted.
 
-### Raw CI P79.6 artifact does not contain Verify Secret
-- CI Run `36523256192` reported `verify_secret_configured=0`.
-- The raw CI dylib must not be used as the final Verify acceptance artifact.
-- Controlled final test artifact uses equal-length post-build injection of the user-provided test Verify Secret into both architecture slices.
-- Final controlled dylib SHA256: `9192a214bc7a23a0fb18aadccd72529c9404e415e3c20faab3ddb36b67974080`.
-- Public source must retain only the placeholder. Do not commit the real/test Secret or print it in CI logs.
+### App mismatch prompt routing requires device confirmation
+- P79.7 routes `app_not_authorized` / `Authorization does not apply to this App` back into the existing card prompt.
+- Verify on-device that no separate terminal alert remains and that a replacement card can be entered immediately.
 
-### Valid authorization may still expose an App Identity mismatch
-- P79.6 now prevents invalid/unchanged activation state from falling through into Verify.
-- If a genuinely valid authorization passes the activation gate but Verify still returns `Authorization does not apply to this App`, inspect server-side `app_identity` / bundle mapping and the submitted `bundle_id`, executable, Mach-O UUID, app version/build and dylib identity.
-- Do not work around this by bypassing or weakening Verify.
+### Cross-App authorization clearing is limited by Keychain visibility
+- P79.7 deletes complete authorization-related Generic Password services visible to the current process.
+- iOS Keychain access-group isolation still applies. If App A and App B use separate/default access groups, App A cannot remove App B's isolated records.
+- True cross-App local clearing requires a shared access group available to both signed Apps; server-side records require an explicit server reset/revoke contract if such behavior is desired.
+- The current integration surface should not assume `/unbind` is equivalent to global authorization removal.
+
+### Raw CI artifact still has no Verify Secret
+- CI Run `36531465809` reported `verify_secret_configured=0`.
+- Raw CI dylib SHA256: `d6c74b0cb3a7f9f9318c1f1ed805690aaecda2ef01be915b718deb9f5dc707f9`.
+- Controlled final test artifact uses equal-length post-build injection into both architecture slices; placeholder remaining `0`, Secret occurrences `2`.
+- Public source must retain only the placeholder.
 
 ### Presentation continuation remains device-sensitive
 - Notice/update/message presentation is serialized by `ZONPresentationCoordinator`.
-- Several call sites depend on presentation completion to continue to the icon.
-- CI cannot prove that a modal presentation retry/failure always reaches the business continuation path; device regression must verify success → notice → update → icon.
-
-### Historical backup/restore refactor work remains incomplete
-- `daochucd` still mixes UI, filesystem traversal, archive work and sharing.
-- Backup format compatibility must be preserved in any future P65 work.
-- `YYYPicker` still mixes picker UI and restore engine.
-- `PubgLoad` remains a multi-responsibility class for remote download/cloud-save work.
+- Device regression must still verify success → notice → update → icon.
 
 ## Closed / corrected
 
-### P79 activation fall-through into Verify — CORRECTED IN P79.6 / DEVICE PENDING
-- Previous P79 code could call Verify after `/appstore` + `/apiface` without confirming that authorization became valid and changed.
-- This caused unrelated card failures to reach Verify and be collapsed into `Authorization does not apply to this App` / `当前卡密不适用于此应用`.
-- P79.6 restored `ZONLicenseIsAuthorized`, authorization fingerprinting and the `stateChanged` gate from the successful standalone auth implementation.
-- Saved-card HTTP-200 but invalid authorization content is now also rejected before Verify.
-- Activation-gate commit: `ad7fc577bb52b02a1c5cecaa74ef263c1f19a6a9`.
+### P79 activation fall-through into Verify — corrected in P79.6
+- P79.6 restored authorization-state validation and `stateChanged` gating before Verify.
+- P79.7 retains that gate and layers same-binding reuse on top.
 
-### P64a runtime-directory model — CLOSED / DEVICE PASSED
-- P64a distinguishes game/user payload from runtime directory skeletons and volatile cache/temp residue.
+### P64a runtime-directory model — device passed
 - CI Run `35524126925`: success.
-- User explicitly reported P64a fully normal on device.
-
-### Version naming drift — CORRECTED IN PROJECT RECORDS
-- New stages increment numeric phase.
-- Same-stage fixes use suffix letters.
-- Historical commits/artifacts remain preserved.
+- User reported P64a fully normal on device.
 
 ## Tracking rule
 - CI success alone does not equal promotion.
