@@ -40,6 +40,73 @@ static NSString *ZONString(id value) {
     return [value description] ?: @"";
 }
 
+static BOOL ZONLicenseIsAuthorized(NSDictionary *license) {
+    if (![license isKindOfClass:NSDictionary.class] || !license.count) return NO;
+
+    id auths = license[@"authorizations"];
+    if ([auths isKindOfClass:NSArray.class] && [(NSArray *)auths count] > 0) {
+        double now = NSDate.date.timeIntervalSince1970;
+        for (id item in (NSArray *)auths) {
+            if (![item isKindOfClass:NSDictionary.class]) continue;
+            id expireObj = ZONFirstValueForKeys(item, @[@"expire", @"expires_at", @"expire_time"]);
+            double expire = [ZONString(expireObj) doubleValue];
+            if (expire <= 0 || expire > now) return YES;
+        }
+    }
+
+    id status = ZONFirstValueForKeys(license, @[@"status", @"active", @"authorized", @"valid"]);
+    id expireObj = ZONFirstValueForKeys(license, @[@"expire", @"expires_at", @"expire_time"]);
+    double expire = [ZONString(expireObj) doubleValue];
+    if ([status respondsToSelector:@selector(boolValue)] && [status boolValue] &&
+        (expire <= 0 || expire > NSDate.date.timeIntervalSince1970)) {
+        return YES;
+    }
+    return expire > NSDate.date.timeIntervalSince1970;
+}
+
+static id ZONLicenseProjection(id obj) {
+    if ([obj isKindOfClass:NSArray.class]) {
+        NSMutableArray *array = [NSMutableArray array];
+        for (id value in (NSArray *)obj) {
+            [array addObject:ZONLicenseProjection(value) ?: NSNull.null];
+        }
+        return array.copy;
+    }
+    if (![obj isKindOfClass:NSDictionary.class]) return obj ?: NSNull.null;
+
+    NSDictionary *dict = obj;
+    NSArray<NSString *> *wanted = @[
+        @"authorizations", @"expire", @"expires_at", @"expire_time",
+        @"status", @"active", @"authorized", @"valid",
+        @"scope", @"type", @"access_level", @"permissions"
+    ];
+    NSMutableDictionary *out = [NSMutableDictionary dictionary];
+    for (NSString *key in wanted) {
+        id value = dict[key];
+        if (value && value != NSNull.null) out[key] = ZONLicenseProjection(value);
+    }
+    return out.copy;
+}
+
+static NSString *ZONLicenseFingerprint(NSDictionary *license) {
+    id projection = ZONLicenseProjection(license ?: @{});
+    if (![NSJSONSerialization isValidJSONObject:projection]) return [projection description] ?: @"";
+    NSError *error = nil;
+    NSData *data = [NSJSONSerialization dataWithJSONObject:projection options:NSJSONWritingSortedKeys error:&error];
+    if (!data.length || error) return [projection description] ?: @"";
+    return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] ?: @"";
+}
+
+static NSString *ZONActivationMessage(NSDictionary *activation, NSDictionary *license, NSError *error, NSString *fallback) {
+    NSString *message = @"";
+    if ([activation[@"message"] isKindOfClass:NSString.class]) message = activation[@"message"];
+    if (!message.length && [activation[@"msg"] isKindOfClass:NSString.class]) message = activation[@"msg"];
+    if (!message.length && [license[@"message"] isKindOfClass:NSString.class]) message = license[@"message"];
+    if (!message.length && [license[@"msg"] isKindOfClass:NSString.class]) message = license[@"msg"];
+    if (!message.length) message = error.localizedDescription ?: fallback ?: @"授权状态未发生变化";
+    return message;
+}
+
 static NSString *ZONUserMessage(NSString *code, NSString *raw) {
     NSString *lower = raw.lowercaseString ?: @"";
     if ([lower containsString:@"authorization does not apply to this app"]) {
@@ -140,28 +207,52 @@ static NSString *ZONSavedCardTransientErrorMessage(NSError *error) {
     ZONAuthV2API *api = [ZONAuthV2API sharedAPI];
 
     [api fetchLicenseForUDID:udid completion:^(NSDictionary *before, NSError *beforeError) {
-        if (beforeError && beforeError.code > 0 && beforeError.code < 500) {
-            before = before ?: @{};
-        } else if (beforeError) {
-            [self presentCardPromptForUDID:udid host:nil message:beforeError.localizedDescription ?: @"网络错误"];
+        if (beforeError && !(beforeError.code > 0 && beforeError.code < 500)) {
+            NSLog(@"[zonoemenu][auth-v2][BEFORE_LICENSE] failure domain=%@ code=%ld", beforeError.domain, (long)beforeError.code);
+            [self presentCardPromptForUDID:udid host:nil message:ZONSavedCardTransientErrorMessage(beforeError)];
             return;
         }
 
+        NSDictionary *beforeLicense = before ?: @{};
+        BOOL beforeAuthorized = !beforeError && ZONLicenseIsAuthorized(beforeLicense);
+        NSString *beforeFingerprint = beforeError ? @"" : ZONLicenseFingerprint(beforeLicense);
+        NSLog(@"[zonoemenu][auth-v2][BEFORE_LICENSE] authorized=%d http_error=%ld", beforeAuthorized, (long)beforeError.code);
+
         [api activateUDID:udid card:card completion:^(NSDictionary *activation, NSError *activationError) {
+            NSDictionary *activationResponse = activation ?: @{};
             if (activationError) {
-                NSString *raw = activationError.localizedDescription ?: @"激活失败";
+                NSString *raw = ZONActivationMessage(activationResponse, nil, activationError, @"激活失败");
+                NSLog(@"[zonoemenu][auth-v2][APPSTORE] rejected status=%ld raw_message=%@", (long)activationError.code, raw);
                 [self presentCardPromptForUDID:udid host:nil message:ZONUserMessage(@"", raw)];
                 return;
             }
-            [ZONAuthV2Storage setLastActivation:activation];
+
+            [ZONAuthV2Storage setLastActivation:activationResponse];
+            NSLog(@"[zonoemenu][auth-v2][APPSTORE] transport_ok=1 message=%@", ZONActivationMessage(activationResponse, nil, nil, @""));
 
             [api fetchLicenseForUDID:udid completion:^(NSDictionary *after, NSError *afterError) {
+                NSDictionary *afterLicense = after ?: @{};
                 if (afterError || !after) {
-                    NSString *raw = [after[@"message"] isKindOfClass:NSString.class] ? after[@"message"] : (afterError.localizedDescription ?: @"授权状态读取失败");
+                    NSString *raw = ZONActivationMessage(activationResponse, afterLicense, afterError, @"授权状态读取失败");
+                    NSLog(@"[zonoemenu][auth-v2][AFTER_LICENSE] failure domain=%@ code=%ld raw_message=%@", afterError.domain, (long)afterError.code, raw);
                     [self presentCardPromptForUDID:udid host:nil message:ZONUserMessage(@"", raw)];
                     return;
                 }
-                [self fetchConfigAndVerifyUDID:udid card:card license:after host:nil isNewActivation:YES];
+
+                BOOL afterAuthorized = ZONLicenseIsAuthorized(afterLicense);
+                NSString *afterFingerprint = ZONLicenseFingerprint(afterLicense);
+                BOOL stateChanged = !beforeAuthorized ? afterAuthorized : ![beforeFingerprint isEqualToString:afterFingerprint];
+                NSLog(@"[zonoemenu][auth-v2][AFTER_LICENSE] authorized=%d state_changed=%d", afterAuthorized, stateChanged);
+
+                if (!afterAuthorized || !stateChanged) {
+                    NSString *raw = ZONActivationMessage(activationResponse, afterLicense, nil, @"授权状态未发生变化");
+                    NSLog(@"[zonoemenu][auth-v2][ACTIVATION_GATE] rejected authorized=%d state_changed=%d raw_message=%@", afterAuthorized, stateChanged, raw);
+                    [self presentCardPromptForUDID:udid host:nil message:ZONUserMessage(@"", raw)];
+                    return;
+                }
+
+                NSLog(@"[zonoemenu][auth-v2][ACTIVATION_GATE] passed; entering runtime-config + verify");
+                [self fetchConfigAndVerifyUDID:udid card:card license:afterLicense host:nil isNewActivation:YES];
             }];
         }];
     }];
@@ -169,8 +260,9 @@ static NSString *ZONSavedCardTransientErrorMessage(NSError *error) {
 
 - (void)verifySavedCard:(NSString *)card udid:(NSString *)udid host:(UIViewController *)host {
     [[ZONAuthV2API sharedAPI] fetchLicenseForUDID:udid completion:^(NSDictionary *license, NSError *error) {
+        NSDictionary *licenseResponse = license ?: @{};
         if (error) {
-            NSString *raw = [license[@"message"] isKindOfClass:NSString.class] ? license[@"message"] : (error.localizedDescription ?: @"授权验证失败");
+            NSString *raw = ZONActivationMessage(nil, licenseResponse, error, @"授权验证失败");
             if (ZONLicenseHTTPErrorInvalidatesSavedCard(error)) {
                 NSLog(@"[zonoemenu][auth-v2] saved-card /apiface rejected status=%ld raw_message=%@; clearing card only", (long)error.code, raw);
                 [ZONAuthV2Storage clearCard];
@@ -182,7 +274,17 @@ static NSString *ZONSavedCardTransientErrorMessage(NSError *error) {
             [self showMessage:ZONSavedCardTransientErrorMessage(error) title:@"验证失败" completion:nil];
             return;
         }
-        [self fetchConfigAndVerifyUDID:udid card:card license:license ?: @{} host:nil isNewActivation:NO];
+
+        if (!ZONLicenseIsAuthorized(licenseResponse)) {
+            NSString *raw = ZONActivationMessage(nil, licenseResponse, nil, @"授权状态无效");
+            NSLog(@"[zonoemenu][auth-v2] saved-card /apiface returned HTTP success but license is not authorized; clearing card only raw_message=%@", raw);
+            [ZONAuthV2Storage clearCard];
+            [self presentCardPromptForUDID:udid host:nil message:ZONUserMessage(@"license_invalid", raw)];
+            return;
+        }
+
+        NSLog(@"[zonoemenu][auth-v2] saved-card license authorized; entering runtime-config + verify");
+        [self fetchConfigAndVerifyUDID:udid card:card license:licenseResponse host:nil isNewActivation:NO];
     }];
 }
 
@@ -203,6 +305,7 @@ static NSString *ZONSavedCardTransientErrorMessage(NSError *error) {
             return;
         }
 
+        NSLog(@"[zonoemenu][auth-v2][VERIFY_CONFIG] ready dylib_key=%@", ZONString(ZONFirstValueForKeys(effectiveConfig, @[@"dylib_key"])));
         [[ZONAuthV2Verify sharedVerifier] verifyUDID:udid runtimeConfig:effectiveConfig completion:^(NSDictionary *response, NSError *verifyError) {
             if (verifyError && !response) {
                 [self handleVerifyFailureResponse:nil error:verifyError udid:udid];
@@ -211,6 +314,7 @@ static NSString *ZONSavedCardTransientErrorMessage(NSError *error) {
 
             BOOL ok = [response[@"ok"] respondsToSelector:@selector(boolValue)] && [response[@"ok"] boolValue];
             NSString *action = [response[@"action"] isKindOfClass:NSString.class] ? response[@"action"] : @"";
+            NSLog(@"[zonoemenu][auth-v2][VERIFY] ok=%d code=%@ action=%@", ok, ZONString(response[@"code"]), action);
 
             if (ok && ![action isEqualToString:@"block"]) {
                 [ZONAuthV2Storage setLastVerify:response];
