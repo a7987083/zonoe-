@@ -1,5 +1,20 @@
 # CHANGELOG_DEV
 
+## 2026-09-29 — v1_p79_7 Auth Semantics + Reset Scope — CI PASSED / DEVICE PENDING
+- Development branch: `work/p79.7-auth-semantics-reset-scope`; main P79 work branch fast-forwarded without force.
+- Source/build commit: `20cc0dc14e3157060d738ec8b66ef184284597bf`.
+- CI Run `36531465809` / run #25: success.
+- Artifact ID `11016299418`, digest `sha256:048d839f1080890618f342885f12ae2e28d30884463f3f0e29c74f20af77aa1e`.
+- Raw CI dylib SHA256: `d6c74b0cb3a7f9f9318c1f1ed805690aaecda2ef01be915b718deb9f5dc707f9`.
+- Added `ZONAuthV2BindingProbe`: before re-activating a card on an already-authorized UDID, query the compatibility `/authorization` endpoint with `code + udid`; only structured same-binding evidence may skip `/appstore` and continue to Verify. Unknown/not-bound results keep the strict P79.6 activation path.
+- `Authorization does not apply to this App` / `app_not_authorized` is now treated as a card-input validation failure: clear the saved card and return to the original card prompt instead of showing a separate terminal alert.
+- Authorization reset now deletes complete authorization-related Generic Password services visible to the current process rather than only selected accounts. This can cover records exposed through an actually shared Keychain access group, but cannot delete another App's isolated access group without matching entitlements or a server-side revoke API.
+- Raw CI build still reported `verify_secret_configured=0`; source remains placeholder-only.
+- Controlled final test artifact received equal-length post-build injection of the user-provided test Verify Secret into both arm64/arm64e slices: placeholder remaining `0`, Secret occurrences `2`, size unchanged, 128 bytes differ from raw CI binary.
+- Controlled final test dylib SHA256: `4ea75bea7c8a1929483d9f404aa9c47ab3be6e50cf7cafca5679740b926c23b8`.
+- Real/test Verify Secret is intentionally not committed to public Git history.
+- Device validation required for: same card + same UDID reuse, wrong/nonexistent card prompt behavior, App mismatch returning to the same prompt, and authorization reset behavior across Apps/access groups.
+
 ## 2026-09-29 — v1_p79_6 Server-Driven Auth Activation Gate — CI PASSED / DEVICE PENDING
 - Main work branch: `work/p79-server-driven-auth-isolation-v1`.
 - Development branch: `work/p79.6-saved-card-ci-contract`.
@@ -45,7 +60,7 @@
 - Added `ZONGameDataResetService` as a pure Foundation reset engine.
 - Removed both historical 5-second clear-game-data timers.
 - Added background cleanup, real stage display, explicit NSError propagation, verification, and success-controlled exit.
-- Device test found that `Library/Caches` may remain/in-use while the app is alive; P64 incorrectly treated that runtime directory removal failure as fatal.
+- Device test found that `Library/Caches` may remain/in-use while the app was alive; P64 incorrectly treated that runtime directory removal failure as fatal.
 - P64 was not promoted and is superseded by P64a.
 
 ## 2026-09-20 — P63 Six Button Service Boundary — DEVICE PASSED
