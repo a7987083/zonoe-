@@ -7,12 +7,21 @@ NSString * const ZONFeatureLegacyTagKey = @"legacyTag";
 NSString * const ZONFeatureKindKey = @"kind";
 NSString * const ZONFeatureRiskKey = @"risk";
 NSString * const ZONFeatureMigratedKey = @"migrated";
+NSString * const ZONFeatureRequiredMenuPermissionKey = @"requiredMenuPermission";
+NSString * const ZONFeatureRequiredActionPermissionKey = @"requiredActionPermission";
 
 NSString * const ZONSectionIdentifierKey = @"identifier";
 NSString * const ZONSectionTitleKey = @"title";
 NSString * const ZONSectionDetailKey = @"detail";
 NSString * const ZONSectionStateKey = @"stateKey";
 NSString * const ZONSectionRendererKey = @"renderer";
+
+static BOOL ZONPermissionEnabled(NSDictionary<NSString *, id> *permissions, NSString *key)
+{
+    if (key.length == 0) return YES;
+    id value = [permissions isKindOfClass:NSDictionary.class] ? permissions[key] : nil;
+    return [value respondsToSelector:@selector(boolValue)] && [value boolValue];
+}
 
 NSArray<NSDictionary<NSString *, id> *> *ZONBuiltInSectionMetadata(void)
 {
@@ -35,7 +44,7 @@ NSArray<NSDictionary<NSString *, id> *> *ZONBuiltInFeatureMetadata(void)
     dispatch_once(&onceToken, ^{
         features = @[
             @{ ZONFeatureIdentifierKey:@"base.remote-download", ZONFeatureTitleKey:@"远程下载", ZONFeatureSectionKey:@"基础功能", ZONFeatureLegacyTagKey:@1, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskLow), ZONFeatureMigratedKey:@YES },
-            @{ ZONFeatureIdentifierKey:@"base.cloud-save", ZONFeatureTitleKey:@"VIP云存档", ZONFeatureSectionKey:@"基础功能", ZONFeatureLegacyTagKey:@2, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskHigh), ZONFeatureMigratedKey:@YES },
+            @{ ZONFeatureIdentifierKey:@"base.cloud-save", ZONFeatureTitleKey:@"VIP云存档", ZONFeatureSectionKey:@"基础功能", ZONFeatureLegacyTagKey:@2, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskHigh), ZONFeatureMigratedKey:@YES, ZONFeatureRequiredMenuPermissionKey:@"extra_menu", ZONFeatureRequiredActionPermissionKey:@"extra_features" },
             @{ ZONFeatureIdentifierKey:@"base.local-files", ZONFeatureTitleKey:@"浏览本地文件", ZONFeatureSectionKey:@"基础功能", ZONFeatureLegacyTagKey:@3, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskLow), ZONFeatureMigratedKey:@YES },
 
             @{ ZONFeatureIdentifierKey:@"data.backup-save", ZONFeatureTitleKey:@"备份存档", ZONFeatureSectionKey:@"数据功能", ZONFeatureLegacyTagKey:@100, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskLow), ZONFeatureMigratedKey:@YES },
@@ -69,6 +78,22 @@ NSArray<NSDictionary<NSString *, id> *> *ZONFeatureMetadataForSection(NSString *
         }
     }
     return [matches copy];
+}
+
+BOOL ZONFeatureIsVisibleWithPermissions(NSDictionary<NSString *, id> *feature,
+                                        NSDictionary<NSString *, id> *permissions)
+{
+    NSString *required = [feature[ZONFeatureRequiredMenuPermissionKey] isKindOfClass:NSString.class]
+        ? feature[ZONFeatureRequiredMenuPermissionKey] : @"";
+    return ZONPermissionEnabled(permissions, required);
+}
+
+BOOL ZONFeatureIsActionAllowedWithPermissions(NSDictionary<NSString *, id> *feature,
+                                              NSDictionary<NSString *, id> *permissions)
+{
+    NSString *required = [feature[ZONFeatureRequiredActionPermissionKey] isKindOfClass:NSString.class]
+        ? feature[ZONFeatureRequiredActionPermissionKey] : @"";
+    return ZONPermissionEnabled(permissions, required);
 }
 
 BOOL ZONFeatureRegistryHasUniqueIdentifiersAndTags(void)
