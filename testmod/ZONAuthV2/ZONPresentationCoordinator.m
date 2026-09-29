@@ -117,7 +117,11 @@ static const NSUInteger ZONPresentationMaxRetries = 20;
     if ([vc isKindOfClass:UITabBarController.class]) {
         return [self topControllerFrom:((UITabBarController *)vc).selectedViewController];
     }
-    for (UIViewController *child in vc.children.reverseObjectEnumerator) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    NSArray<UIViewController *> *children = vc.childViewControllers;
+#pragma clang diagnostic pop
+    for (UIViewController *child in children.reverseObjectEnumerator) {
         UIView *view = child.viewIfLoaded;
         if (view.window) {
             UIViewController *candidate = [self topControllerFrom:child];
