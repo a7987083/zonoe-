@@ -1,6 +1,7 @@
 #import "ZONAuthorizationCoordinator.h"
 #import "../category/getKeychain.h"
 #import "../ZONAuthV2/ZONAuthV2Flow.h"
+#import "../ZONAuthV2/ZONAuthV2Storage.h"
 #import "JDStatusBarNotification.h"
 #import "ZonoeUDIDAPI.h"
 #import "ZONLaunchTrace.h"
@@ -44,6 +45,12 @@ static void ZONContinueCustomerAuthorization(NSString *udid, BOOL newlyFetched)
                               5.0);
         return;
     }
+
+    // P79.8b persistence cleanup starts only after DZUDID is durably confirmed.
+    // This leaves menu/runtime preferences untouched while removing obsolete AuthV2,
+    // legacy authorization, and completed UDID-bridge residue.
+    [ZONAuthV2Storage purgeLegacyPersistentState];
+    NSLog(@"[zonoemenu][auth-v2][P79.8B_PERSISTENCE] DZUDID confirmed; legacy auth/defaults residue purged");
 
     if (newlyFetched) {
         NSString *status = [NSString stringWithFormat:
