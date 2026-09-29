@@ -2,6 +2,30 @@
 #import "../category/getKeychain.h"
 #import "../菜单/ZONKeychain.h"
 #import "../ZONAuthV2/ZONAuthV2Storage.h"
+#import <Security/Security.h>
+
+static BOOL ZONDeleteAllVisibleGenericPasswordsForService(NSString *service, NSError **error)
+{
+    if (!service.length) return YES;
+    NSDictionary *query = @{
+        (__bridge id)kSecClass: (__bridge id)kSecClassGenericPassword,
+        (__bridge id)kSecAttrService: service,
+    };
+    OSStatus status = SecItemDelete((__bridge CFDictionaryRef)query);
+    if (status == errSecSuccess || status == errSecItemNotFound) return YES;
+
+    if (error) {
+        NSString *message = nil;
+        if (@available(iOS 11.3, *)) {
+            message = CFBridgingRelease(SecCopyErrorMessageString(status, NULL));
+        }
+        *error = [NSError errorWithDomain:@"com.zonoe.authorization-reset"
+                                     code:status
+                                 userInfo:@{NSLocalizedDescriptionKey: message ?: @"Keychain 授权记录清理失败",
+                                            @"service": service}];
+    }
+    return NO;
+}
 
 @implementation ZONAuthorizationResetService
 
@@ -10,8 +34,6 @@
     if (error) *error = nil;
 
     NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;
-
-    // Preserve the exact P62 deletekm UserDefaults clear set.
     NSArray<NSString *> *userDefaultsKeys = @[
         @"zonoeudid",
         @"卡密",
@@ -22,19 +44,15 @@
         [defaults removeObjectForKey:key];
     }
 
-    // Preserve the exact P62 deletekm getKeychain clear set.
     NSArray<NSString *> *legacyKeychainKeys = @[
         @"SJUSERID",
         @"ShiSanGeDZKM",
         @"rjyyz",
+        @"DZUDID",
     ];
     for (NSString *key in legacyKeychainKeys) {
         [getKeychain removeKeychainDataForKey:key];
     }
-
-    // P62 coordinator reset extension: clear the machine-code cache as part
-    // of the same atomic reset API instead of relying on runtime swizzling.
-    [getKeychain removeKeychainDataForKey:@"DZUDID"];
 
     NSArray<NSString *> *bridgeKeys = @[
         @"zonoe.udid.bridge.value",
@@ -46,18 +64,29 @@
         [defaults removeObjectForKey:key];
     }
 
-    // P79 AuthV2 reset: clear the new Keychain-backed card/UDID and
-    // authorization-derived local state. Runtime/bootstrap LKG is intentionally
-    // kept because it is transport/config cache, not a user's authorization.
     [ZONAuthV2Storage clearAll];
+
+    // Delete the whole authorization service surface visible to this process,
+    // not only one account. This also clears records in any shared Keychain
+    // access group that the current host App is actually entitled to access.
+    NSMutableArray<NSString *> *services = [NSMutableArray arrayWithArray:legacyKeychainKeys];
+    [services addObject:@"com.zonoe.auth.v2"];
+    [services addObject:@"com.china.TestKeyChain"];
+
+    NSError *bulkDeleteError = nil;
+    for (NSString *service in services) {
+        if (!ZONDeleteAllVisibleGenericPasswordsForService(service, &bulkDeleteError)) {
+            NSLog(@"[zonoemenu][authorization-reset] bulk Keychain delete failed service=%@ error=%@", service, bulkDeleteError);
+            if (error) *error = bulkDeleteError;
+            return NO;
+        }
+    }
 
     NSError *keychainError = nil;
     BOOL keychainOK = [ZONKeychain removeItemForAccount:@"UDID"
                                                 service:@"com.china.TestKeyChain"
                                                   error:&keychainError];
 
-    // The old coordinator called synchronize after its bridge-cache cleanup.
-    // Keep that effective P62 behavior here.
     [defaults synchronize];
 
     if (!keychainOK) {
