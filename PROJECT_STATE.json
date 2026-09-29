@@ -4,13 +4,13 @@
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
   "current_work_branch": "work/p79-server-driven-auth-isolation-v1",
-  "current_version": "v1_p79_9",
-  "current_phase": "p79_9_udid_first_authorization_gate",
+  "current_version": "v1_p79_10",
+  "current_phase": "p79_10_server_authoritative_access_model",
   "phase_status": "ci_passed_device_pending",
   "last_device_verified_code_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
   "last_device_verified_version": "v1_p64a",
-  "last_ci_run_id": 36564346565,
-  "last_ci_run_number": 29,
+  "last_ci_run_id": 36567247825,
+  "last_ci_run_number": 31,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
@@ -21,64 +21,59 @@
     "ci_run_id": 35524126925,
     "device_status": "passed"
   },
-  "p79_7": {
-    "version": "v1_p79_7",
-    "status": "device_failed_same_card_same_udid",
-    "final_test_dylib_sha256": "4ea75bea7c8a1929483d9f404aa9c47ab3be6e50cf7cafca5679740b926c23b8",
-    "root_cause": "legacy /authorization probe did not prove same binding before /appstore"
-  },
-  "p79_8": {
-    "version": "v1_p79_8",
-    "status": "superseded_before_device_by_requirement_correction",
-    "logic_commit": "608a5bbb1c584e551efe6bffbce088bcf99280b2",
-    "build_commit": "702f7011bda568dffbe57c1ad3ca6d7d0feebc40",
-    "ci_run_id": 36560746520,
-    "final_test_dylib_sha256": "12cac6f3a9b7ce9da1ad5f27f9364606c42f52eb3311dd36e2308c5cd8a8f723",
-    "reason": "requirement clarified: a newly installed App must query authorization by UDID before any card prompt; card is only for first activation"
-  },
   "p79_9": {
-    "name": "udid_first_authorization_gate",
     "version": "v1_p79_9",
-    "status": "ci_passed_device_pending",
+    "status": "device_failed_authorization_parser",
     "logic_commit": "675621f8264e228fc1d578301b17f49e9101a16b",
     "build_commit": "77db45077f6e22e54b7fa9e8c5a0a3924a65747a",
     "ci_run_id": 36564346565,
-    "ci_run_number": 29,
-    "ci_status": "success",
-    "artifact_id": 11031705119,
-    "artifact_digest": "sha256:05393223053e999500028f64d8143c84191666016a4441adf4b4cf5f35b5bd23",
-    "ci_dylib_sha256": "57a81062e35556b7092fbabaa6d98a8a90ea3796a3cbe8c3c27a3cc39f9e06c7",
-    "ci_verify_secret_configured": false,
     "final_test_dylib_sha256": "75b28c007ee6171fe506af68a76ccfd008f1dd07226deab7c227a54c3dec721b",
+    "root_cause": "client inferred authorization from scope/type/expire instead of consuming server-calculated access_level/permissions, so an already-activated UDID could still be treated as unactivated and receive a card prompt"
+  },
+  "p79_10": {
+    "name": "server_authoritative_access_model",
+    "version": "v1_p79_10",
+    "status": "ci_passed_device_pending",
+    "logic_commit": "3177a4e8dc4ceeaabd97ecdac87a7266b201566a",
+    "build_commit": "533af1abd09bb2fcf0701ca05c4370d740129459",
+    "ci_run_id": 36567247825,
+    "ci_run_number": 31,
+    "ci_status": "success",
+    "artifact_id": 11032596408,
+    "artifact_digest": "sha256:0afa2b4c1066b011f0cde87e03ca5680a8d635a0f5a3784b1e9565546d1f701a",
+    "ci_dylib_sha256": "af13c7a69f4a30cb5333d1f04917998f738ba513ca19ea94cf6a24e1dc775552",
+    "ci_verify_secret_configured": false,
+    "final_test_dylib_sha256": "6e0a29487b5e5f8c2f9392203e306c59de8140eb2983e5f59f28821f42ebd9e5",
     "final_test_verify_secret_configured": true,
     "placeholder_remaining": 0,
     "secret_occurrences": 2,
+    "authorization_contract": {
+      "bootstrap_url": "https://raw.githubusercontent.com/a7987083/zonoemenu-config/main/bootstrap/zonoe.main.json",
+      "business_api_base": "https://app3.zonoeios.xyz",
+      "license_path": "/index/index/apiface",
+      "client_consumes": ["access_level", "permissions"],
+      "accepted_access_levels": ["global_plus", "app_plus", "basic"],
+      "blocked_access_level": "block",
+      "priority": "global_plus > app_plus > basic > block",
+      "rule": "client must not infer card type from scope/type/expire"
+    },
     "startup_contract": [
       "acquire UDID first",
       "query /apiface by UDID before reading or requesting a card",
-      "prefer active authorization scope source/Plus (1), then apps (3), then verify-only (2)",
-      "if any supported active authorization exists, continue Runtime Config + Verify without /appstore",
-      "only when UDID has no active authorization, clear stale local card and show card activation prompt",
+      "if access_level is global_plus, app_plus or basic, continue Runtime Config + Verify without card prompt",
+      "only when the server returns no usable authorization/block/missing access level does the activation card prompt appear",
       "network/5xx lookup failure must not be treated as no authorization"
     ],
-    "protocol": {
-      "bootstrap_url": "https://raw.githubusercontent.com/a7987083/zonoemenu-config/main/bootstrap/zonoe.main.json",
-      "verify_endpoint": "https://app3.zonoeios.xyz/index/dylib_verify/verify",
-      "dylib_key": "zonoe.main",
-      "dylib_version": "1",
-      "dylib_build": "",
-      "protocol_version": 2
-    },
     "device_verification_required": [
-      "fresh App + UDID with Plus authorization enters Verify without card prompt",
-      "fresh App + UDID with matching specified-App authorization enters Verify without card prompt",
-      "fresh App + UDID with verify-only authorization enters Verify without card prompt",
-      "UDID with no active authorization shows card prompt",
+      "fresh App + already-activated UDID returns access_level and does not show card prompt",
+      "global_plus proceeds directly to Verify",
+      "app_plus proceeds directly to Verify and Verify decides current-App applicability",
+      "basic proceeds directly to Verify",
+      "block/no authorization shows card prompt",
       "lookup failure does not show card prompt",
-      "App mismatch returns to the existing card prompt",
-      "authorization reset cross-App behavior remains pending entitlement/server verification"
+      "first card activation is re-read through /apiface and accepted only from server access_level"
     ]
   },
   "secret_storage_policy": "test/real Verify Secret is injected only into the controlled final artifact and is not committed to public Git history",
-  "next_task": "Install the controlled v1_p79_9 Secret-configured dylib and test fresh-App UDID-first behavior for all three card scopes."
+  "next_task": "Install the controlled v1_p79_10 Secret-configured dylib and verify that an already-activated UDID on a newly installed App bypasses the card prompt based on server access_level."
 }
