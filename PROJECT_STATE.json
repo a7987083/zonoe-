@@ -4,30 +4,29 @@
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
   "current_work_branch": "work/p79.8-udid-first-rebuild",
-  "current_version": "v1_p79_8c",
-  "current_phase": "p79_8c_server_driven_menu_permissions",
+  "current_version": "v1_p79_8d",
+  "current_phase": "p79_8d_injected_passive_satella_trigger",
   "phase_status": "ci_passed_device_pending",
   "functional_baseline": {
     "authorization_version": "v1_p79_8a",
     "authorization_device_status": "passed",
     "persistence_version": "v1_p79_8b",
-    "persistence_device_status": "pending"
+    "persistence_device_status": "pending",
+    "menu_permission_version": "v1_p79_8c",
+    "menu_permission_device_status": "pending"
   },
   "implementation": {
-    "feature_permission_commit": "dffe27a0f5101591d0a57774cf0041b64f06349d",
-    "menu_filter_commit": "0d7c93c434084c260e240b824980cdb684fd25c9",
-    "action_permission_commit": "dd75f3f6267390268b12e467b03efa83d78f5d7d",
-    "cloud_fresh_verify_commit": "dbe02798bd0e2d5e4d55bde950100d510d40a93e",
-    "version_commit": "4a2c35923c646917e912ca0758294df98460cccd"
+    "passive_satella_trigger_commit": "985f85073d89cb46aff8fd940ee50f1ed6175f3f",
+    "version_commit": "6ab1494bb11afc228fe78cd7087b97c4c04d9b2d"
   },
-  "last_ci_run_id": 36591707184,
-  "last_ci_run_number": 37,
+  "last_ci_run_id": 36604169367,
+  "last_ci_run_number": 38,
   "last_ci_status": "success",
-  "artifact_id": 11043668689,
-  "artifact_digest": "sha256:c6e1f80c902508e27d527a4079f2d72ad53767438ca24278405010d93f22a66e",
-  "raw_ci_dylib_sha256": "de3be9f75f5fb6639c84c283252bd5e184b1cde0d512b1cc3ca6c48ba314c153",
-  "final_test_dylib_sha256": "7d8c80d317810eb4331db02fa216697f3c869fdfa7cacbfb0499c936d60f1651",
-  "final_test_zip_sha256": "203f622b85c69703cc91d63c4820e8e975a77b9b96897b1c3256a2317da7c386",
+  "artifact_id": 11050622646,
+  "artifact_digest": "sha256:16569dbb378372b5372dea8e3312549d1fe632f3b85b831dc3d8027ffb445b6e",
+  "raw_ci_dylib_sha256": "1c7e788f60c79679af7cf06b8427b559364fa7c4374901f455260c0057778d35",
+  "final_test_dylib_sha256": "bd5b3ca738d6e8041d16b57c4515dffb6f47806da412b0b5f8bd512e1f09d6cd",
+  "final_test_zip_sha256": "242a461d27a16a8758c750dbc8ac65ac12f28704996d39d8df9051e5922da3d6",
   "ci_verify_secret_configured": false,
   "final_test_verify_secret_configured": true,
   "placeholder_remaining": 0,
@@ -41,46 +40,42 @@
     "only explicit missing or expired authorization opens card input"
   ],
   "server_permission_model": {
-    "basic": {
-      "normal_menu": true,
-      "extra_menu": false,
-      "extra_features": false
-    },
-    "app_plus": {
-      "normal_menu": true,
-      "extra_menu": true,
-      "extra_features": true
-    },
-    "global_plus": {
-      "normal_menu": true,
-      "extra_menu": true,
-      "extra_features": true
-    }
+    "basic": {"normal_menu": true, "extra_menu": false, "extra_features": false},
+    "app_plus": {"normal_menu": true, "extra_menu": true, "extra_features": true},
+    "global_plus": {"normal_menu": true, "extra_menu": true, "extra_features": true}
+  },
+  "passive_satella_contract": {
+    "trigger_feature_identifier": "runtime.iap-noads",
+    "external_preload_required": true,
+    "dlopen_used": false,
+    "accepted_image_names": [
+      "1_passive.dylib",
+      "1_passive_zh.dylib",
+      "SatellaJailed_passive.dylib"
+    ],
+    "text_vmaddr_expected": 0,
+    "passive_ctor_rva": "0x847C",
+    "passive_ctor_expected_hex": "C0035FD6",
+    "init_rva": "0x888C",
+    "init_prologue_expected_hex": "FC6FBAA9FA6701A9F85F02A9F65703A9",
+    "main_thread_call": true,
+    "arm64e_function_pointer_pac": true,
+    "one_shot_per_process": true,
+    "off_deinitializes": false,
+    "missing_target_rolls_back_existing_toggle": false,
+    "log_prefix": "[zonoemenu][P79.8D_SATELLA]"
   },
   "cloud_save_contract": {
     "feature_identifier": "base.cloud-save",
-    "legacy_tag": 2,
     "menu_permission": "extra_menu",
     "action_permission": "extra_features",
-    "menu_permission_source": "session Verify response",
-    "action_permission_source": "session Verify response",
     "download_permission_source": "fresh Verify v2 before archive resolution",
-    "legacy_cloud_apiface_route_active": false,
-    "legacy_old_hostname_may_remain_in_compatibility_binary": true
+    "legacy_cloud_apiface_route_active": false
   },
   "persistence_contract": {
     "long_lived_device_identity": "DZUDID Keychain",
-    "session_only": [
-      "AuthV2 udid",
-      "AuthV2 card",
-      "lastVerify",
-      "lastActivation",
-      "lastRuntimeConfig",
-      "lastBootstrap"
-    ],
-    "persistent_auth_userdefaults": [
-      "zonoe.auth.v2.lastNoticeFingerprint"
-    ],
+    "session_only": ["AuthV2 udid", "AuthV2 card", "lastVerify", "lastActivation", "lastRuntimeConfig", "lastBootstrap"],
+    "persistent_auth_userdefaults": ["zonoe.auth.v2.lastNoticeFingerprint"],
     "menu_defaults_policy": "unchanged"
   },
   "protocol": {
@@ -94,24 +89,27 @@
     "protocol_version": 2
   },
   "binary_validation": {
-    "p79_8c_menu_permission_marker_count": 4,
-    "p79_8c_action_permission_marker_count": 2,
-    "p79_8c_cloud_permission_marker_count": 4,
+    "p79_8d_satella_marker_count": 18,
+    "accepted_target_name_occurrences_per_name": 2,
     "arm64_present": true,
     "arm64e_present": true,
     "placeholder_remaining": 0,
-    "secret_occurrences": 2
+    "secret_occurrences": 2,
+    "raw_to_final_changed_bytes": 128
   },
   "last_device_verified_version": "v1_p79_8a",
   "last_device_verified_ci_run_id": 36572203902,
   "device_status": "pending",
   "device_verification_required": [
-    "basic/verify-only does not render VIP cloud save",
-    "app_plus matched App renders and uses VIP cloud save",
-    "global_plus renders and uses VIP cloud save",
-    "permission downgrade after menu creation is rejected by fresh Verify before download",
-    "P79.8b persistence cleanup and menu preference persistence do not regress"
+    "matching injected passive dylib starts on first IAP/iGameGod switch ON",
+    "second ON in same process reports already_started and does not call init twice",
+    "missing injected target does not break existing IAP/iGameGod toggle",
+    "mismatched passive build is rejected before init call",
+    "arm64e device call succeeds with PAC-signed function pointer",
+    "P79.8c cloud permission behavior does not regress",
+    "P79.8b persistence behavior does not regress",
+    "P79.8a UDID-first authorization does not regress"
   ],
   "secret_storage_policy": "test/real Verify Secret is injected only into the controlled final artifact and is not committed to public Git history",
-  "next_task": "Install controlled v1_p79_8c and test basic vs app_plus/global_plus VIP cloud-save visibility plus fresh-Verify enforcement."
+  "next_task": "Install controlled v1_p79_8d with an externally injected matching passive Satella dylib and validate one-shot switch-triggered initialization plus inherited regressions."
 }
