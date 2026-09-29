@@ -4,13 +4,13 @@
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
   "current_work_branch": "work/p79-server-driven-auth-isolation-v1",
-  "current_development_branch": "work/p79.7-auth-semantics-reset-scope",
-  "current_version": "v1_p79_7",
-  "current_phase": "p79_7_auth_semantics_reset_scope",
+  "current_version": "v1_p79_8",
+  "current_phase": "p79_8_same_card_same_udid_license_query",
   "phase_status": "ci_passed_device_pending",
   "last_device_verified_code_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
   "last_device_verified_version": "v1_p64a",
-  "last_ci_run_id": 36531465809,
+  "last_ci_run_id": 36560746520,
+  "last_ci_run_number": 27,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
@@ -25,7 +25,7 @@
   "p79_6": {
     "name": "server_driven_auth_activation_state_gate",
     "version": "v1_p79_6",
-    "status": "superseded_by_p79_7_device_pending",
+    "status": "superseded",
     "build_commit": "ac948369ceba488ece11deb8730d8a9510687f44",
     "ci_run_id": 36523256192,
     "ci_status": "success",
@@ -34,23 +34,40 @@
   "p79_7": {
     "name": "auth_semantics_and_reset_scope",
     "version": "v1_p79_7",
-    "status": "ci_passed_device_pending",
-    "branch": "work/p79.7-auth-semantics-reset-scope",
-    "main_work_branch": "work/p79-server-driven-auth-isolation-v1",
+    "status": "device_failed_same_card_same_udid",
     "source_build_commit": "20cc0dc14e3157060d738ec8b66ef184284597bf",
     "ci_run_id": 36531465809,
-    "ci_run_number": 25,
     "ci_status": "success",
-    "artifact_id": 11016299418,
-    "artifact_digest": "sha256:048d839f1080890618f342885f12ae2e28d30884463f3f0e29c74f20af77aa1e",
-    "ci_dylib_sha256": "d6c74b0cb3a7f9f9318c1f1ed805690aaecda2ef01be915b718deb9f5dc707f9",
-    "ci_verify_secret_configured": false,
     "final_test_dylib_sha256": "4ea75bea7c8a1929483d9f404aa9c47ab3be6e50cf7cafca5679740b926c23b8",
+    "device_failure": "same card already bound to the same UDID still returned 解锁码已使用 because the compatibility /authorization probe did not provide structured binding evidence and the flow fell back to /appstore",
+    "root_cause": "P79.7 used retired /authorization compatibility surface instead of the existing AuthorizationLicense::query(code, udid) contract"
+  },
+  "p79_8": {
+    "name": "same_card_same_udid_license_query",
+    "version": "v1_p79_8",
+    "status": "ci_passed_device_pending",
+    "main_work_branch": "work/p79-server-driven-auth-isolation-v1",
+    "logic_commit": "608a5bbb1c584e551efe6bffbce088bcf99280b2",
+    "build_commit": "702f7011bda568dffbe57c1ad3ca6d7d0feebc40",
+    "ci_run_id": 36560746520,
+    "ci_run_number": 27,
+    "ci_status": "success",
+    "artifact_id": 11028839445,
+    "artifact_digest": "sha256:e76c0494f8c69668ab99001eea0a9a502ec46d47f96596742bbbeb2b8577a1f3",
+    "ci_dylib_sha256": "590f6a67e5e4faf9d6c9a2c6f6910884cbff4a15e5cf6c205fe3536be20fb9cc",
+    "ci_verify_secret_configured": false,
+    "final_test_dylib_sha256": "12cac6f3a9b7ce9da1ad5f27f9364606c42f52eb3311dd36e2308c5cd8a8f723",
     "final_test_verify_secret_configured": true,
     "placeholder_remaining": 0,
     "secret_occurrences": 2,
     "binary_patch_mode": "equal_length_post_build",
-    "secret_storage_policy": "test/real Verify Secret is injected only into the controlled final artifact and is not committed to the public repository",
+    "binding_probe": {
+      "endpoint": "/index/index/license",
+      "server_contract": "AuthorizationLicense::query(code, udid)",
+      "bound_condition": "exact card + exact UDID + jh=1 + active authorization",
+      "fallback": "new/unused/mismatched/expired results continue through canonical /appstore activation flow",
+      "retired_probe": "/authorization"
+    },
     "protocol": {
       "bootstrap_url": "https://raw.githubusercontent.com/a7987083/zonoemenu-config/main/bootstrap/zonoe.main.json",
       "verify_endpoint": "https://app3.zonoeios.xyz/index/dylib_verify/verify",
@@ -59,21 +76,15 @@
       "dylib_build": "",
       "protocol_version": 2
     },
-    "changes": [
-      "same card + same UDID binding probe before reactivation",
-      "App mismatch returns to existing card prompt",
-      "authorization reset deletes all authorization-related Keychain services visible to current process"
-    ],
     "device_status": "pending",
     "device_verification_required": [
-      "same valid card + same UDID authenticates without used-card rejection",
-      "different used card cannot borrow existing UDID authorization",
-      "invalid/nonexistent card remains in card input flow",
+      "same valid card + same UDID reaches Verify without /appstore used-card rejection",
+      "different used card cannot borrow current UDID authorization",
+      "unused valid card still uses canonical /appstore activation path",
       "card for another App returns to the same card prompt",
-      "valid current-App card reaches Verify then notice/update/icon",
-      "clear authorization removes current-App visible authorization records",
-      "cross-App reset behavior is verified against actual Keychain access-group entitlements"
+      "authorization reset behavior is rechecked across Apps/access groups"
     ]
   },
-  "next_task": "Install the controlled v1_p79_7 Secret-configured dylib and run the scoped real-device regression."
+  "secret_storage_policy": "test/real Verify Secret is injected only into the controlled final artifact and is not committed to public Git history",
+  "next_task": "Install the controlled v1_p79_8 Secret-configured dylib and verify same-card/same-UDID reuse first."
 }
