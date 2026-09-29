@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - work/p79-server-driven-auth-isolation-v1
+      - work/p79.8-udid-first-rebuild
     paths:
       - 'VERSION'
       - 'testmod/ZONAuthV2/**'
