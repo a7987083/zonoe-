@@ -1,5 +1,29 @@
 # CHANGELOG_DEV
 
+## 2026-09-29 — v1_p79_8c Server-Driven Menu Permissions — CI PASSED / DEVICE PENDING
+- Branch: `work/p79.8-udid-first-rebuild`.
+- Feature permission metadata commit: `dffe27a0f5101591d0a57774cf0041b64f06349d`.
+- Menu filter commit: `0d7c93c434084c260e240b824980cdb684fd25c9`.
+- Action permission commit: `dd75f3f6267390268b12e467b03efa83d78f5d7d`.
+- Fresh cloud Verify commit: `dbe02798bd0e2d5e4d55bde950100d510d40a93e`.
+- VERSION/build commit: `4a2c35923c646917e912ca0758294df98460cccd`; VERSION=`v1_p79_8c`.
+- CI Run `36591707184` / #37: success.
+- Artifact ID `11043668689`, digest `sha256:c6e1f80c902508e27d527a4079f2d72ad53767438ca24278405010d93f22a66e`.
+- Raw CI dylib SHA256: `de3be9f75f5fb6639c84c283252bd5e184b1cde0d512b1cc3ca6c48ba314c153`.
+- Controlled final dylib SHA256: `7d8c80d317810eb4331db02fa216697f3c869fdfa7cacbfb0499c936d60f1651`.
+- Verified backend permission semantics from `DylibRuntimeAccessService`: `basic` has `normal_menu=true`, `extra_menu=false`, `extra_features=false`; `app_plus/global_plus` have all three true.
+- Client does not infer cloud-save rights from card scope/type/access-level ranking; it consumes the server `permissions` dictionary.
+- `base.cloud-save` now declares `requiredMenuPermission=extra_menu` and `requiredActionPermission=extra_features`.
+- Menu renderer hides `VIP云存档` when `extra_menu` is absent/false, so verify-only/basic keeps the normal menu but does not see the VIP cloud button.
+- Action dispatcher independently checks `extra_features` and returns handled on denial, preventing legacy tag fallback from bypassing the permission gate.
+- `ZONSaveTransferCoordinator` checks the current session Verify result before opening cloud-save UI and performs a fresh Verify v2 request before each actual cloud download selection.
+- Fresh Verify must return success and `extra_features=true` before archive URL resolution/download proceeds.
+- Current P79.8c cloud-save route no longer passes the legacy `https://app.zonoeios.xyz/index/index/apiface?udid=` entitlement endpoint; old hostname strings may still exist in compiled legacy Bsphp/UDID fallback code that remains for compatibility.
+- P79.8a UDID-first authorization and P79.8b persistence semantics were intentionally preserved.
+- Binary validation: arm64 + arm64e; `P79.8C_MENU_PERMISSION` marker count 4, `P79.8C_ACTION_PERMISSION` count 2, `P79.8C_CLOUD_PERMISSION` count 4.
+- Controlled final artifact: placeholder remaining `0`, Verify Secret occurrences `2`, size unchanged from raw, 128 bytes differ from raw CI binary.
+- Device test priority: basic card must hide VIP cloud-save; matched app/global Plus must show it; permission downgrade after menu creation must be blocked by fresh Verify before download.
+
 ## 2026-09-29 — v1_p79_8b Persistence Cleanup — CI PASSED / DEVICE PENDING
 - Branch: `work/p79.8-udid-first-rebuild`.
 - Functional baseline is the device-passed P79.8a UDID-first authorization flow; authorization decision semantics were intentionally not changed.
