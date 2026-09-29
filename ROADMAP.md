@@ -2,35 +2,43 @@
 
 > Canonical refactor plan for `zonoemenu`. New functional stages increment the numeric phase. Same-stage fixes use `a/b/c/d` suffixes.
 
-## Current active stage — P79.7 Auth Semantics + Reset Scope — CI PASSED / DEVICE PENDING
-- VERSION: `v1_p79_7`.
+## Current active stage — P79.8 Same-Card/Same-UDID License Query — CI PASSED / DEVICE PENDING
+- VERSION: `v1_p79_8`.
 - Main P79 work branch: `work/p79-server-driven-auth-isolation-v1`.
-- Development branch: `work/p79.7-auth-semantics-reset-scope`.
-- Source/build commit: `20cc0dc14e3157060d738ec8b66ef184284597bf`.
-- CI Run `36531465809` / run #25: success.
-- Raw artifact ID `11016299418`; raw CI dylib SHA256 `d6c74b0cb3a7f9f9318c1f1ed805690aaecda2ef01be915b718deb9f5dc707f9`.
-- CI still reported `verify_secret_configured=0`; raw artifact is not the final Verify acceptance artifact.
-- Controlled final test dylib has the user-provided test Verify Secret injected into both arm64/arm64e slices; placeholder remaining `0`; final SHA256 `4ea75bea7c8a1929483d9f404aa9c47ab3be6e50cf7cafca5679740b926c23b8`.
+- Logic commit: `608a5bbb1c584e551efe6bffbce088bcf99280b2`.
+- Build/version commit: `702f7011bda568dffbe57c1ad3ca6d7d0feebc40`.
+- CI Run `36560746520` / run #27: success.
+- Raw artifact ID `11028839445`; raw CI dylib SHA256 `590f6a67e5e4faf9d6c9a2c6f6910884cbff4a15e5cf6c205fe3536be20fb9cc`.
+- CI reported `verify_secret_configured=0`; raw artifact is not the final Verify acceptance artifact.
+- Controlled final test dylib has the test Verify Secret injected into both arm64/arm64e slices; placeholder remaining `0`; final SHA256 `12cac6f3a9b7ce9da1ad5f27f9364606c42f52eb3311dd36e2308c5cd8a8f723`.
 - Public source remains placeholder-only; never commit the real/test Secret.
 
-### P79.7 behavior contract
-1. **Same card + same UDID reuse**: when the UDID is already authorized, query the compatibility `/authorization` endpoint with `code + udid`. Only structured evidence that the submitted card is already bound to this UDID may skip `/appstore` and proceed to Runtime Config + Verify. Unknown/not-bound results retain P79.6 strict activation.
-2. **App mismatch UX**: Verify `app_not_authorized` / `Authorization does not apply to this App` clears the saved card and returns to the original card input with the error message; it must not terminate in a separate standalone alert.
-3. **Authorization reset scope**: reset deletes authorization-related Generic Password services visible to the current process, not only selected accounts. Cross-App isolated Keychain access groups remain outside the current App's entitlement boundary; a shared access group or server revoke API is required for true cross-App deletion.
+### P79.8 correction over P79.7
+- P79.7 device test failed: a card already bound to the same UDID still showed `解锁码已使用`.
+- Root cause: P79.7 queried the retired `/authorization` compatibility surface. It did not provide the structured same-binding evidence expected by the client, so the client fell back to `/appstore`, whose one-time activation contract correctly returned `解锁码已使用` for `jh=1`.
+- P79.8 removes that dependency and probes `/index/index/license`, whose server path uses `AuthorizationLicense::query(code, udid)`.
+- The server query is exact: it requires the submitted card code, the submitted UDID, and `jh=1`; an active authorization is then required before the client may skip `/appstore`.
+- New/unused/mismatched/expired results still run the canonical P79.6 `/appstore` activation flow. A generic `解锁码已使用` message is never sufficient to authorize.
 
-### P79.7 device gates
-- Same valid card + same UDID authenticates without being rejected as merely “used”.
-- Different/used/mismatched/nonexistent card cannot borrow an existing UDID authorization.
-- A card for another App returns to the same card prompt with “当前卡密不适用于此应用”.
-- Valid current-App card reaches Verify and continues success → notice → update → icon.
-- Clear authorization removes all current-process-visible legacy/AuthV2 authorization records and exits cleanly.
-- Test reset behavior across at least two Apps; if the second App uses an isolated Keychain access group, record that as an entitlement/server scope limitation rather than claiming global deletion.
+### P79.8 device gates
+- Same valid card + same UDID must reach Runtime Config + Verify without `/appstore` used-card rejection.
+- Different used card must not borrow the existing UDID authorization.
+- Unused valid card must still activate through `/appstore` and pass the P79.6 before/after authorization gate.
+- Card for another App must return to the same card prompt with `当前卡密不适用于此应用`.
+- Clear authorization must remove all current-process-visible legacy/AuthV2 authorization records; cross-App isolated Keychain access groups remain an entitlement/server boundary.
 
-## P79.6 baseline retained beneath P79.7
+## P79.7 — DEVICE FAILED / SUPERSEDED
+- VERSION: `v1_p79_7`.
+- CI Run `36531465809`: success.
+- Controlled final dylib SHA256 `4ea75bea7c8a1929483d9f404aa9c47ab3be6e50cf7cafca5679740b926c23b8`.
+- App-mismatch prompt routing and broadened visible-Keychain reset remain carried forward.
+- Same-card reuse implementation based on `/authorization` is retired and must not be restored.
+
+## P79.6 baseline retained beneath P79.8
 - P79.6 restored `/apiface before → /appstore → /apiface after → authorized + stateChanged gate → Runtime Config → Verify v2`.
 - `/appstore` HTTP success is transport success only; do not infer business activation from legacy numeric `code` alone.
 - Saved-card `/apiface` HTTP 200 must still contain valid authorization before Verify.
-- P79.7 layers binding reuse and prompt/reset semantics on top without removing this gate.
+- P79.8 adds precise existing-card binding reuse without weakening this gate for new cards.
 
 ## Verify protocol baseline
 - Bootstrap URL: `https://raw.githubusercontent.com/a7987083/zonoemenu-config/main/bootstrap/zonoe.main.json`
@@ -69,4 +77,4 @@
 6. Real/test Verify Secret must not be committed to public source or printed in logs.
 
 # Next Task
-Install the controlled `v1_p79_7` Secret-configured dylib and run the same-card/same-UDID, App-mismatch prompt, and authorization-reset cross-App regression. Promote only after those checks pass.
+Install the controlled `v1_p79_8` Secret-configured dylib and test same-card/same-UDID reuse first. Promote only after the full scoped regression passes.
