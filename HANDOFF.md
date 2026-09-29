@@ -6,57 +6,63 @@
 - Current branch: `work/p79.8-udid-first-rebuild`.
 - Read in this order: `PROJECT_STATE.json` → `ROADMAP.md` → `KNOWN_ISSUES.md` → `CHANGELOG_DEV.md`.
 
-## Current target — P79.8b Persistence Cleanup
-- VERSION: `v1_p79_8b`.
-- Functional baseline: device-passed `v1_p79_8a`.
-- Storage contract: `78da327ef11946d8502e77b023d1f8b823c2fad1`, `1b099d83da7ae00a5773279f755110f0c441b4d3`.
-- Cleanup integration: `d97e78c8bdedbf8efa0b87b77a0c18bf8b9266ea`.
-- Reset integration: `4a5888613f7c2c5b76e5191d2c42a9a60e491890`.
-- Build HEAD: `19d5d1e0204c84f56fc2ee330bb2371d3511d367`.
-- CI Run `36585791709` / #36: success.
-- Artifact ID `11041556869`.
-- Raw CI SHA256: `b6c3333cbce0b0ff508a11ac31a6d81ce180db4c1afd3360e86d0ed5a9ce7045`.
-- Controlled final dylib SHA256: `e363256b06e7842090103f95cc5edd14066b7eb50f144768fcd38882255bd62c`.
+## Current target — P79.8c Server-Driven Menu Permissions
+- VERSION: `v1_p79_8c`.
+- Permission metadata: `dffe27a0f5101591d0a57774cf0041b64f06349d`.
+- Menu filter: `0d7c93c434084c260e240b824980cdb684fd25c9`.
+- Action gate: `dd75f3f6267390268b12e467b03efa83d78f5d7d`.
+- Fresh cloud Verify: `dbe02798bd0e2d5e4d55bde950100d510d40a93e`.
+- Build HEAD: `4a2c35923c646917e912ca0758294df98460cccd`.
+- CI Run `36591707184` / #37: success.
+- Artifact ID `11043668689`, digest `sha256:c6e1f80c902508e27d527a4079f2d72ad53767438ca24278405010d93f22a66e`.
+- Raw CI SHA256: `de3be9f75f5fb6639c84c283252bd5e184b1cde0d512b1cc3ca6c48ba314c153`.
+- Controlled final dylib SHA256: `7d8c80d317810eb4331db02fa216697f3c869fdfa7cacbfb0499c936d60f1651`.
 - Final artifact: arm64 + arm64e; placeholder `0`; Verify Secret occurrences `2`.
 
-## Required authorization model — unchanged from P79.8a
-1. `ZONAuthorizationCoordinator` obtains or reuses the device UDID and writes `DZUDID`.
-2. `ZONAuthV2Flow::startFromViewController:udid:` immediately queries `/index/index/apiface` using that UDID.
-3. Do not use local card presence to decide startup activation.
-4. `/apiface` is the device-activation check: `code=1`, `msg=ok`, unexpired `expire` means active UDID authorization.
-5. Active UDID skips card entry and continues to Runtime Config + Verify.
-6. Verify owns current-App applicability plus `access_level` / `permissions`.
-7. Only explicit no-record or expired authorization opens card input.
-8. Network/5xx/unknown payloads are errors, not proof activation is absent.
+## Authorization model — unchanged
+1. Acquire/reuse `DZUDID` first.
+2. Query `/index/index/apiface?udid=<UDID>` before any card prompt.
+3. Active UDID authorization skips card entry and continues to Runtime Config + Verify.
+4. Verify owns current-App applicability plus `access_level` and `permissions`.
+5. Only explicit missing/expired authorization opens card input.
+6. Network/server/unknown payloads are not treated as missing activation.
 
-## P79.8b persistence rules
-- Long-lived UDID: only legacy Keychain `DZUDID`.
-- AuthV2 session-only values: `udid`, `card`, `lastVerify`, `lastActivation`, `lastRuntimeConfig`, `lastBootstrap`.
-- Only persistent AuthV2 preference: `zonoe.auth.v2.lastNoticeFingerprint` for notice de-duplication.
-- After `DZUDID` is confirmed, remove completed bridge keys: `zonoe.udid.bridge.value`, `zonoe.udid.bridge.scheme`, `zonoe.udid.bridge.requestTimestamp`, `zonoe.udid.bridge.requestNonce`.
-- Upgrade cleanup removes old authorization defaults: `到期时间`, `卡密`, `公告`, `zonoeudid`, `解锁码到期时间`, `到期弹窗`.
-- Do NOT remove or rename menu/runtime preferences such as fold-state, IAP toggle, ad toggle, and ad-speed keys.
+## Server permission model used by P79.8c
+Backend currently returns:
+- `basic`: `normal_menu=true`, `extra_menu=false`, `extra_features=false`.
+- `app_plus`: `normal_menu=true`, `extra_menu=true`, `extra_features=true`.
+- `global_plus`: `normal_menu=true`, `extra_menu=true`, `extra_features=true`.
 
-## API topology
-- Bootstrap: `https://raw.githubusercontent.com/a7987083/zonoemenu-config/main/bootstrap/zonoe.main.json`
-- Business API Base: `https://app3.zonoeios.xyz`
-- Device auth: `/index/index/apiface?udid=<UDID>`
-- Verify: `https://app3.zonoeios.xyz/index/dylib_verify/verify`
+Client rule: consume `permissions` only. Do not infer cloud-save visibility/action from `scope`, card type, or `access_level` ranking.
 
-## Device test order for P79.8b
-1. Install over a device that has previously used P79.8a/older builds.
-2. Confirm existing valid `DZUDID` still goes directly to `/apiface` and Verify without card input.
-3. Inspect Preferences after startup: AuthV2 response/config/activation/card/bridge residue should be absent; only notice fingerprint may remain from AuthV2.
-4. Confirm menu fold state remains persistent.
-5. Confirm IAP/ad toggles and ad-speed remain persistent.
-6. Trigger a notice, relaunch, and confirm the same notice does not reappear.
-7. Test fresh activation and verify no card value is persisted after success.
+## VIP cloud-save routing
+- Registry feature: `base.cloud-save`, legacy tag `2`.
+- Menu visibility requires server permission `extra_menu`.
+- Action dispatcher requires server permission `extra_features` and returns handled-on-denial to block legacy fallthrough.
+- `ZONSaveTransferCoordinator` checks the session Verify result before opening cloud-save UI.
+- Each actual cloud download selection performs a fresh Verify v2 request using `DZUDID` + current session Runtime Config.
+- Only fresh Verify success with `extra_features=true` resolves/downloads the archive.
+- The new cloud route no longer uses the legacy `app.zonoeios.xyz /apiface` entitlement request.
+- Old Bsphp/UDID fallback compatibility code is still compiled and may contain the old hostname string; do not confuse binary-string presence with the active P79.8c cloud route.
+
+## Persistence model inherited from P79.8b
+- Long-lived identity: Keychain `DZUDID` only.
+- AuthV2 `udid`, `card`, `lastVerify`, `lastActivation`, `lastRuntimeConfig`, `lastBootstrap`: process-memory only.
+- Persistent AuthV2 UserDefaults: only `zonoe.auth.v2.lastNoticeFingerprint` for notice de-duplication.
+- Menu/runtime preference keys remain untouched.
+
+## Device test order
+1. Verify-only/basic card: menu should open, `VIP云存档` should not exist.
+2. App-specific card matched to current App: `VIP云存档` should exist and work.
+3. Global Plus card: `VIP云存档` should exist and work.
+4. Open menu while entitled, then revoke/downgrade server permission and attempt a cloud download; fresh Verify must deny before archive resolution/download.
+5. Confirm normal menu items and P79.8b persistence behavior are unchanged.
 
 ## Device-passed rollback baseline
 - P79.8a / `v1_p79_8a`.
-- CI Run `36572203902` / #32: success.
+- CI Run `36572203902` / #32.
 - Controlled final SHA256: `1601c8aaf55643918d4d7d6f4ea16d45c552e6fdf1ad9c8c7a2cd9152c03fbb0`.
-- User reported real-device test normal, including fresh App + already-activated UDID skipping card input.
+- User confirmed fresh App + already-activated UDID behavior works correctly.
 
 ## Long-project rules
 - Preserve commit history.
