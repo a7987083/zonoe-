@@ -1,5 +1,25 @@
 # CHANGELOG_DEV
 
+## 2026-09-29 — v1_p79_6 Server-Driven Auth Activation Gate — CI PASSED / DEVICE PENDING
+- Main work branch: `work/p79-server-driven-auth-isolation-v1`.
+- Development branch: `work/p79.6-saved-card-ci-contract`.
+- Restored the successful standalone auth flow's activation contract: `/apiface` before state → `/appstore` transport request → `/apiface` after state → authorization + state-change gate → Runtime Config → Verify v2.
+- Added `ZONLicenseIsAuthorized`, authorization projection/fingerprint comparison, and explicit `stateChanged` gating before Verify.
+- Invalid/unchanged activation no longer falls through to Verify and gets collapsed into `Authorization does not apply to this App`.
+- Saved-card flow now also rejects HTTP-200 `/apiface` payloads whose authorization content is invalid; card is cleared while UDID is preserved.
+- Transient network/server failures still preserve the saved card.
+- Added stage logs: `BEFORE_LICENSE`, `APPSTORE`, `AFTER_LICENSE`, `ACTIVATION_GATE`, `VERIFY_CONFIG`, `VERIFY`; logs do not print Verify Secret/signature.
+- Activation-gate commit: `ad7fc577bb52b02a1c5cecaa74ef263c1f19a6a9`.
+- Build/version commit: `ac948369ceba488ece11deb8730d8a9510687f44`.
+- VERSION: `v1_p79_6`.
+- CI Run `36523256192` / run #24: success.
+- Artifact ID `11014190087`, digest `sha256:f5170fc97de9990c5be38ad04cb9d59831ca6ffc00cea796da6876cc3aa169f3`.
+- CI artifact dylib SHA256: `73ace8affac76960efc6f4fb060d4551a9c111ff3208e97ea0c64d7ff1dbc444`.
+- CI reported `verify_secret_configured=0`; therefore the raw CI artifact is not the final Verify test artifact.
+- Controlled final test artifact uses equal-length post-build injection of the user-provided test Verify Secret into both arm64/arm64e slices; placeholder remaining: 0; final SHA256: `9192a214bc7a23a0fb18aadccd72529c9404e415e3c20faab3ddb36b67974080`.
+- Real/test Verify Secret is intentionally not committed to the public repository.
+- Device validation is still required before promotion.
+
 ## 2026-09-21 — v1_p64a Runtime Directory Cleanup Fix — DEVICE PASSED / PROMOTED
 - Branch: `work/p64a-clear-game-data-runtime-directory-fix`.
 - Actual build SHA: `010f383da7f1429c4db93bfda559431e3c4080f9`.
@@ -16,7 +36,7 @@
 - A_customer `arm64 + arm64e`: PASS. Artifact `10608274021`, digest `sha256:5cc2772e8fb2794a1301ca79526ea9a375ae5686c92e9040609eb9009ab20302`, dylib SHA256 `34ef87c5be956e81764984a524c0c04428bbc83a4949e23dbc4ba19f10cfbaf9`.
 - B_debug `arm64 + arm64e`: PASS. Artifact `10608289075`, digest `sha256:c6296cb2d5ee1114501e9f35eda7e5c9cef76e9bc2657d126accb79e9bdedff8`, dylib SHA256 `335f0e3028a6bf2f9e202681487822065bdda6598a853889f9c973cd9616b379`.
 - User explicitly reported the P64a real-device regression fully normal.
-- **P64a is promoted/device-passed and is the baseline for P65.**
+- **P64a is promoted/device-passed and remains the last device-verified rollback baseline.**
 
 ## 2026-09-21 — P64 Clear Game Data Dedicated Service — CI PASSED / DEVICE FAILED
 - Historical built VERSION string: `v1_p63b`; this was a naming error. Canonical stage is P64.
@@ -29,7 +49,7 @@
 - P64 was not promoted and is superseded by P64a.
 
 ## 2026-09-20 — P63 Six Button Service Boundary — DEVICE PASSED
-- Historical built VERSION string: `v1_p63a`; this was a naming error. Canonical stage is P63.
+- Historical built VERSION string: `v1_p63a`; canonical stage is P63.
 - Runtime source commit: `170f006d7bdf3aa1ef0f51df7f81d21a86b73b7d`.
 - CI Run `35483209464`: success.
 - Added `ZONSixButtonActionService` and routed all six scoped actions through it.
@@ -48,12 +68,6 @@
 - Same-stage fixes use suffixes: `P64a → P64b → P64c`.
 - Existing commits/artifacts are not rewritten; canonical project records correct the mistaken historical P63a/P63b labels.
 
-## Next development stage — P65 Backup Engine Refactor
-- Goal: extract backup execution from `daochucd` behind a clean API/service boundary.
-- Planned cleanup: duplicate Documents/Library traversal/copy loops, repeated stat/size checks, scattered staging lifecycle, scattered include/exclude policy and silent filesystem failures.
-- Preserve existing backup UX, ZIP compatibility and restore compatibility before changing P66 restore behavior.
-- First P65 action is a full source/data-flow audit of `daochucd`, then behavior-locking tests before implementation cleanup.
-
 ## Earlier architecture cleanup
 - P60 UDID acquisition progress/manual retry: device passed.
 - P58 download lifecycle hardening: device passed.
@@ -61,4 +75,3 @@
 - P51/P51-B feature routing and backup refactor: device passed.
 - P50 architecture freeze: completed.
 - P49 active-target/dependency audit: device passed.
-- P48.1 StoreKit residual cleanup: device passed.
