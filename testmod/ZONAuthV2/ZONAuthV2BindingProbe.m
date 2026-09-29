@@ -117,8 +117,6 @@ static BOOL ZONLicenseHTMLShowsActiveBinding(NSString *html) {
         }
         if ([base hasSuffix:@"/"]) base = [base substringToIndex:base.length - 1];
 
-        // P79.8: use the server's canonical AuthorizationLicense::query(code, udid)
-        // surface instead of the retired /authorization compatibility page.
         NSURL *url = [NSURL URLWithString:[base stringByAppendingString:@"/index/index/license"]];
         if (!url) {
             if (completion) completion(ZONAuthV2BindingStateUnknown, nil,
@@ -173,7 +171,7 @@ static BOOL ZONLicenseHTMLShowsActiveBinding(NSString *html) {
 
 @end
 
-#pragma mark - P79.8 compatibility layer
+#pragma mark - P79.9 UDID-first compatibility layer
 
 static id ZONP797FirstValue(id obj, NSArray<NSString *> *keys) {
     if ([obj isKindOfClass:NSDictionary.class]) {
@@ -218,7 +216,61 @@ static BOOL ZONP797LicenseAuthorized(NSDictionary *license) {
     return expire > now;
 }
 
+static NSInteger ZONP799ScopeFromAuthorization(NSDictionary *item) {
+    if (![item isKindOfClass:NSDictionary.class]) return 0;
+    NSInteger scope = [ZONP797String(item[@"scope"]) integerValue];
+    if (scope == 1 || scope == 2 || scope == 3) return scope;
+
+    NSString *type = ZONP797String(item[@"type"]);
+    if ([type containsString:@"全软件源"] || [type.lowercaseString containsString:@"plus"] || [type.lowercaseString containsString:@"source"]) return 1;
+    if ([type containsString:@"指定"] || [type.lowercaseString containsString:@"app"]) return 3;
+    if ([type containsString:@"仅验证"] || [type.lowercaseString containsString:@"verify"]) return 2;
+    return 0;
+}
+
+static NSInteger ZONP799PreferredScope(NSDictionary *license) {
+    double now = NSDate.date.timeIntervalSince1970;
+    BOOL hasSource = NO;
+    BOOL hasApps = NO;
+    BOOL hasVerify = NO;
+    NSArray *authorizations = [license[@"authorizations"] isKindOfClass:NSArray.class] ? license[@"authorizations"] : nil;
+
+    for (id obj in authorizations) {
+        if (![obj isKindOfClass:NSDictionary.class]) continue;
+        NSDictionary *item = obj;
+        double expire = [ZONP797String(ZONP797FirstValue(item, @[@"expire", @"expires_at", @"expire_time"])) doubleValue];
+        if (expire > 0 && expire <= now) continue;
+        NSInteger scope = ZONP799ScopeFromAuthorization(item);
+        if (scope == 1) hasSource = YES;
+        else if (scope == 3) hasApps = YES;
+        else if (scope == 2) hasVerify = YES;
+    }
+
+    if (hasSource) return 1; // Plus / 全软件源 first
+    if (hasApps) return 3;   // 指定 App second
+    if (hasVerify) return 2; // 仅验证 third
+
+    // Legacy rows may have only the historical top-level expire/status fields.
+    // Preserve their old behavior as source/Plus authorization.
+    if ((!authorizations || authorizations.count == 0) && ZONP797LicenseAuthorized(license)) return 1;
+    return 0;
+}
+
+static NSString *ZONP799ScopeName(NSInteger scope) {
+    if (scope == 1) return @"plus";
+    if (scope == 3) return @"apps";
+    if (scope == 2) return @"verify";
+    return @"none";
+}
+
+static NSString *ZONP799StartupErrorMessage(NSError *error) {
+    if ([error.domain isEqualToString:NSURLErrorDomain]) return @"网络连接失败，请检查网络后重试。";
+    if ([error.domain isEqualToString:@"ZONAuthV2"] && error.code >= 500 && error.code < 600) return @"授权服务器暂时不可用，请稍后重试。";
+    return error.localizedDescription.length ? error.localizedDescription : @"授权查询失败，请稍后重试。";
+}
+
 @interface ZONAuthV2Flow (P797Private)
+- (void)startFromViewController:(UIViewController *)hostViewController udid:(NSString *)udid;
 - (void)presentCardPromptForUDID:(NSString *)udid host:(UIViewController *)host message:(NSString *)message;
 - (void)fetchConfigAndVerifyUDID:(NSString *)udid
                             card:(NSString *)card
@@ -227,9 +279,38 @@ static BOOL ZONP797LicenseAuthorized(NSDictionary *license) {
                  isNewActivation:(BOOL)isNewActivation;
 - (void)handleVerifyFailureResponse:(NSDictionary *)response error:(NSError *)error udid:(NSString *)udid;
 - (void)activateCard:(NSString *)card udid:(NSString *)udid host:(UIViewController *)host;
+- (void)showMessage:(NSString *)message title:(NSString *)title completion:(dispatch_block_t)completion;
 @end
 
 @implementation ZONAuthV2Flow (P797Compatibility)
+
+- (void)zon_p799_startFromViewController:(UIViewController *)hostViewController udid:(NSString *)udid {
+    if (udid.length < 5) return;
+    [ZONAuthV2Storage setUDID:udid];
+
+    [[ZONAuthV2API sharedAPI] fetchLicenseForUDID:udid completion:^(NSDictionary *license, NSError *error) {
+        if (error) {
+            NSLog(@"[zonoemenu][auth-v2][P79.9_UDID_GATE] lookup_failed domain=%@ code=%ld", error.domain, (long)error.code);
+            [self showMessage:ZONP799StartupErrorMessage(error) title:@"验证失败" completion:nil];
+            return;
+        }
+
+        NSDictionary *snapshot = license ?: @{};
+        NSInteger scope = ZONP799PreferredScope(snapshot);
+        BOOL authorized = ZONP797LicenseAuthorized(snapshot) && scope != 0;
+        NSLog(@"[zonoemenu][auth-v2][P79.9_UDID_GATE] authorized=%d scope=%@", authorized, ZONP799ScopeName(scope));
+
+        if (authorized) {
+            NSString *savedCard = [ZONAuthV2Storage card] ?: @"";
+            [self fetchConfigAndVerifyUDID:udid card:savedCard license:snapshot host:nil isNewActivation:NO];
+            return;
+        }
+
+        NSLog(@"[zonoemenu][auth-v2][P79.9_UDID_GATE] no_active_authorization -> card prompt");
+        [ZONAuthV2Storage clearCard];
+        [self presentCardPromptForUDID:udid host:hostViewController message:nil];
+    }];
+}
 
 - (void)zon_p797_activateCard:(NSString *)card udid:(NSString *)udid host:(UIViewController *)host {
     [[ZONAuthV2API sharedAPI] fetchLicenseForUDID:udid completion:^(NSDictionary *license, NSError *licenseError) {
@@ -247,7 +328,6 @@ static BOOL ZONP797LicenseAuthorized(NSDictionary *license) {
                 return;
             }
 
-            // New/unused/mismatched/expired cards keep the canonical P79.6 activation path.
             [self zon_p797_activateCard:card udid:udid host:host];
         }];
     }];
@@ -259,7 +339,7 @@ static BOOL ZONP797LicenseAuthorized(NSDictionary *license) {
     BOOL appMismatch = [code isEqualToString:@"app_not_authorized"] ||
                        [raw.lowercaseString containsString:@"authorization does not apply to this app"];
     if (appMismatch) {
-        NSLog(@"[zonoemenu][auth-v2][P79.8_VERIFY] app_not_authorized -> clear card and return to card prompt");
+        NSLog(@"[zonoemenu][auth-v2][P79.9_VERIFY] app_not_authorized -> clear card and return to card prompt");
         [ZONAuthV2Storage clearCard];
         [self presentCardPromptForUDID:udid host:nil message:@"当前卡密不适用于此应用，请更换有效卡密。"];
         return;
@@ -276,6 +356,10 @@ static void ZONInstallP797Compatibility(void) {
     dispatch_once(&onceToken, ^{
         Class cls = NSClassFromString(@"ZONAuthV2Flow");
         if (!cls) return;
+
+        Method originalStart = class_getInstanceMethod(cls, @selector(startFromViewController:udid:));
+        Method replacementStart = class_getInstanceMethod(cls, @selector(zon_p799_startFromViewController:udid:));
+        if (originalStart && replacementStart) method_exchangeImplementations(originalStart, replacementStart);
 
         Method originalActivate = class_getInstanceMethod(cls, @selector(activateCard:udid:host:));
         Method replacementActivate = class_getInstanceMethod(cls, @selector(zon_p797_activateCard:udid:host:));
