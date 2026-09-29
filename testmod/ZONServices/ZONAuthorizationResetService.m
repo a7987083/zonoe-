@@ -33,6 +33,10 @@ static BOOL ZONDeleteAllVisibleGenericPasswordsForService(NSString *service, NSE
 {
     if (error) *error = nil;
 
+    // P79.8b: first remove all obsolete AuthV2/legacy authorization persistence.
+    // The cleanup list intentionally excludes menu/runtime preference keys.
+    [ZONAuthV2Storage purgeLegacyPersistentState];
+
     NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;
     NSArray<NSString *> *userDefaultsKeys = @[
         @"zonoeudid",
