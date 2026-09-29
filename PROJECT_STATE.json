@@ -4,21 +4,17 @@
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
   "current_work_branch": "work/p79-server-driven-auth-isolation-v1",
-  "current_version": "v1_p79_6",
-  "current_phase": "p79_6_server_driven_auth_activation_gate",
+  "current_development_branch": "work/p79.7-auth-semantics-reset-scope",
+  "current_version": "v1_p79_7",
+  "current_phase": "p79_7_auth_semantics_reset_scope",
   "phase_status": "ci_passed_device_pending",
   "last_device_verified_code_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
   "last_device_verified_version": "v1_p64a",
-  "last_ci_run_id": 36523256192,
+  "last_ci_run_id": 36531465809,
   "last_ci_status": "success",
   "minimum_ios": "12.0",
   "architectures": ["arm64", "arm64e"],
   "canonical_product_surface": ["testmod/", "testmod.xcodeproj"],
-  "version_naming_rule": {
-    "new_stage": "increment numeric phase, e.g. P63 -> P64 -> P65",
-    "same_stage_fix": "append lowercase suffix, e.g. P64a -> P64b -> P64c",
-    "historical_correction": "v1_p63a maps canonically to P63; v1_p63b maps canonically to P64. History is preserved rather than rewritten."
-  },
   "rollback_baseline": {
     "canonical_version": "v1_p64a",
     "source_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
@@ -26,80 +22,58 @@
     "device_status": "passed",
     "device_reported_by_user": true
   },
-  "p64": {
-    "name": "clear_game_data_dedicated_service",
-    "historical_built_version_string": "v1_p63b",
-    "canonical_version": "v1_p64",
-    "actual_build_commit": "203b9f93d88a20f820ba35d0e3f65f16f296ce5d",
-    "ci_run_id": 35522283236,
-    "ci_status": "success",
-    "device_status": "failed",
-    "device_failure": "Library/Caches could not be removed while the app was alive; P64 incorrectly treated runtime directory removal/existence as fatal remaining payload.",
-    "promotion_status": "not_promoted"
-  },
-  "p64a": {
-    "name": "clear_game_data_runtime_directory_fix",
-    "version": "v1_p64a",
-    "status": "promoted_device_passed",
-    "branch": "work/p64a-clear-game-data-runtime-directory-fix",
-    "actual_build_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
-    "ci_run_id": 35524126925,
-    "ci_status": "success",
-    "device_status": "passed",
-    "device_reported_by_user": true,
-    "a_customer_artifact_id": 10608274021,
-    "a_customer_artifact_digest": "sha256:5cc2772e8fb2794a1301ca79526ea9a375ae5686c92e9040609eb9009ab20302",
-    "a_customer_dylib_sha256": "34ef87c5be956e81764984a524c0c04428bbc83a4949e23dbc4ba19f10cfbaf9",
-    "b_debug_artifact_id": 10608289075,
-    "b_debug_artifact_digest": "sha256:c6296cb2d5ee1114501e9f35eda7e5c9cef76e9bc2657d126accb79e9bdedff8",
-    "b_debug_dylib_sha256": "335f0e3028a6bf2f9e202681487822065bdda6598a853889f9c973cd9616b379"
-  },
-  "p65": {
-    "name": "backup_engine_refactor",
-    "version": "v1_p65",
-    "status": "historical_planned_stage",
-    "baseline_version": "v1_p64a",
-    "baseline_source_commit": "010f383da7f1429c4db93bfda559431e3c4080f9",
-    "goal": "Extract backup execution from daochucd behind a clean API/service boundary, remove duplicate scanning/copy/staging logic, centralize policy/error handling, and preserve compatibility with the existing restore flow."
-  },
   "p79_6": {
     "name": "server_driven_auth_activation_state_gate",
     "version": "v1_p79_6",
-    "status": "ci_passed_device_pending",
-    "branch": "work/p79-server-driven-auth-isolation-v1",
-    "development_branch": "work/p79.6-saved-card-ci-contract",
-    "activation_gate_commit": "ad7fc577bb52b02a1c5cecaa74ef263c1f19a6a9",
+    "status": "superseded_by_p79_7_device_pending",
     "build_commit": "ac948369ceba488ece11deb8730d8a9510687f44",
     "ci_run_id": 36523256192,
     "ci_status": "success",
-    "artifact_id": 11014190087,
-    "artifact_digest": "sha256:f5170fc97de9990c5be38ad04cb9d59831ca6ffc00cea796da6876cc3aa169f3",
-    "ci_dylib_sha256": "73ace8affac76960efc6f4fb060d4551a9c111ff3208e97ea0c64d7ff1dbc444",
+    "final_test_dylib_sha256": "9192a214bc7a23a0fb18aadccd72529c9404e415e3c20faab3ddb36b67974080"
+  },
+  "p79_7": {
+    "name": "auth_semantics_and_reset_scope",
+    "version": "v1_p79_7",
+    "status": "ci_passed_device_pending",
+    "branch": "work/p79.7-auth-semantics-reset-scope",
+    "main_work_branch": "work/p79-server-driven-auth-isolation-v1",
+    "source_build_commit": "20cc0dc14e3157060d738ec8b66ef184284597bf",
+    "ci_run_id": 36531465809,
+    "ci_run_number": 25,
+    "ci_status": "success",
+    "artifact_id": 11016299418,
+    "artifact_digest": "sha256:048d839f1080890618f342885f12ae2e28d30884463f3f0e29c74f20af77aa1e",
+    "ci_dylib_sha256": "d6c74b0cb3a7f9f9318c1f1ed805690aaecda2ef01be915b718deb9f5dc707f9",
     "ci_verify_secret_configured": false,
-    "final_test_dylib_sha256": "9192a214bc7a23a0fb18aadccd72529c9404e415e3c20faab3ddb36b67974080",
+    "final_test_dylib_sha256": "4ea75bea7c8a1929483d9f404aa9c47ab3be6e50cf7cafca5679740b926c23b8",
     "final_test_verify_secret_configured": true,
-    "secret_storage_policy": "real/test Verify Secret is injected only into the controlled final test artifact and is not committed to the public repository",
+    "placeholder_remaining": 0,
+    "secret_occurrences": 2,
+    "binary_patch_mode": "equal_length_post_build",
+    "secret_storage_policy": "test/real Verify Secret is injected only into the controlled final artifact and is not committed to the public repository",
     "protocol": {
       "bootstrap_url": "https://raw.githubusercontent.com/a7987083/zonoemenu-config/main/bootstrap/zonoe.main.json",
       "verify_endpoint": "https://app3.zonoeios.xyz/index/dylib_verify/verify",
       "dylib_key": "zonoe.main",
       "dylib_version": "1",
-      "dylib_build": ""
+      "dylib_build": "",
+      "protocol_version": 2
     },
+    "changes": [
+      "same card + same UDID binding probe before reactivation",
+      "App mismatch returns to existing card prompt",
+      "authorization reset deletes all authorization-related Keychain services visible to current process"
+    ],
     "device_status": "pending",
     "device_verification_required": [
-      "invalid/nonexistent card remains in card prompt with server-derived error",
-      "valid new card changes /apiface authorization state before Verify v2 is entered",
-      "saved valid card reaches Verify v2 without reactivation",
-      "saved invalid/expired authorization clears card but preserves UDID",
-      "network/server transient error does not clear saved card",
-      "successful Verify continues notice -> app_update -> icon flow"
+      "same valid card + same UDID authenticates without used-card rejection",
+      "different used card cannot borrow existing UDID authorization",
+      "invalid/nonexistent card remains in card input flow",
+      "card for another App returns to the same card prompt",
+      "valid current-App card reaches Verify then notice/update/icon",
+      "clear authorization removes current-App visible authorization records",
+      "cross-App reset behavior is verified against actual Keychain access-group entitlements"
     ]
   },
-  "follow_on_plan": [
-    "Complete P79.6 real-device validation",
-    "If activation works but Verify still rejects, compare server app_identity/bundle_id mapping against the target app",
-    "Only promote P79.6 after real-device validation"
-  ],
-  "next_task": "Install the controlled v1_p79_6 test dylib with Verify Secret injected and perform the scoped real-device activation/Verify regression."
+  "next_task": "Install the controlled v1_p79_7 Secret-configured dylib and run the scoped real-device regression."
 }
