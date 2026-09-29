@@ -1,60 +1,62 @@
 # KNOWN_ISSUES
 
 ## Current state
-- Active test version: `v1_p79_8c`.
+- Active test version: `v1_p79_8d`.
 - Branch: `work/p79.8-udid-first-rebuild`.
-- Build HEAD: `4a2c35923c646917e912ca0758294df98460cccd`.
-- CI Run `36591707184` / #37: success.
+- Trigger implementation: `985f85073d89cb46aff8fd940ee50f1ed6175f3f`.
+- Build HEAD: `6ab1494bb11afc228fe78cd7087b97c4c04d9b2d`.
+- CI Run `36604169367` / #38: success.
+- Artifact ID: `11050622646`.
 - Architectures: `arm64 + arm64e`.
-- Artifact ID: `11043668689`.
-- Raw CI SHA256: `de3be9f75f5fb6639c84c283252bd5e184b1cde0d512b1cc3ca6c48ba314c153`.
-- Controlled final SHA256: `7d8c80d317810eb4331db02fa216697f3c869fdfa7cacbfb0499c936d60f1651`.
+- Raw CI SHA256: `1c7e788f60c79679af7cf06b8427b559364fa7c4374901f455260c0057778d35`.
+- Controlled final SHA256: `bd5b3ca738d6e8041d16b57c4515dffb6f47806da412b0b5f8bd512e1f09d6cd`.
 - Current-device validation: pending.
-- Last device-passed baseline: P79.8a / controlled SHA256 `1601c8aaf55643918d4d7d6f4ea16d45c552e6fdf1ad9c8c7a2cd9152c03fbb0`.
+- Last device-passed baseline: P79.8a / controlled SHA256 `1601c8aaf55643918d4d6f4ea16d45c552e6fdf1ad9c8c7a2cd9152c03fbb0`.
 
 ## Open risks
 
-### Permission-gated menu needs real-device confirmation
-- `VIP云存档` is now hidden unless Verify `permissions.extra_menu` is true.
-- Backend current model gives `extra_menu=false` to `basic` and true to `app_plus/global_plus`.
-- Device test must confirm basic/verify-only does not render the button while app/global Plus does.
+### Passive Satella trigger requires exact matching injected build
+- P79.8d does not load the target dylib; it must already be present in dyld when the switch is enabled.
+- Accepted suffixes are `1_passive.dylib`, `1_passive_zh.dylib`, and `SatellaJailed_passive.dylib`.
+- Runtime address contract is tied to the supplied passive build: ctor RVA `0x847C`, init RVA `0x888C`, `__TEXT vmaddr=0`.
+- The implementation checks the ctor `RET` bytes and 16-byte init prologue before calling. A changed target build will intentionally fail closed.
 
-### Cloud-save action has three gates
-- Menu rendering requires `extra_menu`.
-- Action dispatch requires `extra_features` and prevents legacy fallthrough on denial.
-- Actual cloud download selection performs a fresh Verify and again requires `extra_features=true`.
-- Device testing should include a permission revoke/downgrade after the menu is already open.
+### No passive deinitializer is known
+- OFF does not call into Satella and does not unload the image.
+- First successful start is one-shot per process; later ON events log `already_started`.
+- If a future passive build exposes a documented shutdown entry, add it as a separate versioned contract rather than guessing an inverse operation.
 
-### Old app.zonoeios.xyz string still exists in compatibility code
-- The current P79.8c cloud-save coordinator no longer passes the legacy `https://app.zonoeios.xyz/index/index/apiface?udid=` endpoint.
-- The final binary still contains two copies of the old string because legacy Bsphp/UDID fallback code remains compiled for compatibility.
-- Do not remove stable fallback code solely to make the binary string count zero unless that legacy path is separately retired and regression-tested.
+### Missing passive dylib does not fail the existing toggle
+- This is intentional: the original `NNGG/NNGGNNGG` persistence and `ImgTool.NeiGou` side effect are applied first.
+- If no valid injected image is found, P79.8d logs `image_not_loaded_or_invalid` but does not revert the switch.
+- Device testing must confirm this fallback is acceptable in the real injection workflow.
 
-### Server permissions are authoritative
-- Do not infer feature access from `scope`, card labels, or locally ranked `access_level`.
-- Current menu/action logic consumes the server `permissions` dictionary.
-- Missing permission keys fail closed for protected features such as cloud save.
+### arm64e PAC path needs device confirmation
+- Xcode 16.4 compiled both arm64 and arm64e successfully.
+- arm64e signs the raw `base + 0x888C` address using the function-pointer PAC key before invocation.
+- Real arm64e hardware still needs confirmation that the target passive dylib's entry behaves correctly with this indirect call.
 
-### Persistence cleanup remains device-pending
-- P79.8b storage semantics are inherited unchanged.
-- Verify/menu testing for P79.8c should also confirm no regression in `DZUDID`, notice fingerprint, or menu/runtime preferences.
+### P79.8c permission-gated cloud menu remains device-pending
+- Verify-only/basic must not render `VIP云存档`.
+- `app_plus/global_plus` must render it and actual download must still pass fresh Verify.
+
+### P79.8b persistence cleanup remains device-pending
+- Authorization response/config/card state is memory-only; menu/runtime preferences remain unchanged.
 
 ### Raw CI artifact has no Verify Secret
-- CI Run `36591707184` produced the placeholder build.
+- CI Run `36604169367` produced the placeholder build.
 - Controlled final artifact uses equal-length post-build injection into both architecture slices.
 - Placeholder remaining `0`; Secret occurrences `2`; 128 bytes differ from raw CI.
 - Public source remains placeholder-only.
 
-## Corrected / removed
+## Corrected / intentionally preserved
 
-### Ungated VIP cloud-save menu — corrected in P79.8c
-- `base.cloud-save` now declares `requiredMenuPermission=extra_menu` and `requiredActionPermission=extra_features`.
-- Renderer consumes the current session Verify permissions before constructing the section.
-- Dispatcher blocks direct/tag-based action entry without `extra_features`.
+### Passive trigger does not use dlopen — P79.8d
+- Earlier candidate design included optional loading; final user requirement is preload/inject externally and only activate on switch ON.
+- The committed implementation enumerates loaded dyld images only.
 
-### Legacy cloud entitlement request — removed from the current cloud route in P79.8c
-- Cloud downloads now re-run Verify v2 using current Runtime Config and `DZUDID`.
-- After successful fresh Verify, legacy `/apiface` entitlement checking is bypassed because Verify already supplied the authoritative permission decision.
+### Ungated VIP cloud-save — corrected in P79.8c
+- Menu visibility and action execution consume server permissions, with a fresh Verify before cloud download.
 
 ### Excess AuthV2 persistence — corrected in P79.8b
 - AuthV2 response/config/card state is process-memory only; only notice fingerprint remains persistent.
@@ -65,4 +67,4 @@
 ## Tracking rule
 - CI success alone does not equal promotion.
 - Keep ROADMAP, CHANGELOG_DEV, HANDOFF, PROJECT_STATE and KNOWN_ISSUES synchronized.
-- Verify acceptance testing must use the Secret-configured controlled artifact.
+- Acceptance testing must use the Secret-configured controlled artifact.
