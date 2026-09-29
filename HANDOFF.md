@@ -6,63 +6,51 @@
 - Current branch: `work/p79.8-udid-first-rebuild`.
 - Read in this order: `PROJECT_STATE.json` → `ROADMAP.md` → `KNOWN_ISSUES.md` → `CHANGELOG_DEV.md`.
 
-## Current target — P79.8c Server-Driven Menu Permissions
-- VERSION: `v1_p79_8c`.
-- Permission metadata: `dffe27a0f5101591d0a57774cf0041b64f06349d`.
-- Menu filter: `0d7c93c434084c260e240b824980cdb684fd25c9`.
-- Action gate: `dd75f3f6267390268b12e467b03efa83d78f5d7d`.
-- Fresh cloud Verify: `dbe02798bd0e2d5e4d55bde950100d510d40a93e`.
-- Build HEAD: `4a2c35923c646917e912ca0758294df98460cccd`.
-- CI Run `36591707184` / #37: success.
-- Artifact ID `11043668689`, digest `sha256:c6e1f80c902508e27d527a4079f2d72ad53767438ca24278405010d93f22a66e`.
-- Raw CI SHA256: `de3be9f75f5fb6639c84c283252bd5e184b1cde0d512b1cc3ca6c48ba314c153`.
-- Controlled final dylib SHA256: `7d8c80d317810eb4331db02fa216697f3c869fdfa7cacbfb0499c936d60f1651`.
+## Current target — P79.8d Injected Passive Satella Trigger
+- VERSION: `v1_p79_8d`.
+- Trigger implementation: `985f85073d89cb46aff8fd940ee50f1ed6175f3f`.
+- Build HEAD: `6ab1494bb11afc228fe78cd7087b97c4c04d9b2d`.
+- CI Run `36604169367` / #38: success.
+- Artifact ID `11050622646`, digest `sha256:16569dbb378372b5372dea8e3312549d1fe632f3b85b831dc3d8027ffb445b6e`.
+- Raw CI SHA256: `1c7e788f60c79679af7cf06b8427b559364fa7c4374901f455260c0057778d35`.
+- Controlled final dylib SHA256: `bd5b3ca738d6e8041d16b57c4515dffb6f47806da412b0b5f8bd512e1f09d6cd`.
+- Controlled ZIP SHA256: `242a461d27a16a8758c750dbc8ac65ac12f28704996d39d8df9051e5922da3d6`.
 - Final artifact: arm64 + arm64e; placeholder `0`; Verify Secret occurrences `2`.
 
-## Authorization model — unchanged
-1. Acquire/reuse `DZUDID` first.
-2. Query `/index/index/apiface?udid=<UDID>` before any card prompt.
-3. Active UDID authorization skips card entry and continues to Runtime Config + Verify.
-4. Verify owns current-App applicability plus `access_level` and `permissions`.
-5. Only explicit missing/expired authorization opens card input.
-6. Network/server/unknown payloads are not treated as missing activation.
+## Passive Satella behavior
+- Integration point: `runtime.iap-noads` / `内购破解+ iGameGod去广告` toggle in `ZONFeatureDispatcher.m`.
+- The menu dylib never `dlopen`s Satella. Another injection layer must preload the passive dylib.
+- Accepted loaded-image suffixes: `1_passive.dylib`, `1_passive_zh.dylib`, `SatellaJailed_passive.dylib`.
+- Current passive-build contract assumes `__TEXT vmaddr = 0` and validates:
+  - RVA `0x847C` = ARM64 `RET` (`C0 03 5F D6`);
+  - RVA `0x888C` = expected 16-byte init prologue.
+- First ON event runs init at `image_base + 0x888C` on the main thread.
+- arm64e uses function-pointer PAC signing before the call.
+- Startup is one-shot per process (`already_started` on subsequent ON events).
+- OFF never attempts unload or deinit.
+- Missing/invalid target logs failure but leaves the existing IAP/iGameGod toggle enabled.
+- Primary log prefix: `[zonoemenu][P79.8D_SATELLA]`.
 
-## Server permission model used by P79.8c
-Backend currently returns:
-- `basic`: `normal_menu=true`, `extra_menu=false`, `extra_features=false`.
-- `app_plus`: `normal_menu=true`, `extra_menu=true`, `extra_features=true`.
-- `global_plus`: `normal_menu=true`, `extra_menu=true`, `extra_features=true`.
+## Inherited authorization/menu contracts
+1. Acquire/reuse Keychain `DZUDID` first.
+2. `/apiface` checks whether the UDID has active activation before card prompt.
+3. Active UDID proceeds Runtime Config → Verify; Verify owns App applicability and `permissions`.
+4. P79.8c consumes server `permissions`; `VIP云存档` requires `extra_menu` for visibility and `extra_features` for execution.
+5. P79.8b keeps AuthV2 response/config/card values in memory; only notice fingerprint is intentionally persistent in AuthV2 UserDefaults.
 
-Client rule: consume `permissions` only. Do not infer cloud-save visibility/action from `scope`, card type, or `access_level` ranking.
+## Device test order for P79.8d
+1. Inject a matching passive dylib before enabling the IAP/iGameGod switch.
+2. First OFF→ON: expect `validated`, `init=...`, `started`; verify passive functionality is active.
+3. OFF→ON again: expect `already_started`; init must not run twice.
+4. No passive dylib injected: expect `image_not_loaded_or_invalid`; original IAP/iGameGod behavior must remain functional.
+5. Wrong passive version: expect ctor/prologue mismatch and no jump.
+6. Regression: basic hides VIP cloud save; app/global Plus exposes it correctly; UDID-first and persistence behavior remain intact.
 
-## VIP cloud-save routing
-- Registry feature: `base.cloud-save`, legacy tag `2`.
-- Menu visibility requires server permission `extra_menu`.
-- Action dispatcher requires server permission `extra_features` and returns handled-on-denial to block legacy fallthrough.
-- `ZONSaveTransferCoordinator` checks the session Verify result before opening cloud-save UI.
-- Each actual cloud download selection performs a fresh Verify v2 request using `DZUDID` + current session Runtime Config.
-- Only fresh Verify success with `extra_features=true` resolves/downloads the archive.
-- The new cloud route no longer uses the legacy `app.zonoeios.xyz /apiface` entitlement request.
-- Old Bsphp/UDID fallback compatibility code is still compiled and may contain the old hostname string; do not confuse binary-string presence with the active P79.8c cloud route.
-
-## Persistence model inherited from P79.8b
-- Long-lived identity: Keychain `DZUDID` only.
-- AuthV2 `udid`, `card`, `lastVerify`, `lastActivation`, `lastRuntimeConfig`, `lastBootstrap`: process-memory only.
-- Persistent AuthV2 UserDefaults: only `zonoe.auth.v2.lastNoticeFingerprint` for notice de-duplication.
-- Menu/runtime preference keys remain untouched.
-
-## Device test order
-1. Verify-only/basic card: menu should open, `VIP云存档` should not exist.
-2. App-specific card matched to current App: `VIP云存档` should exist and work.
-3. Global Plus card: `VIP云存档` should exist and work.
-4. Open menu while entitled, then revoke/downgrade server permission and attempt a cloud download; fresh Verify must deny before archive resolution/download.
-5. Confirm normal menu items and P79.8b persistence behavior are unchanged.
-
-## Device-passed rollback baseline
+## Last device-passed baseline
 - P79.8a / `v1_p79_8a`.
 - CI Run `36572203902` / #32.
-- Controlled final SHA256: `1601c8aaf55643918d4d7d6f4ea16d45c552e6fdf1ad9c8c7a2cd9152c03fbb0`.
-- User confirmed fresh App + already-activated UDID behavior works correctly.
+- Controlled final SHA256: `1601c8aaf55643918d4d6f4ea16d45c552e6fdf1ad9c8c7a2cd9152c03fbb0`.
+- User confirmed fresh App + already-activated UDID works without card re-entry.
 
 ## Long-project rules
 - Preserve commit history.
