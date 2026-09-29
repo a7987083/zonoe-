@@ -1,6 +1,7 @@
 #import "ZONSectionRenderer.h"
 #import "ZONFeatureRegistry.h"
 #import "ZONFeatureRenderer.h"
+#import "../ZONAuthV2/ZONAuthV2Storage.h"
 #import "../菜单/FoldSectionView.h"
 
 NSArray<FoldSectionView *> *ZONRenderRegisteredSections(UIScrollView *scrollView,
@@ -17,12 +18,32 @@ NSArray<FoldSectionView *> *ZONRenderRegisteredSections(UIScrollView *scrollView
     CGFloat y = 0;
     CGFloat sectionW = panelWidth - 30;
 
+    NSDictionary *verify = [ZONAuthV2Storage lastVerify] ?: @{};
+    NSDictionary *permissions = [verify[@"permissions"] isKindOfClass:NSDictionary.class] ? verify[@"permissions"] : @{};
+    NSString *accessLevel = [verify[@"access_level"] isKindOfClass:NSString.class] ? verify[@"access_level"] : @"";
+    NSLog(@"[zonoemenu][P79.8C_MENU_PERMISSION] access_level=%@ normal_menu=%d extra_menu=%d extra_features=%d",
+          accessLevel,
+          [permissions[@"normal_menu"] boolValue],
+          [permissions[@"extra_menu"] boolValue],
+          [permissions[@"extra_features"] boolValue]);
+
     for (NSDictionary<NSString *, id> *sectionMeta in ZONBuiltInSectionMetadata()) {
         NSString *sectionTitle = sectionMeta[ZONSectionTitleKey];
         NSString *detail = sectionMeta[ZONSectionDetailKey];
         NSString *stateKey = sectionMeta[ZONSectionStateKey];
         NSString *renderer = sectionMeta[ZONSectionRendererKey];
-        NSArray<NSDictionary<NSString *, id> *> *features = ZONFeatureMetadataForSection(sectionTitle);
+        NSArray<NSDictionary<NSString *, id> *> *registeredFeatures = ZONFeatureMetadataForSection(sectionTitle);
+        NSMutableArray<NSDictionary<NSString *, id> *> *visibleFeatures = [NSMutableArray array];
+        for (NSDictionary<NSString *, id> *feature in registeredFeatures) {
+            if (ZONFeatureIsVisibleWithPermissions(feature, permissions)) {
+                [visibleFeatures addObject:feature];
+            } else {
+                NSLog(@"[zonoemenu][P79.8C_MENU_PERMISSION] hidden feature=%@ required=%@",
+                      feature[ZONFeatureIdentifierKey] ?: @"",
+                      feature[ZONFeatureRequiredMenuPermissionKey] ?: @"");
+            }
+        }
+        NSArray<NSDictionary<NSString *, id> *> *features = visibleFeatures.copy;
 
         FoldSectionView *section = [[FoldSectionView alloc] initWithTitle:sectionTitle
                                                                    detail:detail
