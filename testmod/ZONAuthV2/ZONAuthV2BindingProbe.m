@@ -37,6 +37,14 @@ static NSString *ZONBindingString(id value) {
 static ZONAuthV2BindingState ZONBindingStateFromJSON(NSDictionary *json) {
     if (![json isKindOfClass:NSDictionary.class] || !json.count) return ZONAuthV2BindingStateUnknown;
 
+    id ok = json[@"ok"];
+    id active = json[@"active"];
+    if ([ok respondsToSelector:@selector(boolValue)] && [ok boolValue]) {
+        if ([active respondsToSelector:@selector(boolValue)]) {
+            return [active boolValue] ? ZONAuthV2BindingStateBound : ZONAuthV2BindingStateNotBound;
+        }
+    }
+
     id explicit = ZONBindingFindValue(json, @[@"same_udid", @"same_device", @"already_bound_to_this_udid",
                                                @"bound", @"is_bound", @"activated", @"is_activated"]);
     if ([explicit respondsToSelector:@selector(boolValue)]) {
@@ -64,6 +72,16 @@ static ZONAuthV2BindingState ZONBindingStateFromJSON(NSDictionary *json) {
 static NSString *ZONFormEscape(NSString *value) {
     NSCharacterSet *allowed = [NSCharacterSet characterSetWithCharactersInString:@"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~"];
     return [value stringByAddingPercentEncodingWithAllowedCharacters:allowed] ?: @"";
+}
+
+static BOOL ZONLicenseHTMLShowsActiveBinding(NSString *html) {
+    if (!html.length) return NO;
+    BOOL successClass = [html containsString:@"class=\"msg ok\""] ||
+                        [html containsString:@"class='msg ok'"] ||
+                        [html containsString:@"class=\"ok msg\""] ||
+                        [html containsString:@"class='ok msg'"];
+    BOOL activeMessage = [html containsString:@"授权有效"];
+    return successClass && activeMessage;
 }
 
 @implementation ZONAuthV2BindingProbe
@@ -98,10 +116,13 @@ static NSString *ZONFormEscape(NSString *value) {
             return;
         }
         if ([base hasSuffix:@"/"]) base = [base substringToIndex:base.length - 1];
-        NSURL *url = [NSURL URLWithString:[base stringByAppendingString:@"/authorization"]];
+
+        // P79.8: use the server's canonical AuthorizationLicense::query(code, udid)
+        // surface instead of the retired /authorization compatibility page.
+        NSURL *url = [NSURL URLWithString:[base stringByAppendingString:@"/index/index/license"]];
         if (!url) {
             if (completion) completion(ZONAuthV2BindingStateUnknown, nil,
-                                       [NSError errorWithDomain:@"ZONAuthV2BindingProbe" code:-3 userInfo:@{NSLocalizedDescriptionKey:@"Authorization 地址无效"}]);
+                                       [NSError errorWithDomain:@"ZONAuthV2BindingProbe" code:-3 userInfo:@{NSLocalizedDescriptionKey:@"License 查询地址无效"}]);
             return;
         }
 
@@ -111,31 +132,48 @@ static NSString *ZONFormEscape(NSString *value) {
                                                            timeoutInterval:10.0];
         request.HTTPMethod = @"POST";
         [request setValue:@"application/x-www-form-urlencoded; charset=utf-8" forHTTPHeaderField:@"Content-Type"];
-        [request setValue:@"application/json, text/html;q=0.9, */*;q=0.8" forHTTPHeaderField:@"Accept"];
+        [request setValue:@"text/html, application/json;q=0.9, */*;q=0.8" forHTTPHeaderField:@"Accept"];
         request.HTTPBody = [form dataUsingEncoding:NSUTF8StringEncoding];
 
-        [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *body, NSURLResponse *authorizationResponse, NSError *authorizationError) {
-            if (authorizationError) {
-                if (completion) completion(ZONAuthV2BindingStateUnknown, nil, authorizationError);
+        [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *body, NSURLResponse *licenseResponse, NSError *licenseError) {
+            if (licenseError) {
+                if (completion) completion(ZONAuthV2BindingStateUnknown, nil, licenseError);
                 return;
             }
-            NSHTTPURLResponse *http = (NSHTTPURLResponse *)authorizationResponse;
-            id parsed = body.length ? [NSJSONSerialization JSONObjectWithData:body options:0 error:nil] : nil;
-            NSDictionary *json = [parsed isKindOfClass:NSDictionary.class] ? parsed : nil;
-            ZONAuthV2BindingState state = ZONBindingStateFromJSON(json ?: @{});
+
+            NSHTTPURLResponse *http = (NSHTTPURLResponse *)licenseResponse;
             NSError *statusError = nil;
             if (http.statusCode < 200 || http.statusCode >= 300) {
-                NSString *message = [json[@"message"] isKindOfClass:NSString.class] ? json[@"message"] : [NSString stringWithFormat:@"Authorization HTTP %ld", (long)http.statusCode];
-                statusError = [NSError errorWithDomain:@"ZONAuthV2BindingProbe" code:http.statusCode userInfo:@{NSLocalizedDescriptionKey:message}];
+                statusError = [NSError errorWithDomain:@"ZONAuthV2BindingProbe"
+                                                  code:http.statusCode
+                                              userInfo:@{NSLocalizedDescriptionKey:[NSString stringWithFormat:@"License HTTP %ld", (long)http.statusCode]}];
             }
-            if (completion) completion(state, json, statusError);
+
+            id parsed = body.length ? [NSJSONSerialization JSONObjectWithData:body options:0 error:nil] : nil;
+            if ([parsed isKindOfClass:NSDictionary.class]) {
+                NSDictionary *json = (NSDictionary *)parsed;
+                ZONAuthV2BindingState state = ZONBindingStateFromJSON(json);
+                if (completion) completion(state, json, statusError);
+                return;
+            }
+
+            NSString *html = body.length ? [[NSString alloc] initWithData:body encoding:NSUTF8StringEncoding] : @"";
+            ZONAuthV2BindingState state = ZONLicenseHTMLShowsActiveBinding(html)
+                ? ZONAuthV2BindingStateBound
+                : ZONAuthV2BindingStateNotBound;
+            NSDictionary *summary = @{
+                @"source": @"authorization_license_html",
+                @"ok": @(state == ZONAuthV2BindingStateBound),
+                @"active": @(state == ZONAuthV2BindingStateBound),
+            };
+            if (completion) completion(statusError ? ZONAuthV2BindingStateUnknown : state, summary, statusError);
         }] resume];
     }] resume];
 }
 
 @end
 
-#pragma mark - P79.7 compatibility layer
+#pragma mark - P79.8 compatibility layer
 
 static id ZONP797FirstValue(id obj, NSArray<NSString *> *keys) {
     if ([obj isKindOfClass:NSDictionary.class]) {
@@ -202,15 +240,14 @@ static BOOL ZONP797LicenseAuthorized(NSDictionary *license) {
         }
 
         [ZONAuthV2BindingProbe queryCard:card udid:udid completion:^(ZONAuthV2BindingState state, NSDictionary *response, NSError *probeError) {
-            NSLog(@"[zonoemenu][auth-v2][P79.7_BINDING_PROBE] state=%ld error=%ld", (long)state, (long)probeError.code);
+            NSLog(@"[zonoemenu][auth-v2][P79.8_LICENSE_PROBE] state=%ld error=%ld", (long)state, (long)probeError.code);
             if (state == ZONAuthV2BindingStateBound) {
-                NSLog(@"[zonoemenu][auth-v2][P79.7_BINDING_GATE] same card + same UDID confirmed; entering Verify without re-activation");
+                NSLog(@"[zonoemenu][auth-v2][P79.8_BINDING_GATE] same card + same UDID + active license confirmed; entering Verify without re-activation");
                 [self fetchConfigAndVerifyUDID:udid card:card license:snapshot host:nil isNewActivation:NO];
                 return;
             }
 
-            // Unknown/NotBound must keep P79.6's strict activation gate. Never turn a generic
-            // “already used” message into authorization without card+UDID binding evidence.
+            // New/unused/mismatched/expired cards keep the canonical P79.6 activation path.
             [self zon_p797_activateCard:card udid:udid host:host];
         }];
     }];
@@ -222,7 +259,7 @@ static BOOL ZONP797LicenseAuthorized(NSDictionary *license) {
     BOOL appMismatch = [code isEqualToString:@"app_not_authorized"] ||
                        [raw.lowercaseString containsString:@"authorization does not apply to this app"];
     if (appMismatch) {
-        NSLog(@"[zonoemenu][auth-v2][P79.7_VERIFY] app_not_authorized -> clear card and return to card prompt");
+        NSLog(@"[zonoemenu][auth-v2][P79.8_VERIFY] app_not_authorized -> clear card and return to card prompt");
         [ZONAuthV2Storage clearCard];
         [self presentCardPromptForUDID:udid host:nil message:@"当前卡密不适用于此应用，请更换有效卡密。"];
         return;
