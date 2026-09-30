@@ -12,8 +12,7 @@ on:
       - 'testmod/ZONCore/**'
       - 'testmod/ZONServices/**'
       - 'testmod.xcodeproj/project.pbxproj'
-      - 'Tests/dispatcher_contract_smoke.py'
-      - 'Tests/p79_8d_passive_satella_contract.py'
+      - 'Tests/**'
       - '.github/workflows/p79-server-driven-auth-build.yml'
 
 jobs:
@@ -30,11 +29,12 @@ jobs:
           grep -q 'ZONAuthV2Flow' testmod/ZONServices/ZONAuthorizationCoordinator.m
           grep -q 'ZonoeRequestUDIDIfNeeded' testmod/ZONServices/ZONAuthorizationCoordinator.m
           grep -q 'ZONContinueCustomerAuthorization' testmod/ZONServices/ZONAuthorizationCoordinator.m
-      - name: Run current dispatcher/runtime contract tests
+      - name: Run current dispatcher/runtime/P0 contract tests
         run: |
           set -euxo pipefail
           python3 Tests/dispatcher_contract_smoke.py
           python3 Tests/p79_8d_passive_satella_contract.py
+          python3 Tests/p79_8f_p0_safety_contract.py
       - name: Install xcodeproj
         run: sudo gem install xcodeproj --no-document
       - name: Add ZONAuthV2 files to testmod target
