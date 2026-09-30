@@ -1,37 +1,39 @@
 # KNOWN_ISSUES
 
 ## Current state
-- Active version: `v1_p79_8g`.
+- Active version: `v1_p79_8h`.
 - Branch: `work/p79.8-udid-first-rebuild`.
-- Build HEAD: `9702183f97304e62939d528f7bec64c46417510a`.
-- CI Run `36727105080` / #53: success.
-- Artifact ID: `11103866499`.
+- Build HEAD: `b62e6ac71c6d58db48b75e8f3064b012b836571f`.
+- CI Run `36734106358` / #62: success.
+- Artifact ID: `11106496611`.
 - Architectures: `arm64 + arm64e`.
-- Raw CI SHA256: `e5a7f07ed4a5bf980113382f72eca11782fc163b80f64a05754843b0b3a3bede`.
-- Controlled final SHA256: `4172ac0881f6885b1ac620a486ba9b8eadd153c9b11f26a3647607737c028863`.
-- P79.8g device validation: PASSED by user report on 2026-09-30.
-- Current latest device-passed runtime/architecture baseline: P79.8g.
-- Closed P0 safety baseline remains P79.8f and is inherited by P79.8g.
+- Raw CI SHA256: `ae3a3eee1fc53b0009f7c25ad4b37d9713ab2ef2f0fd34d1ad17dc78fd3c3457`.
+- Controlled final SHA256: `8ac866a22d2bae372adb62f9cdcc67c1bfadf6b3a71fe7e8e2b927d8687caa26`.
+- P79.8h device validation: pending.
+- Latest device-passed runtime/architecture baseline: P79.8g.
+- Closed P0 safety baseline: P79.8f.
 
-## R2 risk closed in P79.8g
+## R3 risk reduced in P79.8h
 
-### Dispatcher no longer owns passive runtime internals
-- `ZONFeatureDispatcher` delegates passive activation through `ZONRuntimeCapabilityService`.
-- `_dyld_*`, Mach-O parsing, mapped-`__TEXT` validation, passive RVAs/signatures, ptrauth and one-shot state live behind the capability boundary.
-- `Tests/p79_8g_runtime_capability_boundary.py` rejects those low-level details if they reappear in Dispatcher.
+### Renderer and Dispatcher no longer parse AuthV2 permission schema independently
+- `ZONFeatureAccessProvider` now owns `lastVerify → permissions/access_level` parsing.
+- `ZONSectionRenderer` calls `isFeatureVisible:`.
+- `ZONFeatureDispatcher` calls `isFeatureActionAllowed:` for protected actions.
+- This removes duplicated permission-schema knowledge from two consumer layers.
 
-### Runtime capability service is device-accepted
-- Current registered capability is `passive.satella`.
-- Public API is `isCapabilityAvailable:` + `activateCapability:`.
-- The service does not load/unload external modules; targets remain externally injected/preloaded.
-- User reported P79.8g testing normal after the extraction, so the code-move/device-equivalence risk is closed for this baseline.
+### Local runtime capability can now participate in the same access decision
+- Registry defines optional metadata `requiredRuntimeCapability`.
+- When set, both visibility and action access require `ZONRuntimeCapabilityService.isCapabilityAvailable:`.
+- No existing P79.8h feature sets the key, so this version intentionally does not hide or block any additional existing feature.
 
-## P0 risks remain closed through inherited P79.8f contracts
-- Startup transport failure is not treated as missing activation/card prompt.
-- Authorization reset preserves protected menu/runtime keys.
-- Game-data reset remains scoped to the current App container roots/defaults.
-- Passive mapped-range validation executes before signature dereference/call.
-- P79.8g tests continue to lock these contracts after implementation migration.
+### Visibility is not the only guard
+- Protected action routing uses the same provider as menu rendering.
+- Future runtime-capability-dependent actions can therefore fail closed even if reached outside normal UI rendering.
+
+## Device-equivalence risk still open for P79.8h
+- R3 changes where permission decisions are made, so CI/source-contract success is not promoted as device equivalence automatically.
+- Verify the current menu still renders normally for the current authorization, existing feature ordering/count does not unexpectedly change, protected action behavior remains normal, and the passive runtime path still works.
+- Until that check passes, P79.8g remains the latest device-passed baseline.
 
 ## Remaining functional regression gates
 
@@ -47,17 +49,10 @@
 
 ## Open architecture risks — next stages
 
-### Renderer still reads raw AuthV2 session schema
-- `ZONSectionRenderer` directly consumes `lastVerify/permissions/access_level`.
-- P79.8h / R3 should introduce one feature-access provider combining server permissions with `ZONRuntimeCapabilityService.isCapabilityAvailable:` before adding the standalone external-dylib button.
-
-### Visibility alone must not become the security boundary
-- When runtime-capability metadata is added, Dispatcher/action execution must enforce the same capability requirement used by rendering.
-- A hidden button must not remain reachable through legacy tags or direct dispatch.
-
 ### Feature registry remains weakly typed
 - Feature/section descriptors are dictionaries keyed by strings.
-- R3 may add an optional runtime-capability key, but full typed-descriptor migration belongs to R4 after the access boundary is stable.
+- P79.8h added one optional key safely, but compile-time safety remains limited.
+- R4 should introduce typed descriptors incrementally while preserving identifiers, tags, ordering and renderer behavior.
 
 ### `ZONAuthV2Flow` still owns too many responsibilities
 - It parses server payloads, classifies state, orchestrates activation/config/Verify, maps errors, presents card UI, notices/updates, and opens the floating entry.
@@ -65,18 +60,22 @@
 
 ### Duplicate Runtime Config parsing helpers
 - `ZONAuthV2API.m` and `ZONAuthV2Verify.m` still implement similar nested config lookup semantics.
-- Extract later with tests; do not mix with R3.
+- Extract later with tests; do not mix with R4.
 
-## P79.8g verification evidence
+### External source-controlled dylib integration is deferred
+- Do not add exported-symbol probing or a standalone button yet.
+- The R3 access-provider path is ready for future `requiredRuntimeCapability` usage when that work resumes.
+
+## P79.8h verification evidence
 - `dispatcher-contract: PASS`.
 - `p79.8d-passive-contract: PASS`.
 - `p79.8f-p0-safety: PASS`.
 - `p79.8g-runtime-capability: PASS`.
+- `p79.8h-feature-access: PASS`.
 - Xcode 16.4 arm64 + arm64e build: PASS.
 - Controlled final placeholder remaining: `0`.
 - Controlled final Verify Secret occurrences: `2`.
 - Raw-to-final changed bytes: `128`, limited to the two equal-length Verify Secret placeholder regions.
-- Device test: reported normal; P79.8g promoted to current runtime/architecture baseline.
 
 ## Tracking rule
 - CI success alone does not equal device promotion.
