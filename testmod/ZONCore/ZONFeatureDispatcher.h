@@ -10,7 +10,6 @@ BOOL ZONEnsureTmpDirectory(void);
 void ZONClearGameDataPreservingTmp(void);
 void ZONPresentClearGameDataConfirmation(UIViewController *hostViewController);
 void ZONPresentClearAuthorizationConfirmation(UIViewController *hostViewController);
-BOOL ZONInjectedPassiveSatellaAvailable(void);
 BOOL ZONDispatchMigratedActionForLegacyTag(NSInteger legacyTag,
                                             UIViewController *hostViewController);
 BOOL ZONDispatchMigratedToggleForLegacyTag(NSInteger legacyTag, BOOL on);
