@@ -35,9 +35,10 @@ jobs:
           python3 Tests/dispatcher_contract_smoke.py
           python3 Tests/p79_8d_passive_satella_contract.py
           python3 Tests/p79_8f_p0_safety_contract.py
+          python3 Tests/p79_8g_runtime_capability_boundary.py
       - name: Install xcodeproj
         run: sudo gem install xcodeproj --no-document
-      - name: Add ZONAuthV2 files to testmod target
+      - name: Add active generated files to testmod target
         run: |
           set -euxo pipefail
           ruby <<'RUBY'
@@ -47,29 +48,37 @@ jobs:
           raise 'testmod target missing' unless target
           testmod_group = project.main_group.children.find { |g| g.respond_to?(:display_name) && g.display_name == 'testmod' }
           raise 'testmod group missing' unless testmod_group
-          auth_group = testmod_group.children.find { |g| g.respond_to?(:display_name) && g.display_name == 'ZONAuthV2' }
-          auth_group ||= testmod_group.new_group('ZONAuthV2', 'ZONAuthV2')
-          files = %w[
+
+          add_files = lambda do |group_name, group_path, names|
+            group = testmod_group.children.find { |g| g.respond_to?(:display_name) && g.display_name == group_name }
+            group ||= testmod_group.new_group(group_name, group_path)
+            names.each do |name|
+              ref = group.files.find { |f| f.path == name }
+              ref ||= group.new_file(name)
+              if name.end_with?('.m')
+                target.source_build_phase.add_file_reference(ref, true) unless target.source_build_phase.files_references.include?(ref)
+              else
+                target.headers_build_phase.add_file_reference(ref, true) unless target.headers_build_phase.files_references.include?(ref)
+              end
+            end
+          end
+
+          add_files.call('ZONAuthV2', 'ZONAuthV2', %w[
             ZONAuthV2Storage.h ZONAuthV2Storage.m
             ZONAuthV2API.h ZONAuthV2API.m
             ZONAuthV2Flow.h ZONAuthV2Flow.m
             ZONAuthV2Verify.h ZONAuthV2Verify.m
             ZONPresentationCoordinator.h ZONPresentationCoordinator.m
-          ]
-          files.each do |name|
-            ref = auth_group.files.find { |f| f.path == name }
-            ref ||= auth_group.new_file(name)
-            if name.end_with?('.m')
-              target.source_build_phase.add_file_reference(ref, true) unless target.source_build_phase.files_references.include?(ref)
-            else
-              target.headers_build_phase.add_file_reference(ref, true) unless target.headers_build_phase.files_references.include?(ref)
-            end
-          end
+          ])
+          add_files.call('ZONServices', 'ZONServices', %w[
+            ZONRuntimeCapabilityService.h ZONRuntimeCapabilityService.m
+          ])
           project.save
           RUBY
           grep -q 'ZONAuthV2Verify.m in Sources' testmod.xcodeproj/project.pbxproj
           grep -q 'ZONAuthV2Flow.m in Sources' testmod.xcodeproj/project.pbxproj
           grep -q 'ZONPresentationCoordinator.m in Sources' testmod.xcodeproj/project.pbxproj
+          grep -q 'ZONRuntimeCapabilityService.m in Sources' testmod.xcodeproj/project.pbxproj
       - name: Upload prepared project
         uses: actions/upload-artifact@v4
         with:
