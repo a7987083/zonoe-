@@ -1,6 +1,6 @@
 # CHANGELOG_DEV
 
-## 2026-09-30 — v1_p79_8g R2 Runtime Capability Extraction — CI PASSED / DEVICE PENDING
+## 2026-09-30 — v1_p79_8g R2 Runtime Capability Extraction — CI PASSED / DEVICE PASSED
 - Branch: `work/p79.8-udid-first-rebuild`.
 - Added `ZONRuntimeCapabilityService.h`: `e2ae02388d1990cefa0160d61d04d530e65556c3`.
 - Added passive capability implementation and stable `passive.satella` identifier: `3cecb5791bae8aa22a52681cbc54dfd405a098a6`.
@@ -21,8 +21,10 @@
 - Existing `runtime.iap-noads` still writes `NNGG`/`NNGGNNGG` and updates `ImgTool.NeiGou` before delegating passive activation.
 - CI contract results: `dispatcher-contract: PASS`, `p79.8d-passive-contract: PASS`, `p79.8f-p0-safety: PASS`, `p79.8g-runtime-capability: PASS`.
 - Xcode 16.4 arm64 + arm64e build: PASS.
-- P79.8f remains the last device-passed baseline; P79.8g requires a short device-equivalence pass before promotion.
-- Next after device pass: R3 feature-access provider combining server permissions with local runtime capability availability for the future standalone external-dylib button.
+- **Device validation:** user reported P79.8g testing normal on 2026-09-30. R2 runtime-capability extraction is promoted as the latest device-passed runtime/architecture baseline.
+- P79.8f remains the closed P0 safety baseline and its contracts remain inherited by P79.8g.
+- Separate P79.8c cloud-permission matrix and full P79.8b persistence regression remain independently tracked.
+- Next engineering stage: P79.8h / R3 Feature Access Provider combining server permissions with local runtime capability availability for the future standalone external-dylib button.
 
 ## 2026-09-30 — v1_p79_8f P0 Runtime/Authorization Safety Hardening — CI PASSED / P0 DEVICE PASSED
 - Branch: `work/p79.8-udid-first-rebuild`.
@@ -39,7 +41,7 @@
 - Added mapped `__TEXT` validation before passive RVA signature reads/call.
 - Added authorization-reset protected preference snapshot/verify/restore guard.
 - Added `Tests/p79_8f_p0_safety_contract.py` for startup/reset/runtime safety boundaries.
-- CI contract results: `dispatcher-contract: PASS`, `p79.8d-passive-contract: PASS`, `p79.8f-p0-safety: PASS`.
+- CI contract results: `dispatcher-contract: PASS`, `p79_8d-passive-contract: PASS`, `p79_8f-p0-safety: PASS`.
 - Xcode 16.4 arm64 + arm64e build: PASS.
 - **Device validation:** user reported P79.8f testing normal on 2026-09-30. P79.8f is the current P0 device baseline.
 - Separate P79.8c cloud-permission matrix and full P79.8b persistence regression remain independently tracked.
