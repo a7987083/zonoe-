@@ -27,6 +27,7 @@ FOUNDATION_EXPORT NSString * const ZONFeatureRiskKey;
 FOUNDATION_EXPORT NSString * const ZONFeatureMigratedKey;
 FOUNDATION_EXPORT NSString * const ZONFeatureRequiredMenuPermissionKey;
 FOUNDATION_EXPORT NSString * const ZONFeatureRequiredActionPermissionKey;
+FOUNDATION_EXPORT NSString * const ZONFeatureRequiredRuntimeCapabilityKey;
 
 FOUNDATION_EXPORT NSString * const ZONSectionIdentifierKey;
 FOUNDATION_EXPORT NSString * const ZONSectionTitleKey;
