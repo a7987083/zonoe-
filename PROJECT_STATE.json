@@ -6,7 +6,7 @@
   "current_work_branch": "work/p79.8-udid-first-rebuild",
   "current_version": "v1_p79_8f",
   "current_phase": "p79_8f_p0_runtime_authorization_safety_hardening",
-  "phase_status": "ci_passed_device_pending",
+  "phase_status": "device_passed_p0_baseline",
   "build_head": "67fbf755cf00623f3d0136668e103461d5189dae",
   "implementation": {
     "passive_text_bounds_commit": "b75adaa66982cbc3bf1b43aa13c441e88bf0c85b",
@@ -52,29 +52,37 @@
       "game-data reset remains scoped to NSHomeDirectory Documents/Library/tmp and current bundle defaults"
     ]
   },
+  "p0_device_acceptance": {
+    "status": "passed",
+    "reported_at": "2026-09-30",
+    "evidence": "user reported P79.8f device testing normal",
+    "accepted_matrix": [
+      "activated UDID startup path",
+      "offline startup does not misroute to card prompt",
+      "authorization reset preserves protected menu/runtime preferences",
+      "game-data reset remains within intended app-container scope",
+      "matching passive dylib still initializes correctly",
+      "missing/incompatible passive target fails safely without breaking original toggle",
+      "real-device runtime path shows no observed regression"
+    ]
+  },
   "functional_baseline": {
-    "authorization_version": "v1_p79_8a",
+    "authorization_version": "v1_p79_8f",
     "authorization_device_status": "passed",
     "persistence_version": "v1_p79_8b",
-    "persistence_device_status": "pending",
+    "persistence_device_status": "pending_separate_full_regression",
     "menu_permission_version": "v1_p79_8c",
-    "menu_permission_device_status": "pending",
-    "passive_runtime_version": "v1_p79_8d",
-    "passive_runtime_device_status": "pending"
+    "menu_permission_device_status": "pending_separate_cloud_permission_regression",
+    "passive_runtime_version": "v1_p79_8f",
+    "passive_runtime_device_status": "passed"
   },
-  "last_device_verified_version": "v1_p79_8a",
-  "last_device_verified_ci_run_id": 36572203902,
-  "device_status": "pending",
-  "device_verification_required": [
-    "already-activated UDID starts without card prompt and reaches menu",
-    "offline startup shows network failure and does not open card prompt",
-    "clear authorization removes authorization state while preserving all protected menu/runtime preferences",
-    "clear game data remains confined to current App Documents/Library/tmp/current bundle defaults",
-    "matching injected passive dylib still validates and starts exactly once",
-    "no injected passive dylib does not crash or break the original IAP/iGameGod toggle",
-    "same-name incompatible or truncated passive dylib fails closed before signature dereference/call",
-    "arm64e passive invocation succeeds on real hardware"
+  "last_device_verified_version": "v1_p79_8f",
+  "last_device_verified_ci_run_id": 36723643520,
+  "device_status": "passed_p0_baseline",
+  "remaining_device_regressions": [
+    "P79.8c basic vs app_plus/global_plus VIP cloud-save visibility/action/fresh-Verify behavior",
+    "P79.8b full persistence regression beyond the P0 authorization-reset protected-key boundary"
   ],
   "secret_storage_policy": "test/real Verify Secret is injected only into controlled final artifacts and is not committed to public Git history",
-  "next_task": "Run the P79.8f P0 device matrix. Do not begin R2 capability refactor until the P0 device baseline is accepted."
+  "next_task": "Begin P1/R2 Runtime Capability extraction. Preserve the device-passed P79.8f P0 baseline exactly, then use the capability boundary for the future new external-dylib button that is visible only when its target image is loaded and compatible."
 }
