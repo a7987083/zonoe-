@@ -4,26 +4,29 @@
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
   "current_work_branch": "work/p79.8-udid-first-rebuild",
-  "current_version": "v1_p79_8f",
-  "current_phase": "p79_8f_p0_runtime_authorization_safety_hardening",
-  "phase_status": "device_passed_p0_baseline",
-  "build_head": "67fbf755cf00623f3d0136668e103461d5189dae",
+  "current_version": "v1_p79_8g",
+  "current_phase": "p79_8g_r2_runtime_capability_extraction",
+  "phase_status": "ci_passed_device_pending",
+  "build_head": "9702183f97304e62939d528f7bec64c46417510a",
   "implementation": {
-    "passive_text_bounds_commit": "b75adaa66982cbc3bf1b43aa13c441e88bf0c85b",
-    "authorization_reset_boundary_commit": "033ff7f8f18b4e4894d582b5b02165d84d24bacc",
-    "p0_contract_test_commit": "9a9a797db06c910e5f31633126fe7f8006585b66",
-    "ci_contract_commit": "7b1412434e13b56304d9c609c0b5b277259f8766",
-    "version_commit": "67fbf755cf00623f3d0136668e103461d5189dae"
+    "capability_header_commit": "e2ae02388d1990cefa0160d61d04d530e65556c3",
+    "capability_implementation_commit": "3cecb5791bae8aa22a52681cbc54dfd405a098a6",
+    "dispatcher_delegate_commit": "7441e424aadd1453762741e7b8666a7196cca330",
+    "passive_contract_migration_commit": "4cbe15a61b61659e5110a7a14956c44ddb8766fa",
+    "p0_contract_migration_commit": "3b902b1dc17b46b098f7aea45919aef70b85abbf",
+    "r2_boundary_contract_commit": "4953e357c2f33b0eae20434b8bc6f3d24fe59109",
+    "ci_project_membership_commit": "06be0e0a7f23b61d88fbe71752f9625822566a2f",
+    "version_commit": "9702183f97304e62939d528f7bec64c46417510a"
   },
-  "last_ci_run_id": 36723643520,
-  "last_ci_run_number": 44,
+  "last_ci_run_id": 36727105080,
+  "last_ci_run_number": 53,
   "last_ci_status": "success",
-  "artifact_id": 11101797212,
-  "artifact_digest": "sha256:e16aa4bb55eb9e776c283d02da67eef78010f7f07df012c764e7a452a029ba6e",
-  "raw_ci_dylib_sha256": "b124e544b32674844bf7e9be9a35e0259e512063ce7b0113e5450c3a61535970",
-  "raw_ci_dylib_size_bytes": 3263040,
-  "controlled_final_dylib_sha256": "18c443fb67440e7030b1b85fb82813c6d5aad52347cbf4aa3358313e00a84a6a",
-  "controlled_final_zip_sha256": "1e6ba1e2b3576673e645e787b83cadde1b6833f200dc621d527273ab6fbe0778",
+  "artifact_id": 11103866499,
+  "artifact_digest": "sha256:0d41293824d72804b263385b51e50f59dac69b3adaf1adad2e43a2b9203792ef",
+  "raw_ci_dylib_sha256": "e5a7f07ed4a5bf980113382f72eca11782fc163b80f64a05754843b0b3a3bede",
+  "raw_ci_dylib_size_bytes": 3264304,
+  "controlled_final_dylib_sha256": "4172ac0881f6885b1ac620a486ba9b8eadd153c9b11f26a3647607737c028863",
+  "controlled_final_zip_sha256": "b7e6d9eea2cfb347e1868457e43f54c5b4673b9d28486998433aa44b7b749ad1",
   "controlled_final_placeholder_remaining": 0,
   "controlled_final_secret_occurrences": 2,
   "controlled_final_changed_bytes_vs_raw": 128,
@@ -31,58 +34,49 @@
   "ci_contract_tests": {
     "dispatcher_contract_smoke": "passed",
     "p79_8d_passive_satella_contract": "passed",
-    "p79_8f_p0_safety_contract": "passed"
+    "p79_8f_p0_safety_contract": "passed",
+    "p79_8g_runtime_capability_boundary": "passed"
   },
-  "p0_hardening": {
-    "passive_dylib": [
-      "parse LC_SEGMENT_64 before dereferencing target RVA",
-      "require __TEXT vmaddr == 0",
-      "require __TEXT readable and executable",
-      "require ctor and init signature ranges to fit mapped __TEXT",
-      "fail closed with P79.8F_P0_SATELLA text_range_mismatch before memcmp"
-    ],
-    "authorization_reset": [
-      "snapshot fold_base/fold_draw/fold_role and NNGG/NNGGNNGG/AADD/AADDAADD/AADDssppeedd",
-      "verify protected preferences are unchanged after authorization reset",
-      "restore protected snapshot and return failure if authorization cleanup crosses menu/runtime boundary"
-    ],
-    "contract_locked": [
-      "startup network lookup failure is handled before missing-activation/card-prompt routing",
-      "unknown authorization payload suppresses card prompt",
-      "game-data reset remains scoped to NSHomeDirectory Documents/Library/tmp and current bundle defaults"
+  "r2_runtime_capability": {
+    "service": "ZONRuntimeCapabilityService",
+    "public_api": ["isCapabilityAvailable:", "activateCapability:"],
+    "registered_capabilities": ["passive.satella"],
+    "dispatcher_owns_low_level_dyld_macho_pac": false,
+    "external_loading_owned_by_host_injection": true,
+    "passive_contract_preserved": [
+      "accepted image names unchanged",
+      "ctor RVA 0x847C unchanged",
+      "init RVA 0x888C unchanged",
+      "exact ctor/init signatures unchanged",
+      "P79.8f mapped __TEXT guard preserved",
+      "no dlopen/dlclose",
+      "main-thread invocation preserved",
+      "arm64e function-pointer PAC preserved",
+      "one-shot process state preserved",
+      "missing target does not roll back original IAP/iGameGod toggle"
     ]
   },
-  "p0_device_acceptance": {
+  "p0_device_baseline": {
+    "version": "v1_p79_8f",
     "status": "passed",
     "reported_at": "2026-09-30",
-    "evidence": "user reported P79.8f device testing normal",
-    "accepted_matrix": [
-      "activated UDID startup path",
-      "offline startup does not misroute to card prompt",
-      "authorization reset preserves protected menu/runtime preferences",
-      "game-data reset remains within intended app-container scope",
-      "matching passive dylib still initializes correctly",
-      "missing/incompatible passive target fails safely without breaking original toggle",
-      "real-device runtime path shows no observed regression"
-    ]
-  },
-  "functional_baseline": {
-    "authorization_version": "v1_p79_8f",
-    "authorization_device_status": "passed",
-    "persistence_version": "v1_p79_8b",
-    "persistence_device_status": "pending_separate_full_regression",
-    "menu_permission_version": "v1_p79_8c",
-    "menu_permission_device_status": "pending_separate_cloud_permission_regression",
-    "passive_runtime_version": "v1_p79_8f",
-    "passive_runtime_device_status": "passed"
+    "evidence": "user reported P79.8f device testing normal"
   },
   "last_device_verified_version": "v1_p79_8f",
   "last_device_verified_ci_run_id": 36723643520,
-  "device_status": "passed_p0_baseline",
-  "remaining_device_regressions": [
+  "device_status": "pending_for_p79_8g_r2_equivalence",
+  "device_verification_required": [
+    "runtime.iap-noads preserves NNGG/NNGGNNGG and ImgTool.NeiGou behavior",
+    "matching injected passive dylib still logs validated/init/started and activates",
+    "second ON in same process remains already_started",
+    "missing passive target still does not crash or roll back the original toggle",
+    "malformed/incompatible target still fails closed through P79.8f mapped-range/signature guards",
+    "arm64e passive invocation still succeeds after moving implementation behind service boundary"
+  ],
+  "remaining_separate_regressions": [
     "P79.8c basic vs app_plus/global_plus VIP cloud-save visibility/action/fresh-Verify behavior",
     "P79.8b full persistence regression beyond the P0 authorization-reset protected-key boundary"
   ],
   "secret_storage_policy": "test/real Verify Secret is injected only into controlled final artifacts and is not committed to public Git history",
-  "next_task": "Begin P1/R2 Runtime Capability extraction. Preserve the device-passed P79.8f P0 baseline exactly, then use the capability boundary for the future new external-dylib button that is visible only when its target image is loaded and compatible."
+  "next_task": "Run the short P79.8g R2 device-equivalence matrix. After it passes, begin R3 feature-access provider so menu visibility can combine server permissions with ZONRuntimeCapabilityService.isCapabilityAvailable for the future standalone external-dylib button."
 }
