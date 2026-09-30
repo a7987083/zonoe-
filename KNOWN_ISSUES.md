@@ -9,33 +9,29 @@
 - Architectures: `arm64 + arm64e`.
 - Raw CI SHA256: `e5a7f07ed4a5bf980113382f72eca11782fc163b80f64a05754843b0b3a3bede`.
 - Controlled final SHA256: `4172ac0881f6885b1ac620a486ba9b8eadd153c9b11f26a3647607737c028863`.
-- P79.8g device validation: pending.
-- Current device-passed baseline: P79.8f.
+- P79.8g device validation: PASSED by user report on 2026-09-30.
+- Current latest device-passed runtime/architecture baseline: P79.8g.
+- Closed P0 safety baseline remains P79.8f and is inherited by P79.8g.
 
-## R2 risk reduced in P79.8g
+## R2 risk closed in P79.8g
 
 ### Dispatcher no longer owns passive runtime internals
-- `ZONFeatureDispatcher` now delegates passive activation through `ZONRuntimeCapabilityService`.
-- `_dyld_*`, Mach-O parsing, mapped-`__TEXT` validation, passive RVAs/signatures, ptrauth and one-shot state now live behind the capability boundary.
-- `Tests/p79_8g_runtime_capability_boundary.py` explicitly rejects those low-level details if they reappear in Dispatcher.
+- `ZONFeatureDispatcher` delegates passive activation through `ZONRuntimeCapabilityService`.
+- `_dyld_*`, Mach-O parsing, mapped-`__TEXT` validation, passive RVAs/signatures, ptrauth and one-shot state live behind the capability boundary.
+- `Tests/p79_8g_runtime_capability_boundary.py` rejects those low-level details if they reappear in Dispatcher.
 
-### Runtime capability service is intentionally narrow
-- Current registered capability is only `passive.satella`.
+### Runtime capability service is device-accepted
+- Current registered capability is `passive.satella`.
 - Public API is `isCapabilityAvailable:` + `activateCapability:`.
-- The service does not load or unload external modules; targets remain externally injected/preloaded.
-- This is sufficient for R2 and for future button visibility checks, but it is not yet the R3 menu-access integration.
+- The service does not load/unload external modules; targets remain externally injected/preloaded.
+- User reported P79.8g testing normal after the extraction, so the code-move/device-equivalence risk is closed for this baseline.
 
-## P79.8g device-equivalence risk
-- R2 moves code across compilation units, so CI/source-contract success is not treated as real-device equivalence automatically.
-- Verify on device that the existing `runtime.iap-noads` path still preserves `NNGG`, `NNGGNNGG`, `ImgTool.NeiGou`, valid passive startup, one-shot semantics, no-target behavior and arm64e invocation.
-- Until that passes, P79.8f remains the promotion baseline.
-
-## P0 risks remain closed by P79.8f baseline
+## P0 risks remain closed through inherited P79.8f contracts
 - Startup transport failure is not treated as missing activation/card prompt.
 - Authorization reset preserves protected menu/runtime keys.
 - Game-data reset remains scoped to the current App container roots/defaults.
 - Passive mapped-range validation executes before signature dereference/call.
-- P79.8g tests continue to lock these P79.8f contracts after implementation migration.
+- P79.8g tests continue to lock these contracts after implementation migration.
 
 ## Remaining functional regression gates
 
@@ -53,11 +49,15 @@
 
 ### Renderer still reads raw AuthV2 session schema
 - `ZONSectionRenderer` directly consumes `lastVerify/permissions/access_level`.
-- R3 should introduce a feature-access provider combining server permissions with `ZONRuntimeCapabilityService.isCapabilityAvailable:` before the future standalone external-dylib button is added.
+- P79.8h / R3 should introduce one feature-access provider combining server permissions with `ZONRuntimeCapabilityService.isCapabilityAvailable:` before adding the standalone external-dylib button.
+
+### Visibility alone must not become the security boundary
+- When runtime-capability metadata is added, Dispatcher/action execution must enforce the same capability requirement used by rendering.
+- A hidden button must not remain reachable through legacy tags or direct dispatch.
 
 ### Feature registry remains weakly typed
 - Feature/section descriptors are dictionaries keyed by strings.
-- Add optional runtime-capability metadata during R3 carefully; migrate to typed descriptors only after the access boundary is stable.
+- R3 may add an optional runtime-capability key, but full typed-descriptor migration belongs to R4 after the access boundary is stable.
 
 ### `ZONAuthV2Flow` still owns too many responsibilities
 - It parses server payloads, classifies state, orchestrates activation/config/Verify, maps errors, presents card UI, notices/updates, and opens the floating entry.
@@ -76,6 +76,7 @@
 - Controlled final placeholder remaining: `0`.
 - Controlled final Verify Secret occurrences: `2`.
 - Raw-to-final changed bytes: `128`, limited to the two equal-length Verify Secret placeholder regions.
+- Device test: reported normal; P79.8g promoted to current runtime/architecture baseline.
 
 ## Tracking rule
 - CI success alone does not equal device promotion.
