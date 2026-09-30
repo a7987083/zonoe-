@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-DISPATCHER = (ROOT / "testmod/ZONCore/ZONFeatureDispatcher.m").read_text()
+CAPABILITY = (ROOT / "testmod/ZONServices/ZONRuntimeCapabilityService.m").read_text()
 AUTH_RESET = (ROOT / "testmod/ZONServices/ZONAuthorizationResetService.m").read_text()
 GAME_RESET = (ROOT / "testmod/ZONServices/ZONGameDataResetService.m").read_text()
 AUTH_FLOW = (ROOT / "testmod/ZONAuthV2/ZONAuthV2Flow.m").read_text()
@@ -24,8 +24,6 @@ def forbid(text: str, needle: str, label: str) -> None:
         fail(f"unexpected {label}: {needle}")
 
 
-# P0-4: never dereference base + RVA until the matching target's mapped __TEXT
-# contract has been validated. P79.8d's exact offsets/signatures remain protected.
 for needle, label in [
     ("ZONPassiveSatellaTextCoversRange", "mapped-range validator"),
     ("LC_SEGMENT_64", "64-bit segment parsing"),
@@ -40,15 +38,14 @@ for needle, label in [
     ("if (!ctorMapped || !initMapped)", "fail-closed range gate"),
     ("text_range_mismatch", "diagnostic range failure marker"),
 ]:
-    require(DISPATCHER, needle, label)
+    require(CAPABILITY, needle, label)
 
-range_gate = DISPATCHER.find("if (!ctorMapped || !initMapped)")
-ctor_memcmp = DISPATCHER.find("memcmp((const void *)(base + kZONPassiveSatellaCtorRVA)")
-init_memcmp = DISPATCHER.find("memcmp((const void *)(base + kZONPassiveSatellaInitRVA)")
+range_gate = CAPABILITY.find("if (!ctorMapped || !initMapped)")
+ctor_memcmp = CAPABILITY.find("memcmp((const void *)(base + kZONPassiveSatellaCtorRVA)")
+init_memcmp = CAPABILITY.find("memcmp((const void *)(base + kZONPassiveSatellaInitRVA)")
 if range_gate < 0 or ctor_memcmp < 0 or init_memcmp < 0 or not (range_gate < ctor_memcmp < init_memcmp):
     fail("mapped-range gate must execute before both signature dereferences")
 
-# P0-3: authorization reset must preserve unrelated menu/runtime settings.
 protected_keys = [
     '"fold_base"', '"fold_draw"', '"fold_role"',
     '"NNGG"', '"NNGGNNGG"', '"AADD"', '"AADDAADD"', '"AADDssppeedd"',
@@ -64,8 +61,6 @@ for needle, label in [
 ]:
     require(AUTH_RESET, needle, label)
 
-# The destructive game-data scope remains rooted at the current app container's
-# three existing domains. This test intentionally locks the current behavior.
 for needle, label in [
     ("NSString *home = NSHomeDirectory();", "container home root"),
     ('stringByAppendingPathComponent:@"Documents"', "Documents root"),
@@ -76,8 +71,6 @@ for needle, label in [
     require(GAME_RESET, needle, label)
 forbid(GAME_RESET, "removeItemAtPath:NSHomeDirectory()", "whole-container deletion")
 
-# P0-2: startup lookup transport failure and ambiguous server data must not be
-# treated as an unactivated device/card-prompt condition.
 for needle, label in [
     ('[self showMessage:ZONStartupLookupErrorMessage(error) title:@"验证失败" completion:nil];', "startup transport failure UI"),
     ('NSLog(@"[zonoemenu][auth-v2][P79.8A_UDID_GATE] unknown payload; card prompt suppressed")', "unknown-payload suppression marker"),
