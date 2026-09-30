@@ -6,7 +6,7 @@
 - Current branch: `work/p79.8-udid-first-rebuild`.
 - Read in this order: `PROJECT_STATE.json` → `ROADMAP.md` → `KNOWN_ISSUES.md` → `CHANGELOG_DEV.md` → `ARCHITECTURE.md` → `REFACTOR_REVIEW.md`.
 
-## Current target — P79.8f P0 Runtime/Authorization Safety Hardening
+## Current baseline — P79.8f P0 Runtime/Authorization Safety Hardening
 - VERSION: `v1_p79_8f`.
 - Build HEAD: `67fbf755cf00623f3d0136668e103461d5189dae`.
 - CI Run `36723643520` / #44: success.
@@ -15,43 +15,23 @@
 - Controlled final SHA256: `18c443fb67440e7030b1b85fb82813c6d5aad52347cbf4aa3358313e00a84a6a`.
 - Controlled ZIP SHA256: `1e6ba1e2b3576673e645e787b83cadde1b6833f200dc621d527273ab6fbe0778`.
 - Architectures: arm64 + arm64e PAC00.
-- Status: CI PASSED / DEVICE PENDING.
+- Status: CI PASSED / P0 DEVICE PASSED.
+- User reported P79.8f device testing normal on 2026-09-30.
+
+## P79.8f device-passed P0 contract
+1. Activated-UDID startup remains healthy and does not regress into unnecessary card prompting.
+2. Offline/transport failure does not get treated as missing activation.
+3. Authorization reset preserves unrelated menu/runtime preferences.
+4. Game-data reset remains constrained to intended current-App container state.
+5. Matching externally injected passive dylib remains callable through the existing runtime switch.
+6. Missing/incompatible passive targets fail safely and do not break the original IAP/iGameGod toggle.
+7. No device regression was reported for the P79.8f safety changes.
 
 ## P79.8f code changes
-1. `ZONFeatureDispatcher.m`
-   - Added mapped-`__TEXT` validation before reading `base + 0x847C` or `base + 0x888C`.
-   - Requires `LC_SEGMENT_64`, `__TEXT vmaddr=0`, readable + executable initial protections, and both signature ranges fully inside `vmsize`.
-   - Bad/malformed targets log `[zonoemenu][P79.8F_P0_SATELLA] text_range_mismatch` and are rejected before `memcmp`/call.
-   - P79.8d file names, offsets, signatures, no-dlopen ownership, main-thread call, PAC and one-shot behavior are unchanged.
-2. `ZONAuthorizationResetService.m`
-   - Snapshots `fold_base/fold_draw/fold_role/NNGG/NNGGNNGG/AADD/AADDAADD/AADDssppeedd` before auth cleanup.
-   - Verifies those unrelated menu/runtime keys are unchanged after cleanup.
-   - If crossed, restores the snapshot and returns failure with `[P79.8F_P0_RESET]` logging.
-3. `Tests/p79_8f_p0_safety_contract.py`
-   - Locks mapped-range gating before passive signature reads.
-   - Locks authorization reset/menu preference boundary.
-   - Locks current game-data reset roots to current-container `Documents`, `Library`, `tmp` + current bundle defaults.
-   - Locks startup network-error and unknown-payload behavior so neither is routed as “missing activation” card prompt.
-4. Active P79 workflow now runs all three current contracts and triggers on `Tests/**`.
-
-## CI evidence
-- `dispatcher-contract: PASS`.
-- `p79.8d-passive-contract: PASS`.
-- `p79.8f-p0-safety: PASS`.
-- Xcode 16.4 arm64 + arm64e build: PASS.
-- Raw CI build intentionally has no configured Verify Secret.
-- Controlled final injection changed exactly 128 bytes in the two placeholder regions; placeholder remaining 0, Secret occurrences 2.
-
-## Exact device test order
-1. **Activated UDID startup**: no card prompt; reaches Verify and floating/menu entry.
-2. **Offline startup**: show network failure; no card prompt.
-3. **Clear authorization**: auth state is removed; all protected menu/runtime keys retain their previous values.
-4. **Clear game data**: only current App container Documents/Library/tmp/current bundle defaults are affected; no sandbox escape or bundle deletion.
-5. **Matching passive dylib**: first ON logs `validated`, `init=...`, `started`; feature really activates.
-6. **Second ON same process**: logs `already_started`; no second init.
-7. **No passive dylib**: log `image_not_loaded_or_invalid`; no crash; original IAP/iGameGod toggle still works.
-8. **Incompatible/same-name malformed target**: expect `text_range_mismatch` or ctor/prologue mismatch; no jump.
-9. **arm64e hardware**: indirect PAC-signed call works.
+- `ZONFeatureDispatcher.m`: mapped `__TEXT` validation before reading passive ctor/init RVAs; malformed targets fail closed with `[P79.8F_P0_SATELLA]`.
+- `ZONAuthorizationResetService.m`: snapshot/verify/restore protected menu/runtime keys around authorization cleanup.
+- `Tests/p79_8f_p0_safety_contract.py`: locks network-error routing, unknown-payload behavior, reset boundaries, current game-data reset scope, and passive mapped-range validation.
+- Active P79 workflow runs current Dispatcher, passive-runtime and P0 safety contracts before Xcode build.
 
 ## Current architecture ownership
 - Startup: `Bsphp/main.m +load` → `ZONBootstrap`.
@@ -62,14 +42,15 @@
 - Formal plugin loading: `ZONModuleLoader` ABI.
 - Passive Satella: externally preloaded image; current probe/call still lives in Dispatcher pending R2.
 
-## Last device-passed baseline
-- P79.8a / `v1_p79_8a`.
-- CI Run `36572203902` / #32.
-- Controlled final SHA256: `1601c8aaf55643918d4d6f4ea16d45c552e6fdf1ad9c8c7a2cd9152c03fbb0`.
-- User confirmed fresh App + already-active UDID works without card re-entry.
+## Remaining separate regressions
+- P79.8c cloud permission behavior is not promoted by the P79.8f P0 test result; basic vs app/global Plus visibility/action/fresh-Verify still has its own regression gate.
+- P79.8b full persistence regression remains separately tracked beyond the P0 protected-key reset boundary.
 
-## Next engineering stage
-Do **not** start R2 yet. First accept or reject the P79.8f P0 device matrix. After P0 device acceptance, extract the passive runtime capability from Dispatcher and use that capability boundary for the future new external-dylib button/filter.
+## Next engineering stage — P1 / R2 Runtime Capability
+- Extract only the passive injected-image probe/validation/invocation from `ZONFeatureDispatcher` into a dedicated capability service/registry.
+- Do not change accepted image names, RVAs, signatures, mapped-range guard, no-dlopen ownership, PAC, main-thread invocation, one-shot semantics, or original toggle behavior.
+- Use that boundary for the future new external dylib: target loaded + compatible → show its standalone button; otherwise do not render it.
+- Run source contracts + arm64/arm64e build + device regression before promoting R2.
 
 ## Long-project rules
 - Preserve commit history.
