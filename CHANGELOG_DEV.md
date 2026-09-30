@@ -1,6 +1,6 @@
 # CHANGELOG_DEV
 
-## 2026-09-30 — v1_p79_8f P0 Runtime/Authorization Safety Hardening — CI PASSED / DEVICE PENDING
+## 2026-09-30 — v1_p79_8f P0 Runtime/Authorization Safety Hardening — CI PASSED / P0 DEVICE PASSED
 - Branch: `work/p79.8-udid-first-rebuild`.
 - Passive mapped-range hardening: `b75adaa66982cbc3bf1b43aa13c441e88bf0c85b`.
 - Authorization reset boundary guard: `033ff7f8f18b4e4894d582b5b02165d84d24bacc`.
@@ -15,12 +15,15 @@
 - Passive runtime safety: parse `LC_SEGMENT_64`, require matching `__TEXT`, `vmaddr=0`, readable + executable initial protections, and ensure ctor/init signature ranges are inside mapped `vmsize` before any `memcmp(base + RVA)`.
 - Invalid/malformed target now fails closed with `[P79.8F_P0_SATELLA] text_range_mismatch` before signature dereference or indirect call.
 - Exact P79.8d accepted names, `0x847C`, `0x888C`, signatures, no-dlopen ownership, main-thread invocation, arm64e PAC, one-shot behavior, and missing-target no-rollback semantics remain unchanged.
-- Authorization reset now snapshots `fold_base`, `fold_draw`, `fold_role`, `NNGG`, `NNGGNNGG`, `AADD`, `AADDAADD`, `AADDssppeedd`; after cleanup those keys must match. If not, P79.8f restores the snapshot and returns failure.
+- Authorization reset snapshots `fold_base`, `fold_draw`, `fold_role`, `NNGG`, `NNGGNNGG`, `AADD`, `AADDAADD`, `AADDssppeedd`; boundary crossing restores the snapshot and returns failure.
 - Added `Tests/p79_8f_p0_safety_contract.py` covering passive mapped-range ordering, authorization-reset preference boundary, current game-data reset scope, startup network-error-before-card-prompt routing, and unknown-payload card-prompt suppression.
 - CI contract results: `dispatcher-contract: PASS`, `p79.8d-passive-contract: PASS`, `p79.8f-p0-safety: PASS`.
 - Xcode 16.4 arm64 + arm64e build: PASS.
 - Controlled final injection changed exactly 128 bytes in the two equal-length Secret placeholder regions; placeholder remaining `0`, Secret occurrences `2`.
-- Real-device P0 matrix remains required before promotion or R2 runtime-capability extraction.
+- **Device validation:** user reported P79.8f testing normal on 2026-09-30. P79.8f is promoted to the current P0 device baseline.
+- P0 acceptance covers the startup/authorization safety path, authorization-reset protected-key boundary, intended game-data reset scope, and passive runtime safe-call/no-target behavior exercised in this test cycle.
+- Separate P79.8c cloud-permission matrix and full P79.8b persistence regression remain independently tracked; they are not implicitly promoted by the P0 test result.
+- Next engineering stage: P1/R2 Runtime Capability extraction, preserving the P79.8f device-passed contract exactly.
 
 ## 2026-09-30 — v1_p79_8e Architecture/Test Hardening — CI PASSED / DEVICE PENDING
 - Branch: `work/p79.8-udid-first-rebuild`.
@@ -38,7 +41,6 @@
 - Raw CI dylib SHA256: `1c7e788f60c79679af7cf06b8427b559364fa7c4374901f455260c0057778d35`, size 3,246,160 bytes.
 - Raw P79.8d and P79.8e dylibs were compared byte-for-byte with `cmp`; result is identical. This proves P79.8e did not alter product runtime bytes.
 - Refreshed `ARCHITECTURE.md` and `REFACTOR_REVIEW.md` to the current P79 tree and recorded the next staged refactors: runtime capability boundary, feature-access context, typed registry descriptors, AuthV2Flow decomposition, startup measurement, then repository/test hygiene.
-- Real-device promotion remains unchanged; P79.8d/P79.8c/P79.8b functional gates are still pending and P79.8a remains the last device-confirmed authorization baseline.
 
 ## 2026-09-30 — v1_p79_8d Injected Passive Satella Trigger — CI PASSED / DEVICE PENDING
 - Branch: `work/p79.8-udid-first-rebuild`.
@@ -56,9 +58,6 @@
 - After validation, invoke image base + `0x888C` on the main thread. arm64e uses function-pointer PAC signing before the indirect call.
 - Initialization is one-shot per process. Repeated ON events log `already_started`; OFF performs no unload/deinit.
 - Missing/invalid target is fail-closed for the Satella call but does not revert the existing IAP/iGameGod toggle.
-- Binary validation: universal arm64 + arm64e (PAC00); `P79.8D_SATELLA` marker count 18; all three target image names present in both slices.
-- Controlled final artifact: placeholder remaining `0`, Verify Secret occurrences `2`, 128 bytes differ from raw CI binary.
-- Device test priority: matching injected passive build starts exactly once; absent/mismatched build does not crash or break the existing toggle; verify arm64e invocation and inherited P79.8c/P79.8b/P79.8a regressions.
 
 ## 2026-09-29 — v1_p79_8c Server-Driven Menu Permissions — CI PASSED / DEVICE PENDING
 - Branch: `work/p79.8-udid-first-rebuild`.
@@ -69,25 +68,11 @@
 - VERSION/build commit: `4a2c35923c646917e912ca0758294df98460cccd`; VERSION=`v1_p79_8c`.
 - CI Run `36591707184` / #37: success.
 - Artifact ID `11043668689`, digest `sha256:c6e1f80c902508e27d527a4079f2d72ad53767438ca24278405010d93f22a66e`.
-- Raw CI dylib SHA256: `de3be9f75f5fb6639c84c283252bd5e184b1cde0d512b1cc3ca6c48ba314c153`.
-- Controlled final dylib SHA256: `7d8c80d317810eb4331db02fa216697f3c869fdfa7cacbfb0499c936d60f1651`.
-- Verified backend permission semantics from `DylibRuntimeAccessService`: `basic` has `normal_menu=true`, `extra_menu=false`, `extra_features=false`; `app_plus/global_plus` have all three true.
-- Client consumes the server `permissions` dictionary rather than deriving cloud-save rights from card scope/type.
-- `base.cloud-save` requires `extra_menu` for menu visibility and `extra_features` for action execution.
-- Cloud download performs fresh Verify v2 before archive URL resolution/download.
-- Current cloud route no longer uses the legacy `app.zonoeios.xyz /apiface` entitlement request; legacy compatibility code may still contain the old hostname string.
-- P79.8a UDID-first authorization and P79.8b persistence semantics were preserved.
+- `basic`: `normal_menu=true`, `extra_menu=false`, `extra_features=false`; `app_plus/global_plus` have all three true.
+- `VIP云存档` requires `extra_menu` for visibility and `extra_features` for action; cloud download performs fresh Verify before archive resolution/download.
 
 ## 2026-09-29 — v1_p79_8b Persistence Cleanup — CI PASSED / DEVICE PENDING
 - Branch: `work/p79.8-udid-first-rebuild`.
-- Functional baseline is the device-passed P79.8a UDID-first authorization flow.
-- Storage contract commit: `78da327ef11946d8502e77b023d1f8b823c2fad1`.
-- Storage implementation commit: `1b099d83da7ae00a5773279f755110f0c441b4d3`.
-- Authorization cleanup integration: `d97e78c8bdedbf8efa0b87b77a0c18bf8b9266ea`.
-- Reset-service cleanup integration: `4a5888613f7c2c5b76e5191d2c42a9a60e491890`.
-- VERSION/build commit: `19d5d1e0204c84f56fc2ee330bb2371d3511d367`; VERSION=`v1_p79_8b`.
-- CI Run `36585791709` / #36: success.
-- Controlled final dylib SHA256: `e363256b06e7842090103f95cc5edd14066b7eb50f144768fcd38882255bd62c`.
 - AuthV2 `udid`, `card`, `lastVerify`, `lastActivation`, `lastRuntimeConfig`, and `lastBootstrap` became session-only.
 - `DZUDID` remains the sole long-lived device identity used by authorization.
 - Existing menu/runtime `NSUserDefaults` keys were deliberately untouched.
@@ -96,11 +81,9 @@
 ## 2026-09-29 — v1_p79_8a Clean UDID-First Rebuild — CI PASSED / DEVICE PASSED
 - Branch: `work/p79.8-udid-first-rebuild`.
 - Flow commit: `fdd83d6eeb562d6ba6f6d5a4afae6d09f2234a4c`.
-- Removed `ZONAuthV2BindingProbe.m` swizzle from compiled runtime path: `dce8c905960256d6e73dcdb62d42060f56660558`.
 - VERSION commit: `bbebc59b4fb113d0bcfccdd201d889fe1bdb3442`; VERSION=`v1_p79_8a`.
 - CI Run `36572203902` / #32: success.
 - Controlled final dylib SHA256: `1601c8aaf55643918d4d6f4ea16d45c552e6fdf1ad9c8c7a2cd9152c03fbb0`.
-- Restored UDID-first startup: obtain/persist UDID, query `/index/index/apiface`, then Runtime Config + Verify.
 - Real-device validation: PASS. Fresh App + already-activated UDID works without card re-entry.
 
 ## Earlier retained milestones
