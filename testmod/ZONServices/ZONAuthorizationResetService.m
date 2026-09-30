@@ -4,6 +4,59 @@
 #import "../ZONAuthV2/ZONAuthV2Storage.h"
 #import <Security/Security.h>
 
+static NSString * const ZONAuthorizationResetErrorDomain = @"com.zonoe.authorization-reset";
+static NSInteger const ZONAuthorizationResetProtectedPreferencesChanged = -1001;
+
+static NSArray<NSString *> *ZONAuthorizationResetProtectedPreferenceKeys(void)
+{
+    // These keys belong to menu/runtime state, not authorization. P79.8f snapshots
+    // them so a future authorization cleanup change cannot silently cross that boundary.
+    return @[
+        @"fold_base",
+        @"fold_draw",
+        @"fold_role",
+        @"NNGG",
+        @"NNGGNNGG",
+        @"AADD",
+        @"AADDAADD",
+        @"AADDssppeedd",
+    ];
+}
+
+static NSDictionary<NSString *, id> *ZONAuthorizationResetPreferenceSnapshot(NSUserDefaults *defaults)
+{
+    NSMutableDictionary<NSString *, id> *snapshot = [NSMutableDictionary dictionary];
+    for (NSString *key in ZONAuthorizationResetProtectedPreferenceKeys()) {
+        id value = [defaults objectForKey:key];
+        snapshot[key] = value ?: NSNull.null;
+    }
+    return snapshot.copy;
+}
+
+static BOOL ZONAuthorizationResetPreferenceSnapshotMatches(NSUserDefaults *defaults,
+                                                            NSDictionary<NSString *, id> *snapshot)
+{
+    for (NSString *key in ZONAuthorizationResetProtectedPreferenceKeys()) {
+        id before = snapshot[key] ?: NSNull.null;
+        id after = [defaults objectForKey:key] ?: NSNull.null;
+        if (![before isEqual:after]) return NO;
+    }
+    return YES;
+}
+
+static void ZONAuthorizationResetRestorePreferenceSnapshot(NSUserDefaults *defaults,
+                                                            NSDictionary<NSString *, id> *snapshot)
+{
+    for (NSString *key in ZONAuthorizationResetProtectedPreferenceKeys()) {
+        id value = snapshot[key];
+        if (!value || value == NSNull.null) {
+            [defaults removeObjectForKey:key];
+        } else {
+            [defaults setObject:value forKey:key];
+        }
+    }
+}
+
 static BOOL ZONDeleteAllVisibleGenericPasswordsForService(NSString *service, NSError **error)
 {
     if (!service.length) return YES;
@@ -19,7 +72,7 @@ static BOOL ZONDeleteAllVisibleGenericPasswordsForService(NSString *service, NSE
         if (@available(iOS 11.3, *)) {
             message = CFBridgingRelease(SecCopyErrorMessageString(status, NULL));
         }
-        *error = [NSError errorWithDomain:@"com.zonoe.authorization-reset"
+        *error = [NSError errorWithDomain:ZONAuthorizationResetErrorDomain
                                      code:status
                                  userInfo:@{NSLocalizedDescriptionKey: message ?: @"Keychain 授权记录清理失败",
                                             @"service": service}];
@@ -33,11 +86,14 @@ static BOOL ZONDeleteAllVisibleGenericPasswordsForService(NSString *service, NSE
 {
     if (error) *error = nil;
 
+    NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;
+    NSDictionary<NSString *, id> *protectedPreferenceSnapshot =
+        ZONAuthorizationResetPreferenceSnapshot(defaults);
+
     // P79.8b: first remove all obsolete AuthV2/legacy authorization persistence.
     // The cleanup list intentionally excludes menu/runtime preference keys.
     [ZONAuthV2Storage purgeLegacyPersistentState];
 
-    NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;
     NSArray<NSString *> *userDefaultsKeys = @[
         @"zonoeudid",
         @"卡密",
@@ -98,6 +154,21 @@ static BOOL ZONDeleteAllVisibleGenericPasswordsForService(NSString *service, NSE
         return NO;
     }
 
+    if (!ZONAuthorizationResetPreferenceSnapshotMatches(defaults, protectedPreferenceSnapshot)) {
+        // Fail closed and restore the menu/runtime snapshot. Authorization cleanup
+        // must never silently mutate unrelated product preferences.
+        ZONAuthorizationResetRestorePreferenceSnapshot(defaults, protectedPreferenceSnapshot);
+        [defaults synchronize];
+        NSLog(@"[zonoemenu][P79.8F_P0_RESET] protected menu/runtime preferences changed during authorization reset; restored snapshot");
+        if (error) {
+            *error = [NSError errorWithDomain:ZONAuthorizationResetErrorDomain
+                                         code:ZONAuthorizationResetProtectedPreferencesChanged
+                                     userInfo:@{NSLocalizedDescriptionKey: @"授权清理越过了菜单设置边界，已恢复菜单设置"}];
+        }
+        return NO;
+    }
+
+    NSLog(@"[zonoemenu][P79.8F_P0_RESET] authorization reset completed; protected menu/runtime preferences unchanged");
     return YES;
 }
 
