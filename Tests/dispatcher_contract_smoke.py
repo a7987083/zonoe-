@@ -19,10 +19,14 @@ def require(text: str, needle: str, label: str) -> None:
         fail(f"missing {label}: {needle}")
 
 
-if "static inline" in HEADER:
-    fail("header still contains inline implementation")
-if '#import "ZONFeatureDispatcher.m"' in EVENT:
-    fail("EventBridge must not import implementation")
+def forbid(text: str, needle: str, label: str) -> None:
+    if needle in text:
+        fail(f"unexpected {label}: {needle}")
+
+
+# Translation-unit ownership must stay explicit.
+forbid(HEADER, "static inline", "header implementation")
+forbid(EVENT, '#import "ZONFeatureDispatcher.m"', "implementation import")
 require(EVENT, '#import "ZONFeatureDispatcher.h"', "EventBridge header import")
 require(PBX, "ZONFeatureDispatcher.m in Sources", "Dispatcher PBX source registration")
 
@@ -48,28 +52,53 @@ for definition in [
 ]:
     require(IMPL, definition, "Dispatcher definition")
 
+# Current action ownership: Dispatcher routes identifiers to service boundaries.
 for needle in [
-    '@"base.remote-download"', '[[PubgLoad alloc] yuanchengdwon];',
-    '@"base.cloud-save"', '[[PubgLoad alloc] checkCloudSaveStatus];',
-    '@"base.local-files"', 'SandboxBrowserVC *vc = [[SandboxBrowserVC alloc] init];',
-    '@"data.backup-save"', '[[daochucd alloc] backupasd];',
-    '@"data.restore-save"', '[[YYYPicker alloc] addBtnAction];',
-    '@"data.clear-game-data"', 'ZONPresentClearGameDataConfirmation(hostViewController);',
-    '@"auth.clear-records"', 'ZONPresentClearAuthorizationConfirmation(hostViewController);',
-    '[[WX_NongShiFu123 alloc] deletekm];',
-    'forKey:@"NNGG"', 'forKey:@"NNGGNNGG"', '[ImgTool share].NeiGou = on;',
-    'forKey:@"AADD"', 'forKey:@"AADDAADD"', '[ImgTool share].ADSpeed = on;',
+    '@"base.remote-download"',
+    '[ZONSixButtonActionService performRemoteDownloadFromViewController:host]',
+    '@"base.cloud-save"',
+    '[ZONSixButtonActionService performCloudSaveFromViewController:host]',
+    '@"base.local-files"',
+    '[[ZONLocalFilesCoordinator sharedCoordinator] presentLocalFilesFromViewController:host]',
+    '@"data.backup-save"',
+    '[ZONSixButtonActionService performBackupSaveFromViewController:host]',
+    '@"data.restore-save"',
+    '[ZONSixButtonActionService performRestoreSaveFromViewController:host]',
+    '@"data.clear-game-data"',
+    '[ZONSixButtonActionService performClearGameDataFromViewController:host]',
+    '@"auth.clear-records"',
+    '[ZONSixButtonActionService performClearAuthorizationFromViewController:host]',
 ]:
-    require(IMPL, needle, "Dispatcher contract marker")
+    require(IMPL, needle, "current action route")
 
-if IMPL.count("exit(0);") != 2:
-    fail(f"expected two delayed exits, found {IMPL.count('exit(0);')}")
+# Retired direct legacy handlers must not re-enter Dispatcher.
+for needle in [
+    '[[PubgLoad alloc] yuanchengdwon]',
+    '[[PubgLoad alloc] checkCloudSaveStatus]',
+    '[[daochucd alloc] backupasd]',
+    '[[YYYPicker alloc] addBtnAction]',
+    '[[WX_NongShiFu123 alloc] deletekm]',
+]:
+    forbid(IMPL, needle, "retired direct handler")
 
-for needle in ['@"NNGGNNGG"', '@"AADDAADD"', '@"AADDssppeedd"',
-               '[ImgTool share].NeiGou', '[ImgTool share].ADSpeed', '[ImgTool share].ADBiansu']:
+# Runtime toggle persistence and side effects are intentionally preserved.
+for needle in [
+    '@"runtime.iap-noads"', '@"NNGG", @"NNGGNNGG", on',
+    '[ImgTool share].NeiGou = enabled;',
+    '@"runtime.ad-speed"', '@"AADD", @"AADDAADD", on',
+    '[ImgTool share].ADSpeed = enabled;',
+    '[defaults synchronize];',
+]:
+    require(IMPL, needle, "runtime toggle contract")
+
+# EventBridge remains the restore/sync owner for persisted runtime settings.
+for needle in [
+    '@"NNGGNNGG"', '@"AADDAADD"', '@"AADDssppeedd"',
+    '[ImgTool share].NeiGou', '[ImgTool share].ADSpeed', '[ImgTool share].ADBiansu',
+]:
     require(EVENT, needle, "EventBridge runtime sync marker")
 
-print("dispatcher-contract: PASS")
+forbid(IMPL, "runtime.placeholder-203", "retired tag-203 route")
+forbid(IMPL, "人物血量", "retired tag-203 placeholder")
 
-if "runtime.placeholder-203" in IMPL or "人物血量" in IMPL:
-    fail("retired tag-203 placeholder dispatch still present")
+print("dispatcher-contract: PASS")
