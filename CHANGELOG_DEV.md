@@ -1,5 +1,23 @@
 # CHANGELOG_DEV
 
+## 2026-09-30 — v1_p79_8e Architecture/Test Hardening — CI PASSED / DEVICE PENDING
+- Branch: `work/p79.8-udid-first-rebuild`.
+- P79.8e intentionally changes verification infrastructure, not production runtime behavior.
+- Removed the orphan `ZONInjectedPassiveSatellaAvailable` declaration that had been added after the P79.8d verified build without an implementation/use: `32897a07183d5edf5f92b869adaacbd1c51dd706`.
+- Updated the active Dispatcher contract from obsolete direct legacy handlers to current service/coordinator routing: `3b515b2a8b8711b34a0ac50572483698a2ded4e7`.
+- Added `Tests/p79_8d_passive_satella_contract.py` covering accepted image names, exact RVAs/signatures, dyld-only preload ownership, arm64e PAC, main-thread invocation, one-shot behavior and no rollback of the existing toggle: `4cde12d33974580357c4cff777bd98a6661365b4`.
+- Expanded the active P79 workflow so `ZONCore`, `ZONServices`, project-file and current test changes trigger verification; the current contracts now execute before Xcode build: `afdb84de03eb012ab4fd93a0ebf307a9b06951d0`.
+- VERSION/build commit: `3050a4337ef481f6955b5f9d2000fcde8bd327d3`; VERSION=`v1_p79_8e`.
+- CI Run `36718795572` / #40: success.
+- Artifact ID `11096879463`, digest `sha256:83c8e47a9eb1a679d8a56eef69bdc0c48e6e475042f526600d5070391ec88eef`.
+- Dispatcher current-service-routing contract: PASS.
+- P79.8d passive runtime contract: PASS.
+- Xcode 16.4 arm64 + arm64e build: PASS.
+- Raw CI dylib SHA256: `1c7e788f60c79679af7cf06b8427b559364fa7c4374901f455260c0057778d35`, size 3,246,160 bytes.
+- Raw P79.8d and P79.8e dylibs were compared byte-for-byte with `cmp`; result is identical. This proves P79.8e did not alter product runtime bytes.
+- Refreshed `ARCHITECTURE.md` and `REFACTOR_REVIEW.md` to the current P79 tree and recorded the next staged refactors: runtime capability boundary, feature-access context, typed registry descriptors, AuthV2Flow decomposition, startup measurement, then repository/test hygiene.
+- Real-device promotion remains unchanged; P79.8d/P79.8c/P79.8b functional gates are still pending and P79.8a remains the last device-confirmed authorization baseline.
+
 ## 2026-09-30 — v1_p79_8d Injected Passive Satella Trigger — CI PASSED / DEVICE PENDING
 - Branch: `work/p79.8-udid-first-rebuild`.
 - Trigger implementation commit: `985f85073d89cb46aff8fd940ee50f1ed6175f3f`.
