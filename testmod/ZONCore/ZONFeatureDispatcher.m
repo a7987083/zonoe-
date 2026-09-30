@@ -8,6 +8,7 @@
 #import "../ZONServices/ZONLocalFilesCoordinator.h"
 #import <mach-o/dyld.h>
 #import <mach-o/loader.h>
+#import <mach/vm_prot.h>
 #import <stdint.h>
 #import <string.h>
 #if __has_include(<ptrauth.h>)
@@ -94,6 +95,49 @@ static BOOL ZONPathEndsWith(const char *path, const char *name)
     return strcmp(path + pathLength - nameLength, name) == 0;
 }
 
+/// P79.8f P0 hardening: validate the supplied RVA against the mapped executable
+/// __TEXT segment before dereferencing base + RVA. The target contract still
+/// intentionally requires __TEXT vmaddr == 0, preserving P79.8d address semantics.
+static BOOL ZONPassiveSatellaTextCoversRange(const struct mach_header_64 *header,
+                                             uintptr_t rva,
+                                             size_t length)
+{
+    if (!header || header->magic != MH_MAGIC_64 || length == 0) return NO;
+    if (rva > UINTPTR_MAX - length) return NO;
+
+    uintptr_t cursor = (uintptr_t)(header + 1);
+    if ((uintptr_t)header->sizeofcmds > UINTPTR_MAX - cursor) return NO;
+    uintptr_t commandsEnd = cursor + (uintptr_t)header->sizeofcmds;
+
+    for (uint32_t index = 0; index < header->ncmds; index++) {
+        if (cursor > commandsEnd || commandsEnd - cursor < sizeof(struct load_command)) return NO;
+
+        const struct load_command *command = (const struct load_command *)cursor;
+        if (command->cmdsize < sizeof(struct load_command) ||
+            (uintptr_t)command->cmdsize > commandsEnd - cursor) {
+            return NO;
+        }
+
+        if (command->cmd == LC_SEGMENT_64) {
+            if (command->cmdsize < sizeof(struct segment_command_64)) return NO;
+            const struct segment_command_64 *segment = (const struct segment_command_64 *)command;
+            if (strncmp(segment->segname, "__TEXT", sizeof(segment->segname)) == 0) {
+                if (segment->vmaddr != 0) return NO;
+                if ((segment->initprot & VM_PROT_READ) == 0 ||
+                    (segment->initprot & VM_PROT_EXECUTE) == 0) {
+                    return NO;
+                }
+                if (rva > segment->vmsize) return NO;
+                return length <= (size_t)(segment->vmsize - rva);
+            }
+        }
+
+        cursor += (uintptr_t)command->cmdsize;
+    }
+
+    return NO;
+}
+
 static uintptr_t ZONFindInjectedPassiveSatellaBase(void)
 {
     uint32_t count = _dyld_image_count();
@@ -110,6 +154,19 @@ static uintptr_t ZONFindInjectedPassiveSatellaBase(void)
 
         if (header->magic != MH_MAGIC_64) {
             NSLog(@"[zonoemenu][P79.8D_SATELLA] unsupported Mach-O header path=%s magic=0x%x", path, header->magic);
+            continue;
+        }
+
+        const struct mach_header_64 *header64 = (const struct mach_header_64 *)header;
+        BOOL ctorMapped = ZONPassiveSatellaTextCoversRange(header64,
+                                                           kZONPassiveSatellaCtorRVA,
+                                                           sizeof(kZONPassiveSatellaCtorBytes));
+        BOOL initMapped = ZONPassiveSatellaTextCoversRange(header64,
+                                                           kZONPassiveSatellaInitRVA,
+                                                           sizeof(kZONPassiveSatellaInitPrologue));
+        if (!ctorMapped || !initMapped) {
+            NSLog(@"[zonoemenu][P79.8F_P0_SATELLA] text_range_mismatch path=%s ctor=%d init=%d",
+                  path, ctorMapped, initMapped);
             continue;
         }
 
