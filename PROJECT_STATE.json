@@ -6,7 +6,7 @@
   "current_work_branch": "work/p79.8-udid-first-rebuild",
   "current_version": "v1_p79_8g",
   "current_phase": "p79_8g_r2_runtime_capability_extraction",
-  "phase_status": "ci_passed_device_pending",
+  "phase_status": "ci_passed_device_passed",
   "build_head": "9702183f97304e62939d528f7bec64c46417510a",
   "implementation": {
     "capability_header_commit": "e2ae02388d1990cefa0160d61d04d530e65556c3",
@@ -56,27 +56,31 @@
       "missing target does not roll back original IAP/iGameGod toggle"
     ]
   },
+  "p79_8g_device_acceptance": {
+    "status": "passed",
+    "reported_at": "2026-09-30",
+    "evidence": "user reported P79.8g device testing normal",
+    "accepted_scope": [
+      "runtime.iap-noads remains functional through the capability service",
+      "matching passive target still activates successfully",
+      "one-shot behavior remains healthy",
+      "missing target remains non-crashing and does not roll back the original toggle",
+      "no observed regression from moving dyld/Mach-O/PAC logic behind the capability boundary"
+    ]
+  },
   "p0_device_baseline": {
     "version": "v1_p79_8f",
     "status": "passed",
     "reported_at": "2026-09-30",
     "evidence": "user reported P79.8f device testing normal"
   },
-  "last_device_verified_version": "v1_p79_8f",
-  "last_device_verified_ci_run_id": 36723643520,
-  "device_status": "pending_for_p79_8g_r2_equivalence",
-  "device_verification_required": [
-    "runtime.iap-noads preserves NNGG/NNGGNNGG and ImgTool.NeiGou behavior",
-    "matching injected passive dylib still logs validated/init/started and activates",
-    "second ON in same process remains already_started",
-    "missing passive target still does not crash or roll back the original toggle",
-    "malformed/incompatible target still fails closed through P79.8f mapped-range/signature guards",
-    "arm64e passive invocation still succeeds after moving implementation behind service boundary"
-  ],
+  "last_device_verified_version": "v1_p79_8g",
+  "last_device_verified_ci_run_id": 36727105080,
+  "device_status": "passed_r2_equivalence",
   "remaining_separate_regressions": [
     "P79.8c basic vs app_plus/global_plus VIP cloud-save visibility/action/fresh-Verify behavior",
     "P79.8b full persistence regression beyond the P0 authorization-reset protected-key boundary"
   ],
   "secret_storage_policy": "test/real Verify Secret is injected only into controlled final artifacts and is not committed to public Git history",
-  "next_task": "Run the short P79.8g R2 device-equivalence matrix. After it passes, begin R3 feature-access provider so menu visibility can combine server permissions with ZONRuntimeCapabilityService.isCapabilityAvailable for the future standalone external-dylib button."
+  "next_task": "Begin P79.8h / R3 Feature Access Provider. Centralize server permissions plus local ZONRuntimeCapabilityService availability, stop renderers from parsing AuthV2 storage directly, and add optional runtime-capability metadata as the basis for the future standalone external-dylib button."
 }
