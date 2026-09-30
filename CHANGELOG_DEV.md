@@ -1,5 +1,29 @@
 # CHANGELOG_DEV
 
+## 2026-09-30 — v1_p79_8h R3 Feature Access Provider — CI PASSED / DEVICE PENDING
+- Branch: `work/p79.8-udid-first-rebuild`.
+- Added `ZONFeatureAccessProvider.h`: `25b8eb453dee2ed3e5ad7328bc1726b57649d583`.
+- Added provider implementation centralizing `lastVerify → permissions/access_level` plus optional runtime-capability checks: `b50daa7b75b2bcae8ab67f81f63a46b201ad8369`.
+- Added optional registry key `requiredRuntimeCapability` declaration/definition: `b00105f51618b159a3c4b83ca3a4077722e9c475`, `364ffdb66b692cde5d087a394dea56fff8a6b033`.
+- Migrated `ZONSectionRenderer` from raw `ZONAuthV2Storage` parsing to `ZONFeatureAccessProvider.isFeatureVisible:`: `b213626cc4494f80a1f357ae72c09be4b46d90ab`.
+- Migrated protected action access in `ZONFeatureDispatcher` to `ZONFeatureAccessProvider.isFeatureActionAllowed:` and removed its duplicate current-permissions parser: `37008e3d749e0ff58e0c66fcab7c90d544f9604b`.
+- Added `Tests/p79_8h_feature_access_provider.py`: `fdaafd8898662ff9aadbfbff8c94883d0c018012`.
+- Updated active CI to run the R3 contract and materialize `ZONFeatureAccessProvider.h/.m` into the target: `ebec8155f7ba983f234447d07bc7df9cd76a09d9`.
+- VERSION/build commit: `b62e6ac71c6d58db48b75e8f3064b012b836571f`; VERSION=`v1_p79_8h`.
+- CI Run `36734106358` / #62: success.
+- Artifact ID `11106496611`, digest `sha256:1326c3f0b22e684964ab35c1d6cfb3d7a128dbe5eae10ad96dd965f6a58ccbac`.
+- Raw CI dylib SHA256: `ae3a3eee1fc53b0009f7c25ad4b37d9713ab2ef2f0fd34d1ad17dc78fd3c3457`, size 3,266,336 bytes.
+- Controlled final dylib SHA256: `8ac866a22d2bae372adb62f9cdcc67c1bfadf6b3a71fe7e8e2b927d8687caa26`.
+- Controlled final ZIP SHA256: `215be24ecbc1aa92441603dbaac3073523dd47254f1e36df7450327bf41681ae`.
+- Controlled final injection changed exactly 128 bytes in the two equal-length Verify Secret placeholder regions; placeholder remaining `0`, Secret occurrences `2`.
+- No existing feature is assigned `requiredRuntimeCapability` in P79.8h; current visibility/action behavior is intentionally preserved.
+- Existing `base.cloud-save` permission metadata remains `extra_menu` for visibility and `extra_features` for action.
+- P79.8g passive runtime path remains owned by `ZONRuntimeCapabilityService`; no exported-symbol probing/new external-dylib button was added in this version.
+- CI contract results: `dispatcher-contract: PASS`, `p79.8d-passive-contract: PASS`, `p79.8f-p0-safety: PASS`, `p79.8g-runtime-capability: PASS`, `p79.8h-feature-access: PASS`.
+- Xcode 16.4 arm64 + arm64e build: PASS.
+- Latest device-passed baseline remains P79.8g until the short P79.8h equivalence check is reported.
+- The source-controlled external dylib interface/button is intentionally deferred per current requirement.
+
 ## 2026-09-30 — v1_p79_8g R2 Runtime Capability Extraction — CI PASSED / DEVICE PASSED
 - Branch: `work/p79.8-udid-first-rebuild`.
 - Added `ZONRuntimeCapabilityService.h`: `e2ae02388d1990cefa0160d61d04d530e65556c3`.
@@ -24,7 +48,6 @@
 - **Device validation:** user reported P79.8g testing normal on 2026-09-30. R2 runtime-capability extraction is promoted as the latest device-passed runtime/architecture baseline.
 - P79.8f remains the closed P0 safety baseline and its contracts remain inherited by P79.8g.
 - Separate P79.8c cloud-permission matrix and full P79.8b persistence regression remain independently tracked.
-- Next engineering stage: P79.8h / R3 Feature Access Provider combining server permissions with local runtime capability availability for the future standalone external-dylib button.
 
 ## 2026-09-30 — v1_p79_8f P0 Runtime/Authorization Safety Hardening — CI PASSED / P0 DEVICE PASSED
 - Branch: `work/p79.8-udid-first-rebuild`.
@@ -41,7 +64,7 @@
 - Added mapped `__TEXT` validation before passive RVA signature reads/call.
 - Added authorization-reset protected preference snapshot/verify/restore guard.
 - Added `Tests/p79_8f_p0_safety_contract.py` for startup/reset/runtime safety boundaries.
-- CI contract results: `dispatcher-contract: PASS`, `p79_8d-passive-contract: PASS`, `p79_8f-p0-safety: PASS`.
+- CI contract results: `dispatcher-contract: PASS`, `p79.8d-passive-contract: PASS`, `p79.8f-p0-safety: PASS`.
 - Xcode 16.4 arm64 + arm64e build: PASS.
 - **Device validation:** user reported P79.8f testing normal on 2026-09-30. P79.8f is the current P0 device baseline.
 - Separate P79.8c cloud-permission matrix and full P79.8b persistence regression remain independently tracked.
