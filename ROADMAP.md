@@ -1,44 +1,51 @@
 # ROADMAP
 
-> Canonical refactor plan for `zonoemenu`. New functional stages increment the numeric phase. Same-stage fixes use `a/b/c/d` suffixes.
+> Canonical refactor plan for `zonoemenu`. New functional stages increment the numeric phase. Same-stage fixes use `a/b/c/d/e` suffixes.
 
-## Current active stage — P79.8d Injected Passive Satella Trigger — CI PASSED / DEVICE PENDING
-- VERSION: `v1_p79_8d`.
+## Current active stage — P79.8e Architecture/Test Hardening — CI PASSED / DEVICE PENDING
+- VERSION: `v1_p79_8e`.
 - Branch: `work/p79.8-udid-first-rebuild`.
-- Functional baseline: P79.8c server-driven menu permissions + P79.8b persistence cleanup + device-passed P79.8a UDID-first authorization.
-- Trigger implementation commit: `985f85073d89cb46aff8fd940ee50f1ed6175f3f`.
-- VERSION/build HEAD: `6ab1494bb11afc228fe78cd7087b97c4c04d9b2d`.
-- CI Run `36604169367` / run #38: success.
-- Artifact ID `11050622646`, digest `sha256:16569dbb378372b5372dea8e3312549d1fe632f3b85b831dc3d8027ffb445b6e`.
+- Product behavior baseline: P79.8d injected passive Satella trigger, inheriting P79.8c menu permissions, P79.8b persistence cleanup and device-passed P79.8a UDID-first authorization.
+- P79.8e is intentionally behavior-preserving: no production `.m` runtime logic changed.
+- Removed the unfinished/orphan public declaration introduced after P79.8d.
+- Updated `Tests/dispatcher_contract_smoke.py` to current service/coordinator routing.
+- Added `Tests/p79_8d_passive_satella_contract.py` for the exact passive image/signature/RVA/PAC/one-shot contract.
+- Expanded P79 workflow path coverage to `ZONCore`, `ZONServices`, project-file and current contract-test changes.
+- VERSION/build HEAD: `3050a4337ef481f6955b5f9d2000fcde8bd327d3`.
+- CI Run `36718795572` / run #40: success.
+- Artifact ID `11096879463`, digest `sha256:83c8e47a9eb1a679d8a56eef69bdc0c48e6e475042f526600d5070391ec88eef`.
 - Raw CI dylib SHA256: `1c7e788f60c79679af7cf06b8427b559364fa7c4374901f455260c0057778d35`.
+- P79.8e raw dylib is byte-for-byte identical to P79.8d raw dylib (`cmp` equal, same SHA256 and size 3,246,160 bytes).
+- CI contract tests: PASS.
+- Xcode 16.4 `arm64 + arm64e` build: PASS.
+- Real-device promotion is not inferred; functional device gates remain those of P79.8d/P79.8c/P79.8b.
+
+### Next architecture stages
+1. R2 — extract passive injected-image probing/invocation from `ZONFeatureDispatcher` into a dedicated runtime-capability boundary without changing behavior.
+2. R3 — introduce a feature-access context so renderers/dispatchers do not parse raw AuthV2 storage independently; this will support future “show button only when external dylib is loaded” cleanly.
+3. R4 — migrate dictionary-only feature metadata toward typed descriptors while preserving identifiers/tags/order exactly.
+4. R5 — decompose `ZONAuthV2Flow` beginning with pure authorization decision parsing, then orchestration/presentation separation.
+5. R6 — measure startup/preflight/module-load timing before any optimization or reordering.
+6. R7 — classify active vs historical tests/workflows/generated artifacts before cleanup.
+
+## Functional baseline — P79.8d Injected Passive Satella Trigger
+- VERSION: `v1_p79_8d`.
+- Trigger implementation commit: `985f85073d89cb46aff8fd940ee50f1ed6175f3f`.
+- Build HEAD: `6ab1494bb11afc228fe78cd7087b97c4c04d9b2d`.
+- CI Run `36604169367` / #38: success.
 - Controlled final test dylib SHA256: `bd5b3ca738d6e8041d16b57c4515dffb6f47806da412b0b5f8bd512e1f09d6cd`.
-- Controlled final ZIP SHA256: `242a461d27a16a8758c750dbc8ac65ac12f28704996d39d8df9051e5922da3d6`.
-- Final artifact: arm64 + arm64e; placeholder `0`; Verify Secret occurrences `2`.
+- The host does not `dlopen` Satella; another injection layer must preload it.
+- Accepted names: `1_passive.dylib`, `1_passive_zh.dylib`, `SatellaJailed_passive.dylib`.
+- Validate RVA `0x847C` ARM64 `RET` and RVA `0x888C` 16-byte init prologue before call.
+- Invoke `image_base + 0x888C` on main thread; arm64e PAC-signs the function pointer.
+- One-shot per process; OFF does not unload/deinit; missing target does not roll back original IAP/iGameGod state.
 
-### P79.8d passive trigger contract
-1. The menu dylib does **not** load or `dlopen` Satella; the host/injection workflow must inject it before the switch is enabled.
-2. Trigger is attached to existing `runtime.iap-noads` / `内购破解+ iGameGod去广告` toggle.
-3. Existing `NNGG`, `NNGGNNGG`, and `ImgTool.NeiGou` behavior is preserved.
-4. On toggle ON, enumerate already-loaded dyld images and accept only:
-   - `1_passive.dylib`
-   - `1_passive_zh.dylib`
-   - `SatellaJailed_passive.dylib`
-5. Validate passive build before calling:
-   - image base + `0x847C` must contain ARM64 `RET` bytes `C0 03 5F D6`;
-   - image base + `0x888C` must match the expected 16-byte init prologue.
-6. If validation succeeds, call image base + `0x888C` on the main thread.
-7. arm64e signs the raw function address with the function-pointer PAC key before invocation.
-8. The start routine is one-shot per process; later ON events return `already_started` and do not call init again.
-9. Toggle OFF does not unload or call an unknown deinitializer.
-10. Missing/invalid passive dylib does not roll back the existing iGameGod/IAP toggle; it only records a failure log.
-
-### Device gates for P79.8d
-- Inject a known matching passive dylib before opening the switch; first ON must log `validated`, `init=...`, and `started`.
-- Confirm the passive feature actually activates after the ON event.
-- Toggle OFF then ON again in the same process; init must not execute a second time and log `already_started`.
-- Run without injected passive dylib; existing IAP/iGameGod toggle must still work and log `image_not_loaded_or_invalid`.
-- Test a mismatched passive build; the trigger must fail closed at ctor/prologue validation and must not jump to `0x888C`.
-- Confirm P79.8c VIP cloud-save permissions, P79.8b persistence behavior, and P79.8a UDID-first authorization remain unchanged.
+### Device gates inherited from P79.8d
+- Matching injected passive dylib: first ON logs `validated`, `init=...`, `started` and functionality activates.
+- Second ON in same process: `already_started`; no second init.
+- No injected passive dylib: original IAP/iGameGod toggle still works; log `image_not_loaded_or_invalid`.
+- Mismatched target: fail closed before jump.
+- Confirm P79.8c VIP cloud-save permissions, P79.8b persistence behavior and P79.8a UDID-first authorization remain unchanged.
 
 ## Inherited server permission contract — P79.8c
 - `basic`: `normal_menu=true`, `extra_menu=false`, `extra_features=false`.
@@ -67,4 +74,4 @@
 5. Never commit or print the real/test Verify Secret.
 
 # Next Task
-Install controlled `v1_p79_8d`, inject a matching passive dylib, then validate one-shot ON-triggered init plus all inherited authorization/menu/persistence regressions.
+Proceed with R2 only after keeping P79.8d runtime behavior fixed: isolate passive capability probing/invocation behind a dedicated service, then prove source-contract, arm64/arm64e build and real-device equivalence before using that boundary for the future new external-dylib button.
