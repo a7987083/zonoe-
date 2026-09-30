@@ -9,6 +9,7 @@ NSString * const ZONFeatureRiskKey = @"risk";
 NSString * const ZONFeatureMigratedKey = @"migrated";
 NSString * const ZONFeatureRequiredMenuPermissionKey = @"requiredMenuPermission";
 NSString * const ZONFeatureRequiredActionPermissionKey = @"requiredActionPermission";
+NSString * const ZONFeatureRequiredRuntimeCapabilityKey = @"requiredRuntimeCapability";
 
 NSString * const ZONSectionIdentifierKey = @"identifier";
 NSString * const ZONSectionTitleKey = @"title";
