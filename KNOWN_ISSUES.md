@@ -9,46 +9,47 @@
 - Architectures: `arm64 + arm64e`.
 - Raw CI SHA256: `b124e544b32674844bf7e9be9a35e0259e512063ce7b0113e5450c3a61535970`.
 - Controlled final SHA256: `18c443fb67440e7030b1b85fb82813c6d5aad52347cbf4aa3358313e00a84a6a`.
-- Current-device validation: pending.
-- Last device-passed baseline: P79.8a / controlled SHA256 `1601c8aaf55643918d4d6f4ea16d45c552e6fdf1ad9c8c7a2cd9152c03fbb0`.
+- P0 device validation: PASSED by user report on 2026-09-30.
+- Current P0 device baseline: P79.8f.
 
-## P0 risks still requiring device validation
+## P0 risks closed in P79.8f
 
-### Startup / authorization behavior
-- P79.8f contract tests prove source ordering: startup transport errors are handled before missing-activation/card-prompt routing, and ambiguous payloads suppress the card prompt.
-- CI cannot prove real network/UI timing. Verify on device that offline startup shows a network error and does not open card input.
-- P79.8a remains the last real-device-confirmed UDID-first authorization baseline.
+### Startup / authorization transport-vs-activation routing
+- Source contracts lock transport errors before missing-activation/card-prompt routing and suppress card prompt for ambiguous payloads.
+- User reported device testing normal; no P79.8f startup/authorization regression was reported.
 
 ### Authorization reset boundary
-- P79.8f now snapshots and verifies menu/runtime preferences around authorization cleanup.
-- Protected keys: `fold_base`, `fold_draw`, `fold_role`, `NNGG`, `NNGGNNGG`, `AADD`, `AADDAADD`, `AADDssppeedd`.
-- If cleanup crosses that boundary, P79.8f restores the snapshot and reports failure.
-- Device validation must confirm authorization data is actually cleared while those protected keys retain their previous values.
+- P79.8f snapshots `fold_base`, `fold_draw`, `fold_role`, `NNGG`, `NNGGNNGG`, `AADD`, `AADDAADD`, `AADDssppeedd` around authorization cleanup.
+- Boundary crossing restores the protected snapshot and returns failure.
+- Device testing was reported normal; this P0 boundary is accepted for the current baseline.
 
 ### Game-data reset scope
-- Current implementation derives reset roots from `NSHomeDirectory()` and targets only `Documents`, `Library`, `tmp`, plus the current Bundle ID's NSUserDefaults persistent domain.
-- P79.8f locks this scope with a contract test but does not change the destructive implementation itself.
-- Real-device validation is still required because destructive filesystem behavior cannot be fully proven by static CI.
+- Reset roots remain current `NSHomeDirectory()` → `Documents`, `Library`, `tmp`, plus current Bundle ID defaults.
+- P0 device testing was reported normal; no sandbox-scope regression was reported.
 
-### Passive dylib call still requires exact target contract
+### Passive dylib mapped-range safety
 - Accepted names remain `1_passive.dylib`, `1_passive_zh.dylib`, `SatellaJailed_passive.dylib`.
-- Target contract remains `__TEXT vmaddr=0`, ctor RVA `0x847C`, init RVA `0x888C`, exact ctor/prologue signatures.
-- P79.8f adds a mapped-`__TEXT` range/protection check before reading either signature. Bad/malformed images fail closed with `text_range_mismatch` before `memcmp` or call.
-- Device testing must confirm a valid target still initializes successfully and a bad same-name target does not crash.
+- Contract remains `__TEXT vmaddr=0`, ctor RVA `0x847C`, init RVA `0x888C`, exact ctor/prologue signatures.
+- P79.8f validates mapped `__TEXT` bounds/protections before either signature read or indirect call.
+- Device testing was reported normal; current P0 passive-runtime baseline is accepted.
 
-### arm64e PAC still needs real hardware
-- CI compiles arm64 and arm64e successfully.
-- Real arm64e hardware is still required to prove the PAC-signed indirect call works with the target passive dylib.
+## Remaining functional regression gates
 
-### P79.8c cloud permission and P79.8b persistence remain device-pending
-- basic must hide `VIP云存档`; app/global Plus must expose it and fresh Verify must gate download.
-- AuthV2 response/config/card state is memory-only while menu/runtime preferences remain unchanged.
+### P79.8c cloud permission matrix
+- Still separately pending; the P79.8f P0 acceptance does not by itself prove every cloud permission scenario.
+- `basic` must hide `VIP云存档`.
+- `app_plus/global_plus` must expose it.
+- Actual cloud action must still pass fresh Verify.
 
-## Open architecture risks after P0
+### P79.8b full persistence regression
+- Still separately tracked beyond the P0 authorization-reset protected-key boundary.
+- AuthV2 session-only response/config/card semantics should be rechecked when a later change touches persistence/storage.
+
+## Open architecture risks — P1+
 
 ### Dispatcher still mixes routing with runtime capability implementation
-- P79.8f makes the passive call safer but intentionally leaves ownership in `ZONFeatureDispatcher`.
-- After P0 device acceptance, R2 should extract only the passive capability probe/invocation into a dedicated runtime-capability boundary without changing the contract.
+- P79.8f makes the passive call safe but intentionally leaves the implementation inside `ZONFeatureDispatcher`.
+- R2 should now extract only probe/validation/invocation into a dedicated runtime-capability boundary while preserving the device-passed P79.8f contract.
 
 ### `ZONAuthV2Flow` still owns too many responsibilities
 - It parses server payloads, classifies state, orchestrates activation/config/Verify, maps errors, presents card UI, notices/updates, and opens the floating entry.
@@ -60,11 +61,11 @@
 
 ### Feature registry remains weakly typed
 - Feature/section descriptors are dictionaries keyed by strings.
-- Move toward typed descriptors only after the runtime-capability and access-provider boundaries stabilize.
+- Move toward typed descriptors only after runtime capability and access-provider boundaries stabilize.
 
 ### Duplicate Runtime Config parsing helpers
 - `ZONAuthV2API.m` and `ZONAuthV2Verify.m` still implement similar nested config lookup semantics.
-- Extract later with tests; do not mix with P0 work.
+- Extract later with tests; do not mix with R2.
 
 ## P79.8f verification evidence
 - `dispatcher-contract: PASS`.
@@ -74,6 +75,7 @@
 - Controlled final placeholder remaining: `0`.
 - Controlled final Verify Secret occurrences: `2`.
 - Raw-to-final changed bytes: `128`, limited to the two equal-length Secret placeholder regions.
+- Device test: reported normal; P79.8f promoted to current P0 device baseline.
 
 ## Tracking rule
 - CI success alone does not equal device promotion.
