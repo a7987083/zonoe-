@@ -1,7 +1,7 @@
 #import "ZONSectionRenderer.h"
 #import "ZONFeatureRegistry.h"
 #import "ZONFeatureRenderer.h"
-#import "../ZONAuthV2/ZONAuthV2Storage.h"
+#import "../ZONServices/ZONFeatureAccessProvider.h"
 #import "../菜单/FoldSectionView.h"
 
 NSArray<FoldSectionView *> *ZONRenderRegisteredSections(UIScrollView *scrollView,
@@ -18,10 +18,9 @@ NSArray<FoldSectionView *> *ZONRenderRegisteredSections(UIScrollView *scrollView
     CGFloat y = 0;
     CGFloat sectionW = panelWidth - 30;
 
-    NSDictionary *verify = [ZONAuthV2Storage lastVerify] ?: @{};
-    NSDictionary *permissions = [verify[@"permissions"] isKindOfClass:NSDictionary.class] ? verify[@"permissions"] : @{};
-    NSString *accessLevel = [verify[@"access_level"] isKindOfClass:NSString.class] ? verify[@"access_level"] : @"";
-    NSLog(@"[zonoemenu][P79.8C_MENU_PERMISSION] access_level=%@ normal_menu=%d extra_menu=%d extra_features=%d",
+    NSDictionary *permissions = [ZONFeatureAccessProvider currentServerPermissions];
+    NSString *accessLevel = [ZONFeatureAccessProvider currentAccessLevel];
+    NSLog(@"[zonoemenu][P79.8H_FEATURE_ACCESS] access_level=%@ normal_menu=%d extra_menu=%d extra_features=%d",
           accessLevel,
           [permissions[@"normal_menu"] boolValue],
           [permissions[@"extra_menu"] boolValue],
@@ -35,12 +34,13 @@ NSArray<FoldSectionView *> *ZONRenderRegisteredSections(UIScrollView *scrollView
         NSArray<NSDictionary<NSString *, id> *> *registeredFeatures = ZONFeatureMetadataForSection(sectionTitle);
         NSMutableArray<NSDictionary<NSString *, id> *> *visibleFeatures = [NSMutableArray array];
         for (NSDictionary<NSString *, id> *feature in registeredFeatures) {
-            if (ZONFeatureIsVisibleWithPermissions(feature, permissions)) {
+            if ([ZONFeatureAccessProvider isFeatureVisible:feature]) {
                 [visibleFeatures addObject:feature];
             } else {
-                NSLog(@"[zonoemenu][P79.8C_MENU_PERMISSION] hidden feature=%@ required=%@",
+                NSLog(@"[zonoemenu][P79.8H_FEATURE_ACCESS] hidden feature=%@ permission=%@ capability=%@",
                       feature[ZONFeatureIdentifierKey] ?: @"",
-                      feature[ZONFeatureRequiredMenuPermissionKey] ?: @"");
+                      feature[ZONFeatureRequiredMenuPermissionKey] ?: @"",
+                      feature[ZONFeatureRequiredRuntimeCapabilityKey] ?: @"");
             }
         }
         NSArray<NSDictionary<NSString *, id> *> *features = visibleFeatures.copy;
