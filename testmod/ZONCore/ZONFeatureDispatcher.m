@@ -1,7 +1,7 @@
 #import "ZONFeatureDispatcher.h"
 #import "ZONFeatureRegistry.h"
 #import "ImgTool.h"
-#import "../ZONAuthV2/ZONAuthV2Storage.h"
+#import "../ZONServices/ZONFeatureAccessProvider.h"
 #import "../ZONServices/ZONSixButtonActionService.h"
 #import "../ZONServices/ZONRuntimeDirectoryService.h"
 #import "../ZONServices/ZONRuntimeCapabilityService.h"
@@ -40,13 +40,6 @@ void ZONPresentClearAuthorizationConfirmation(UIViewController *hostViewControll
 }
 
 #pragma mark - Permission helpers
-
-static NSDictionary<NSString *, id> *ZONCurrentServerPermissions(void)
-{
-    NSDictionary *verify = [ZONAuthV2Storage lastVerify];
-    NSDictionary *permissions = [verify[@"permissions"] isKindOfClass:NSDictionary.class] ? verify[@"permissions"] : nil;
-    return permissions ?: @{};
-}
 
 static void ZONPresentPermissionDenied(UIViewController *hostViewController, NSString *featureTitle)
 {
@@ -137,21 +130,22 @@ static NSDictionary<NSString *, ZONFeatureToggleHandler> *ZONToggleRoutes(void)
 }
 
 /// Routes registry-owned actions. Registry metadata remains the source of truth;
-/// route tables only map a registered identifier to its service boundary.
+/// the access provider owns server/local capability decisions and route tables
+/// only map an allowed registered identifier to its service boundary.
 BOOL ZONDispatchMigratedActionForLegacyTag(NSInteger legacyTag,
                                             UIViewController *hostViewController)
 {
     NSDictionary<NSString *, id> *feature = ZONFeatureMetadataForLegacyTag(legacyTag);
     if (!feature || ![feature[ZONFeatureMigratedKey] boolValue]) return NO;
 
-    NSDictionary *permissions = ZONCurrentServerPermissions();
-    if (!ZONFeatureIsActionAllowedWithPermissions(feature, permissions)) {
-        NSLog(@"[zonoemenu][P79.8C_ACTION_PERMISSION] denied feature=%@ required=%@",
+    if (![ZONFeatureAccessProvider isFeatureActionAllowed:feature]) {
+        NSLog(@"[zonoemenu][P79.8H_FEATURE_ACCESS] denied feature=%@ permission=%@ capability=%@",
               feature[ZONFeatureIdentifierKey] ?: @"",
-              feature[ZONFeatureRequiredActionPermissionKey] ?: @"");
+              feature[ZONFeatureRequiredActionPermissionKey] ?: @"",
+              feature[ZONFeatureRequiredRuntimeCapabilityKey] ?: @"");
         ZONPresentPermissionDenied(hostViewController, feature[ZONFeatureTitleKey]);
         // The route is handled even when denied, preventing any legacy fallback
-        // from reaching the protected action by tag.
+        // from reaching a protected action by tag.
         return YES;
     }
 
