@@ -6,66 +6,73 @@
 - Current branch: `work/p79.8-udid-first-rebuild`.
 - Read in this order: `PROJECT_STATE.json` → `ROADMAP.md` → `KNOWN_ISSUES.md` → `CHANGELOG_DEV.md` → `ARCHITECTURE.md` → `REFACTOR_REVIEW.md`.
 
-## Current target — P79.8e Architecture/Test Hardening
-- VERSION: `v1_p79_8e`.
-- Product behavior baseline remains P79.8d; P79.8e changes verification infrastructure only.
-- Build HEAD: `3050a4337ef481f6955b5f9d2000fcde8bd327d3`.
-- CI Run `36718795572` / #40: success.
-- Artifact ID `11096879463`, digest `sha256:83c8e47a9eb1a679d8a56eef69bdc0c48e6e475042f526600d5070391ec88eef`.
-- Raw CI SHA256: `1c7e788f60c79679af7cf06b8427b559364fa7c4374901f455260c0057778d35`.
-- Raw P79.8e dylib is byte-identical to raw P79.8d (`cmp` equal; size 3,246,160 bytes).
-- Current Dispatcher service-routing contract test: PASS.
-- P79.8d passive injected-module contract test: PASS.
-- Xcode 16.4 arm64 + arm64e build: PASS.
-- No real-device promotion was made from CI alone.
+## Current target — P79.8f P0 Runtime/Authorization Safety Hardening
+- VERSION: `v1_p79_8f`.
+- Build HEAD: `67fbf755cf00623f3d0136668e103461d5189dae`.
+- CI Run `36723643520` / #44: success.
+- Artifact ID `11101797212`, digest `sha256:e16aa4bb55eb9e776c283d02da67eef78010f7f07df012c764e7a452a029ba6e`.
+- Raw CI SHA256: `b124e544b32674844bf7e9be9a35e0259e512063ce7b0113e5450c3a61535970`.
+- Controlled final SHA256: `18c443fb67440e7030b1b85fb82813c6d5aad52347cbf4aa3358313e00a84a6a`.
+- Controlled ZIP SHA256: `1e6ba1e2b3576673e645e787b83cadde1b6833f200dc621d527273ab6fbe0778`.
+- Architectures: arm64 + arm64e PAC00.
+- Status: CI PASSED / DEVICE PENDING.
 
-## What changed in P79.8e
-1. Removed the orphan `ZONInjectedPassiveSatellaAvailable` header declaration that had no implementation/use and was added after the P79.8d verified build.
-2. Rewrote `Tests/dispatcher_contract_smoke.py` to describe current service/coordinator routing instead of obsolete direct `PubgLoad/daochucd/YYYPicker/WX_NongShiFu123` calls.
-3. Added `Tests/p79_8d_passive_satella_contract.py` to lock accepted image names, RVAs, binary signatures, no-dlopen ownership, PAC, main-thread and one-shot semantics.
-4. Expanded the active P79 workflow to trigger for `ZONCore`, `ZONServices`, project-file and current test changes, and to run these contracts before Xcode build.
-5. Refreshed `ARCHITECTURE.md` and `REFACTOR_REVIEW.md` to the current P79 tree.
+## P79.8f code changes
+1. `ZONFeatureDispatcher.m`
+   - Added mapped-`__TEXT` validation before reading `base + 0x847C` or `base + 0x888C`.
+   - Requires `LC_SEGMENT_64`, `__TEXT vmaddr=0`, readable + executable initial protections, and both signature ranges fully inside `vmsize`.
+   - Bad/malformed targets log `[zonoemenu][P79.8F_P0_SATELLA] text_range_mismatch` and are rejected before `memcmp`/call.
+   - P79.8d file names, offsets, signatures, no-dlopen ownership, main-thread call, PAC and one-shot behavior are unchanged.
+2. `ZONAuthorizationResetService.m`
+   - Snapshots `fold_base/fold_draw/fold_role/NNGG/NNGGNNGG/AADD/AADDAADD/AADDssppeedd` before auth cleanup.
+   - Verifies those unrelated menu/runtime keys are unchanged after cleanup.
+   - If crossed, restores the snapshot and returns failure with `[P79.8F_P0_RESET]` logging.
+3. `Tests/p79_8f_p0_safety_contract.py`
+   - Locks mapped-range gating before passive signature reads.
+   - Locks authorization reset/menu preference boundary.
+   - Locks current game-data reset roots to current-container `Documents`, `Library`, `tmp` + current bundle defaults.
+   - Locks startup network-error and unknown-payload behavior so neither is routed as “missing activation” card prompt.
+4. Active P79 workflow now runs all three current contracts and triggers on `Tests/**`.
+
+## CI evidence
+- `dispatcher-contract: PASS`.
+- `p79.8d-passive-contract: PASS`.
+- `p79.8f-p0-safety: PASS`.
+- Xcode 16.4 arm64 + arm64e build: PASS.
+- Raw CI build intentionally has no configured Verify Secret.
+- Controlled final injection changed exactly 128 bytes in the two placeholder regions; placeholder remaining 0, Secret occurrences 2.
+
+## Exact device test order
+1. **Activated UDID startup**: no card prompt; reaches Verify and floating/menu entry.
+2. **Offline startup**: show network failure; no card prompt.
+3. **Clear authorization**: auth state is removed; all protected menu/runtime keys retain their previous values.
+4. **Clear game data**: only current App container Documents/Library/tmp/current bundle defaults are affected; no sandbox escape or bundle deletion.
+5. **Matching passive dylib**: first ON logs `validated`, `init=...`, `started`; feature really activates.
+6. **Second ON same process**: logs `already_started`; no second init.
+7. **No passive dylib**: log `image_not_loaded_or_invalid`; no crash; original IAP/iGameGod toggle still works.
+8. **Incompatible/same-name malformed target**: expect `text_range_mismatch` or ctor/prologue mismatch; no jump.
+9. **arm64e hardware**: indirect PAC-signed call works.
 
 ## Current architecture ownership
 - Startup: `Bsphp/main.m +load` → `ZONBootstrap`.
-- Customer identity/entry: `ZONAuthorizationCoordinator` + `ZonoeUDIDAPI`/bridge.
-- Authorization state machine: `ZONAuthV2Flow` → `ZONAuthV2API` → Runtime Config/`ZONAuthV2Verify`.
-- Menu: `ZONMenuCoordinator` → section/feature renderers → `ZONMenuEventBridge` → `ZONFeatureDispatcher`.
-- Business actions: service/coordinator layer under `testmod/ZONServices`.
-- Formal plugin loading: `ZONModuleLoader` ABI boundary.
-- Passive Satella: externally preloaded image, dyld probe + signature/RVA validation in Dispatcher, no host `dlopen`.
-
-## Highest-priority next refactors
-- R2: extract passive runtime capability probing/invocation from Dispatcher without changing any binary contract.
-- R3: introduce one feature-access provider combining server permissions and local runtime capabilities; renderer should not parse raw AuthV2 storage.
-- R4: migrate feature metadata from string-key dictionaries toward typed descriptors.
-- R5: split `ZONAuthV2Flow` starting with pure decision parsing; do not combine protocol/state/UI decomposition into one large rewrite.
-- R6: measure `+load`/preflight/module-load startup cost before optimizing.
-
-## P79.8d passive behavior that must remain exact
-- Trigger feature: `runtime.iap-noads` / `内购破解+ iGameGod去广告`.
-- Existing `NNGG`, `NNGGNNGG`, `ImgTool.NeiGou` semantics remain first-class behavior.
-- Accepted names: `1_passive.dylib`, `1_passive_zh.dylib`, `SatellaJailed_passive.dylib`.
-- `0x847C` must be ARM64 `RET`; `0x888C` must match the expected 16-byte init prologue.
-- Main-thread invocation; arm64e PAC; one-shot per process; no OFF unload/deinit.
-- Missing/invalid target does not roll back original toggle.
-
-## Inherited authorization/menu contracts
-1. Acquire/reuse Keychain `DZUDID` first.
-2. `/apiface` determines active UDID activation before card prompt.
-3. Verify determines current-App applicability and server permissions.
-4. P79.8c `VIP云存档`: `extra_menu` visibility + `extra_features` action + fresh Verify before download.
-5. P79.8b AuthV2 response/config/card state remains memory-only; notice fingerprint is the only intended persistent AuthV2 default.
+- Customer identity: `ZONAuthorizationCoordinator` + `ZonoeUDIDAPI`/bridge.
+- Authorization state/orchestration: `ZONAuthV2Flow` → `ZONAuthV2API` → Runtime Config/`ZONAuthV2Verify`.
+- Menu: `ZONMenuCoordinator` → renderers → `ZONMenuEventBridge` → `ZONFeatureDispatcher`.
+- Business actions: `testmod/ZONServices` service/coordinator layer.
+- Formal plugin loading: `ZONModuleLoader` ABI.
+- Passive Satella: externally preloaded image; current probe/call still lives in Dispatcher pending R2.
 
 ## Last device-passed baseline
 - P79.8a / `v1_p79_8a`.
 - CI Run `36572203902` / #32.
 - Controlled final SHA256: `1601c8aaf55643918d4d6f4ea16d45c552e6fdf1ad9c8c7a2cd9152c03fbb0`.
-- Fresh App + already-activated UDID was confirmed to work without card re-entry.
+- User confirmed fresh App + already-active UDID works without card re-entry.
+
+## Next engineering stage
+Do **not** start R2 yet. First accept or reject the P79.8f P0 device matrix. After P0 device acceptance, extract the passive runtime capability from Dispatcher and use that capability boundary for the future new external-dylib button/filter.
 
 ## Long-project rules
 - Preserve commit history.
 - CI success is not device promotion.
 - Keep all five project-state files synchronized after development/build/validation.
 - Do not commit or print the real/test Verify Secret.
-- Historical phase tests are evidence, not automatically part of the active suite; refresh/classify them before global execution.
