@@ -6,7 +6,7 @@
 - Current branch: `work/p79.8-udid-first-rebuild`.
 - Read in this order: `PROJECT_STATE.json` → `ROADMAP.md` → `KNOWN_ISSUES.md` → `CHANGELOG_DEV.md` → `ARCHITECTURE.md` → `REFACTOR_REVIEW.md`.
 
-## Current target — P79.8g R2 Runtime Capability Extraction
+## Current baseline — P79.8g R2 Runtime Capability Extraction
 - VERSION: `v1_p79_8g`.
 - Build HEAD: `9702183f97304e62939d528f7bec64c46417510a`.
 - CI Run `36727105080` / #53: success.
@@ -15,55 +15,47 @@
 - Controlled final SHA256: `4172ac0881f6885b1ac620a486ba9b8eadd153c9b11f26a3647607737c028863`.
 - Controlled ZIP SHA256: `b7e6d9eea2cfb347e1868457e43f54c5b4673b9d28486998433aa44b7b749ad1`.
 - Architectures: arm64 + arm64e PAC00.
-- Status: CI PASSED / DEVICE PENDING.
+- Status: CI PASSED / DEVICE PASSED.
+- User reported P79.8g testing normal on 2026-09-30.
 
-## R2 architecture change
+## R2 architecture now promoted
 - Added `testmod/ZONServices/ZONRuntimeCapabilityService.h/.m`.
-- Public capability API:
+- Public API:
   - `+isCapabilityAvailable:`
   - `+activateCapability:`
-- First registered identifier: `passive.satella` (`ZONRuntimeCapabilityPassiveSatella`).
-- `ZONFeatureDispatcher` no longer owns `_dyld_*`, Mach-O segment parsing, RVAs, binary signatures, PAC signing or one-shot passive state.
-- Dispatcher still preserves the original toggle first: `NNGG`, `NNGGNNGG`, `ImgTool.NeiGou`; ON then delegates to `ZONRuntimeCapabilityService`.
-- The capability service only consumes an already-loaded target. It does not `dlopen` or `dlclose` external modules.
+- First registered identifier: `passive.satella`.
+- `ZONFeatureDispatcher` no longer owns `_dyld_*`, Mach-O parsing, RVAs, signatures, PAC or passive one-shot state.
+- Dispatcher preserves `NNGG`, `NNGGNNGG`, `ImgTool.NeiGou` first and then delegates ON activation to the capability service.
+- Capability service only consumes already-loaded targets; it does not `dlopen`/`dlclose` external modules.
 
-## Exact P79.8f/P79.8d behavior preserved inside capability service
+## Preserved runtime contract
 - Accepted target names: `1_passive.dylib`, `1_passive_zh.dylib`, `SatellaJailed_passive.dylib`.
-- `__TEXT vmaddr=0` contract preserved.
-- ctor RVA `0x847C` must match ARM64 `RET` bytes `C0 03 5F D6`.
-- init RVA `0x888C` must match the existing 16-byte prologue.
-- P79.8f mapped-`__TEXT` readable/executable/range validation still runs before either signature dereference.
-- Main-thread invocation, arm64e function-pointer PAC and process one-shot behavior are unchanged.
-- Missing/invalid target still fails only the passive activation; it does not roll back the original IAP/iGameGod toggle.
+- `__TEXT vmaddr=0` remains required.
+- ctor RVA `0x847C` and init RVA `0x888C` remain unchanged.
+- Exact ctor/init signatures remain unchanged.
+- P79.8f mapped-`__TEXT` readable/executable/range checks still execute before dereference/call.
+- Main-thread invocation, arm64e PAC, one-shot semantics and no-target no-rollback behavior remain unchanged.
+- P79.8g real-device test was reported normal after moving this implementation behind the service boundary.
 
 ## Test/CI evidence
 - `dispatcher-contract: PASS`.
-- `p79.8d-passive-contract: PASS` after following implementation into capability service.
-- `p79.8f-p0-safety: PASS` after following mapped-range safety into capability service.
-- `p79.8g-runtime-capability: PASS`; this test forbids low-level image/PAC implementation from returning to Dispatcher.
+- `p79.8d-passive-contract: PASS`.
+- `p79.8f-p0-safety: PASS`.
+- `p79.8g-runtime-capability: PASS`.
 - Xcode 16.4 arm64 + arm64e build: PASS.
-- CI workflow materializes `ZONRuntimeCapabilityService.h/.m` into the `testmod` target before build, matching the existing AuthV2 project-materialization pattern.
+- Controlled final Verify Secret injection touched only the two equal-length placeholder regions: 128 changed bytes, placeholder remaining 0, occurrences 2.
 
-## Current real-device baseline
-- P79.8f remains the last device-passed baseline.
-- User reported P79.8f testing normal on 2026-09-30.
-- Do not mark P79.8g device-passed until the short equivalence matrix is run.
+## Device baselines
+- P79.8f remains the closed P0 safety baseline.
+- P79.8g is now the latest device-passed runtime/architecture baseline.
+- Remaining independent gates are still P79.8c full VIP cloud permission matrix and P79.8b full persistence regression.
 
-## P79.8g device test order
-1. Toggle `runtime.iap-noads` with matching passive target: expect `validated`, `init=...`, `started`; feature actually activates.
-2. OFF→ON again in same process: expect `already_started`; no second init.
-3. Run with no passive target: expect `image_not_loaded_or_invalid`; no crash; original IAP/iGameGod toggle remains functional.
-4. Run with incompatible/same-name malformed target: mapped-range or ctor/prologue failure; no jump.
-5. Confirm arm64e device invocation still works.
-
-## Next engineering stage after device pass — R3
-- Add a feature-access provider that combines server `permissions` with `ZONRuntimeCapabilityService.isCapabilityAvailable:`.
-- Add optional runtime-capability metadata to features.
-- Then the future new external dylib can own a standalone feature/button that is rendered only when its target is actually loaded and compatible.
-
-## Remaining separate regressions
-- P79.8c VIP cloud permission matrix remains separately pending.
-- P79.8b full persistence regression remains separately pending beyond the P0 reset boundary.
+## Next engineering stage — P79.8h / R3 Feature Access Provider
+- Introduce one access provider that combines server `permissions` with `ZONRuntimeCapabilityService.isCapabilityAvailable:`.
+- Stop `ZONSectionRenderer` and related menu code from independently parsing raw AuthV2 session schema.
+- Add optional runtime-capability requirement metadata to feature definitions while preserving identifiers/tags/order.
+- Apply the same access decision to both render visibility and action/toggle dispatch so a hidden feature cannot be reached by a legacy/direct route.
+- This becomes the final infrastructure layer before adding the future standalone external-dylib button: compatible target loaded → show; missing/incompatible → hide.
 
 ## Long-project rules
 - Preserve commit history.
