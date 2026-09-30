@@ -4,29 +4,30 @@
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
   "current_work_branch": "work/p79.8-udid-first-rebuild",
-  "current_version": "v1_p79_8g",
-  "current_phase": "p79_8g_r2_runtime_capability_extraction",
-  "phase_status": "ci_passed_device_passed",
-  "build_head": "9702183f97304e62939d528f7bec64c46417510a",
+  "current_version": "v1_p79_8h",
+  "current_phase": "p79_8h_r3_feature_access_provider",
+  "phase_status": "ci_passed_device_pending",
+  "build_head": "b62e6ac71c6d58db48b75e8f3064b012b836571f",
   "implementation": {
-    "capability_header_commit": "e2ae02388d1990cefa0160d61d04d530e65556c3",
-    "capability_implementation_commit": "3cecb5791bae8aa22a52681cbc54dfd405a098a6",
-    "dispatcher_delegate_commit": "7441e424aadd1453762741e7b8666a7196cca330",
-    "passive_contract_migration_commit": "4cbe15a61b61659e5110a7a14956c44ddb8766fa",
-    "p0_contract_migration_commit": "3b902b1dc17b46b098f7aea45919aef70b85abbf",
-    "r2_boundary_contract_commit": "4953e357c2f33b0eae20434b8bc6f3d24fe59109",
-    "ci_project_membership_commit": "06be0e0a7f23b61d88fbe71752f9625822566a2f",
-    "version_commit": "9702183f97304e62939d528f7bec64c46417510a"
+    "access_provider_header_commit": "25b8eb453dee2ed3e5ad7328bc1726b57649d583",
+    "access_provider_implementation_commit": "b50daa7b75b2bcae8ab67f81f63a46b201ad8369",
+    "registry_header_capability_key_commit": "b00105f51618b159a3c4b83ca3a4077722e9c475",
+    "registry_capability_key_commit": "364ffdb66b692cde5d087a394dea56fff8a6b033",
+    "renderer_access_migration_commit": "b213626cc4494f80a1f357ae72c09be4b46d90ab",
+    "dispatcher_access_migration_commit": "37008e3d749e0ff58e0c66fcab7c90d544f9604b",
+    "r3_contract_test_commit": "fdaafd8898662ff9aadbfbff8c94883d0c018012",
+    "ci_project_membership_commit": "ebec8155f7ba983f234447d07bc7df9cd76a09d9",
+    "version_commit": "b62e6ac71c6d58db48b75e8f3064b012b836571f"
   },
-  "last_ci_run_id": 36727105080,
-  "last_ci_run_number": 53,
+  "last_ci_run_id": 36734106358,
+  "last_ci_run_number": 62,
   "last_ci_status": "success",
-  "artifact_id": 11103866499,
-  "artifact_digest": "sha256:0d41293824d72804b263385b51e50f59dac69b3adaf1adad2e43a2b9203792ef",
-  "raw_ci_dylib_sha256": "e5a7f07ed4a5bf980113382f72eca11782fc163b80f64a05754843b0b3a3bede",
-  "raw_ci_dylib_size_bytes": 3264304,
-  "controlled_final_dylib_sha256": "4172ac0881f6885b1ac620a486ba9b8eadd153c9b11f26a3647607737c028863",
-  "controlled_final_zip_sha256": "b7e6d9eea2cfb347e1868457e43f54c5b4673b9d28486998433aa44b7b749ad1",
+  "artifact_id": 11106496611,
+  "artifact_digest": "sha256:1326c3f0b22e684964ab35c1d6cfb3d7a128dbe5eae10ad96dd965f6a58ccbac",
+  "raw_ci_dylib_sha256": "ae3a3eee1fc53b0009f7c25ad4b37d9713ab2ef2f0fd34d1ad17dc78fd3c3457",
+  "raw_ci_dylib_size_bytes": 3266336,
+  "controlled_final_dylib_sha256": "8ac866a22d2bae372adb62f9cdcc67c1bfadf6b3a71fe7e8e2b927d8687caa26",
+  "controlled_final_zip_sha256": "215be24ecbc1aa92441603dbaac3073523dd47254f1e36df7450327bf41681ae",
   "controlled_final_placeholder_remaining": 0,
   "controlled_final_secret_occurrences": 2,
   "controlled_final_changed_bytes_vs_raw": 128,
@@ -35,52 +36,56 @@
     "dispatcher_contract_smoke": "passed",
     "p79_8d_passive_satella_contract": "passed",
     "p79_8f_p0_safety_contract": "passed",
-    "p79_8g_runtime_capability_boundary": "passed"
+    "p79_8g_runtime_capability_boundary": "passed",
+    "p79_8h_feature_access_provider": "passed"
   },
-  "r2_runtime_capability": {
-    "service": "ZONRuntimeCapabilityService",
-    "public_api": ["isCapabilityAvailable:", "activateCapability:"],
-    "registered_capabilities": ["passive.satella"],
-    "dispatcher_owns_low_level_dyld_macho_pac": false,
-    "external_loading_owned_by_host_injection": true,
-    "passive_contract_preserved": [
-      "accepted image names unchanged",
-      "ctor RVA 0x847C unchanged",
-      "init RVA 0x888C unchanged",
-      "exact ctor/init signatures unchanged",
-      "P79.8f mapped __TEXT guard preserved",
-      "no dlopen/dlclose",
-      "main-thread invocation preserved",
-      "arm64e function-pointer PAC preserved",
-      "one-shot process state preserved",
-      "missing target does not roll back original IAP/iGameGod toggle"
-    ]
-  },
-  "p79_8g_device_acceptance": {
-    "status": "passed",
-    "reported_at": "2026-09-30",
-    "evidence": "user reported P79.8g device testing normal",
-    "accepted_scope": [
-      "runtime.iap-noads remains functional through the capability service",
-      "matching passive target still activates successfully",
-      "one-shot behavior remains healthy",
-      "missing target remains non-crashing and does not roll back the original toggle",
-      "no observed regression from moving dyld/Mach-O/PAC logic behind the capability boundary"
+  "r3_feature_access": {
+    "provider": "ZONFeatureAccessProvider",
+    "public_api": [
+      "currentServerPermissions",
+      "currentAccessLevel",
+      "isFeatureVisible:",
+      "isFeatureActionAllowed:"
+    ],
+    "renderer_parses_authv2_storage": false,
+    "dispatcher_parses_authv2_storage": false,
+    "optional_runtime_capability_metadata": "requiredRuntimeCapability",
+    "existing_features_with_runtime_capability_requirement": [],
+    "behavior_preservation": [
+      "existing feature identifiers unchanged",
+      "existing legacy tags unchanged",
+      "existing feature ordering unchanged",
+      "base.cloud-save still requires extra_menu for visibility",
+      "base.cloud-save still requires extra_features for action",
+      "existing features have no new runtime-capability requirement in P79.8h",
+      "P79.8g passive activation remains owned by ZONRuntimeCapabilityService"
     ]
   },
   "p0_device_baseline": {
     "version": "v1_p79_8f",
     "status": "passed",
+    "reported_at": "2026-09-30"
+  },
+  "r2_device_baseline": {
+    "version": "v1_p79_8g",
+    "status": "passed",
     "reported_at": "2026-09-30",
-    "evidence": "user reported P79.8f device testing normal"
+    "evidence": "user reported P79.8g device testing normal"
   },
   "last_device_verified_version": "v1_p79_8g",
   "last_device_verified_ci_run_id": 36727105080,
-  "device_status": "passed_r2_equivalence",
+  "device_status": "pending_for_p79_8h_r3_equivalence",
+  "device_verification_required": [
+    "menu renders normally with current authorization and existing feature count/ordering",
+    "existing server permission visibility remains unchanged",
+    "existing protected action permission behavior remains unchanged",
+    "runtime.iap-noads passive capability path remains normal",
+    "no new requiredRuntimeCapability metadata affects any existing feature"
+  ],
   "remaining_separate_regressions": [
     "P79.8c basic vs app_plus/global_plus VIP cloud-save visibility/action/fresh-Verify behavior",
     "P79.8b full persistence regression beyond the P0 authorization-reset protected-key boundary"
   ],
   "secret_storage_policy": "test/real Verify Secret is injected only into controlled final artifacts and is not committed to public Git history",
-  "next_task": "Begin P79.8h / R3 Feature Access Provider. Centralize server permissions plus local ZONRuntimeCapabilityService availability, stop renderers from parsing AuthV2 storage directly, and add optional runtime-capability metadata as the basis for the future standalone external-dylib button."
+  "next_task": "Run the short P79.8h R3 device-equivalence check. The external-dylib exported interface/button is intentionally deferred; after R3 acceptance continue with the next refactor stage."
 }
