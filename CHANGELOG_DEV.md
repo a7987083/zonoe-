@@ -1,5 +1,27 @@
 # CHANGELOG_DEV
 
+## 2026-09-30 — v1_p79_8f P0 Runtime/Authorization Safety Hardening — CI PASSED / DEVICE PENDING
+- Branch: `work/p79.8-udid-first-rebuild`.
+- Passive mapped-range hardening: `b75adaa66982cbc3bf1b43aa13c441e88bf0c85b`.
+- Authorization reset boundary guard: `033ff7f8f18b4e4894d582b5b02165d84d24bacc`.
+- P0 contract test: `9a9a797db06c910e5f31633126fe7f8006585b66`.
+- CI contract/workflow update: `7b1412434e13b56304d9c609c0b5b277259f8766`.
+- VERSION/build commit: `67fbf755cf00623f3d0136668e103461d5189dae`; VERSION=`v1_p79_8f`.
+- CI Run `36723643520` / #44: success.
+- Artifact ID `11101797212`, digest `sha256:e16aa4bb55eb9e776c283d02da67eef78010f7f07df012c764e7a452a029ba6e`.
+- Raw CI dylib SHA256: `b124e544b32674844bf7e9be9a35e0259e512063ce7b0113e5450c3a61535970`, size 3,263,040 bytes.
+- Controlled final dylib SHA256: `18c443fb67440e7030b1b85fb82813c6d5aad52347cbf4aa3358313e00a84a6a`.
+- Controlled final ZIP SHA256: `1e6ba1e2b3576673e645e787b83cadde1b6833f200dc621d527273ab6fbe0778`.
+- Passive runtime safety: parse `LC_SEGMENT_64`, require matching `__TEXT`, `vmaddr=0`, readable + executable initial protections, and ensure ctor/init signature ranges are inside mapped `vmsize` before any `memcmp(base + RVA)`.
+- Invalid/malformed target now fails closed with `[P79.8F_P0_SATELLA] text_range_mismatch` before signature dereference or indirect call.
+- Exact P79.8d accepted names, `0x847C`, `0x888C`, signatures, no-dlopen ownership, main-thread invocation, arm64e PAC, one-shot behavior, and missing-target no-rollback semantics remain unchanged.
+- Authorization reset now snapshots `fold_base`, `fold_draw`, `fold_role`, `NNGG`, `NNGGNNGG`, `AADD`, `AADDAADD`, `AADDssppeedd`; after cleanup those keys must match. If not, P79.8f restores the snapshot and returns failure.
+- Added `Tests/p79_8f_p0_safety_contract.py` covering passive mapped-range ordering, authorization-reset preference boundary, current game-data reset scope, startup network-error-before-card-prompt routing, and unknown-payload card-prompt suppression.
+- CI contract results: `dispatcher-contract: PASS`, `p79.8d-passive-contract: PASS`, `p79.8f-p0-safety: PASS`.
+- Xcode 16.4 arm64 + arm64e build: PASS.
+- Controlled final injection changed exactly 128 bytes in the two equal-length Secret placeholder regions; placeholder remaining `0`, Secret occurrences `2`.
+- Real-device P0 matrix remains required before promotion or R2 runtime-capability extraction.
+
 ## 2026-09-30 — v1_p79_8e Architecture/Test Hardening — CI PASSED / DEVICE PENDING
 - Branch: `work/p79.8-udid-first-rebuild`.
 - P79.8e intentionally changes verification infrastructure, not production runtime behavior.
@@ -73,40 +95,18 @@
 
 ## 2026-09-29 — v1_p79_8a Clean UDID-First Rebuild — CI PASSED / DEVICE PASSED
 - Branch: `work/p79.8-udid-first-rebuild`.
-- Rebuilt directly from P79.8 commit `702f7011bda568dffbe57c1ad3ca6d7d0feebc40`; P79.9/P79.10 startup experiments are not inherited.
 - Flow commit: `fdd83d6eeb562d6ba6f6d5a4afae6d09f2234a4c`.
-- Removed `ZONAuthV2BindingProbe.m` swizzle from the compiled runtime path: `dce8c905960256d6e73dcdb62d42060f56660558`.
+- Removed `ZONAuthV2BindingProbe.m` swizzle from compiled runtime path: `dce8c905960256d6e73dcdb62d42060f56660558`.
 - VERSION commit: `bbebc59b4fb113d0bcfccdd201d889fe1bdb3442`; VERSION=`v1_p79_8a`.
 - CI Run `36572203902` / #32: success.
 - Controlled final dylib SHA256: `1601c8aaf55643918d4d6f4ea16d45c552e6fdf1ad9c8c7a2cd9152c03fbb0`.
-- Restored the legacy-proven startup contract: obtain/persist UDID first, then query `/index/index/apiface` by UDID before consulting local card state.
-- Active device authorization proceeds directly to Runtime Config + Verify without card prompt.
-- Real-device validation: PASS. User confirmed a freshly installed App on an already-activated UDID no longer prompts for a card and the flow works normally.
+- Restored UDID-first startup: obtain/persist UDID, query `/index/index/apiface`, then Runtime Config + Verify.
+- Real-device validation: PASS. Fresh App + already-activated UDID works without card re-entry.
 
-## 2026-09-29 — v1_p79_7 Auth Semantics + Reset Scope — CI PASSED / DEVICE PENDING
-- Development branch: `work/p79.7-auth-semantics-reset-scope`.
-- Source/build commit: `20cc0dc14e3157060d738ec8b66ef184284597bf`.
-- CI Run `36531465809` / #25: success.
-- Controlled final test dylib SHA256: `4ea75bea7c8a1929483d9f404aa9c47ab3be6e50cf7cafca5679740b926c23b8`.
-
-## 2026-09-29 — v1_p79_6 Server-Driven Auth Activation Gate — CI PASSED / DEVICE PENDING
-- Main work branch: `work/p79-server-driven-auth-isolation-v1`.
-- Restored activation contract: `/apiface before → /appstore → /apiface after → authorization + state-change gate → Runtime Config → Verify v2`.
-- CI Run `36523256192` / #24: success.
-- Controlled final test dylib SHA256: `9192a214bc7a23a0fb18aadccd72529c9404e415e3c20faab3ddb36b67974080`.
-
-## 2026-09-21 — v1_p64a Runtime Directory Cleanup Fix — DEVICE PASSED / PROMOTED
-- Branch: `work/p64a-clear-game-data-runtime-directory-fix`.
-- Actual build SHA: `010f383da7f1429c4db93bfda559431e3c4080f9`.
-- CI Run `35524126925`: success.
-- P64a remains an older known-good rollback point, superseded for authorization behavior by device-passed P79.8a.
-
-## Version naming rule correction
-- New stage increments the number: `P63 → P64 → P65`.
-- Same-stage fixes use suffixes: `P64a → P64b → P64c`.
-- Existing commits/artifacts are not rewritten; canonical project records correct mistaken historical labels.
-
-## Earlier architecture cleanup
+## Earlier retained milestones
+- P79.7 auth semantics/reset scope: CI passed, device pending.
+- P79.6 server-driven auth activation gate: CI passed, device pending.
+- P64a runtime directory cleanup fix: device passed/promoted.
 - P60 UDID acquisition progress/manual retry: device passed.
 - P58 download lifecycle hardening: device passed.
 - P56 PubgLoad temp-boundary cleanup: device passed.
