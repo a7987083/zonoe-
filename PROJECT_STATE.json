@@ -4,16 +4,53 @@
   "stable_branch": "main",
   "production_branch": "dev/zonoemenu-production-v1",
   "current_work_branch": "work/p79.8-udid-first-rebuild",
-  "current_version": "v1_p79_8e",
-  "current_phase": "p79_8e_architecture_test_hardening",
+  "current_version": "v1_p79_8f",
+  "current_phase": "p79_8f_p0_runtime_authorization_safety_hardening",
   "phase_status": "ci_passed_device_pending",
-  "product_behavior_baseline": "v1_p79_8d",
-  "behavior_changed_from_p79_8d": false,
-  "binary_equivalence": {
-    "raw_p79_8d_sha256": "1c7e788f60c79679af7cf06b8427b559364fa7c4374901f455260c0057778d35",
-    "raw_p79_8e_sha256": "1c7e788f60c79679af7cf06b8427b559364fa7c4374901f455260c0057778d35",
-    "byte_compare_equal": true,
-    "size_bytes": 3246160
+  "build_head": "67fbf755cf00623f3d0136668e103461d5189dae",
+  "implementation": {
+    "passive_text_bounds_commit": "b75adaa66982cbc3bf1b43aa13c441e88bf0c85b",
+    "authorization_reset_boundary_commit": "033ff7f8f18b4e4894d582b5b02165d84d24bacc",
+    "p0_contract_test_commit": "9a9a797db06c910e5f31633126fe7f8006585b66",
+    "ci_contract_commit": "7b1412434e13b56304d9c609c0b5b277259f8766",
+    "version_commit": "67fbf755cf00623f3d0136668e103461d5189dae"
+  },
+  "last_ci_run_id": 36723643520,
+  "last_ci_run_number": 44,
+  "last_ci_status": "success",
+  "artifact_id": 11101797212,
+  "artifact_digest": "sha256:e16aa4bb55eb9e776c283d02da67eef78010f7f07df012c764e7a452a029ba6e",
+  "raw_ci_dylib_sha256": "b124e544b32674844bf7e9be9a35e0259e512063ce7b0113e5450c3a61535970",
+  "raw_ci_dylib_size_bytes": 3263040,
+  "controlled_final_dylib_sha256": "18c443fb67440e7030b1b85fb82813c6d5aad52347cbf4aa3358313e00a84a6a",
+  "controlled_final_zip_sha256": "1e6ba1e2b3576673e645e787b83cadde1b6833f200dc621d527273ab6fbe0778",
+  "controlled_final_placeholder_remaining": 0,
+  "controlled_final_secret_occurrences": 2,
+  "controlled_final_changed_bytes_vs_raw": 128,
+  "architectures": ["arm64", "arm64e"],
+  "ci_contract_tests": {
+    "dispatcher_contract_smoke": "passed",
+    "p79_8d_passive_satella_contract": "passed",
+    "p79_8f_p0_safety_contract": "passed"
+  },
+  "p0_hardening": {
+    "passive_dylib": [
+      "parse LC_SEGMENT_64 before dereferencing target RVA",
+      "require __TEXT vmaddr == 0",
+      "require __TEXT readable and executable",
+      "require ctor and init signature ranges to fit mapped __TEXT",
+      "fail closed with P79.8F_P0_SATELLA text_range_mismatch before memcmp"
+    ],
+    "authorization_reset": [
+      "snapshot fold_base/fold_draw/fold_role and NNGG/NNGGNNGG/AADD/AADDAADD/AADDssppeedd",
+      "verify protected preferences are unchanged after authorization reset",
+      "restore protected snapshot and return failure if authorization cleanup crosses menu/runtime boundary"
+    ],
+    "contract_locked": [
+      "startup network lookup failure is handled before missing-activation/card-prompt routing",
+      "unknown authorization payload suppresses card prompt",
+      "game-data reset remains scoped to NSHomeDirectory Documents/Library/tmp and current bundle defaults"
+    ]
   },
   "functional_baseline": {
     "authorization_version": "v1_p79_8a",
@@ -25,105 +62,19 @@
     "passive_runtime_version": "v1_p79_8d",
     "passive_runtime_device_status": "pending"
   },
-  "implementation": {
-    "passive_satella_trigger_commit": "985f85073d89cb46aff8fd940ee50f1ed6175f3f",
-    "p79_8d_build_commit": "6ab1494bb11afc228fe78cd7087b97c4c04d9b2d",
-    "orphan_header_cleanup_commit": "32897a07183d5edf5f92b869adaacbd1c51dd706",
-    "dispatcher_contract_refresh_commit": "3b515b2a8b8711b34a0ac50572483698a2ded4e7",
-    "passive_contract_test_commit": "4cde12d33974580357c4cff777bd98a6661365b4",
-    "ci_coverage_commit": "afdb84de03eb012ab4fd93a0ebf307a9b06951d0",
-    "version_commit": "3050a4337ef481f6955b5f9d2000fcde8bd327d3"
-  },
-  "last_ci_run_id": 36718795572,
-  "last_ci_run_number": 40,
-  "last_ci_status": "success",
-  "artifact_id": 11096879463,
-  "artifact_digest": "sha256:83c8e47a9eb1a679d8a56eef69bdc0c48e6e475042f526600d5070391ec88eef",
-  "raw_ci_dylib_sha256": "1c7e788f60c79679af7cf06b8427b559364fa7c4374901f455260c0057778d35",
-  "ci_contract_tests": {
-    "dispatcher_contract_smoke": "passed",
-    "p79_8d_passive_satella_contract": "passed"
-  },
-  "architectures": ["arm64", "arm64e"],
-  "authorization_contract": [
-    "acquire or reuse DZUDID first",
-    "query /index/index/apiface by UDID before any card prompt",
-    "active UDID authorization skips card input and proceeds to Runtime Config + Verify",
-    "Verify owns current-App applicability plus access_level and permissions",
-    "only explicit missing or expired authorization opens card input"
-  ],
-  "server_permission_model": {
-    "basic": {"normal_menu": true, "extra_menu": false, "extra_features": false},
-    "app_plus": {"normal_menu": true, "extra_menu": true, "extra_features": true},
-    "global_plus": {"normal_menu": true, "extra_menu": true, "extra_features": true}
-  },
-  "passive_satella_contract": {
-    "trigger_feature_identifier": "runtime.iap-noads",
-    "external_preload_required": true,
-    "dlopen_used": false,
-    "accepted_image_names": ["1_passive.dylib", "1_passive_zh.dylib", "SatellaJailed_passive.dylib"],
-    "text_vmaddr_expected": 0,
-    "passive_ctor_rva": "0x847C",
-    "passive_ctor_expected_hex": "C0035FD6",
-    "init_rva": "0x888C",
-    "init_prologue_expected_hex": "FC6FBAA9FA6701A9F85F02A9F65703A9",
-    "main_thread_call": true,
-    "arm64e_function_pointer_pac": true,
-    "one_shot_per_process": true,
-    "off_deinitializes": false,
-    "missing_target_rolls_back_existing_toggle": false
-  },
-  "cloud_save_contract": {
-    "feature_identifier": "base.cloud-save",
-    "menu_permission": "extra_menu",
-    "action_permission": "extra_features",
-    "download_permission_source": "fresh Verify v2 before archive resolution",
-    "legacy_cloud_apiface_route_active": false
-  },
-  "persistence_contract": {
-    "long_lived_device_identity": "DZUDID Keychain",
-    "session_only": ["AuthV2 udid", "AuthV2 card", "lastVerify", "lastActivation", "lastRuntimeConfig", "lastBootstrap"],
-    "persistent_auth_userdefaults": ["zonoe.auth.v2.lastNoticeFingerprint"],
-    "menu_defaults_policy": "unchanged"
-  },
-  "architecture_risks": [
-    "historical tests contain stale phase-specific assumptions",
-    "ZONAuthV2Flow mixes protocol decisions orchestration and presentation",
-    "startup +load/preflight order is sensitive and unmeasured",
-    "ZONFeatureDispatcher mixes routing settings permission UI and passive runtime capability",
-    "ZONSectionRenderer reads raw AuthV2 session schema",
-    "feature metadata is weakly typed dictionary data",
-    "Runtime Config lookup helpers are duplicated across API and Verify"
-  ],
-  "refactor_sequence": [
-    "R2 extract passive runtime capability boundary without behavior change",
-    "R3 centralize feature access context for server permissions plus local capabilities",
-    "R4 introduce typed feature descriptors incrementally",
-    "R5 decompose AuthV2Flow starting from pure decision parsing",
-    "R6 measure startup before timing/order optimization",
-    "R7 classify historical tests/workflows/generated artifacts"
-  ],
-  "protocol": {
-    "bootstrap_url": "https://raw.githubusercontent.com/a7987083/zonoemenu-config/main/bootstrap/zonoe.main.json",
-    "business_api_base": "https://app3.zonoeios.xyz",
-    "authorization_path": "/index/index/apiface",
-    "verify_endpoint": "https://app3.zonoeios.xyz/index/dylib_verify/verify",
-    "dylib_key": "zonoe.main",
-    "dylib_version": "1",
-    "dylib_build": "",
-    "protocol_version": 2
-  },
   "last_device_verified_version": "v1_p79_8a",
   "last_device_verified_ci_run_id": 36572203902,
   "device_status": "pending",
   "device_verification_required": [
-    "matching injected passive dylib starts exactly once from runtime.iap-noads",
-    "missing or mismatched passive target does not break existing toggle",
-    "arm64e passive target invocation succeeds",
-    "basic vs app_plus/global_plus cloud permission behavior remains correct",
-    "P79.8b persistence behavior does not regress",
-    "P79.8a UDID-first authorization does not regress"
+    "already-activated UDID starts without card prompt and reaches menu",
+    "offline startup shows network failure and does not open card prompt",
+    "clear authorization removes authorization state while preserving all protected menu/runtime preferences",
+    "clear game data remains confined to current App Documents/Library/tmp/current bundle defaults",
+    "matching injected passive dylib still validates and starts exactly once",
+    "no injected passive dylib does not crash or break the original IAP/iGameGod toggle",
+    "same-name incompatible or truncated passive dylib fails closed before signature dereference/call",
+    "arm64e passive invocation succeeds on real hardware"
   ],
   "secret_storage_policy": "test/real Verify Secret is injected only into controlled final artifacts and is not committed to public Git history",
-  "next_task": "R2: isolate passive injected-image capability probing/invocation from ZONFeatureDispatcher with exact P79.8d behavior preserved, then use that boundary later for the new external-dylib button capability filter."
+  "next_task": "Run the P79.8f P0 device matrix. Do not begin R2 capability refactor until the P0 device baseline is accepted."
 }
