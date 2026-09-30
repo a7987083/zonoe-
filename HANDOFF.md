@@ -6,56 +6,71 @@
 - Current branch: `work/p79.8-udid-first-rebuild`.
 - Read in this order: `PROJECT_STATE.json` → `ROADMAP.md` → `KNOWN_ISSUES.md` → `CHANGELOG_DEV.md` → `ARCHITECTURE.md` → `REFACTOR_REVIEW.md`.
 
-## Current baseline — P79.8g R2 Runtime Capability Extraction
-- VERSION: `v1_p79_8g`.
-- Build HEAD: `9702183f97304e62939d528f7bec64c46417510a`.
-- CI Run `36727105080` / #53: success.
-- Artifact ID `11103866499`, digest `sha256:0d41293824d72804b263385b51e50f59dac69b3adaf1adad2e43a2b9203792ef`.
-- Raw CI SHA256: `e5a7f07ed4a5bf980113382f72eca11782fc163b80f64a05754843b0b3a3bede`.
-- Controlled final SHA256: `4172ac0881f6885b1ac620a486ba9b8eadd153c9b11f26a3647607737c028863`.
-- Controlled ZIP SHA256: `b7e6d9eea2cfb347e1868457e43f54c5b4673b9d28486998433aa44b7b749ad1`.
+## Current target — P79.8h R3 Feature Access Provider
+- VERSION: `v1_p79_8h`.
+- Build HEAD: `b62e6ac71c6d58db48b75e8f3064b012b836571f`.
+- CI Run `36734106358` / #62: success.
+- Artifact ID `11106496611`, digest `sha256:1326c3f0b22e684964ab35c1d6cfb3d7a128dbe5eae10ad96dd965f6a58ccbac`.
+- Raw CI SHA256: `ae3a3eee1fc53b0009f7c25ad4b37d9713ab2ef2f0fd34d1ad17dc78fd3c3457`.
+- Controlled final SHA256: `8ac866a22d2bae372adb62f9cdcc67c1bfadf6b3a71fe7e8e2b927d8687caa26`.
+- Controlled ZIP SHA256: `215be24ecbc1aa92441603dbaac3073523dd47254f1e36df7450327bf41681ae`.
 - Architectures: arm64 + arm64e PAC00.
-- Status: CI PASSED / DEVICE PASSED.
-- User reported P79.8g testing normal on 2026-09-30.
+- Status: CI PASSED / DEVICE PENDING.
 
-## R2 architecture now promoted
-- Added `testmod/ZONServices/ZONRuntimeCapabilityService.h/.m`.
+## R3 architecture change
+- Added `testmod/ZONServices/ZONFeatureAccessProvider.h/.m`.
 - Public API:
-  - `+isCapabilityAvailable:`
-  - `+activateCapability:`
-- First registered identifier: `passive.satella`.
-- `ZONFeatureDispatcher` no longer owns `_dyld_*`, Mach-O parsing, RVAs, signatures, PAC or passive one-shot state.
-- Dispatcher preserves `NNGG`, `NNGGNNGG`, `ImgTool.NeiGou` first and then delegates ON activation to the capability service.
-- Capability service only consumes already-loaded targets; it does not `dlopen`/`dlclose` external modules.
+  - `+currentServerPermissions`
+  - `+currentAccessLevel`
+  - `+isFeatureVisible:`
+  - `+isFeatureActionAllowed:`
+- Raw `ZONAuthV2Storage.lastVerify` permission/access-level parsing is centralized in this provider.
+- `ZONSectionRenderer` no longer imports `ZONAuthV2Storage`; visibility is delegated to the provider.
+- `ZONFeatureDispatcher` no longer owns a duplicate current-permissions helper; protected action access is delegated to the provider.
+- Added optional registry metadata `requiredRuntimeCapability`.
+- When present, the provider requires `ZONRuntimeCapabilityService.isCapabilityAvailable:` in addition to existing server permissions.
+- P79.8h assigns this key to no existing feature, intentionally preserving all current feature behavior.
 
-## Preserved runtime contract
-- Accepted target names: `1_passive.dylib`, `1_passive_zh.dylib`, `SatellaJailed_passive.dylib`.
-- `__TEXT vmaddr=0` remains required.
-- ctor RVA `0x847C` and init RVA `0x888C` remain unchanged.
-- Exact ctor/init signatures remain unchanged.
-- P79.8f mapped-`__TEXT` readable/executable/range checks still execute before dereference/call.
-- Main-thread invocation, arm64e PAC, one-shot semantics and no-target no-rollback behavior remain unchanged.
-- P79.8g real-device test was reported normal after moving this implementation behind the service boundary.
+## Preserved behavior contracts
+- Feature identifiers, legacy tags, section ordering and current renderer types are unchanged.
+- `base.cloud-save` still requires `extra_menu` to render and `extra_features` to execute.
+- `runtime.iap-noads` still preserves `NNGG`, `NNGGNNGG`, `ImgTool.NeiGou` and delegates passive activation to `ZONRuntimeCapabilityService`.
+- P79.8g passive names/RVAs/signatures/mapped-range/PAC/one-shot/no-target behavior remain unchanged.
+- P79.8f startup/reset/runtime-safety contracts remain inherited.
 
-## Test/CI evidence
+## Test / CI evidence
 - `dispatcher-contract: PASS`.
 - `p79.8d-passive-contract: PASS`.
 - `p79.8f-p0-safety: PASS`.
 - `p79.8g-runtime-capability: PASS`.
+- `p79.8h-feature-access: PASS`.
 - Xcode 16.4 arm64 + arm64e build: PASS.
-- Controlled final Verify Secret injection touched only the two equal-length placeholder regions: 128 changed bytes, placeholder remaining 0, occurrences 2.
+- CI materializes `ZONFeatureAccessProvider.h/.m` into the active target before build.
+- Controlled final Verify Secret injection: placeholder remaining 0, occurrences 2, changed bytes 128.
 
-## Device baselines
-- P79.8f remains the closed P0 safety baseline.
-- P79.8g is now the latest device-passed runtime/architecture baseline.
-- Remaining independent gates are still P79.8c full VIP cloud permission matrix and P79.8b full persistence regression.
+## Device baselines / current gate
+- P79.8f: DEVICE PASSED P0 baseline.
+- P79.8g: DEVICE PASSED R2/runtime architecture baseline.
+- P79.8h: DEVICE PENDING; short equivalence check only.
 
-## Next engineering stage — P79.8h / R3 Feature Access Provider
-- Introduce one access provider that combines server `permissions` with `ZONRuntimeCapabilityService.isCapabilityAvailable:`.
-- Stop `ZONSectionRenderer` and related menu code from independently parsing raw AuthV2 session schema.
-- Add optional runtime-capability requirement metadata to feature definitions while preserving identifiers/tags/order.
-- Apply the same access decision to both render visibility and action/toggle dispatch so a hidden feature cannot be reached by a legacy/direct route.
-- This becomes the final infrastructure layer before adding the future standalone external-dylib button: compatible target loaded → show; missing/incompatible → hide.
+## P79.8h device check
+1. Open menu and confirm sections/features appear normally for the current authorization.
+2. Confirm no existing feature unexpectedly disappears or changes order.
+3. Confirm any currently-available protected feature behaves as before.
+4. Confirm `runtime.iap-noads` passive path remains normal.
+
+## Deferred work
+- The second/source-controlled external dylib interface and standalone button are intentionally deferred by request.
+- Do not add exported-symbol probing yet.
+- R3 infrastructure is ready for it later through `requiredRuntimeCapability`.
+
+## Next engineering stage after P79.8h device pass
+- R4 typed feature descriptors, incrementally and behavior-preserving.
+- Then R5 AuthV2Flow decomposition, R6 startup measurement, R7 historical-test/repository hygiene.
+
+## Remaining separate regressions
+- P79.8c VIP cloud permission matrix remains independently pending.
+- P79.8b full persistence regression remains independently pending beyond the P0 reset boundary.
 
 ## Long-project rules
 - Preserve commit history.
