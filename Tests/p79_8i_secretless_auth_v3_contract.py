@@ -52,11 +52,11 @@ for required in (
 
 assert 'if (card.length) payload[@"license_code"] = card;' in verify
 
-# The GitHub bootstrap is itself the signed v3 runtime config. The client must not
-# insert an extra /index/dylib_verify/config hop before challenge/verify.
+# The GitHub bootstrap is itself the signed v3 runtime config. The runtime-config
+# method must return that object directly and must not make any additional HTTP GET.
 runtime_method = api.split('- (void)fetchRuntimeConfigWithCompletion:', 1)[1].split('- (NSString *)verifyURLForRuntimeConfig:', 1)[0]
 assert 'completion(bootstrap, nil)' in runtime_method
-assert '/index/dylib_verify/config' not in runtime_method
+assert 'GETAbsoluteURL' not in runtime_method
 assert 'using signed bootstrap directly' in runtime_method
 
 # The short-lived token is session-only; no token Keychain/UserDefaults storage.
