@@ -9,14 +9,16 @@ NS_ASSUME_NONNULL_BEGIN
 + (void)purgeLegacyPersistentState;
 
 /// Session-only values. DZUDID in the legacy Keychain remains the sole long-lived
-/// device identifier used by the authorization coordinator. P79.8i adds the v3
-/// short-lived session token here; it is never persisted.
+/// device identifier used by the authorization coordinator. P79.8i adds v3
+/// short-lived values here; none are persisted.
 + (nullable NSString *)udid;
 + (void)setUDID:(NSString *)udid;
 + (nullable NSString *)card;
 + (void)setCard:(NSString *)card;
 + (nullable NSString *)token;
 + (void)setToken:(nullable NSString *)token;
++ (nullable NSString *)authProof;
++ (void)setAuthProof:(nullable NSString *)authProof;
 + (void)clearCard;
 + (void)clearAll;
 
