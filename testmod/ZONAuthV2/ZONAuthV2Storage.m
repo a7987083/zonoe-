@@ -13,6 +13,7 @@ static NSString * const ZONAuthV2LastNoticeFingerprintKey = @"zonoe.auth.v2.last
 static NSString *gZONAuthV2SessionUDID = nil;
 static NSString *gZONAuthV2SessionToken = nil;
 static NSString *gZONAuthV2SessionAuthProof = nil;
+static NSDictionary *gZONAuthV2SessionLastLicense = nil;
 static NSDictionary *gZONAuthV2SessionLastVerify = nil;
 static NSDictionary *gZONAuthV2SessionLastRuntimeConfig = nil;
 
@@ -84,6 +85,7 @@ static NSDictionary *gZONAuthV2SessionLastRuntimeConfig = nil;
     @synchronized(self) {
         gZONAuthV2SessionToken = nil;
         gZONAuthV2SessionAuthProof = nil;
+        gZONAuthV2SessionLastLicense = nil;
         gZONAuthV2SessionLastVerify = nil;
     }
 
@@ -99,6 +101,7 @@ static NSDictionary *gZONAuthV2SessionLastRuntimeConfig = nil;
         gZONAuthV2SessionUDID = nil;
         gZONAuthV2SessionToken = nil;
         gZONAuthV2SessionAuthProof = nil;
+        gZONAuthV2SessionLastLicense = nil;
         gZONAuthV2SessionLastVerify = nil;
         gZONAuthV2SessionLastRuntimeConfig = nil;
     }
@@ -113,6 +116,14 @@ static NSDictionary *gZONAuthV2SessionLastRuntimeConfig = nil;
     [d removeObjectForKey:ZONAuthV2LastActivationKey];
     [d removeObjectForKey:ZONAuthV2LastRuntimeConfigKey];
     [d removeObjectForKey:ZONAuthV2LastBootstrapKey];
+}
+
++ (NSDictionary *)lastLicense {
+    @synchronized(self) { return [gZONAuthV2SessionLastLicense copy]; }
+}
+
++ (void)setLastLicense:(NSDictionary *)value {
+    @synchronized(self) { gZONAuthV2SessionLastLicense = [value copy]; }
 }
 
 + (NSDictionary *)lastVerify {
