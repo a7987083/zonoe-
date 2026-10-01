@@ -58,6 +58,7 @@ jobs:
 
           ruby <<'RUBY'
           require 'xcodeproj'
+          require 'set'
 
           project = Xcodeproj::Project.open('testmod.xcodeproj')
 
@@ -73,8 +74,6 @@ jobs:
             UIDevice+VKKeychainIDFV.h UIDevice+VKKeychainIDFV.m
             wyURLProtocol.h
           ].to_set
-
-          require 'set'
 
           removable = lambda do |ref|
             next false unless ref
@@ -103,7 +102,6 @@ jobs:
             ref.remove_from_project if removable.call(ref)
           end
 
-          # Remove now-empty legacy dependency groups under Bsphp.
           project.groups.dup.each do |group|
             next unless %w[AFNetworking MBProgressHUD SCLAlertView].include?(group.display_name.to_s)
             group.remove_from_project
@@ -112,18 +110,15 @@ jobs:
           project.save
           RUBY
 
-          # getKeychain is intentionally retained: DZUDID and authorization state still use it.
           test -f testmod/category/getKeychain.h
           test -f testmod/category/getKeychain.m
           test -f testmod/Bsphp/main.m
 
-          # No active source is allowed to reference the retired BSPHP stack.
           if git grep -n -E 'WX_NongShiFu123|SCLAlertView|SCLTextView|MBProgressHUD|AFHTTPSessionManager|AFURLSessionManager|NetWorkingApiClient|DES3Util|MF_Base64Additions|StichingStringkeyValue|NSString\+MD5|NSString\+URLCode|VKKeychainIDFV' -- testmod ':!testmod.xcodeproj/project.pbxproj'; then
             echo 'Retired BSPHP symbol still referenced by active source.' >&2
             exit 1
           fi
 
-          # Xcode target must no longer compile/link the retired files.
           if grep -E 'WX_NongShiFu123|SCLAlertView|MBProgressHUD|AFHTTPSessionManager|AFURLSessionManager|NetWorkingApiClient|DES3Util|MF_Base64Additions|StichingStringkeyValue|NSString\+MD5|NSString\+URLCode|VKKeychainIDFV' testmod.xcodeproj/project.pbxproj; then
             echo 'Retired BSPHP file reference remains in project.pbxproj.' >&2
             exit 1
