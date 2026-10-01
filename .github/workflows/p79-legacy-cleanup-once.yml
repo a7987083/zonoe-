@@ -1,0 +1,144 @@
+name: P79 Legacy BSPHP Cleanup Once
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - work/p79.8-udid-first-rebuild
+    paths:
+      - '.github/workflows/p79-legacy-cleanup-once.yml'
+      - 'testmod/Bsphp/**'
+      - 'testmod/category/**'
+      - 'testmod.xcodeproj/project.pbxproj'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install xcodeproj
+        run: sudo gem install xcodeproj --no-document
+
+      - name: Remove retired BSPHP stack and Xcode references
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          rm -rf \
+            testmod/Bsphp/AFNetworking \
+            testmod/Bsphp/MBProgressHUD \
+            testmod/Bsphp/SCLAlertView
+
+          rm -f \
+            testmod/Bsphp/Config.h \
+            testmod/Bsphp/Config.m \
+            testmod/Bsphp/WX_NongShiFu123.h \
+            testmod/Bsphp/WX_NongShiFu123.mm \
+            testmod/category/DES3Util.h \
+            testmod/category/DES3Util.m \
+            testmod/category/MF_Base64Additions.h \
+            testmod/category/MF_Base64Additions.m \
+            testmod/category/NSDictionary+StichingStringkeyValue.h \
+            testmod/category/NSDictionary+StichingStringkeyValue.m \
+            testmod/category/NSString+MD5.h \
+            testmod/category/NSString+MD5.m \
+            testmod/category/NSString+URLCode.h \
+            testmod/category/NSString+URLCode.m \
+            testmod/category/NetWorkingApiClient.h \
+            testmod/category/NetWorkingApiClient.m \
+            testmod/category/UIDevice+VKKeychainIDFV.h \
+            testmod/category/UIDevice+VKKeychainIDFV.m \
+            testmod/category/wyURLProtocol.h
+
+          ruby <<'RUBY'
+          require 'xcodeproj'
+
+          project = Xcodeproj::Project.open('testmod.xcodeproj')
+
+          retired_basenames = %w[
+            Config.h Config.m
+            WX_NongShiFu123.h WX_NongShiFu123.mm
+            DES3Util.h DES3Util.m
+            MF_Base64Additions.h MF_Base64Additions.m
+            NSDictionary+StichingStringkeyValue.h NSDictionary+StichingStringkeyValue.m
+            NSString+MD5.h NSString+MD5.m
+            NSString+URLCode.h NSString+URLCode.m
+            NetWorkingApiClient.h NetWorkingApiClient.m
+            UIDevice+VKKeychainIDFV.h UIDevice+VKKeychainIDFV.m
+            wyURLProtocol.h
+          ].to_set
+
+          require 'set'
+
+          removable = lambda do |ref|
+            next false unless ref
+            path = begin
+              ref.real_path.to_s
+            rescue
+              ref.path.to_s
+            end
+            base = File.basename(ref.path.to_s)
+            path.include?('/testmod/Bsphp/AFNetworking/') ||
+              path.include?('/testmod/Bsphp/MBProgressHUD/') ||
+              path.include?('/testmod/Bsphp/SCLAlertView/') ||
+              retired_basenames.include?(base)
+          end
+
+          project.targets.each do |target|
+            phases = [target.source_build_phase, target.headers_build_phase, target.resources_build_phase].compact
+            phases.each do |phase|
+              phase.files.dup.each do |build_file|
+                build_file.remove_from_project if removable.call(build_file.file_ref)
+              end
+            end
+          end
+
+          project.files.dup.each do |ref|
+            ref.remove_from_project if removable.call(ref)
+          end
+
+          # Remove now-empty legacy dependency groups under Bsphp.
+          project.groups.dup.each do |group|
+            next unless %w[AFNetworking MBProgressHUD SCLAlertView].include?(group.display_name.to_s)
+            group.remove_from_project
+          end
+
+          project.save
+          RUBY
+
+          # getKeychain is intentionally retained: DZUDID and authorization state still use it.
+          test -f testmod/category/getKeychain.h
+          test -f testmod/category/getKeychain.m
+          test -f testmod/Bsphp/main.m
+
+          # No active source is allowed to reference the retired BSPHP stack.
+          if git grep -n -E 'WX_NongShiFu123|SCLAlertView|SCLTextView|MBProgressHUD|AFHTTPSessionManager|AFURLSessionManager|NetWorkingApiClient|DES3Util|MF_Base64Additions|StichingStringkeyValue|NSString\+MD5|NSString\+URLCode|VKKeychainIDFV' -- testmod ':!testmod.xcodeproj/project.pbxproj'; then
+            echo 'Retired BSPHP symbol still referenced by active source.' >&2
+            exit 1
+          fi
+
+          # Xcode target must no longer compile/link the retired files.
+          if grep -E 'WX_NongShiFu123|SCLAlertView|MBProgressHUD|AFHTTPSessionManager|AFURLSessionManager|NetWorkingApiClient|DES3Util|MF_Base64Additions|StichingStringkeyValue|NSString\+MD5|NSString\+URLCode|VKKeychainIDFV' testmod.xcodeproj/project.pbxproj; then
+            echo 'Retired BSPHP file reference remains in project.pbxproj.' >&2
+            exit 1
+          fi
+
+      - name: Commit cleanup once
+        shell: bash
+        run: |
+          set -euxo pipefail
+          if git diff --quiet && git diff --cached --quiet; then
+            echo 'Legacy cleanup already applied; nothing to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'cleanup(p79.8k): remove retired BSPHP UI/network stack'
+          git push origin HEAD:work/p79.8-udid-first-rebuild
