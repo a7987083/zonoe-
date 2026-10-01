@@ -8,7 +8,7 @@ storage_m = (root / "testmod/ZONAuthV2/ZONAuthV2Storage.m").read_text()
 workflow = (root / ".github/workflows/p79-server-driven-auth-build.yml").read_text()
 
 # P79.8i is an intentional hard cutover: the old shared-secret/HMAC Verify path
-# must not remain reachable or injected by CI.
+# and card-backed Verify enrollment must not remain reachable or injected by CI.
 for forbidden in (
     "ZON_VERIFY_SECRET",
     "ZON_VERIFY_SECRET_PLACEHOLDER",
@@ -18,6 +18,7 @@ for forbidden in (
     "requestEnrollmentLicenseCode",
     "设备安全升级",
     "首次升级到新版安全验证",
+    'payload[@"license_code"]',
 ):
     assert forbidden not in verify, forbidden
 
@@ -30,17 +31,19 @@ for forbidden in (
 ):
     assert forbidden not in workflow, forbidden
 
-# Required v3 proof chain. Enrollment is server-owned. If the normal UDID-first
-# activation flow already has a session card, Verify may attach it; otherwise the
-# client still submits the signed proof without opening a second activation UI.
+# Required v3 proof chain. The existing UDID-first /apiface gate supplies a
+# short-lived auth_proof. Verify must require it before challenge creation and
+# attach it to the challenge request. No second card prompt/enrollment path exists.
 for required in (
     "zonoe-dylib-auth-v3",
     'payload[@"protocol_version"] = @3',
     'device_public_key',
     'device_signature',
     'challenge_id',
-    'enrollment_required',
-    'license_code',
+    'auth_proof',
+    'auth_proof_unavailable',
+    '[ZONAuthV2Storage authProof]',
+    '[ZONAuthV2Storage setAuthProof:nil]',
     'SecKeyCreateRandomKey',
     'kSecAttrKeyTypeECSECPrimeRandom',
     'kSecKeyAlgorithmECDSASignatureMessageX962SHA256',
@@ -50,7 +53,12 @@ for required in (
 ):
     assert required in verify, required
 
-assert 'if (card.length) payload[@"license_code"] = card;' in verify
+# /apiface is the only source of the enrollment authorization proof. Every fresh
+# license lookup refreshes or clears the session-only proof.
+license_method = api.split('- (void)fetchLicenseForUDID:', 1)[1].split('- (void)activateUDID:', 1)[0]
+assert 'json[@"auth_proof"]' in license_method
+assert '[ZONAuthV2Storage setAuthProof:' in license_method
+assert 'AUTH_PROOF' in license_method
 
 # The GitHub bootstrap is itself the signed v3 runtime config. The runtime-config
 # method must return that object directly and must not make any additional HTTP GET.
@@ -59,11 +67,15 @@ assert 'completion(bootstrap, nil)' in runtime_method
 assert 'GETAbsoluteURL' not in runtime_method
 assert 'using signed bootstrap directly' in runtime_method
 
-# The short-lived token is session-only; no token Keychain/UserDefaults storage.
+# Short-lived token and auth_proof are session-only; neither is persisted.
 assert "+ (nullable NSString *)token;" in storage_h
 assert "+ (void)setToken:(nullable NSString *)token;" in storage_h
+assert "+ (nullable NSString *)authProof;" in storage_h
+assert "+ (void)setAuthProof:(nullable NSString *)authProof;" in storage_h
 assert "gZONAuthV2SessionToken" in storage_m
+assert "gZONAuthV2SessionAuthProof" in storage_m
 assert "setToken:token" in verify
 assert "ZONAuthV2SessionToken" not in workflow
+assert "ZONAuthV2SessionAuthProof" not in workflow
 
-print("P79.8i Secretless Auth v3 contract: OK")
+print("P79.8i Secretless Auth v3 auth-proof contract: OK")
