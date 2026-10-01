@@ -1,11 +1,20 @@
+//
+//  GIKeychain.h
+//  GIKeychainDemo
+//
+//  Created by shen on 15/12/24.
+//  Copyright © 2015年 shen. All rights reserved.
+//
+
 #import <Foundation/Foundation.h>
 
-NS_ASSUME_NONNULL_BEGIN
+#define accessGroupItem @"XXXXX.GrassInfoAppFamily"
 
 @interface getKeychain : NSObject
-+ (void)addKeychainData:(NSString *)data forKey:(NSString *)key;
-+ (nullable NSString *)getKeychainDataForKey:(NSString *)key;
-+ (void)deleteKeychainDataForKey:(NSString *)key;
-@end
 
-NS_ASSUME_NONNULL_END
++ (id)getKeychainDataForKey:(NSString *)key;
++ (void)addKeychainData:(id)data forKey:(NSString *)key;
++ (void)removeKeychainDataForKey:(NSString *)key;
++ (void)addShareKeyChainData:(id)data forKey:(NSString *)key;
+
+@end
