@@ -5,37 +5,30 @@
   "production_branch": "dev/zonoemenu-production-v1",
   "current_work_branch": "work/p79.8-udid-first-rebuild",
   "current_version": "v1_p79_8i",
-  "current_phase": "p79_8i_secretless_auth_v3_cutover",
-  "phase_status": "ci_passed_device_pending",
-  "build_head": "03a81ac810c849a10b90a76b06aea3ee9b81db3d",
+  "current_phase": "p79_8i_secretless_auth_v3_auth_proof_enrollment",
+  "phase_status": "ci_passed_server_pending_device_pending",
+  "build_head": "980bc43656c8f609ea1c1c8f596d6128c5ae623e",
   "implementation": {
-    "secretless_verify_commit": "1c2cff1d375dc2768b0ed515bf29b9d8ee1bb469",
-    "session_token_header_commit": "5789d0fcb375e07626e75d6df65e7a44ed02fea6",
-    "session_token_implementation_commit": "2f5016fb8bf4096cf32d07af1d3846d3c800fbe7",
-    "v3_contract_test_commit": "488e5341b32d9696ff0461ba23c730d669cd7766",
-    "secretless_ci_commit": "02f0ec8b70dbcd98bf5c66a558335ac967f5ac21",
-    "version_commit": "d48ccce2bef3b6ce38046d643807f54729d1225e",
-    "contract_fix_commit": "f5a50ec6b9f3f33d0a9e2adf2fb7982b461c5fd7",
-    "active_udid_enrollment_commit": "03a81ac810c849a10b90a76b06aea3ee9b81db3d"
+    "signed_bootstrap_direct_commit": "b8d2f71ace051099430003ded7dc8c833cb49085",
+    "signed_bootstrap_contract_commit": "72f5d7352756f54a0173c146d1617c0da061fb3b",
+    "remove_secondary_enrollment_ui_commit": "a0ab8259ea8246aaabea52daba7e6a1bc0f2f622",
+    "remove_secondary_enrollment_ui_contract_commit": "2c4815796daba5cba6fb4a93608597de2df0285f",
+    "auth_proof_storage_header_commit": "e9b38e18aea65420e49d1171d1278040ffd72407",
+    "auth_proof_storage_impl_commit": "9b7053ac431bd87fb32736d30436f983433cac17",
+    "auth_proof_apiface_capture_commit": "fa0c5f6860f763492ecd80f65e0f4c83d9634f31",
+    "auth_proof_challenge_commit": "78effa63a4a66d7a91cadd40d3024d8ce61d2e9d",
+    "auth_proof_contract_commit": "980bc43656c8f609ea1c1c8f596d6128c5ae623e"
   },
-  "last_ci_run_id": 36831060055,
-  "last_ci_run_number": 70,
+  "last_ci_run_id": 36856203863,
+  "last_ci_run_number": 84,
   "last_ci_status": "success",
-  "artifact_id": 11146139879,
-  "artifact_digest": "sha256:d1c1ca3bc161edf027953c2e5b68274d57318556b0c2598dec23b74d0edd19fe",
-  "ci_dylib_sha256": "df8470f296d6d62e0196aea040175e16deab3f78077564b2403dbe2f940a44ad",
-  "ci_dylib_size_bytes": 3322560,
+  "artifact_id": 11157763459,
+  "artifact_digest": "sha256:18fd793a2d930f63774e244e8c88d75849702e0542f6791b89f5d7033acdc35f",
+  "ci_dylib_sha256": "a30afd52caf5640ab27aa907b5da70b4450c8b336b115a43ae0a3cf0184525af",
+  "ci_dylib_size_bytes": 3321952,
   "architectures": ["arm64", "arm64e"],
   "auth_protocol": "secretless-v3",
   "verify_secret_embedded": false,
-  "binary_contract_evidence": {
-    "ZON_VERIFY_SECRET_occurrences": 0,
-    "ZON_VERIFY_SECRET_PLACEHOLDER_occurrences": 0,
-    "zonoe-dylib-auth-v3_occurrences": 2,
-    "device_signature_occurrences": 4,
-    "challenge_path_occurrences": 2,
-    "rsa_2048_sha256_occurrences": 2
-  },
   "ci_contract_tests": {
     "dispatcher_contract_smoke": "passed",
     "p79_8d_passive_satella_contract": "passed",
@@ -45,9 +38,11 @@
     "p79_8i_secretless_auth_v3_contract": "passed"
   },
   "p79_8i_auth": {
+    "authorization_model": "UDID-first; card is required only when UDID has no valid authorization or is expired",
     "legacy_verify_secret_hmac_removed": true,
     "runtime_config_signature": "rsa-2048-sha256",
-    "runtime_config_server_key": "public-key-only-in-client",
+    "runtime_config_source": "signed GitHub bootstrap directly",
+    "runtime_config_second_config_hop": false,
     "device_key_algorithm": "ECDSA P-256",
     "device_private_key_storage": "Keychain AfterFirstUnlockThisDeviceOnly",
     "protocol_version": 3,
@@ -57,8 +52,20 @@
     "legacy_apiface_semantics_preserved": true,
     "legacy_appstore_semantics_preserved": true,
     "short_lived_token_storage": "session-only",
-    "verify_response_persistent_cache": false,
-    "first_device_enrollment": "active UDIDs receive one-time license-code prompt only when server reports enrollment_required; this does not re-run /appstore activation"
+    "auth_proof_storage": "session-only",
+    "auth_proof_source": "/index/index/apiface active response",
+    "auth_proof_challenge_field": "auth_proof",
+    "auth_proof_consumption": "client clears local proof after server accepts challenge",
+    "verify_license_code_enrollment_removed": true,
+    "secondary_card_prompt_removed": true,
+    "multi_app_model": "same authorized UDID may enroll a separate P-256 key for each App without card re-entry; server authorizes first key registration using the short-lived apiface auth_proof"
+  },
+  "server_contract_pending": {
+    "apiface_must_return": ["auth_proof", "auth_proof_expires_at"],
+    "challenge_must_accept": ["udid", "dylib_key", "device_public_key", "auth_proof"],
+    "challenge_must_validate": ["proof signature", "proof expiry", "UDID match", "dylib_key match", "authorization still active"],
+    "verify_must_not_require": ["license_code"],
+    "first_key_enrollment": "allowed only for a challenge created from a valid auth_proof"
   },
   "r3_feature_access": {
     "provider": "ZONFeatureAccessProvider",
@@ -66,33 +73,22 @@
     "dispatcher_parses_authv2_storage": false,
     "existing_features_with_runtime_capability_requirement": []
   },
-  "p0_device_baseline": {
-    "version": "v1_p79_8f",
-    "status": "passed",
-    "reported_at": "2026-09-30"
-  },
-  "r2_device_baseline": {
-    "version": "v1_p79_8g",
-    "status": "passed",
-    "reported_at": "2026-09-30",
-    "evidence": "user reported P79.8g device testing normal"
-  },
   "last_device_verified_version": "v1_p79_8g",
   "last_device_verified_ci_run_id": 36727105080,
-  "device_status": "pending_for_p79_8i_secretless_v3",
+  "device_status": "pending_for_p79_8i_auth_proof_server_contract",
   "device_verification_required": [
-    "already-active UDID upgrades to v3 and completes one-time device-key enrollment when requested",
-    "fresh card activation reaches v3 Verify successfully",
-    "subsequent launches reuse the device Keychain key and do not request the card again",
-    "signed Runtime Config validates successfully",
+    "deploy server auth_proof contract before testing this client",
+    "already-active UDID receives auth_proof and reaches challenge without any card prompt",
+    "fresh card activation is followed by apiface active response with auth_proof and reaches challenge",
+    "second App on the same active UDID enrolls its own P-256 key without card re-entry",
+    "subsequent launches reuse the App Keychain key",
     "Verify returns access_level/permissions/token and menu opens normally",
-    "invalid or cancelled enrollment remains fail-closed",
     "runtime.iap-noads passive capability path remains normal"
   ],
   "remaining_separate_regressions": [
     "P79.8c basic vs app_plus/global_plus VIP cloud-save visibility/action/fresh-Verify behavior",
     "P79.8b full persistence regression beyond the P0 authorization-reset protected-key boundary"
   ],
-  "secret_storage_policy": "No long-lived shared Verify Secret is embedded or injected. Server private signing material remains server-side; client contains only the RSA public key and a per-device P-256 private key in Keychain. Short-lived token is session-only.",
-  "next_task": "Run P79.8i device verification against the deployed v3 server. P79.8g remains the last device-passed baseline until that test is reported normal."
+  "secret_storage_policy": "No long-lived shared Verify Secret is embedded or injected. Server private signing material remains server-side. auth_proof and Verify token are session-only. Per-App P-256 private keys remain in Keychain.",
+  "next_task": "Deploy the matching server auth_proof contract, then run the P79.8i real-device gate. P79.8g remains the last device-passed baseline until promotion."
 }
