@@ -12,6 +12,7 @@ static NSString * const ZONAuthV2LastNoticeFingerprintKey = @"zonoe.auth.v2.last
 
 static NSString *gZONAuthV2SessionUDID = nil;
 static NSString *gZONAuthV2SessionCard = nil;
+static NSString *gZONAuthV2SessionToken = nil;
 static NSDictionary *gZONAuthV2SessionLastVerify = nil;
 static NSDictionary *gZONAuthV2SessionLastActivation = nil;
 static NSDictionary *gZONAuthV2SessionLastRuntimeConfig = nil;
@@ -22,7 +23,6 @@ static NSDictionary *gZONAuthV2SessionLastBootstrap = nil;
 + (void)purgeLegacyPersistentState {
     NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
 
-    // AuthV2 response/config persistence from P79.8 and earlier.
     for (NSString *key in @[
         ZONAuthV2LastVerifyKey,
         ZONAuthV2LastActivationKey,
@@ -32,8 +32,6 @@ static NSDictionary *gZONAuthV2SessionLastBootstrap = nil;
         [d removeObjectForKey:key];
     }
 
-    // Legacy authorization values that are no longer authoritative in the P79
-    // UDID-first flow. Menu/UI/runtime preference keys are intentionally excluded.
     for (NSString *key in @[
         @"到期时间",
         @"卡密",
@@ -45,8 +43,6 @@ static NSDictionary *gZONAuthV2SessionLastBootstrap = nil;
         [d removeObjectForKey:key];
     }
 
-    // UDID bridge values are transaction/cache residue only. Once the coordinator
-    // has DZUDID, no bridge value needs to remain in Preferences.
     for (NSString *key in @[
         @"zonoe.udid.bridge.value",
         @"zonoe.udid.bridge.scheme",
@@ -56,8 +52,6 @@ static NSDictionary *gZONAuthV2SessionLastBootstrap = nil;
         [d removeObjectForKey:key];
     }
 
-    // Remove obsolete AuthV2 Keychain copies. DZUDID is owned separately by the
-    // authorization coordinator and is deliberately not touched here.
     NSError *error = nil;
     [ZONKeychain removeItemForAccount:ZONAuthV2UDIDAccount service:ZONAuthV2Service error:&error];
     error = nil;
@@ -80,15 +74,22 @@ static NSDictionary *gZONAuthV2SessionLastBootstrap = nil;
     @synchronized(self) { gZONAuthV2SessionCard = [card copy]; }
 }
 
++ (NSString *)token {
+    @synchronized(self) { return [gZONAuthV2SessionToken copy]; }
+}
+
++ (void)setToken:(NSString *)token {
+    @synchronized(self) { gZONAuthV2SessionToken = [token copy]; }
+}
+
 + (void)clearCard {
     @synchronized(self) {
         gZONAuthV2SessionCard = nil;
+        gZONAuthV2SessionToken = nil;
         gZONAuthV2SessionLastVerify = nil;
         gZONAuthV2SessionLastActivation = nil;
     }
 
-    // Also remove obsolete persistent copies that may exist after upgrading from
-    // P79.8 or earlier.
     NSError *error = nil;
     [ZONKeychain removeItemForAccount:ZONAuthV2CardAccount service:ZONAuthV2Service error:&error];
     NSUserDefaults *d = NSUserDefaults.standardUserDefaults;
@@ -100,6 +101,7 @@ static NSDictionary *gZONAuthV2SessionLastBootstrap = nil;
     @synchronized(self) {
         gZONAuthV2SessionUDID = nil;
         gZONAuthV2SessionCard = nil;
+        gZONAuthV2SessionToken = nil;
         gZONAuthV2SessionLastVerify = nil;
         gZONAuthV2SessionLastActivation = nil;
         gZONAuthV2SessionLastRuntimeConfig = nil;
