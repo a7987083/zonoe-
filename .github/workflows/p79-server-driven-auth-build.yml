@@ -224,6 +224,22 @@ jobs:
           printf 'artifact_version=%s\n' "${TESTMOD_VERSION}" >> build/P79_AUTH_BUILD_INFO.txt
           printf 'verify_secret_embedded=0\n' >> build/P79_AUTH_BUILD_INFO.txt
           printf 'protocol_dylib_key=zonoe.main\nprotocol_dylib_version=1\nprotocol_dylib_build=\n' >> build/P79_AUTH_BUILD_INFO.txt
+      - name: Package clean Xcode source
+        if: env.XCODEBUILD_STATUS == '0'
+        run: |
+          set -euxo pipefail
+          SOURCE_ZIP="build/zonoe_${TESTMOD_VERSION}_Xcode_Source.zip"
+          rm -f "$SOURCE_ZIP"
+          zip -qry "$SOURCE_ZIP" \
+            testmod \
+            testmod.xcodeproj \
+            VERSION \
+            testmod-Prefix.pch \
+            BUILD.md \
+            ci/dependencies.lock \
+            -x 'testmod/Package/*' '*.dylib' '*.py' '__pycache__/*'
+          test -s "$SOURCE_ZIP"
+          shasum -a 256 "$SOURCE_ZIP" | tee build/SOURCE_SHA256.txt
       - name: Upload P79 candidate
         if: always()
         uses: actions/upload-artifact@v4
@@ -231,7 +247,9 @@ jobs:
           name: p79-server-driven-auth-A_customer
           path: |
             build/Release-iphoneos/${{ env.TESTMOD_FILENAME }}
+            build/zonoe_${{ env.TESTMOD_VERSION }}_Xcode_Source.zip
             build/SHA256.txt
+            build/SOURCE_SHA256.txt
             build/P79_AUTH_BUILD_INFO.txt
             build/xcodebuild.log
           if-no-files-found: warn
