@@ -4,12 +4,8 @@
 #ifndef ZON_AUTH_BOOTSTRAP_URL
 #define ZON_AUTH_BOOTSTRAP_URL "https://raw.githubusercontent.com/a7987083/zonoemenu-config/main/bootstrap/zonoe.main.json"
 #endif
-#ifndef ZON_AUTH_BOOTSTRAP_DYLIB_KEY
-#define ZON_AUTH_BOOTSTRAP_DYLIB_KEY "zonoe.main"
-#endif
 
 static NSString *ZONAuthBootstrapURLString(void) { return @ZON_AUTH_BOOTSTRAP_URL; }
-static NSString *ZONAuthBootstrapDylibKey(void) { return @ZON_AUTH_BOOTSTRAP_DYLIB_KEY; }
 
 static id ZONConfigValue(NSDictionary *config, NSString *key) {
     id value = config[key];
@@ -43,8 +39,7 @@ static NSArray<NSString *> *ZONConfigStringArray(NSDictionary *config, NSString 
 static NSString *ZONJoinURL(NSString *base, NSString *path) {
     if (!base.length || !path.length) return @"";
     if ([path hasPrefix:@"http://"] || [path hasPrefix:@"https://"]) return path;
-    NSString *normalizedBase = base;
-    if ([normalizedBase hasSuffix:@"/"]) normalizedBase = [normalizedBase substringToIndex:normalizedBase.length - 1];
+    NSString *normalizedBase = [base hasSuffix:@"/"] ? [base substringToIndex:base.length - 1] : base;
     NSString *normalizedPath = [path hasPrefix:@"/"] ? path : [@"/" stringByAppendingString:path];
     return [normalizedBase stringByAppendingString:normalizedPath];
 }
@@ -64,7 +59,10 @@ static NSString *ZONJoinURL(NSString *base, NSString *path) {
 
 - (void)completeJSONRequest:(NSURLRequest *)request completion:(ZONAuthV2JSONCompletion)completion {
     [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        if (error) { if (completion) completion(nil, error); return; }
+        if (error) {
+            if (completion) completion(nil, error);
+            return;
+        }
         NSHTTPURLResponse *http = (NSHTTPURLResponse *)response;
         NSError *jsonError = nil;
         id object = data.length ? [NSJSONSerialization JSONObjectWithData:data options:0 error:&jsonError] : nil;
@@ -86,8 +84,7 @@ static NSString *ZONJoinURL(NSString *base, NSString *path) {
     NSDictionary *config = [json[@"config"] isKindOfClass:NSDictionary.class] ? json[@"config"] : json;
     id ok = config[@"ok"];
     if (ok && [ok respondsToSelector:@selector(boolValue)] && ![ok boolValue]) return NO;
-    NSArray<NSString *> *endpoints = ZONConfigStringArray(config, @"api_endpoints");
-    if (!endpoints.count) return NO;
+    if (!ZONConfigStringArray(config, @"api_endpoints").count) return NO;
     id expires = config[@"expires_at"];
     if ([expires respondsToSelector:@selector(doubleValue)]) {
         NSTimeInterval expiry = [expires doubleValue];
@@ -112,9 +109,9 @@ static NSString *ZONJoinURL(NSString *base, NSString *path) {
         if (completion) completion(nil, [NSError errorWithDomain:@"ZONAuthV2" code:-10 userInfo:@{NSLocalizedDescriptionKey:@"Bootstrap 地址无效"}]);
         return;
     }
+
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:15.0];
     request.HTTPMethod = @"GET";
-
     [self completeJSONRequest:request completion:^(NSDictionary *json, NSError *error) {
         NSDictionary *normalized = json ? [self normalizedBootstrap:json] : nil;
         if (!error && [self isUsableBootstrap:normalized]) {
@@ -167,8 +164,7 @@ static NSString *ZONJoinURL(NSString *base, NSString *path) {
             if (completion) completion(nil, bootstrapError);
             return;
         }
-        NSString *base = [self apiBaseFromBootstrap:bootstrap];
-        NSString *urlString = ZONJoinURL(base, path);
+        NSString *urlString = ZONJoinURL([self apiBaseFromBootstrap:bootstrap], path);
         if (!urlString.length) {
             if (completion) completion(nil, [NSError errorWithDomain:@"ZONAuthV2" code:-14 userInfo:@{NSLocalizedDescriptionKey:@"Bootstrap 未返回业务 API 地址"}]);
             return;
@@ -186,27 +182,18 @@ static NSString *ZONJoinURL(NSString *base, NSString *path) {
 }
 
 - (void)fetchRuntimeConfigWithCompletion:(ZONAuthV2JSONCompletion)completion {
+    // Secretless v3 hard cutover: the bootstrap document itself is the signed
+    // runtime config. Do not perform a second /index/dylib_verify/config fetch.
     [self fetchBootstrapWithCompletion:^(NSDictionary *bootstrap, NSError *bootstrapError) {
         if (bootstrapError || !bootstrap) {
             if (completion) completion(nil, bootstrapError);
             return;
         }
-
-        NSString *runtimeURL = @"";
-        for (NSString *candidate in ZONConfigStringArray(bootstrap, @"bootstrap_urls")) {
-            if ([candidate containsString:@"/index/dylib_verify/config"]) {
-                runtimeURL = candidate;
-                break;
-            }
-        }
-        if (!runtimeURL.length) {
-            runtimeURL = ZONJoinURL([self apiBaseFromBootstrap:bootstrap], @"/index/dylib_verify/config");
-        }
-        if (!runtimeURL.length) {
-            if (completion) completion(nil, [NSError errorWithDomain:@"ZONAuthV2" code:-15 userInfo:@{NSLocalizedDescriptionKey:@"Bootstrap 未返回 Runtime Config 地址"}]);
-            return;
-        }
-        [self GETAbsoluteURL:runtimeURL query:@{@"dylib_key": ZONAuthBootstrapDylibKey()} completion:completion];
+        NSLog(@"[zonoemenu][auth-v2][RUNTIME_CONFIG] using signed bootstrap directly version=%@ alg=%@ key_id=%@",
+              bootstrap[@"config_version"] ?: @"",
+              bootstrap[@"signature_alg"] ?: @"",
+              bootstrap[@"key_id"] ?: @"");
+        if (completion) completion(bootstrap, nil);
     }];
 }
 
@@ -238,7 +225,10 @@ static NSString *ZONJoinURL(NSString *base, NSString *path) {
 
         NSError *jsonError = nil;
         NSData *data = [NSJSONSerialization dataWithJSONObject:body options:0 error:&jsonError];
-        if (!data) { if (completion) completion(nil, jsonError); return; }
+        if (!data) {
+            if (completion) completion(nil, jsonError);
+            return;
+        }
 
         NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:20.0];
         request.HTTPMethod = @"POST";
