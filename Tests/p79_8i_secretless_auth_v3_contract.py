@@ -14,6 +14,9 @@ for forbidden in (
     "CCHmac(",
     "kCCHmacAlgSHA256",
     'protocol_version\"] = @2',
+    "requestEnrollmentLicenseCode",
+    "设备安全升级",
+    "首次升级到新版安全验证",
 ):
     assert forbidden not in verify, forbidden
 
@@ -26,7 +29,9 @@ for forbidden in (
 ):
     assert forbidden not in workflow, forbidden
 
-# Required v3 proof chain.
+# Required v3 proof chain. Enrollment is server-owned. If the normal UDID-first
+# activation flow already has a session card, Verify may attach it; otherwise the
+# client still submits the signed proof without opening a second activation UI.
 for required in (
     "zonoe-dylib-auth-v3",
     'payload[@"protocol_version"] = @3',
@@ -43,6 +48,8 @@ for required in (
     'rsa-2048-sha256',
 ):
     assert required in verify, required
+
+assert 'if (card.length) payload[@"license_code"] = card;' in verify
 
 # The short-lived token is session-only; no token Keychain/UserDefaults storage.
 assert "+ (nullable NSString *)token;" in storage_h
