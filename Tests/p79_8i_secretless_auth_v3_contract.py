@@ -2,6 +2,7 @@ from pathlib import Path
 
 root = Path(__file__).resolve().parents[1]
 verify = (root / "testmod/ZONAuthV2/ZONAuthV2Verify.m").read_text()
+api = (root / "testmod/ZONAuthV2/ZONAuthV2API.m").read_text()
 storage_h = (root / "testmod/ZONAuthV2/ZONAuthV2Storage.h").read_text()
 storage_m = (root / "testmod/ZONAuthV2/ZONAuthV2Storage.m").read_text()
 workflow = (root / ".github/workflows/p79-server-driven-auth-build.yml").read_text()
@@ -50,6 +51,13 @@ for required in (
     assert required in verify, required
 
 assert 'if (card.length) payload[@"license_code"] = card;' in verify
+
+# The GitHub bootstrap is itself the signed v3 runtime config. The client must not
+# insert an extra /index/dylib_verify/config hop before challenge/verify.
+runtime_method = api.split('- (void)fetchRuntimeConfigWithCompletion:', 1)[1].split('- (NSString *)verifyURLForRuntimeConfig:', 1)[0]
+assert 'completion(bootstrap, nil)' in runtime_method
+assert '/index/dylib_verify/config' not in runtime_method
+assert 'using signed bootstrap directly' in runtime_method
 
 # The short-lived token is session-only; no token Keychain/UserDefaults storage.
 assert "+ (nullable NSString *)token;" in storage_h
