@@ -166,8 +166,16 @@ jobs:
           fi
           test -x /opt/MonkeyDev/bin/md
           test -d /opt/theos/vendor/include
-      - name: Materialize pinned vendor sources
-        run: bash scripts/bootstrap_vendor.sh
+      - name: Verify retired vendor sources stay removed
+        run: |
+          set -euxo pipefail
+          test ! -d testmod/Bsphp/SCLAlertView
+          test ! -d testmod/Bsphp/MBProgressHUD
+          test ! -d testmod/Bsphp/AFNetworking
+          test ! -e testmod/Bsphp/WX_NongShiFu123.mm
+          test ! -e testmod/Bsphp/WX_NongShiFu123.h
+          test ! -e testmod/Bsphp/Config.m
+          test ! -e testmod/Bsphp/Config.h
       - name: Build P79 A_customer
         id: build
         shell: bash
