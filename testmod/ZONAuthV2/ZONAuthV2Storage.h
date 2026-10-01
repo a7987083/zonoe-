@@ -21,6 +21,8 @@ NS_ASSUME_NONNULL_BEGIN
 + (void)clearAll;
 
 /// Session-only response/config caches. They deliberately do not survive process exit.
++ (nullable NSDictionary *)lastLicense;
++ (void)setLastLicense:(nullable NSDictionary *)value;
 + (nullable NSDictionary *)lastVerify;
 + (void)setLastVerify:(nullable NSDictionary *)value;
 + (nullable NSDictionary *)lastRuntimeConfig;
