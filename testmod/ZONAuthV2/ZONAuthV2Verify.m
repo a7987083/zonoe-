@@ -155,14 +155,11 @@ static BOOL ZONReadDERLength(NSData *data, NSUInteger *offset, NSUInteger *lengt
             return;
         }
 
-        // auth_proof is short-lived and only authorizes creation of this challenge.
-        // Once the server accepted the challenge request, never reuse the proof locally.
-        [ZONAuthV2Storage setAuthProof:nil];
-
         NSMutableDictionary *payload = [context mutableCopy];
         payload[@"protocol_version"] = @3;
         payload[@"challenge_id"] = challengeID;
         payload[@"challenge"] = challenge;
+        payload[@"auth_proof"] = authProof;
 
         SecKeyRef signingKey = [self devicePrivateKey];
         if (!signingKey) {
@@ -183,6 +180,10 @@ static BOOL ZONReadDERLength(NSData *data, NSUInteger *offset, NSUInteger *lengt
 
 - (void)submitVerifyPayload:(NSDictionary *)payload URL:(NSURL *)verifyURL completion:(ZONAuthV2VerifyCompletion)completion {
     [self postJSON:payload URL:verifyURL completion:^(NSDictionary *response, NSError *verifyError) {
+        // v3.1 binds the same short-lived auth_proof to both Challenge and Verify.
+        // Clear the session copy only after the Verify request has completed.
+        [ZONAuthV2Storage setAuthProof:nil];
+
         if (verifyError || !response) {
             completion(nil, verifyError ?: ZONVerifyError(-102, @"Verify service unavailable"));
             return;
@@ -287,6 +288,7 @@ static BOOL ZONReadDERLength(NSData *data, NSUInteger *offset, NSUInteger *lengt
     return [@[ @"zonoe-dylib-auth-v3",
                payload[@"challenge_id"] ?: @"",
                payload[@"challenge"] ?: @"",
+               payload[@"auth_proof"] ?: @"",
                payload[@"udid"] ?: @"",
                payload[@"bundle_id"] ?: @"",
                payload[@"dylib_key"] ?: @"",
