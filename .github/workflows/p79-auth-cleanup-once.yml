@@ -20,26 +20,10 @@ jobs:
           ref: work/p79.8-udid-first-rebuild
           fetch-depth: 0
 
-      - name: Remove stale coordinator comment reference
-        run: |
-          set -euxo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('testmod/ZONServices/ZONAuthorizationCoordinator.m')
-          s = p.read_text()
-          s = s.replace(
-              '// Kept as a compatibility startup hook. Legacy Bsphp remains in-tree for reference,\n'
-              '    // but P79 authorization no longer calls WX_NongShiFu123/BSPHP/BSPHPy/loada.\n',
-              '// Compatibility startup hook retained for the authorization reset service.\n'
-              '    // The legacy BSPHP authorization engine is no longer part of the runtime path.\n'
-          )
-          p.write_text(s)
-          PY
-
-      - name: Apply auth residue cleanup
+      - name: Apply safe auth residue cleanup
         run: |
           set -o pipefail
-          python3 tools/p79_8j_cleanup_auth_residue.py 2>&1 | tee /tmp/p79_8j_cleanup.log
+          python3 tools/p79_8j_cleanup_auth_residue_v2.py 2>&1 | tee /tmp/p79_8j_cleanup.log
           status=${PIPESTATUS[0]}
           if [[ $status -eq 0 ]]; then git diff --check; fi
           exit $status
@@ -52,15 +36,16 @@ jobs:
           path: /tmp/p79_8j_cleanup.log
           if-no-files-found: warn
 
-      - name: Verify deleted auth residue and references
+      - name: Verify cleaned auth boundary
         run: |
           set -euxo pipefail
           test ! -e testmod/ZONAuthV2/ZONAuthV2BindingProbe.h
           test ! -e testmod/ZONAuthV2/ZONAuthV2BindingProbe.m
-          test ! -e testmod/Bsphp/WX_NongShiFu123.h
-          test ! -e testmod/Bsphp/WX_NongShiFu123.mm
           ! grep -R -n 'postVerifyBody\|verifyURLForRuntimeConfig\|ZONAuthV2BindingProbe' testmod/ZONAuthV2 testmod/ZONServices
           ! grep -R -n 'ZON_VERIFY_SECRET\|CCHmac(' testmod/ZONAuthV2
+          ! grep -R -n 'setLastActivation\|lastBootstrap\|setLastBootstrap' testmod/ZONAuthV2
+          ! grep -R -n 'setCard\|\[ZONAuthV2Storage card\]' testmod/ZONAuthV2
+          grep -R -n 'lastRuntimeConfig' testmod/ZONAuthV2 testmod/ZONServices/ZONSaveTransferCoordinator.m
           grep -R -n 'auth_proof' testmod/ZONAuthV2/ZONAuthV2API.m testmod/ZONAuthV2/ZONAuthV2Verify.m
 
       - name: Run auth and architecture contracts
@@ -74,19 +59,13 @@ jobs:
           python3 Tests/p79_8i_secretless_auth_v3_contract.py
 
       - name: Commit cleaned source
-        id: commit
         run: |
           set -euxo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          if git diff --cached --quiet; then
-            echo 'changed=0' >> "$GITHUB_OUTPUT"
-          else
-            git commit -m 'refactor(p79.8j): remove obsolete auth verification residue'
-            git push origin HEAD:work/p79.8-udid-first-rebuild
-            echo 'changed=1' >> "$GITHUB_OUTPUT"
-          fi
+          git commit -m 'refactor(p79.8j): remove obsolete auth verification residue'
+          git push origin HEAD:work/p79.8-udid-first-rebuild
 
       - name: Package cleaned Objective-C source
         run: |
