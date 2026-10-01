@@ -20,10 +20,26 @@ jobs:
           ref: work/p79.8-udid-first-rebuild
           fetch-depth: 0
 
+      - name: Remove stale coordinator comment reference
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('testmod/ZONServices/ZONAuthorizationCoordinator.m')
+          s = p.read_text()
+          s = s.replace(
+              '// Kept as a compatibility startup hook. Legacy Bsphp remains in-tree for reference,\n'
+              '    // but P79 authorization no longer calls WX_NongShiFu123/BSPHP/BSPHPy/loada.\n',
+              '// Compatibility startup hook retained for the authorization reset service.\n'
+              '    // The legacy BSPHP authorization engine is no longer part of the runtime path.\n'
+          )
+          p.write_text(s)
+          PY
+
       - name: Apply auth residue cleanup
         run: |
           set -euxo pipefail
-          python3 tools/p79_8j_cleanup_auth_residue.py
+          python3 tools/p79_8j_cleanup_auth_residue.py 2>&1 | tee /tmp/p79_8j_cleanup.log
           git diff --check
 
       - name: Verify deleted auth residue and references
@@ -33,7 +49,7 @@ jobs:
           test ! -e testmod/ZONAuthV2/ZONAuthV2BindingProbe.m
           test ! -e testmod/Bsphp/WX_NongShiFu123.h
           test ! -e testmod/Bsphp/WX_NongShiFu123.mm
-          ! grep -R -n 'postVerifyBody\|verifyURLForRuntimeConfig\|ZONAuthV2BindingProbe' testmod/ZONAuthV2 testmod/ZONServices || true
+          ! grep -R -n 'postVerifyBody\|verifyURLForRuntimeConfig\|ZONAuthV2BindingProbe' testmod/ZONAuthV2 testmod/ZONServices
           ! grep -R -n 'ZON_VERIFY_SECRET\|CCHmac(' testmod/ZONAuthV2
           grep -R -n 'auth_proof' testmod/ZONAuthV2/ZONAuthV2API.m testmod/ZONAuthV2/ZONAuthV2Verify.m
 
