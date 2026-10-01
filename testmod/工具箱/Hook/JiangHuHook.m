@@ -11,7 +11,6 @@
 #import "GAD.h"
 #import "MTG.h"
 #import "ImgTool.h"
-#import "Config.h"
 #import "albase.h"
 #import "ALAdView.h"
 #import <dlfcn.h>  // <--- 必须包含这个头文件
