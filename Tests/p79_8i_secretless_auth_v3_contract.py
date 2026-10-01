@@ -36,7 +36,7 @@ for required in (
     'enrollment_required',
     'license_code',
     'SecKeyCreateRandomKey',
-    'kSecKeyTypeECSECPrimeRandom',
+    'kSecAttrKeyTypeECSECPrimeRandom',
     'kSecKeyAlgorithmECDSASignatureMessageX962SHA256',
     'SecKeyCreateSignature',
     'SecKeyVerifySignature',
