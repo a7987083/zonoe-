@@ -1,14 +1,5 @@
+#import <Foundation/Foundation.h>
 
-//
-//  NetWorkingApiClient.h
-//  BSPHPOC
-//
-//  Created by MRW on 2016/12/14.
-//  Copyright © 2016年 xiaozhou. All rights reserved.
-//
-
-#import "AFNetworking.h"
-
-@interface NetWorkingApiClient : AFHTTPSessionManager
-+ (NetWorkingApiClient *)sharedNetWorkingApiClient;
+// P79.8k retired legacy BSPHP AFNetworking adapter.
+@interface NetWorkingApiClient : NSObject
 @end
