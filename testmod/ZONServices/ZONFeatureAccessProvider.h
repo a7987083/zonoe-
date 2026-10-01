@@ -8,6 +8,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface ZONFeatureAccessProvider : NSObject
 
 + (NSDictionary<NSString *, id> *)currentServerPermissions;
++ (NSDictionary<NSString *, id> *)effectivePermissionsForVerifyResponse:(nullable NSDictionary<NSString *, id> *)verifyResponse;
 + (NSString *)currentAccessLevel;
 + (BOOL)isFeatureVisible:(NSDictionary<NSString *, id> *)feature;
 + (BOOL)isFeatureActionAllowed:(NSDictionary<NSString *, id> *)feature;
