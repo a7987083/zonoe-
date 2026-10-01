@@ -102,9 +102,11 @@ jobs:
             ref.remove_from_project if removable.call(ref)
           end
 
-          project.groups.dup.each do |group|
-            next unless %w[AFNetworking MBProgressHUD SCLAlertView].include?(group.display_name.to_s)
-            group.remove_from_project
+          legacy_group_names = %w[AFNetworking MBProgressHUD SCLAlertView]
+          project.objects.dup.each do |object|
+            next unless object.respond_to?(:display_name)
+            next unless legacy_group_names.include?(object.display_name.to_s)
+            object.remove_from_project if object.respond_to?(:remove_from_project)
           end
 
           project.save
