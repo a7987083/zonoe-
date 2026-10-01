@@ -116,17 +116,10 @@ static NSString *ZONJoinURL(NSString *base, NSString *path) {
         NSDictionary *normalized = json ? [self normalizedBootstrap:json] : nil;
         if (!error && [self isUsableBootstrap:normalized]) {
             self.sessionBootstrap = normalized;
-            [ZONAuthV2Storage setLastBootstrap:normalized];
             if (completion) completion(normalized, nil);
             return;
         }
 
-        NSDictionary *lastKnownGood = [ZONAuthV2Storage lastBootstrap];
-        if ([self isUsableBootstrap:lastKnownGood]) {
-            self.sessionBootstrap = lastKnownGood;
-            if (completion) completion(lastKnownGood, nil);
-            return;
-        }
 
         NSError *finalError = error ?: [NSError errorWithDomain:@"ZONAuthV2" code:-11 userInfo:@{NSLocalizedDescriptionKey:@"Bootstrap 配置不可用"}];
         if (completion) completion(json, finalError);
@@ -206,46 +199,5 @@ static NSString *ZONJoinURL(NSString *base, NSString *path) {
     }];
 }
 
-- (NSString *)verifyURLForRuntimeConfig:(NSDictionary *)runtimeConfig bootstrap:(NSDictionary *)bootstrap {
-    NSString *verifyPath = ZONConfigString(runtimeConfig, @[@"verify_path", @"verifyPath"]);
-    if (!verifyPath.length) verifyPath = ZONConfigString(bootstrap, @[@"verify_path", @"verifyPath"]);
-
-    NSString *base = ZONConfigStringArray(runtimeConfig, @"api_endpoints").firstObject;
-    if (!base.length) base = ZONConfigString(runtimeConfig, @[@"endpoint_url", @"endpointURL", @"endpoint", @"base_url", @"baseURL", @"api_endpoint"]);
-    if (!base.length) base = [self apiBaseFromBootstrap:bootstrap];
-
-    if ([verifyPath hasPrefix:@"http://"] || [verifyPath hasPrefix:@"https://"]) return verifyPath;
-    return ZONJoinURL(base, verifyPath);
-}
-
-- (void)postVerifyBody:(NSDictionary *)body runtimeConfig:(NSDictionary *)runtimeConfig completion:(ZONAuthV2JSONCompletion)completion {
-    [self fetchBootstrapWithCompletion:^(NSDictionary *bootstrap, NSError *bootstrapError) {
-        if (bootstrapError || !bootstrap) {
-            if (completion) completion(nil, bootstrapError);
-            return;
-        }
-
-        NSString *urlString = [self verifyURLForRuntimeConfig:runtimeConfig ?: @{} bootstrap:bootstrap];
-        NSURL *url = [NSURL URLWithString:urlString ?: @""];
-        if (!url) {
-            if (completion) completion(nil, [NSError errorWithDomain:@"ZONAuthV2" code:-16 userInfo:@{NSLocalizedDescriptionKey:@"Verify 地址无效"}]);
-            return;
-        }
-
-        NSError *jsonError = nil;
-        NSData *data = [NSJSONSerialization dataWithJSONObject:body options:0 error:&jsonError];
-        if (!data) {
-            if (completion) completion(nil, jsonError);
-            return;
-        }
-
-        NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:20.0];
-        request.HTTPMethod = @"POST";
-        [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
-        [request setValue:@"application/json" forHTTPHeaderField:@"Accept"];
-        request.HTTPBody = data;
-        [self completeJSONRequest:request completion:completion];
-    }];
-}
 
 @end

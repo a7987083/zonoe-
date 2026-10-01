@@ -96,10 +96,6 @@ static NSString *ZONUDIDAuthorizationStateName(ZONUDIDAuthorizationState state) 
     }
 }
 
-static BOOL ZONLicenseIsAuthorized(NSDictionary *license) {
-    return ZONUDIDAuthorizationStateFromPayload(license) == ZONUDIDAuthorizationStateActive;
-}
-
 static id ZONLicenseProjection(id obj) {
     if ([obj isKindOfClass:NSArray.class]) {
         NSMutableArray *array = [NSMutableArray array];
@@ -145,27 +141,19 @@ static NSString *ZONActivationMessage(NSDictionary *activation, NSDictionary *li
 
 static NSString *ZONUserMessage(NSString *code, NSString *raw) {
     NSString *lower = raw.lowercaseString ?: @"";
-    if ([lower containsString:@"authorization does not apply to this app"]) {
-        return @"当前卡密不适用于此应用，请更换有效卡密。";
-    }
+    if ([lower containsString:@"authorization does not apply to this app"] || [code isEqualToString:@"app_not_authorized"]) return @"当前授权不适用于此应用。";
     if ([code isEqualToString:@"license_invalid"]) {
         if ([lower containsString:@"expired"] || [lower containsString:@"expire"]) return @"卡密已到期，请重新输入有效卡密。";
         return @"卡密无效、已失效或不适用于当前应用，请重新输入有效卡密。";
     }
-    if ([code isEqualToString:@"license_expired"] || [code isEqualToString:@"authorization_expired"]) {
-        return @"卡密已到期，请重新输入有效卡密。";
-    }
+    if ([code isEqualToString:@"license_expired"] || [code isEqualToString:@"authorization_expired"]) return @"授权已到期，请重新输入有效卡密。";
+    if ([code hasPrefix:@"auth_proof_"]) return @"设备授权凭证已失效，请重新验证。";
+    if ([code hasPrefix:@"challenge_"]) return @"验证请求已失效，请重试。";
+    if ([code hasPrefix:@"device_key_"] || [code hasPrefix:@"device_signature_"]) return @"设备身份验证失败。";
+    if ([code isEqualToString:@"runtime_config_invalid"] || [code isEqualToString:@"client_config_invalid"]) return @"验证配置无效，请稍后重试。";
     if (!raw.length) return @"授权验证失败，请稍后重试。";
-
-    NSCharacterSet *letters = NSCharacterSet.letterCharacterSet;
-    NSUInteger letterCount = 0, nonASCII = 0;
-    for (NSUInteger i = 0; i < raw.length; i++) {
-        unichar c = [raw characterAtIndex:i];
-        if ([letters characterIsMember:c]) letterCount++;
-        if (c > 127) nonASCII++;
-    }
-    if (letterCount > 6 && nonASCII == 0) return @"授权状态异常，请检查卡密是否有效并重试。";
-    return raw;
+    for (NSUInteger i = 0; i < raw.length; i++) if ([raw characterAtIndex:i] > 127) return raw;
+    return @"授权验证失败，请稍后重试。";
 }
 
 static NSString *ZONStartupLookupErrorMessage(NSError *error) {
@@ -211,23 +199,22 @@ static NSString *ZONStartupLookupErrorMessage(NSError *error) {
               ZONUDIDAuthorizationStateName(state), code, msg, expire, (unsigned long)auths.count);
 
         if (state == ZONUDIDAuthorizationStateActive) {
-            NSString *savedCard = [ZONAuthV2Storage card] ?: @"";
-            NSLog(@"[zonoemenu][auth-v2][P79.8A_UDID_GATE] active UDID authorization; entering runtime-config + Verify without card prompt");
-            [self fetchConfigAndVerifyUDID:udid card:savedCard license:snapshot host:nil isNewActivation:NO];
+            NSLog(@"[zonoemenu][auth-v3][UDID_GATE] active UDID authorization; entering signed Runtime Config + Verify");
+            [self fetchConfigAndVerifyUDID:udid license:snapshot isNewActivation:NO];
             return;
         }
 
         if (state == ZONUDIDAuthorizationStateMissing) {
             NSLog(@"[zonoemenu][auth-v2][P79.8A_UDID_GATE] no activation record -> card prompt");
-            [ZONAuthV2Storage clearCard];
-            [self presentCardPromptForUDID:udid host:hostViewController message:nil];
+            [ZONAuthV2Storage clearAuthorizationSession];
+            [self presentCardPromptForUDID:udid message:nil];
             return;
         }
 
         if (state == ZONUDIDAuthorizationStateExpired) {
             NSLog(@"[zonoemenu][auth-v2][P79.8A_UDID_GATE] authorization expired -> card prompt");
-            [ZONAuthV2Storage clearCard];
-            [self presentCardPromptForUDID:udid host:hostViewController message:@"当前设备授权已到期，请输入新的有效卡密。"];
+            [ZONAuthV2Storage clearAuthorizationSession];
+            [self presentCardPromptForUDID:udid message:@"当前设备授权已到期，请输入新的有效卡密。"];
             return;
         }
 
@@ -243,7 +230,7 @@ static NSString *ZONStartupLookupErrorMessage(NSError *error) {
     }];
 }
 
-- (void)presentCardPromptForUDID:(NSString *)udid host:(UIViewController *)host message:(NSString *)message {
+- (void)presentCardPromptForUDID:(NSString *)udid message:(NSString *)message {
     NSString *displayMessage = message.length ? message : @"请输入有效卡密";
     [[ZONPresentationCoordinator sharedCoordinator] enqueueWithKey:@"auth.cardPrompt" builder:^UIViewController *(dispatch_block_t finish) {
         UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"卡密激活"
@@ -262,25 +249,25 @@ static NSString *ZONStartupLookupErrorMessage(NSError *error) {
             finish();
             if (card.length == 0) {
                 dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                    [weakSelf presentCardPromptForUDID:udid host:nil message:@"请输入卡密"];
+                    [weakSelf presentCardPromptForUDID:udid message:@"请输入卡密"];
                 });
                 return;
             }
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                [weakSelf activateCard:card udid:udid host:nil];
+                [weakSelf activateCard:card udid:udid];
             });
         }]];
         return alert;
     }];
 }
 
-- (void)activateCard:(NSString *)card udid:(NSString *)udid host:(UIViewController *)host {
+- (void)activateCard:(NSString *)card udid:(NSString *)udid {
     ZONAuthV2API *api = [ZONAuthV2API sharedAPI];
 
     [api fetchLicenseForUDID:udid completion:^(NSDictionary *before, NSError *beforeError) {
         if (beforeError) {
             NSLog(@"[zonoemenu][auth-v2][BEFORE_LICENSE] failure domain=%@ code=%ld", beforeError.domain, (long)beforeError.code);
-            [self presentCardPromptForUDID:udid host:nil message:ZONStartupLookupErrorMessage(beforeError)];
+            [self presentCardPromptForUDID:udid message:ZONStartupLookupErrorMessage(beforeError)];
             return;
         }
 
@@ -292,7 +279,7 @@ static NSString *ZONStartupLookupErrorMessage(NSError *error) {
 
         if (beforeState == ZONUDIDAuthorizationStateBlocked || beforeState == ZONUDIDAuthorizationStateUnknown) {
             NSString *raw = ZONActivationMessage(nil, beforeLicense, nil, @"授权状态异常");
-            [self presentCardPromptForUDID:udid host:nil message:ZONUserMessage(@"", raw)];
+            [self presentCardPromptForUDID:udid message:ZONUserMessage(@"", raw)];
             return;
         }
 
@@ -301,11 +288,10 @@ static NSString *ZONStartupLookupErrorMessage(NSError *error) {
             if (activationError) {
                 NSString *raw = ZONActivationMessage(activationResponse, nil, activationError, @"激活失败");
                 NSLog(@"[zonoemenu][auth-v2][APPSTORE] rejected status=%ld raw_message=%@", (long)activationError.code, raw);
-                [self presentCardPromptForUDID:udid host:nil message:ZONUserMessage(@"", raw)];
+                [self presentCardPromptForUDID:udid message:ZONUserMessage(@"", raw)];
                 return;
             }
 
-            [ZONAuthV2Storage setLastActivation:activationResponse];
             NSLog(@"[zonoemenu][auth-v2][APPSTORE] transport_ok=1 message=%@", ZONActivationMessage(activationResponse, nil, nil, @""));
 
             [api fetchLicenseForUDID:udid completion:^(NSDictionary *after, NSError *afterError) {
@@ -313,7 +299,7 @@ static NSString *ZONStartupLookupErrorMessage(NSError *error) {
                 if (afterError || !after) {
                     NSString *raw = ZONActivationMessage(activationResponse, afterLicense, afterError, @"授权状态读取失败");
                     NSLog(@"[zonoemenu][auth-v2][AFTER_LICENSE] failure domain=%@ code=%ld raw_message=%@", afterError.domain, (long)afterError.code, raw);
-                    [self presentCardPromptForUDID:udid host:nil message:ZONUserMessage(@"", raw)];
+                    [self presentCardPromptForUDID:udid message:ZONUserMessage(@"", raw)];
                     return;
                 }
 
@@ -327,21 +313,19 @@ static NSString *ZONStartupLookupErrorMessage(NSError *error) {
                 if (!afterAuthorized || !stateChanged) {
                     NSString *raw = ZONActivationMessage(activationResponse, afterLicense, nil, @"授权状态未发生变化");
                     NSLog(@"[zonoemenu][auth-v2][ACTIVATION_GATE] rejected authorized=%d state_changed=%d raw_message=%@", afterAuthorized, stateChanged, raw);
-                    [self presentCardPromptForUDID:udid host:nil message:ZONUserMessage(@"", raw)];
+                    [self presentCardPromptForUDID:udid message:ZONUserMessage(@"", raw)];
                     return;
                 }
 
                 NSLog(@"[zonoemenu][auth-v2][ACTIVATION_GATE] passed; entering runtime-config + Verify");
-                [self fetchConfigAndVerifyUDID:udid card:card license:afterLicense host:nil isNewActivation:YES];
+                [self fetchConfigAndVerifyUDID:udid license:afterLicense isNewActivation:YES];
             }];
         }];
     }];
 }
 
 - (void)fetchConfigAndVerifyUDID:(NSString *)udid
-                            card:(NSString *)card
                          license:(NSDictionary *)license
-                            host:(UIViewController *)host
                  isNewActivation:(BOOL)isNewActivation {
     [[ZONAuthV2API sharedAPI] fetchRuntimeConfigWithCompletion:^(NSDictionary *config, NSError *configError) {
         NSDictionary *effectiveConfig = config;
@@ -372,7 +356,6 @@ static NSString *ZONStartupLookupErrorMessage(NSError *error) {
 
             if (ok && ![action isEqualToString:@"block"]) {
                 [ZONAuthV2Storage setLastVerify:response];
-                if (card.length) [ZONAuthV2Storage setCard:card];
                 [self handleVerifySuccess:response license:license ?: @{} isNewActivation:isNewActivation];
                 return;
             }
@@ -392,14 +375,14 @@ static NSString *ZONStartupLookupErrorMessage(NSError *error) {
     BOOL appMismatch = [code isEqualToString:@"app_not_authorized"] ||
                        [raw.lowercaseString containsString:@"authorization does not apply to this app"];
     if (appMismatch) {
-        [ZONAuthV2Storage clearCard];
-        [self presentCardPromptForUDID:udid host:nil message:@"当前卡密不适用于此应用，请更换有效卡密。"];
+        [ZONAuthV2Storage clearAuthorizationSession];
+        [self presentCardPromptForUDID:udid message:@"当前卡密不适用于此应用，请更换有效卡密。"];
         return;
     }
 
     if ([code isEqualToString:@"license_invalid"] || [code isEqualToString:@"license_expired"] || [code isEqualToString:@"authorization_expired"]) {
-        [ZONAuthV2Storage clearCard];
-        [self presentCardPromptForUDID:udid host:nil message:message];
+        [ZONAuthV2Storage clearAuthorizationSession];
+        [self presentCardPromptForUDID:udid message:message];
         return;
     }
 

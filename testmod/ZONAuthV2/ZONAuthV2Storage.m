@@ -11,13 +11,10 @@ static NSString * const ZONAuthV2LastBootstrapKey = @"zonoe.auth.v2.lastBootstra
 static NSString * const ZONAuthV2LastNoticeFingerprintKey = @"zonoe.auth.v2.lastNoticeFingerprint";
 
 static NSString *gZONAuthV2SessionUDID = nil;
-static NSString *gZONAuthV2SessionCard = nil;
 static NSString *gZONAuthV2SessionToken = nil;
 static NSString *gZONAuthV2SessionAuthProof = nil;
 static NSDictionary *gZONAuthV2SessionLastVerify = nil;
-static NSDictionary *gZONAuthV2SessionLastActivation = nil;
 static NSDictionary *gZONAuthV2SessionLastRuntimeConfig = nil;
-static NSDictionary *gZONAuthV2SessionLastBootstrap = nil;
 
 @implementation ZONAuthV2Storage
 
@@ -67,14 +64,6 @@ static NSDictionary *gZONAuthV2SessionLastBootstrap = nil;
     @synchronized(self) { gZONAuthV2SessionUDID = [udid copy]; }
 }
 
-+ (NSString *)card {
-    @synchronized(self) { return [gZONAuthV2SessionCard copy]; }
-}
-
-+ (void)setCard:(NSString *)card {
-    @synchronized(self) { gZONAuthV2SessionCard = [card copy]; }
-}
-
 + (NSString *)token {
     @synchronized(self) { return [gZONAuthV2SessionToken copy]; }
 }
@@ -91,13 +80,11 @@ static NSDictionary *gZONAuthV2SessionLastBootstrap = nil;
     @synchronized(self) { gZONAuthV2SessionAuthProof = [authProof copy]; }
 }
 
-+ (void)clearCard {
++ (void)clearAuthorizationSession {
     @synchronized(self) {
-        gZONAuthV2SessionCard = nil;
         gZONAuthV2SessionToken = nil;
         gZONAuthV2SessionAuthProof = nil;
         gZONAuthV2SessionLastVerify = nil;
-        gZONAuthV2SessionLastActivation = nil;
     }
 
     NSError *error = nil;
@@ -110,13 +97,10 @@ static NSDictionary *gZONAuthV2SessionLastBootstrap = nil;
 + (void)clearAll {
     @synchronized(self) {
         gZONAuthV2SessionUDID = nil;
-        gZONAuthV2SessionCard = nil;
         gZONAuthV2SessionToken = nil;
         gZONAuthV2SessionAuthProof = nil;
         gZONAuthV2SessionLastVerify = nil;
-        gZONAuthV2SessionLastActivation = nil;
         gZONAuthV2SessionLastRuntimeConfig = nil;
-        gZONAuthV2SessionLastBootstrap = nil;
     }
 
     NSError *error = nil;
@@ -139,28 +123,12 @@ static NSDictionary *gZONAuthV2SessionLastBootstrap = nil;
     @synchronized(self) { gZONAuthV2SessionLastVerify = [value copy]; }
 }
 
-+ (NSDictionary *)lastActivation {
-    @synchronized(self) { return [gZONAuthV2SessionLastActivation copy]; }
-}
-
-+ (void)setLastActivation:(NSDictionary *)value {
-    @synchronized(self) { gZONAuthV2SessionLastActivation = [value copy]; }
-}
-
 + (NSDictionary *)lastRuntimeConfig {
     @synchronized(self) { return [gZONAuthV2SessionLastRuntimeConfig copy]; }
 }
 
 + (void)setLastRuntimeConfig:(NSDictionary *)value {
     @synchronized(self) { gZONAuthV2SessionLastRuntimeConfig = [value copy]; }
-}
-
-+ (NSDictionary *)lastBootstrap {
-    @synchronized(self) { return [gZONAuthV2SessionLastBootstrap copy]; }
-}
-
-+ (void)setLastBootstrap:(NSDictionary *)value {
-    @synchronized(self) { gZONAuthV2SessionLastBootstrap = [value copy]; }
 }
 
 + (NSString *)lastNoticeFingerprint {

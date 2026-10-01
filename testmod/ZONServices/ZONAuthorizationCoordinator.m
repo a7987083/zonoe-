@@ -11,8 +11,8 @@
 
 void ZONInstallAuthorizationResetExtension(void)
 {
-    // Kept as a compatibility startup hook. Legacy Bsphp remains in-tree for reference,
-    // but P79 authorization no longer calls WX_NongShiFu123/BSPHP/BSPHPy/loada.
+    // Compatibility startup hook retained for the authorization reset service.
+    // The primary P79 authorization engine is ZONAuthV2Flow.
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         NSLog(@"[zonoemenu][INFO][auth] authorization reset service installed");

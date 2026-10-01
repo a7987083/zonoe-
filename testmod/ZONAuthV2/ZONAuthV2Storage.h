@@ -13,24 +13,18 @@ NS_ASSUME_NONNULL_BEGIN
 /// short-lived values here; none are persisted.
 + (nullable NSString *)udid;
 + (void)setUDID:(NSString *)udid;
-+ (nullable NSString *)card;
-+ (void)setCard:(NSString *)card;
 + (nullable NSString *)token;
 + (void)setToken:(nullable NSString *)token;
 + (nullable NSString *)authProof;
 + (void)setAuthProof:(nullable NSString *)authProof;
-+ (void)clearCard;
++ (void)clearAuthorizationSession;
 + (void)clearAll;
 
 /// Session-only response/config caches. They deliberately do not survive process exit.
 + (nullable NSDictionary *)lastVerify;
 + (void)setLastVerify:(nullable NSDictionary *)value;
-+ (nullable NSDictionary *)lastActivation;
-+ (void)setLastActivation:(nullable NSDictionary *)value;
 + (nullable NSDictionary *)lastRuntimeConfig;
 + (void)setLastRuntimeConfig:(nullable NSDictionary *)value;
-+ (nullable NSDictionary *)lastBootstrap;
-+ (void)setLastBootstrap:(nullable NSDictionary *)value;
 
 /// The only AuthV2 NSUserDefaults value intentionally kept across launches: it
 /// records which notice has already been presented so the same notice is not repeated.

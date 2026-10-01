@@ -1,8 +1,3 @@
-//static __attribute__((constructor)) void _logosLocalInit(void) {
-//    NSLog(@"load1111111111");
-//    [[WX_NongShiFu123 alloc] BSPHP];
-//}
-#import "WX_NongShiFu123.h"
 #import <SystemConfiguration/SystemConfiguration.h>
 #import "daochucd.h"
 #import "getKeychain.h"

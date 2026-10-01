@@ -1,3 +1,12 @@
+
+## v1_p79_8j — Auth Verification Residue Cleanup
+- Removed detached `ZONAuthV2BindingProbe` compatibility/swizzle source.
+- Removed duplicate `ZONAuthV2API` Verify transport; `ZONAuthV2Verify` exclusively owns `/challenge` and `/verify`.
+- Removed card propagation/storage from Verify; card remains activation-only.
+- Removed write-only `lastActivation` and duplicate `lastBootstrap` session caches.
+- Kept `lastRuntimeConfig` because cloud-save fresh Verify still consumes it.
+- Kept legacy `WX_NongShiFu123`/Config source because the live legacy-UDID fallback and cloud-save purchase/config paths still reference it; it is not dead code yet.
+- Replaced card-centric generic Verify errors with v3 protocol-aware messages.
 # CHANGELOG_DEV
 
 ## 2026-10-01 — v1_p79_8i UDID auth-proof enrollment cutover — CLIENT CI PASSED / SERVER PENDING / DEVICE PENDING

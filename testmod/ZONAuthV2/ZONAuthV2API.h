@@ -9,9 +9,6 @@ typedef void (^ZONAuthV2JSONCompletion)(NSDictionary * _Nullable json, NSError *
 - (void)fetchLicenseForUDID:(NSString *)udid completion:(ZONAuthV2JSONCompletion)completion;
 - (void)activateUDID:(NSString *)udid card:(NSString *)card completion:(ZONAuthV2JSONCompletion)completion;
 - (void)fetchRuntimeConfigWithCompletion:(ZONAuthV2JSONCompletion)completion;
-- (void)postVerifyBody:(NSDictionary *)body
-         runtimeConfig:(NSDictionary *)runtimeConfig
-            completion:(ZONAuthV2JSONCompletion)completion;
 @end
 
 NS_ASSUME_NONNULL_END

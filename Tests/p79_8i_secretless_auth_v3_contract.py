@@ -99,7 +99,7 @@ assert 'AUTH_PROOF' in license_method
 
 # The GitHub bootstrap remains the signed runtime config in this product client.
 # Do not reintroduce the previously removed second /config hop as part of v3.1.
-runtime_method = api.split('- (void)fetchRuntimeConfigWithCompletion:', 1)[1].split('- (NSString *)verifyURLForRuntimeConfig:', 1)[0]
+runtime_method = api.split('- (void)fetchRuntimeConfigWithCompletion:', 1)[1].split('\n@end', 1)[0]
 assert 'completion(bootstrap, nil)' in runtime_method
 assert 'GETAbsoluteURL' not in runtime_method
 assert 'using signed bootstrap directly' in runtime_method
@@ -116,3 +116,14 @@ assert "ZONAuthV2SessionToken" not in workflow
 assert "ZONAuthV2SessionAuthProof" not in workflow
 
 print("P79.8i Secretless Auth v3.1 auth-proof contract: OK")
+
+# P79.8j proven-dead auth residue must not return.
+assert not (root / "testmod/ZONAuthV2/ZONAuthV2BindingProbe.m").exists()
+assert not (root / "testmod/ZONAuthV2/ZONAuthV2BindingProbe.h").exists()
+assert "postVerifyBody" not in api
+assert "verifyURLForRuntimeConfig" not in api
+assert "lastBootstrap" not in storage_h
+assert "lastActivation" not in storage_h
+assert "+ (nullable NSString *)card;" not in storage_h
+assert "lastRuntimeConfig" in storage_h  # still consumed by cloud-save fresh Verify
+assert "clearAuthorizationSession" in storage_h
