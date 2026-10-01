@@ -5,6 +5,8 @@ verify = (root / "testmod/ZONAuthV2/ZONAuthV2Verify.m").read_text()
 api = (root / "testmod/ZONAuthV2/ZONAuthV2API.m").read_text()
 storage_h = (root / "testmod/ZONAuthV2/ZONAuthV2Storage.h").read_text()
 storage_m = (root / "testmod/ZONAuthV2/ZONAuthV2Storage.m").read_text()
+provider = (root / "testmod/ZONServices/ZONFeatureAccessProvider.m").read_text()
+cloud = (root / "testmod/ZONServices/ZONSaveTransferCoordinator.m").read_text()
 workflow = (root / ".github/workflows/p79-server-driven-auth-build.yml").read_text()
 
 # P79.8i is an intentional hard cutover: the old shared-secret/HMAC Verify path
@@ -95,6 +97,7 @@ assert '[ZONAuthV2Storage setAuthProof:nil]' in submit_method
 license_method = api.split('- (void)fetchLicenseForUDID:', 1)[1].split('- (void)activateUDID:', 1)[0]
 assert 'json[@"auth_proof"]' in license_method
 assert '[ZONAuthV2Storage setAuthProof:' in license_method
+assert '[ZONAuthV2Storage setLastLicense:json]' in license_method
 assert 'AUTH_PROOF' in license_method
 
 # The GitHub bootstrap remains the signed runtime config in this product client.
@@ -104,18 +107,37 @@ assert 'completion(bootstrap, nil)' in runtime_method
 assert 'GETAbsoluteURL' not in runtime_method
 assert 'using signed bootstrap directly' in runtime_method
 
-# Short-lived token and auth_proof are session-only; neither is persisted.
+# Short-lived token/auth_proof/license projection are session-only; none are persisted.
 assert "+ (nullable NSString *)token;" in storage_h
 assert "+ (void)setToken:(nullable NSString *)token;" in storage_h
 assert "+ (nullable NSString *)authProof;" in storage_h
 assert "+ (void)setAuthProof:(nullable NSString *)authProof;" in storage_h
+assert "+ (nullable NSDictionary *)lastLicense;" in storage_h
 assert "gZONAuthV2SessionToken" in storage_m
 assert "gZONAuthV2SessionAuthProof" in storage_m
+assert "gZONAuthV2SessionLastLicense" in storage_m
 assert "setToken:token" in verify
 assert "ZONAuthV2SessionToken" not in workflow
 assert "ZONAuthV2SessionAuthProof" not in workflow
 
-print("P79.8i Secretless Auth v3.1 auth-proof contract: OK")
+# P79.8k2: one centralized compatibility projection maps an active, unexpired
+# 全软件源 authorization to the complete software-source permission surface.
+assert 'authorization[@"type"]' in provider
+assert '@"全软件源"' in provider
+assert 'effective[@"normal_menu"] = @YES' in provider
+assert 'effective[@"extra_menu"] = @YES' in provider
+assert 'effective[@"extra_features"] = @YES' in provider
+assert 'explicitlyDenied' in provider
+
+# Cloud-sensitive actions must fetch a fresh /apiface proof before v3.1 Verify,
+# because the startup proof is intentionally consumed after its Verify request.
+assert 'fetchLicenseForUDID:deviceIdentifier' in cloud
+assert 'verifyUDID:deviceIdentifier' in cloud
+assert cloud.index('fetchLicenseForUDID:deviceIdentifier') < cloud.index('verifyUDID:deviceIdentifier')
+assert 'effectivePermissionsForVerifyResponse:response' in cloud
+assert 'ZONCloudLicenseIsActive' in cloud
+
+print("P79.8i/v3.1 + P79.8k2 cloud permission contract: OK")
 
 # P79.8j proven-dead auth residue must not return.
 assert not (root / "testmod/ZONAuthV2/ZONAuthV2BindingProbe.m").exists()
