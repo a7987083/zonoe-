@@ -6,10 +6,30 @@
 #import "../ZONAuthV2/ZONAuthV2Storage.h"
 #import "../ZONAuthV2/ZONAuthV2Verify.h"
 #import "getKeychain.h"
-#import "WX_NongShiFu123.h"
-#import "Config.h"
 #import "SVProgressHUD.h"
 #import "JDStatusBarNotification.h"
+
+static NSString * const ZONCloudMetadataBaseURLString = @"https://yun.zonoeios.xyz/d/a/json/";
+static NSString * const ZONCloudArchiveBaseURLString = @"https://yun.zonoeios.xyz/d/a/yuncundang/";
+
+static NSString *ZONStringValue(NSDictionary *dictionary, NSString *key)
+{
+    id value = [dictionary isKindOfClass:NSDictionary.class] ? dictionary[key] : nil;
+    return [value isKindOfClass:NSString.class] ? value : @"";
+}
+
+static NSString *ZONPurchaseURLString(void)
+{
+    NSDictionary *verify = [ZONAuthV2Storage lastVerify];
+    NSString *url = ZONStringValue(verify, @"purchase_url");
+    if (!url.length) url = ZONStringValue(verify, @"software_url");
+    if (url.length) return url;
+
+    NSDictionary *runtimeConfig = [ZONAuthV2Storage lastRuntimeConfig];
+    url = ZONStringValue(runtimeConfig, @"purchase_url");
+    if (!url.length) url = ZONStringValue(runtimeConfig, @"software_url");
+    return url;
+}
 
 @implementation ZONSaveTransferCoordinator
 
@@ -126,8 +146,6 @@
 {
     if (!hostViewController) return;
 
-    // UI visibility is already controlled by permissions. Keep a second local
-    // guard here so direct/programmatic calls cannot open the cloud-save surface.
     NSDictionary *sessionVerify = [ZONAuthV2Storage lastVerify];
     if (![self cloudPermissionGrantedInVerifyResponse:sessionVerify]) {
         NSLog(@"[zonoemenu][P79.8C_CLOUD_PERMISSION] session permission denied before cloud menu");
@@ -140,7 +158,7 @@
     NSString *bundleID = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleIdentifier"];
     [[ZONCloudSaveService sharedService]
      fetchMetadataForBundleIdentifier:bundleID ?: @""
-     metadataBaseURLString:homeurl ?: @""
+     metadataBaseURLString:ZONCloudMetadataBaseURLString
      completion:^(NSDictionary *metadata, NSError *error) {
         [SVProgressHUD dismiss];
         if (error || !metadata) {
@@ -179,9 +197,13 @@
     UIAlertController *alert = [UIAlertController alertControllerWithTitle:nil
                                                                    message:@"当前授权不包含 VIP云存档权限"
                                                             preferredStyle:UIAlertControllerStyleAlert];
-    [alert addAction:[UIAlertAction actionWithTitle:@"购买解锁码" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:软件网页地址] options:@{} completionHandler:^(__unused BOOL success) { exit(0); }];
-    }]];
+    NSString *purchaseURLString = ZONPurchaseURLString();
+    NSURL *purchaseURL = purchaseURLString.length ? [NSURL URLWithString:purchaseURLString] : nil;
+    if (purchaseURL) {
+        [alert addAction:[UIAlertAction actionWithTitle:@"购买解锁码" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
+            [[UIApplication sharedApplication] openURL:purchaseURL options:@{} completionHandler:nil];
+        }]];
+    }
     [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:nil]];
     [hostViewController presentViewController:alert animated:YES completion:nil];
 }
@@ -201,8 +223,6 @@
     NSString *downloadAddress = [[ZONCloudSaveService sharedService] effectiveDownloadAddressForFunction:functionDictionary];
     [SVProgressHUD showWithStatus:@"正在验证云存档权限..."];
 
-    // P79.8c replaces the legacy app.zonoeios.xyz /apiface entitlement check with
-    // a fresh Verify v2 decision from the current Bootstrap/runtime-config chain.
     [[ZONAuthV2Verify sharedVerifier]
      verifyUDID:deviceIdentifier
      runtimeConfig:runtimeConfig
@@ -227,14 +247,12 @@
             return;
         }
 
-        // Refresh session-only authorization state. Nothing is persisted to
-        // NSUserDefaults by P79.8b storage semantics.
         [ZONAuthV2Storage setLastVerify:response];
 
         [[ZONCloudSaveService sharedService]
          resolveDownloadURLForBundleIdentifier:bundleIdentifier
          downloadAddress:downloadAddress
-         archiveBaseURLString:homezip ?: @""
+         archiveBaseURLString:ZONCloudArchiveBaseURLString
          deviceIdentifier:deviceIdentifier
          entitlementBaseURLString:@""
          bypassEntitlement:YES
