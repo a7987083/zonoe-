@@ -120,7 +120,6 @@ static NSString *ZONJoinURL(NSString *base, NSString *path) {
             return;
         }
 
-
         NSError *finalError = error ?: [NSError errorWithDomain:@"ZONAuthV2" code:-11 userInfo:@{NSLocalizedDescriptionKey:@"Bootstrap 配置不可用"}];
         if (completion) completion(json, finalError);
     }];
@@ -169,10 +168,12 @@ static NSString *ZONJoinURL(NSString *base, NSString *path) {
 - (void)fetchLicenseForUDID:(NSString *)udid completion:(ZONAuthV2JSONCompletion)completion {
     [self GETBusinessPath:@"/index/index/apiface" query:@{@"udid": udid ?: @""} completion:^(NSDictionary *json, NSError *error) {
         if (!error && [json isKindOfClass:NSDictionary.class]) {
+            [ZONAuthV2Storage setLastLicense:json];
             NSString *authProof = [json[@"auth_proof"] isKindOfClass:NSString.class] ? json[@"auth_proof"] : @"";
             [ZONAuthV2Storage setAuthProof:(authProof.length ? authProof : nil)];
             NSLog(@"[zonoemenu][auth-v3][AUTH_PROOF] apiface proof=%@", authProof.length ? @"present" : @"absent");
         } else if (error) {
+            [ZONAuthV2Storage setLastLicense:nil];
             [ZONAuthV2Storage setAuthProof:nil];
         }
         if (completion) completion(json, error);
@@ -198,6 +199,5 @@ static NSString *ZONJoinURL(NSString *base, NSString *path) {
         if (completion) completion(bootstrap, nil);
     }];
 }
-
 
 @end
