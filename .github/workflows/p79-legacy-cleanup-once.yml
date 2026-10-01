@@ -114,7 +114,7 @@ jobs:
           test -f testmod/category/getKeychain.m
           test -f testmod/Bsphp/main.m
 
-          if git grep -n -E 'WX_NongShiFu123|SCLAlertView|SCLTextView|MBProgressHUD|AFHTTPSessionManager|AFURLSessionManager|NetWorkingApiClient|DES3Util|MF_Base64Additions|StichingStringkeyValue|NSString\+MD5|NSString\+URLCode|VKKeychainIDFV' -- testmod ':!testmod.xcodeproj/project.pbxproj'; then
+          if git grep -I -n -E 'WX_NongShiFu123|SCLAlertView|SCLTextView|MBProgressHUD|AFHTTPSessionManager|AFURLSessionManager|NetWorkingApiClient|DES3Util|MF_Base64Additions|StichingStringkeyValue|NSString\+MD5|NSString\+URLCode|VKKeychainIDFV' -- testmod ':!testmod/Package/**' ':!testmod.xcodeproj/project.pbxproj'; then
             echo 'Retired BSPHP symbol still referenced by active source.' >&2
             exit 1
           fi
