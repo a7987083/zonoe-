@@ -23,8 +23,16 @@ jobs:
       - name: Verify P79 isolation contract
         run: |
           set -euxo pipefail
-          test -f testmod/Bsphp/WX_NongShiFu123.mm
-          test -f testmod/Bsphp/WX_NongShiFu123.h
+          test ! -e testmod/Bsphp/WX_NongShiFu123.mm
+          test ! -e testmod/Bsphp/WX_NongShiFu123.h
+          test ! -e testmod/Bsphp/Config.m
+          test ! -e testmod/Bsphp/Config.h
+          test ! -d testmod/Bsphp/SCLAlertView
+          test ! -d testmod/Bsphp/MBProgressHUD
+          test ! -d testmod/Bsphp/AFNetworking
+          test -f testmod/Bsphp/main.m
+          test -f testmod/category/getKeychain.m
+          test -f testmod/category/getKeychain.h
           ! grep -q 'WX_NongShiFu123' testmod/ZONServices/ZONAuthorizationCoordinator.m
           grep -q 'ZONAuthV2Flow' testmod/ZONServices/ZONAuthorizationCoordinator.m
           grep -q 'ZonoeRequestUDIDIfNeeded' testmod/ZONServices/ZONAuthorizationCoordinator.m
