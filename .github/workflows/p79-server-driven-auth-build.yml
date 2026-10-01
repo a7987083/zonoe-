@@ -29,7 +29,7 @@ jobs:
           grep -q 'ZONAuthV2Flow' testmod/ZONServices/ZONAuthorizationCoordinator.m
           grep -q 'ZonoeRequestUDIDIfNeeded' testmod/ZONServices/ZONAuthorizationCoordinator.m
           grep -q 'ZONContinueCustomerAuthorization' testmod/ZONServices/ZONAuthorizationCoordinator.m
-      - name: Run current dispatcher/runtime/P0/R3 contract tests
+      - name: Run current dispatcher/runtime/P0/R3/v3 contract tests
         run: |
           set -euxo pipefail
           python3 Tests/dispatcher_contract_smoke.py
@@ -37,6 +37,7 @@ jobs:
           python3 Tests/p79_8f_p0_safety_contract.py
           python3 Tests/p79_8g_runtime_capability_boundary.py
           python3 Tests/p79_8h_feature_access_provider.py
+          python3 Tests/p79_8i_secretless_auth_v3_contract.py
       - name: Install xcodeproj
         run: sudo gem install xcodeproj --no-document
       - name: Add active generated files to testmod target
@@ -92,10 +93,6 @@ jobs:
   build:
     needs: prepare-project
     runs-on: macos-15
-    env:
-      SECRET_PRIMARY: ${{ secrets.ZON_VERIFY_SECRET }}
-      SECRET_FALLBACK_1: ${{ secrets.VERIFY_SECRET }}
-      SECRET_FALLBACK_2: ${{ secrets.DYLIB_VERIFY_SECRET }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -104,7 +101,7 @@ jobs:
           path: /tmp/p79-project
       - name: Apply prepared project
         run: cp /tmp/p79-project/project.pbxproj testmod.xcodeproj/project.pbxproj
-      - name: Resolve artifact version and secret availability
+      - name: Resolve artifact version
         shell: bash
         run: |
           set -euo pipefail
@@ -112,32 +109,11 @@ jobs:
           test -n "$VERSION"
           echo "TESTMOD_VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "TESTMOD_FILENAME=testmod_${VERSION}_A_customer.dylib" >> "$GITHUB_ENV"
-          SECRET="${SECRET_PRIMARY:-}"
-          [[ -n "$SECRET" ]] || SECRET="${SECRET_FALLBACK_1:-}"
-          [[ -n "$SECRET" ]] || SECRET="${SECRET_FALLBACK_2:-}"
-          if [[ -n "$SECRET" ]]; then
-            echo "VERIFY_SECRET_CONFIGURED=1" >> "$GITHUB_ENV"
-            python3 - <<'PY'
-          from pathlib import Path
-          import os
-          p = Path('testmod/ZONAuthV2/ZONAuthV2Verify.m')
-          s = p.read_text()
-          secret = os.environ.get('SECRET_PRIMARY') or os.environ.get('SECRET_FALLBACK_1') or os.environ.get('SECRET_FALLBACK_2') or ''
-          if not secret:
-              raise SystemExit('no secret')
-          if '\x00' in secret or '\n' in secret or '\r' in secret:
-              raise SystemExit('Verify Secret contains unsupported control characters')
-          secret = secret.replace('\\', '\\\\').replace('"', '\\"')
-          marker = 'ZON_VERIFY_SECRET_PLACEHOLDER_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
-          if marker not in s:
-              raise SystemExit('secret placeholder missing')
-          p.write_text(s.replace(marker, secret, 1))
-          PY
-          else
-            echo "VERIFY_SECRET_CONFIGURED=0" >> "$GITHUB_ENV"
-          fi
           grep -q '#define ZON_DYLIB_VERSION "1"' testmod/ZONAuthV2/ZONAuthV2Verify.m
           grep -q '#define ZON_DYLIB_BUILD ""' testmod/ZONAuthV2/ZONAuthV2Verify.m
+          ! grep -q 'ZON_VERIFY_SECRET' testmod/ZONAuthV2/ZONAuthV2Verify.m
+          ! grep -q 'CCHmac(' testmod/ZONAuthV2/ZONAuthV2Verify.m
+          grep -q 'zonoe-dylib-auth-v3' testmod/ZONAuthV2/ZONAuthV2Verify.m
       - name: Select Xcode 16.4
         run: |
           set -euxo pipefail
@@ -228,8 +204,9 @@ jobs:
           file "$TARGET"
           lipo -info "$TARGET"
           shasum -a 256 "$TARGET" | tee build/SHA256.txt
-          printf 'verify_secret_configured=%s\n' "${VERIFY_SECRET_CONFIGURED}" > build/P79_AUTH_BUILD_INFO.txt
+          printf 'auth_protocol=secretless-v3\n' > build/P79_AUTH_BUILD_INFO.txt
           printf 'artifact_version=%s\n' "${TESTMOD_VERSION}" >> build/P79_AUTH_BUILD_INFO.txt
+          printf 'verify_secret_embedded=0\n' >> build/P79_AUTH_BUILD_INFO.txt
           printf 'protocol_dylib_key=zonoe.main\nprotocol_dylib_version=1\nprotocol_dylib_build=\n' >> build/P79_AUTH_BUILD_INFO.txt
       - name: Upload P79 candidate
         if: always()
