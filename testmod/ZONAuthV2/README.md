@@ -21,4 +21,10 @@ P79.8j cleanup:
 - Removed card propagation/storage from the Verify stage.
 - Removed write-only `lastActivation` and duplicate `lastBootstrap` caches.
 - `lastRuntimeConfig` remains intentionally because the cloud-save path performs a fresh Verify using the current signed Runtime Config.
-- Legacy `WX_NongShiFu123` / `Config` source remains for now because live legacy-UDID fallback and cloud-save compatibility paths still reference it; it is not dead code yet.
+
+P79.8k cleanup:
+
+- `ZONLegacyUDIDFallbackAdapter` now owns the fallback UDID acquisition path directly and no longer depends on `WX_NongShiFu123`.
+- `ZONSaveTransferCoordinator` owns its cloud-save endpoints/config boundary and no longer depends on `WX_NongShiFu123` or `Config`.
+- The retired BSPHP authorization/UI/network stack is removed from the active Xcode target and source tree: `WX_NongShiFu123`, `Config`, SCLAlertView, MBProgressHUD, AFNetworking, and BSPHP-only crypto/encoding helpers.
+- `getKeychain` remains intentionally because `DZUDID` and existing authorization compatibility state still use it.
