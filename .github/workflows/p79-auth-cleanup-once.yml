@@ -38,9 +38,19 @@ jobs:
 
       - name: Apply auth residue cleanup
         run: |
-          set -euxo pipefail
+          set -o pipefail
           python3 tools/p79_8j_cleanup_auth_residue.py 2>&1 | tee /tmp/p79_8j_cleanup.log
-          git diff --check
+          status=${PIPESTATUS[0]}
+          if [[ $status -eq 0 ]]; then git diff --check; fi
+          exit $status
+
+      - name: Upload cleanup diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p79-8j-cleanup-diagnostics
+          path: /tmp/p79_8j_cleanup.log
+          if-no-files-found: warn
 
       - name: Verify deleted auth residue and references
         run: |
