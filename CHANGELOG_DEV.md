@@ -1,5 +1,23 @@
 # CHANGELOG_DEV
 
+## 2026-10-01 — v1_p79_8i UDID auth-proof enrollment cutover — CLIENT CI PASSED / SERVER PENDING / DEVICE PENDING
+- Branch: `work/p79.8-udid-first-rebuild`.
+- Preserved the existing UDID-first business activation model: active UDID skips card and `/appstore`; missing/expired UDID uses card activation then a second `/apiface` confirmation.
+- Removed the accidental second `/index/dylib_verify/config` hop; signed GitHub bootstrap is used directly as Runtime Config after RSA-2048/SHA-256 verification.
+- Removed the secondary `设备安全升级`/card enrollment UI.
+- Added session-only `auth_proof` storage: header commit `e9b38e18aea65420e49d1171d1278040ffd72407`, implementation commit `9b7053ac431bd87fb32736d30436f983433cac17`.
+- `ZONAuthV2API.fetchLicenseForUDID` now captures/refreshed top-level `/apiface` `auth_proof` and clears it on lookup failure: `fa0c5f6860f763492ecd80f65e0f4c83d9634f31`.
+- `ZONAuthV2Verify` now fails closed with `auth_proof_unavailable` if the proof is absent, includes `auth_proof` in `/challenge`, clears it after challenge acceptance, and no longer sends `license_code` to `/verify`: `78effa63a4a66d7a91cadd40d3024d8ce61d2e9d`.
+- Updated v3 contract to require auth-proof challenge enrollment and forbid card-backed Verify enrollment: `980bc43656c8f609ea1c1c8f596d6128c5ae623e`.
+- Functional auth-proof HEAD before documentation synchronization: `980bc43656c8f609ea1c1c8f596d6128c5ae623e`.
+- CI Run `36856203863` / #84: success.
+- Artifact ID `11157763459`, digest `sha256:18fd793a2d930f63774e244e8c88d75849702e0542f6791b89f5d7033acdc35f`.
+- CI dylib SHA256 `a30afd52caf5640ab27aa907b5da70b4450c8b336b115a43ae0a3cf0184525af`, size 3,321,952 bytes, universal arm64 + arm64e PAC00.
+- Contract suite and Xcode 16.4 build passed.
+- Matching server contract is still required before device promotion: active `/apiface` must return `auth_proof`/expiry; `/challenge` must validate it and bind the challenge to the submitted public-key fingerprint; `/verify` must allow first-key enrollment without `license_code`.
+- Multi-App rule is explicit: once a UDID is active, additional Apps on that UDID may enroll their own P-256 keys using fresh `/apiface` proofs without card re-entry.
+- Latest device-passed baseline remains P79.8g.
+
 ## 2026-09-30 — v1_p79_8h R3 Feature Access Provider — CI PASSED / DEVICE PENDING
 - Branch: `work/p79.8-udid-first-rebuild`.
 - Added `ZONFeatureAccessProvider.h`: `25b8eb453dee2ed3e5ad7328bc1726b57649d583`.
@@ -36,7 +54,7 @@
 - VERSION/build commit: `9702183f97304e62939d528f7bec64c46417510a`; VERSION=`v1_p79_8g`.
 - CI Run `36727105080` / #53: success.
 - Artifact ID `11103866499`, digest `sha256:0d41293824d72804b263385b51e50f59dac69b3adaf1adad2e43a2b9203792ef`.
-- Raw CI dylib SHA256: `e5a7f07ed4a5bf980113382f72eca11782fc163b80f64a05754843b0b3a3bede`, size 3,264,304 bytes.
+- Raw CI dylib SHA256: `e5a7f07ed4a5bf980113382f72eca11782fc163b80f64a05754843b0b3bede`, size 3,264,304 bytes.
 - Controlled final dylib SHA256: `4172ac0881f6885b1ac620a486ba9b8eadd153c9b11f26a3647607737c028863`.
 - Controlled final ZIP SHA256: `b7e6d9eea2cfb347e1868457e43f54c5b4673b9d28486998433aa44b7b749ad1`.
 - Controlled final injection changed exactly 128 bytes in the two equal-length Verify Secret placeholder regions; placeholder remaining `0`, Secret occurrences `2`.
