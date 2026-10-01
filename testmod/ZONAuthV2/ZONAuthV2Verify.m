@@ -2,7 +2,6 @@
 #import "ZONAuthV2Storage.h"
 #import <CommonCrypto/CommonDigest.h>
 #import <Security/Security.h>
-#import <UIKit/UIKit.h>
 #import <dlfcn.h>
 #import <mach-o/dyld.h>
 #import <mach-o/loader.h>
@@ -169,21 +168,7 @@ static BOOL ZONReadDERLength(NSData *data, NSUInteger *offset, NSUInteger *lengt
 
         if ([challengeJSON[@"enrollment_required"] boolValue]) {
             NSString *card = [ZONAuthV2Storage card] ?: @"";
-            if (card.length) {
-                payload[@"license_code"] = card;
-                [self submitVerifyPayload:payload URL:verifyURL completion:completion];
-                return;
-            }
-            [self requestEnrollmentLicenseCode:^(NSString *licenseCode) {
-                if (!licenseCode.length) {
-                    completion(@{@"ok": @NO, @"code": @"license_required", @"action": @"block", @"message": @"First device enrollment requires the current license code"}, nil);
-                    return;
-                }
-                [ZONAuthV2Storage setCard:licenseCode];
-                payload[@"license_code"] = licenseCode;
-                [self submitVerifyPayload:payload URL:verifyURL completion:completion];
-            }];
-            return;
+            if (card.length) payload[@"license_code"] = card;
         }
 
         [self submitVerifyPayload:payload URL:verifyURL completion:completion];
@@ -204,36 +189,6 @@ static BOOL ZONReadDERLength(NSData *data, NSUInteger *offset, NSUInteger *lengt
         }
         completion(response, nil);
     }];
-}
-
-- (void)requestEnrollmentLicenseCode:(void (^)(NSString *licenseCode))completion {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        UIWindow *window = UIApplication.sharedApplication.keyWindow;
-        if (!window) {
-            for (UIWindow *candidate in UIApplication.sharedApplication.windows) {
-                if (!candidate.hidden) { window = candidate; break; }
-            }
-        }
-        UIViewController *presenter = window.rootViewController;
-        while (presenter.presentedViewController) presenter = presenter.presentedViewController;
-        if (!presenter) { completion(@""); return; }
-
-        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"设备安全升级"
-                                                                       message:@"首次升级到新版安全验证，需要输入当前有效卡密绑定此设备。绑定完成后无需重复输入。"
-                                                                preferredStyle:UIAlertControllerStyleAlert];
-        [alert addTextFieldWithConfigurationHandler:^(UITextField *textField) {
-            textField.placeholder = @"请输入当前有效卡密";
-            textField.clearButtonMode = UITextFieldViewModeWhileEditing;
-        }];
-        [alert addAction:[UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleCancel handler:^(__unused UIAlertAction *action) {
-            completion(@"");
-        }]];
-        [alert addAction:[UIAlertAction actionWithTitle:@"绑定" style:UIAlertActionStyleDefault handler:^(__unused UIAlertAction *action) {
-            NSString *value = [alert.textFields.firstObject.text stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
-            completion(value ?: @"");
-        }]];
-        [presenter presentViewController:alert animated:YES completion:nil];
-    });
 }
 
 #pragma mark - Runtime Config signature
