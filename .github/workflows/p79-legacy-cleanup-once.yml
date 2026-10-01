@@ -56,6 +56,16 @@ jobs:
             testmod/category/UIDevice+VKKeychainIDFV.m \
             testmod/category/wyURLProtocol.h
 
+          # JiangHuHook only inherited Config.h from the retired BSPHP stack;
+          # none of its active hook logic consumes Config symbols.
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('testmod/工具箱/Hook/JiangHuHook.m')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('#import "Config.h"\n', '')
+          p.write_text(s, encoding='utf-8')
+          PY
+
           ruby <<'RUBY'
           require 'xcodeproj'
           require 'set'
@@ -116,7 +126,7 @@ jobs:
           test -f testmod/category/getKeychain.m
           test -f testmod/Bsphp/main.m
 
-          if git grep -I -n -E 'WX_NongShiFu123|SCLAlertView|SCLTextView|MBProgressHUD|AFHTTPSessionManager|AFURLSessionManager|NetWorkingApiClient|DES3Util|MF_Base64Additions|StichingStringkeyValue|NSString\+MD5|NSString\+URLCode|VKKeychainIDFV' -- testmod ':!testmod/Package/**' ':!testmod/ZONAuthV2/README.md' ':!testmod.xcodeproj/project.pbxproj'; then
+          if git grep -I -n -E 'WX_NongShiFu123|SCLAlertView|SCLTextView|MBProgressHUD|AFHTTPSessionManager|AFURLSessionManager|NetWorkingApiClient|DES3Util|MF_Base64Additions|StichingStringkeyValue|NSString\+MD5|NSString\+URLCode|VKKeychainIDFV|#import "Config.h"' -- testmod ':!testmod/Package/**' ':!testmod/ZONAuthV2/README.md' ':!testmod.xcodeproj/project.pbxproj'; then
             echo 'Retired BSPHP symbol still referenced by active source.' >&2
             exit 1
           fi
@@ -137,5 +147,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -A
-          git commit -m 'cleanup(p79.8k): remove retired BSPHP UI/network stack'
+          git commit -m 'cleanup(p79.8k): remove final BSPHP include residue'
           git push origin HEAD:work/p79.8-udid-first-rebuild
