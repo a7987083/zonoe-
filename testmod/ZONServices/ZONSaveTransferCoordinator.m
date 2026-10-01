@@ -3,7 +3,9 @@
 #import "ZONRestoreAPI.h"
 #import "ZONCloudSaveService.h"
 #import "ZONRuntimeDirectoryService.h"
+#import "ZONFeatureAccessProvider.h"
 #import "../ZONAuthV2/ZONAuthV2Storage.h"
+#import "../ZONAuthV2/ZONAuthV2API.h"
 #import "../ZONAuthV2/ZONAuthV2Verify.h"
 #import "getKeychain.h"
 #import "SVProgressHUD.h"
@@ -16,6 +18,15 @@ static NSString *ZONStringValue(NSDictionary *dictionary, NSString *key)
 {
     id value = [dictionary isKindOfClass:NSDictionary.class] ? dictionary[key] : nil;
     return [value isKindOfClass:NSString.class] ? value : @"";
+}
+
+static BOOL ZONCloudLicenseIsActive(NSDictionary *license)
+{
+    if (![license isKindOfClass:NSDictionary.class]) return NO;
+    NSInteger code = [license[@"code"] respondsToSelector:@selector(integerValue)] ? [license[@"code"] integerValue] : 0;
+    NSString *msg = [license[@"msg"] isKindOfClass:NSString.class] ? license[@"msg"] : @"";
+    NSTimeInterval expire = [license[@"expire"] respondsToSelector:@selector(doubleValue)] ? [license[@"expire"] doubleValue] : 0;
+    return code == 1 && [msg.lowercaseString isEqualToString:@"ok"] && expire > NSDate.date.timeIntervalSince1970;
 }
 
 static NSString *ZONPurchaseURLString(void)
@@ -46,7 +57,7 @@ static NSString *ZONPurchaseURLString(void)
     if (![response isKindOfClass:NSDictionary.class] || ![response[@"ok"] boolValue]) return NO;
     NSString *action = [response[@"action"] isKindOfClass:NSString.class] ? response[@"action"] : @"";
     if ([action isEqualToString:@"block"] || [action isEqualToString:@"disable_feature"]) return NO;
-    NSDictionary *permissions = [response[@"permissions"] isKindOfClass:NSDictionary.class] ? response[@"permissions"] : nil;
+    NSDictionary *permissions = [ZONFeatureAccessProvider effectivePermissionsForVerifyResponse:response];
     return [permissions[@"extra_features"] boolValue];
 }
 
@@ -148,7 +159,7 @@ static NSString *ZONPurchaseURLString(void)
 
     NSDictionary *sessionVerify = [ZONAuthV2Storage lastVerify];
     if (![self cloudPermissionGrantedInVerifyResponse:sessionVerify]) {
-        NSLog(@"[zonoemenu][P79.8C_CLOUD_PERMISSION] session permission denied before cloud menu");
+        NSLog(@"[zonoemenu][P79.8K2_CLOUD_PERMISSION] session permission denied before cloud menu");
         [self presentCloudEntitlementDeniedFromViewController:hostViewController];
         return;
     }
@@ -221,56 +232,70 @@ static NSString *ZONPurchaseURLString(void)
     }
 
     NSString *downloadAddress = [[ZONCloudSaveService sharedService] effectiveDownloadAddressForFunction:functionDictionary];
-    [SVProgressHUD showWithStatus:@"正在验证云存档权限..."];
+    [SVProgressHUD showWithStatus:@"正在刷新设备授权..."];
 
-    [[ZONAuthV2Verify sharedVerifier]
-     verifyUDID:deviceIdentifier
-     runtimeConfig:runtimeConfig
-     completion:^(NSDictionary *response, NSError *verifyError) {
-        [SVProgressHUD dismiss];
-        BOOL allowed = [self cloudPermissionGrantedInVerifyResponse:response];
-        NSString *accessLevel = [response[@"access_level"] isKindOfClass:NSString.class] ? response[@"access_level"] : @"";
-        NSDictionary *permissions = [response[@"permissions"] isKindOfClass:NSDictionary.class] ? response[@"permissions"] : @{};
-        NSLog(@"[zonoemenu][P79.8C_CLOUD_PERMISSION] fresh_verify allowed=%d access_level=%@ extra_features=%d error=%@",
-              allowed,
-              accessLevel,
-              [permissions[@"extra_features"] boolValue],
-              verifyError ? verifyError.domain : @"none");
-
-        if (verifyError) {
-            [SVProgressHUD showErrorWithStatus:verifyError.localizedDescription ?: @"云存档权限验证失败"];
+    // auth_proof is deliberately one-shot/session-only and is consumed by startup Verify.
+    // A fresh cloud-sensitive action must re-read /apiface so it gets both the current
+    // authorization projection and a new short-lived proof before Challenge/Verify.
+    [[ZONAuthV2API sharedAPI] fetchLicenseForUDID:deviceIdentifier completion:^(NSDictionary *license, NSError *licenseError) {
+        if (licenseError || !ZONCloudLicenseIsActive(license)) {
+            [SVProgressHUD dismiss];
+            NSString *message = licenseError.localizedDescription ?: @"当前设备授权无效或已到期";
+            [SVProgressHUD showErrorWithStatus:message];
             [SVProgressHUD dismissWithDelay:3.0];
             return;
         }
-        if (!allowed) {
-            [self presentCloudEntitlementDeniedFromViewController:hostViewController];
-            return;
-        }
 
-        [ZONAuthV2Storage setLastVerify:response];
+        [SVProgressHUD showWithStatus:@"正在验证云存档权限..."];
+        [[ZONAuthV2Verify sharedVerifier]
+         verifyUDID:deviceIdentifier
+         runtimeConfig:runtimeConfig
+         completion:^(NSDictionary *response, NSError *verifyError) {
+            [SVProgressHUD dismiss];
+            BOOL allowed = [self cloudPermissionGrantedInVerifyResponse:response];
+            NSString *accessLevel = [response[@"access_level"] isKindOfClass:NSString.class] ? response[@"access_level"] : @"";
+            NSDictionary *permissions = [ZONFeatureAccessProvider effectivePermissionsForVerifyResponse:response];
+            NSLog(@"[zonoemenu][P79.8K2_CLOUD_PERMISSION] fresh_verify allowed=%d access_level=%@ extra_features=%d error=%@",
+                  allowed,
+                  accessLevel,
+                  [permissions[@"extra_features"] boolValue],
+                  verifyError ? verifyError.domain : @"none");
 
-        [[ZONCloudSaveService sharedService]
-         resolveDownloadURLForBundleIdentifier:bundleIdentifier
-         downloadAddress:downloadAddress
-         archiveBaseURLString:ZONCloudArchiveBaseURLString
-         deviceIdentifier:deviceIdentifier
-         entitlementBaseURLString:@""
-         bypassEntitlement:YES
-         completion:^(NSURL *downloadURL, NSError *error) {
-            if (error || !downloadURL) {
-                [SVProgressHUD showErrorWithStatus:error.localizedDescription ?: @"云存档下载地址解析失败"];
+            if (verifyError) {
+                [SVProgressHUD showErrorWithStatus:verifyError.localizedDescription ?: @"云存档权限验证失败"];
                 [SVProgressHUD dismissWithDelay:3.0];
                 return;
             }
-            JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
-            [presenter dismissAnimated:YES];
-            [presenter presentWithText:@"准备下载存档,请稍后."
-                     dismissAfterDelay:0
-                         includedStyle:JDStatusBarNotificationIncludedStyleWarning];
-            [self cleanupRestoreStaging];
-            [self startArchiveDownloadWithURL:downloadURL];
+            if (!allowed) {
+                [self presentCloudEntitlementDeniedFromViewController:hostViewController];
+                return;
+            }
+
+            [ZONAuthV2Storage setLastVerify:response];
+
+            [[ZONCloudSaveService sharedService]
+             resolveDownloadURLForBundleIdentifier:bundleIdentifier
+             downloadAddress:downloadAddress
+             archiveBaseURLString:ZONCloudArchiveBaseURLString
+             deviceIdentifier:deviceIdentifier
+             entitlementBaseURLString:@""
+             bypassEntitlement:YES
+             completion:^(NSURL *downloadURL, NSError *error) {
+                if (error || !downloadURL) {
+                    [SVProgressHUD showErrorWithStatus:error.localizedDescription ?: @"云存档下载地址解析失败"];
+                    [SVProgressHUD dismissWithDelay:3.0];
+                    return;
+                }
+                JDStatusBarNotificationPresenter *presenter = [JDStatusBarNotificationPresenter sharedPresenter];
+                [presenter dismissAnimated:YES];
+                [presenter presentWithText:@"准备下载存档,请稍后."
+                         dismissAfterDelay:0
+                             includedStyle:JDStatusBarNotificationIncludedStyleWarning];
+                [self cleanupRestoreStaging];
+                [self startArchiveDownloadWithURL:downloadURL];
+             }];
          }];
-     }];
+    }];
 }
 
 - (void)cleanupRestoreStaging
