@@ -86,6 +86,12 @@ static BOOL ZONReadDERLength(NSData *data, NSUInteger *offset, NSUInteger *lengt
         return;
     }
 
+    NSString *authProof = [ZONAuthV2Storage authProof] ?: @"";
+    if (!authProof.length) {
+        completion(@{@"ok": @NO, @"code": @"auth_proof_unavailable", @"action": @"block", @"message": @"Authorization proof unavailable"}, nil);
+        return;
+    }
+
     SecKeyRef privateKey = [self devicePrivateKey];
     if (!privateKey) {
         completion(@{@"ok": @NO, @"code": @"device_key_unavailable", @"action": @"block", @"message": @"Unable to create device key"}, nil);
@@ -126,6 +132,7 @@ static BOOL ZONReadDERLength(NSData *data, NSUInteger *offset, NSUInteger *lengt
         @"udid": udid,
         @"dylib_key": @ZON_AUTH_BOOTSTRAP_DYLIB_KEY,
         @"device_public_key": publicPEM,
+        @"auth_proof": authProof,
     };
 
     __weak typeof(self) weakSelf = self;
@@ -148,6 +155,10 @@ static BOOL ZONReadDERLength(NSData *data, NSUInteger *offset, NSUInteger *lengt
             return;
         }
 
+        // auth_proof is short-lived and only authorizes creation of this challenge.
+        // Once the server accepted the challenge request, never reuse the proof locally.
+        [ZONAuthV2Storage setAuthProof:nil];
+
         NSMutableDictionary *payload = [context mutableCopy];
         payload[@"protocol_version"] = @3;
         payload[@"challenge_id"] = challengeID;
@@ -165,11 +176,6 @@ static BOOL ZONReadDERLength(NSData *data, NSUInteger *offset, NSUInteger *lengt
             return;
         }
         payload[@"device_signature"] = [signature base64EncodedStringWithOptions:0];
-
-        if ([challengeJSON[@"enrollment_required"] boolValue]) {
-            NSString *card = [ZONAuthV2Storage card] ?: @"";
-            if (card.length) payload[@"license_code"] = card;
-        }
 
         [self submitVerifyPayload:payload URL:verifyURL completion:completion];
     }];
