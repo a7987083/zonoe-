@@ -13,6 +13,7 @@ static NSString * const ZONAuthV2LastNoticeFingerprintKey = @"zonoe.auth.v2.last
 static NSString *gZONAuthV2SessionUDID = nil;
 static NSString *gZONAuthV2SessionCard = nil;
 static NSString *gZONAuthV2SessionToken = nil;
+static NSString *gZONAuthV2SessionAuthProof = nil;
 static NSDictionary *gZONAuthV2SessionLastVerify = nil;
 static NSDictionary *gZONAuthV2SessionLastActivation = nil;
 static NSDictionary *gZONAuthV2SessionLastRuntimeConfig = nil;
@@ -82,10 +83,19 @@ static NSDictionary *gZONAuthV2SessionLastBootstrap = nil;
     @synchronized(self) { gZONAuthV2SessionToken = [token copy]; }
 }
 
++ (NSString *)authProof {
+    @synchronized(self) { return [gZONAuthV2SessionAuthProof copy]; }
+}
+
++ (void)setAuthProof:(NSString *)authProof {
+    @synchronized(self) { gZONAuthV2SessionAuthProof = [authProof copy]; }
+}
+
 + (void)clearCard {
     @synchronized(self) {
         gZONAuthV2SessionCard = nil;
         gZONAuthV2SessionToken = nil;
+        gZONAuthV2SessionAuthProof = nil;
         gZONAuthV2SessionLastVerify = nil;
         gZONAuthV2SessionLastActivation = nil;
     }
@@ -102,6 +112,7 @@ static NSDictionary *gZONAuthV2SessionLastBootstrap = nil;
         gZONAuthV2SessionUDID = nil;
         gZONAuthV2SessionCard = nil;
         gZONAuthV2SessionToken = nil;
+        gZONAuthV2SessionAuthProof = nil;
         gZONAuthV2SessionLastVerify = nil;
         gZONAuthV2SessionLastActivation = nil;
         gZONAuthV2SessionLastRuntimeConfig = nil;
