@@ -4,7 +4,15 @@
 - Repository: `a7987083/zonoe-`.
 - Canonical runtime/product surface: `testmod/` + `testmod.xcodeproj`.
 - Current branch: `work/p79.8-udid-first-rebuild`.
-- Current VERSION: `v1_p79_8j`.
+- Current VERSION: `v1_p79_8k2`.
+
+## Current startup compatibility candidate
+- Startup gate commit: `b0ead52f680945f5b9377a3eb57e78732ae89a5e`.
+- Bootstrap contract comment commit: `9b588ac9d4b2798ebfe2757256d4588d8f315e9a`.
+- CI path-trigger fix commit: `83fd0faff225754dc2dfb7d72d53a2b0fc81c0ad`.
+- Behavior: dylib/`+load` returns without synchronous framework preflight; startup waits for host UIKit/window readiness, then preserves the existing preflight → authorization → bundled-module order.
+- Validation status: source committed; compile/CI result not yet observed through the available connector; real-device regression pending.
+- Primary regression target: Apps that previously flashed back/crashed during early injected startup.
 
 ## Current build evidence
 - Runtime cleanup commit: `b18d6d7b003ab6c227e3890a4fb60b81acf5125c`.
