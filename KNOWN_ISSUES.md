@@ -1,5 +1,11 @@
 # KNOWN_ISSUES
 
+## Modifier validation pending
+- `base.modifier` source implementation is committed.
+- Build/CI has not yet been observed.
+- Device checks required: hidden without `ZonoePatchActivate`; hidden without `extra_menu`; visible only when both are present; fresh Verify must reject missing/expired/blocked access; successful Verify must invoke the ABI exactly through the already-loaded symbol.
+- Target dylib must export an unmangled C symbol `bool ZonoePatchActivate(void)`; Objective-C++/C++ implementations require `extern "C"`.
+
 ## Menu local-files validation pending
 - `base.local-files` source hardening is committed on 2026-10-02.
 - Build/CI result has not yet been observed.
