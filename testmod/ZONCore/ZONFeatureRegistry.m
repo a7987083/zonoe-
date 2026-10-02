@@ -30,7 +30,7 @@ NSArray<NSDictionary<NSString *, id> *> *ZONBuiltInSectionMetadata(void)
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         sections = @[
-            @{ ZONSectionIdentifierKey:@"base", ZONSectionTitleKey:@"基础功能", ZONSectionDetailKey:@"远程下载 / 云存档", ZONSectionStateKey:@"fold_base", ZONSectionRendererKey:@"cards" },
+            @{ ZONSectionIdentifierKey:@"base", ZONSectionTitleKey:@"基础功能", ZONSectionDetailKey:@"远程下载 / 云存档 / 修改器", ZONSectionStateKey:@"fold_base", ZONSectionRendererKey:@"cards" },
             @{ ZONSectionIdentifierKey:@"data", ZONSectionTitleKey:@"数据功能", ZONSectionDetailKey:@"备份存档 /恢复存档 / 清理配置和授权", ZONSectionStateKey:@"fold_draw", ZONSectionRendererKey:@"grid" },
             @{ ZONSectionIdentifierKey:@"runtime", ZONSectionTitleKey:@"其他功能", ZONSectionDetailKey:@"内购 / 广告加速", ZONSectionStateKey:@"fold_role", ZONSectionRendererKey:@"runtime" },
         ];
@@ -46,6 +46,7 @@ NSArray<NSDictionary<NSString *, id> *> *ZONBuiltInFeatureMetadata(void)
         features = @[
             @{ ZONFeatureIdentifierKey:@"base.remote-download", ZONFeatureTitleKey:@"远程下载", ZONFeatureSectionKey:@"基础功能", ZONFeatureLegacyTagKey:@1, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskLow), ZONFeatureMigratedKey:@YES },
             @{ ZONFeatureIdentifierKey:@"base.cloud-save", ZONFeatureTitleKey:@"VIP云存档", ZONFeatureSectionKey:@"基础功能", ZONFeatureLegacyTagKey:@2, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskHigh), ZONFeatureMigratedKey:@YES, ZONFeatureRequiredMenuPermissionKey:@"extra_menu", ZONFeatureRequiredActionPermissionKey:@"extra_features" },
+            @{ ZONFeatureIdentifierKey:@"base.modifier", ZONFeatureTitleKey:@"修改器", ZONFeatureSectionKey:@"基础功能", ZONFeatureLegacyTagKey:@4, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskHigh), ZONFeatureMigratedKey:@YES, ZONFeatureRequiredMenuPermissionKey:@"extra_menu", ZONFeatureRequiredActionPermissionKey:@"extra_features", ZONFeatureRequiredRuntimeCapabilityKey:@"external.zonoepatch" },
             @{ ZONFeatureIdentifierKey:@"base.local-files", ZONFeatureTitleKey:@"浏览本地文件", ZONFeatureSectionKey:@"基础功能", ZONFeatureLegacyTagKey:@3, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskLow), ZONFeatureMigratedKey:@YES },
 
             @{ ZONFeatureIdentifierKey:@"data.backup-save", ZONFeatureTitleKey:@"备份存档", ZONFeatureSectionKey:@"数据功能", ZONFeatureLegacyTagKey:@100, ZONFeatureKindKey:@(ZONFeatureKindAction), ZONFeatureRiskKey:@(ZONFeatureRiskLow), ZONFeatureMigratedKey:@YES },
