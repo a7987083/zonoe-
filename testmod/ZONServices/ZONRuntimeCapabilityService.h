@@ -3,6 +3,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 FOUNDATION_EXPORT NSString * const ZONRuntimeCapabilityPassiveSatella;
+FOUNDATION_EXPORT NSString * const ZONRuntimeCapabilityZonoePatch;
 
 /// Central boundary for runtime capabilities supplied by already-loaded images.
 /// The service does not own injection/loading; availability is derived from the
