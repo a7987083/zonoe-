@@ -127,10 +127,12 @@ static void ZONLegacyOpenProfileInstaller(NSString *userID)
                 return;
             }
 
-            // Do not terminate the host process here. Some iOS/profile-install flows
-            // return to the existing process rather than relaunching it. The
-            // foreground resume hook will poll the server result and continue auth.
-            NSLog(@"[zonoemenu][INFO][udid] legacy profile installer opened; waiting for foreground resume");
+            // Preserve the proven legacy lifecycle: once the profile installer/web
+            // flow has been opened successfully, terminate the injected host process.
+            // The next App launch reuses the persistent SJUSERID, fetches the server
+            // generated udid<SJUSERID>.txt, stores DZUDID, and resumes authorization.
+            NSLog(@"[zonoemenu][INFO][udid] legacy profile installer opened; terminating host for clean relaunch");
+            exit(0);
         }];
     });
 }
