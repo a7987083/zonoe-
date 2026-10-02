@@ -17,11 +17,18 @@
 
     SandboxBrowserVC *vc = [[SandboxBrowserVC alloc] init];
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vc];
-    if (@available(iOS 13.0, *)) {
-        nav.modalPresentationStyle = UIModalPresentationPageSheet;
-    } else {
-        nav.modalPresentationStyle = UIModalPresentationFullScreen;
+    nav.modalPresentationStyle = UIModalPresentationPageSheet;
+
+    if (@available(iOS 15.0, *)) {
+        UISheetPresentationController *sheet = nav.sheetPresentationController;
+        sheet.detents = @[
+            UISheetPresentationControllerDetent.mediumDetent,
+            UISheetPresentationControllerDetent.largeDetent
+        ];
+        sheet.prefersGrabberVisible = YES;
+        sheet.prefersScrollingExpandsWhenScrolledToEdge = YES;
     }
+
     [hostViewController presentViewController:nav animated:YES completion:nil];
     return YES;
 }
