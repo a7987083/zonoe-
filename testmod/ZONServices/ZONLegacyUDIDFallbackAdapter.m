@@ -7,6 +7,8 @@
 static BOOL gZonoeLegacyWebFallbackInFlight = NO;
 static NSString * const ZONLegacyUDIDBaseURLString = @"https://yz.zonoeios.xyz/udid/";
 static NSString * const ZONLegacyUDIDAppCode = @"79870831";
+static NSString * const ZONLegacyUDIDPendingTimestampKey = @"zonoe.legacy.udid.pendingAt";
+static const NSTimeInterval ZONLegacyUDIDPendingMaxAge = 600.0;
 
 static NSString *ZONLegacyRandomUserID(void)
 {
@@ -51,6 +53,30 @@ static void ZONLegacyFinishFallback(void)
     });
 }
 
+static void ZONLegacyClearPendingMarker(void)
+{
+    [NSUserDefaults.standardUserDefaults removeObjectForKey:ZONLegacyUDIDPendingTimestampKey];
+}
+
+static void ZONLegacyMarkPending(void)
+{
+    [NSUserDefaults.standardUserDefaults setDouble:NSDate.date.timeIntervalSince1970
+                                             forKey:ZONLegacyUDIDPendingTimestampKey];
+}
+
+static BOOL ZONLegacyHasFreshPendingMarker(void)
+{
+    NSTimeInterval pendingAt = [NSUserDefaults.standardUserDefaults doubleForKey:ZONLegacyUDIDPendingTimestampKey];
+    if (pendingAt <= 0) return NO;
+
+    NSTimeInterval age = NSDate.date.timeIntervalSince1970 - pendingAt;
+    if (age < 0 || age > ZONLegacyUDIDPendingMaxAge) {
+        ZONLegacyClearPendingMarker();
+        return NO;
+    }
+    return YES;
+}
+
 static void ZONLegacyRemoveServerCache(NSString *userID)
 {
     if (!userID.length) return;
@@ -91,10 +117,20 @@ static void ZONLegacyOpenProfileInstaller(NSString *userID)
         ZONLegacyFinishFallback();
         return;
     }
+    ZONLegacyMarkPending();
     dispatch_async(dispatch_get_main_queue(), ^{
-        [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:^(__unused BOOL success) {
+        [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:^(BOOL success) {
             gZonoeLegacyWebFallbackInFlight = NO;
-            exit(0);
+            if (!success) {
+                ZONLegacyClearPendingMarker();
+                NSLog(@"[zonoemenu][WARN][udid] unable to open legacy profile installer");
+                return;
+            }
+
+            // Do not terminate the host process here. Some iOS/profile-install flows
+            // return to the existing process rather than relaunching it. The
+            // foreground resume hook will poll the server result and continue auth.
+            NSLog(@"[zonoemenu][INFO][udid] legacy profile installer opened; waiting for foreground resume");
         }];
     });
 }
@@ -160,6 +196,7 @@ static void ZONLegacyFetchUDIDForUserID(NSString *userID)
 
         [[NSUserDefaults standardUserDefaults] setObject:udid forKey:@"zonoeudid"];
         [getKeychain addKeychainData:udid forKey:@"DZUDID"];
+        ZONLegacyClearPendingMarker();
         ZONLegacyRemoveServerCache(userID);
 
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -192,5 +229,81 @@ void ZONStartLegacyWebUDIDFallback(void)
             [getKeychain addKeychainData:userID forKey:@"SJUSERID"];
         }
         ZONLegacyFetchUDIDForUserID(userID);
+    });
+}
+
+void ZONResumeLegacyWebUDIDFallbackIfNeeded(void)
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (ZONUDIDBridgeCurrentUDID().length > 0) {
+            ZONLegacyClearPendingMarker();
+            return;
+        }
+        if (!ZONLegacyHasFreshPendingMarker()) return;
+        if (gZonoeLegacyWebFallbackInFlight) return;
+
+        NSString *userID = [getKeychain getKeychainDataForKey:@"SJUSERID"] ?: @"";
+        if (userID.length <= 5) {
+            ZONLegacyClearPendingMarker();
+            return;
+        }
+
+        gZonoeLegacyWebFallbackInFlight = YES;
+        NSLog(@"[zonoemenu][INFO][udid] foreground resume: polling legacy web UDID result");
+
+        __block NSInteger attemptsRemaining = 12;
+        __block void (^poll)(void) = nil;
+        poll = ^{
+            if (ZONUDIDBridgeCurrentUDID().length > 0) {
+                gZonoeLegacyWebFallbackInFlight = NO;
+                poll = nil;
+                return;
+            }
+            if (!ZONLegacyHasFreshPendingMarker() || attemptsRemaining-- <= 0) {
+                gZonoeLegacyWebFallbackInFlight = NO;
+                NSLog(@"[zonoemenu][WARN][udid] foreground resume: legacy web result still unavailable");
+                poll = nil;
+                return;
+            }
+
+            NSString *requestString = [NSString stringWithFormat:@"%@udid%@.txt", ZONLegacyUDIDBaseURLString, userID];
+            NSURL *url = [NSURL URLWithString:requestString];
+            if (!url) {
+                gZonoeLegacyWebFallbackInFlight = NO;
+                poll = nil;
+                return;
+            }
+
+            [[[NSURLSession sharedSession] dataTaskWithURL:url completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                NSHTTPURLResponse *http = [response isKindOfClass:NSHTTPURLResponse.class] ? (NSHTTPURLResponse *)response : nil;
+                if (!error && http.statusCode == 200 && data.length > 0) {
+                    NSString *body = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] ?: @"";
+                    NSString *trimmed = [body stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+                    NSArray<NSString *> *parts = [trimmed componentsSeparatedByString:@"|"];
+                    NSString *udid = parts.count > 0 ? (parts[0] ?: @"") : @"";
+                    if (ZONUDIDBridgeIsPlausibleUDID(udid)) {
+                        [[NSUserDefaults standardUserDefaults] setObject:udid forKey:@"zonoeudid"];
+                        [getKeychain addKeychainData:udid forKey:@"DZUDID"];
+                        ZONLegacyClearPendingMarker();
+                        ZONLegacyRemoveServerCache(userID);
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            gZonoeLegacyWebFallbackInFlight = NO;
+                            NSLog(@"[zonoemenu][INFO][udid] foreground resume recovered legacy web UDID");
+                            ZONLaunchTraceRecord(ZONLaunchTraceLegacyFallbackStore);
+                            ZONUDIDBridgeStoreUDID(udid);
+                            poll = nil;
+                        });
+                        return;
+                    }
+                }
+
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)),
+                               dispatch_get_main_queue(), ^{
+                    if (poll) poll();
+                });
+            }] resume];
+        };
+
+        poll();
     });
 }
