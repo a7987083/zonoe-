@@ -1,11 +1,29 @@
 #import "ZONAuthV2API.h"
 #import "ZONAuthV2Storage.h"
 
-#ifndef ZON_AUTH_BOOTSTRAP_URL
-#define ZON_AUTH_BOOTSTRAP_URL "https://raw.githubusercontent.com/a7987083/zonoemenu-config/main/bootstrap/zonoe.main.json"
-#endif
+static NSString * const ZONPrimaryBootstrapURLString =
+    @"https://app3.zonoeios.xyz/config/zonoe.main.json";
 
-static NSString *ZONAuthBootstrapURLString(void) { return @ZON_AUTH_BOOTSTRAP_URL; }
+static NSString * const ZONSecondaryBootstrapURLString =
+    @"https://raw.githubusercontent.com/a7987083/zonoemenu-config/main/bootstrap/zonoe.main.json";
+
+static NSArray<NSString *> *ZONAuthBootstrapURLStrings(void) {
+    return @[ ZONPrimaryBootstrapURLString, ZONSecondaryBootstrapURLString ];
+}
+
+static NSDictionary *ZONEmergencyBootstrap(void) {
+    return @{
+        @"ok": @YES,
+        @"config_version": @3,
+        @"api_endpoints": @[ @"https://app3.zonoeios.xyz" ],
+        @"bootstrap_urls": @[ @"https://raw.githubusercontent.com/a7987083/zonoemenu-config/main/bootstrap/zonoe.main.json" ],
+        @"verify_path": @"/index/dylib_verify/verify",
+        @"expires_at": @1790931711,
+        @"signature_alg": @"rsa-2048-sha256",
+        @"key_id": @"2ccbccb450ac8ee98c240dee77ce075e",
+        @"signature": @"mTbaIRbceBfIE8oKPqceg7GGP4xeq6PVtxemByasN/kZWe+g2JAC5IVK0Dln3d8lHlBrFig14BjLiqr8mYjd2a4i0v4VUlziVWwJpH2vTYIo3ilTfexGIAPcFsOvPuS9TXuP2IZbTZCvHiKbdD6lRTdwwcIhBxbtS+6tzOU3msPCZ1mXxSg8mlKgQHxbx1oLdlsymuuoKpwqC835MVCtMisKFf5UQka+I1fzol5muUdkTa237DdW+6d6RpK/LngV0v/BWRIVUiN9HmH8/9U/6ORsg4nBZlhON3gmTKUrp26rrrdlVU9TEqNCXuszQ9jaKVOjL/ZFSsOoTckHv9etVw=="
+    };
+}
 
 static id ZONConfigValue(NSDictionary *config, NSString *key) {
     id value = config[key];
@@ -98,31 +116,63 @@ static NSString *ZONJoinURL(NSString *base, NSString *path) {
     return config ?: @{};
 }
 
+- (void)fetchBootstrapFromURLs:(NSArray<NSString *> *)urls
+                          index:(NSUInteger)index
+                     completion:(ZONAuthV2JSONCompletion)completion {
+    if (index >= urls.count) {
+        NSDictionary *emergency = ZONEmergencyBootstrap();
+        if ([self isUsableBootstrap:emergency]) {
+            self.sessionBootstrap = emergency;
+            NSLog(@"[zonoemenu][WARN][auth-v3][BOOTSTRAP] network sources unavailable; using embedded emergency bootstrap");
+            if (completion) completion(emergency, nil);
+            return;
+        }
+
+        if (completion) {
+            completion(nil, [NSError errorWithDomain:@"ZONAuthV2"
+                                                code:-11
+                                            userInfo:@{NSLocalizedDescriptionKey:@"Bootstrap 配置不可用"}]);
+        }
+        return;
+    }
+
+    NSString *urlString = urls[index];
+    NSURL *url = [NSURL URLWithString:urlString ?: @""];
+    if (!url) {
+        [self fetchBootstrapFromURLs:urls index:index + 1 completion:completion];
+        return;
+    }
+
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url
+                                                           cachePolicy:NSURLRequestReloadIgnoringLocalCacheData
+                                                       timeoutInterval:15.0];
+    request.HTTPMethod = @"GET";
+
+    [self completeJSONRequest:request completion:^(NSDictionary *json, NSError *error) {
+        NSDictionary *normalized = json ? [self normalizedBootstrap:json] : nil;
+        if (!error && [self isUsableBootstrap:normalized]) {
+            self.sessionBootstrap = normalized;
+            NSLog(@"[zonoemenu][INFO][auth-v3][BOOTSTRAP] source=%@", urlString);
+            if (completion) completion(normalized, nil);
+            return;
+        }
+
+        NSLog(@"[zonoemenu][WARN][auth-v3][BOOTSTRAP] source failed=%@ error=%@",
+              urlString,
+              error.localizedDescription ?: @"invalid bootstrap");
+        [self fetchBootstrapFromURLs:urls index:index + 1 completion:completion];
+    }];
+}
+
 - (void)fetchBootstrapWithCompletion:(ZONAuthV2JSONCompletion)completion {
     if ([self isUsableBootstrap:self.sessionBootstrap]) {
         if (completion) completion(self.sessionBootstrap, nil);
         return;
     }
 
-    NSURL *url = [NSURL URLWithString:ZONAuthBootstrapURLString()];
-    if (!url) {
-        if (completion) completion(nil, [NSError errorWithDomain:@"ZONAuthV2" code:-10 userInfo:@{NSLocalizedDescriptionKey:@"Bootstrap 地址无效"}]);
-        return;
-    }
-
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:url cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:15.0];
-    request.HTTPMethod = @"GET";
-    [self completeJSONRequest:request completion:^(NSDictionary *json, NSError *error) {
-        NSDictionary *normalized = json ? [self normalizedBootstrap:json] : nil;
-        if (!error && [self isUsableBootstrap:normalized]) {
-            self.sessionBootstrap = normalized;
-            if (completion) completion(normalized, nil);
-            return;
-        }
-
-        NSError *finalError = error ?: [NSError errorWithDomain:@"ZONAuthV2" code:-11 userInfo:@{NSLocalizedDescriptionKey:@"Bootstrap 配置不可用"}];
-        if (completion) completion(json, finalError);
-    }];
+    [self fetchBootstrapFromURLs:ZONAuthBootstrapURLStrings()
+                           index:0
+                      completion:completion];
 }
 
 - (NSString *)apiBaseFromBootstrap:(NSDictionary *)bootstrap {
