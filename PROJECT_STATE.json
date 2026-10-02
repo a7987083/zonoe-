@@ -3,7 +3,7 @@
   "repository": "a7987083/zonoe-",
   "current_work_branch": "work/p79.8-udid-first-rebuild",
   "current_version": "v1_p79_8k2",
-  "current_phase": "p79_8k2_menu_local_files_hardening",
+  "current_phase": "p79_8k2_modifier_cross_dylib_abi",
   "phase_status": "source_committed_build_pending_device_pending",
   "runtime_cleanup_commit": "b18d6d7b003ab6c227e3890a4fb60b81acf5125c",
   "ci_build_commit": "7a69b75edf552221cedd7501a80324f69f5b185d",
@@ -69,7 +69,7 @@
     "P79.8c cloud permission matrix",
     "P79.8b full persistence/reset regression"
   ],
-  "next_task": "Build/validate base.local-files hardening, then continue sequential menu processing with data.backup-save (备份存档).",
+  "next_task": "Observe/verify the P79.8k2 CI build, then device-test modifier visibility and fresh-verify activation with and without the target dylib loaded.",
   "startup_compatibility_candidate": {
     "implementation_commit": "b0ead52f680945f5b9377a3eb57e78732ae89a5e",
     "documentation_commit": "9b588ac9d4b2798ebfe2757256d4588d8f315e9a",
@@ -91,5 +91,30 @@
     "build_status": "pending/unobserved",
     "device_status": "pending",
     "next_registry_item": "data.backup-save"
+  },
+  "modifier_feature": {
+    "identifier": "base.modifier",
+    "title": "修改器",
+    "legacy_tag": 4,
+    "placement": "immediately after base.cloud-save",
+    "menu_permission": "extra_menu",
+    "action_permission": "extra_features",
+    "runtime_capability": "external.zonoepatch",
+    "abi_symbol": "ZonoePatchActivate",
+    "abi_signature": "bool ZonoePatchActivate(void)",
+    "symbol_resolution": "dlsym(RTLD_DEFAULT)",
+    "active_loading": false,
+    "fresh_verify": true,
+    "runtime_commits": [
+      "65f8f616fff2b3be72750ad7e565968aa18d2859",
+      "7225563d3e1d1448d63d2444435c1c39c1025209"
+    ],
+    "action_commits": [
+      "67b0273d4a1a05a0a3bb1606a8687c4d91821871",
+      "590a0c324b2fcd7b77c0947ce44b5ba8a2456a29",
+      "98694dafec31af90780d75959e235fe8e9a721bd"
+    ],
+    "build_status": "pending/unobserved",
+    "device_status": "pending"
   }
 }
