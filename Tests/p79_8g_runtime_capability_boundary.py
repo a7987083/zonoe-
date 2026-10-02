@@ -61,3 +61,5 @@ forbid(IMPL, "dlclose(", "runtime capability dlclose")
 require(IMPL, "_dyld_image_count()", "loaded image enumeration")
 
 print("p79.8g-runtime-capability: PASS")
+
+# CI trigger: modifier ABI integration
