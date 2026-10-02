@@ -1,3 +1,10 @@
+## 2026-10-02 — Menu continuation: base.local-files hardening — SOURCE COMMITTED / BUILD PENDING / DEVICE PENDING
+- Continued sequential menu work after `VIP云存档`; next registry item is `base.local-files` / “浏览本地文件” / legacy tag 3.
+- `ZONLocalFilesCoordinator`: moved iOS 15 sheet detent configuration to the presented `UINavigationController`, which actually owns the sheet presentation controller. Commit: `a81b0579cdc9d1631e37fe68fcf982a615d2588e`.
+- `SandboxBrowserVC`: share now exports an `NSURL fileURLWithPath:` instead of sharing the path string; preview is bounded to <=1 MiB likely-text files; directory-read/delete errors no longer silently desynchronize UI; file list is stable-sorted. Commit: `d9dbd49c3a542adbe73018964b59a85d052a2929`.
+- Existing Documents/Library browsing, navigation, swipe-delete and share behavior remain the functional surface.
+- Compile/CI and real-device validation are still pending; do not promote this as device-verified.
+
 
 ## 2026-10-02 — P79.8k2 Startup Compatibility Candidate — SOURCE COMMITTED / CI PENDING / DEVICE PENDING
 - Branch: `work/p79.8-udid-first-rebuild`; VERSION remains `v1_p79_8k2`.
