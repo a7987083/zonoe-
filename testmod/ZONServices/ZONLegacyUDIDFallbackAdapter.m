@@ -25,12 +25,14 @@ static NSString *ZONLegacyURLScheme(void)
 {
     NSArray *urlTypes = [NSBundle mainBundle].infoDictionary[@"CFBundleURLTypes"];
     if (![urlTypes isKindOfClass:NSArray.class]) return @"";
+
+    NSString *selected = @"";
     for (NSDictionary *entry in urlTypes) {
         NSArray *schemes = [entry[@"CFBundleURLSchemes"] isKindOfClass:NSArray.class] ? entry[@"CFBundleURLSchemes"] : nil;
         NSString *scheme = [schemes.firstObject isKindOfClass:NSString.class] ? schemes.firstObject : @"";
-        if (scheme.length) return scheme;
+        if (scheme.length) selected = scheme;
     }
-    return @"";
+    return selected;
 }
 
 static UIViewController *ZONLegacyTopViewController(void)
