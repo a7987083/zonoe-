@@ -51,6 +51,14 @@ void ZonoeSetUDIDCallback(ZonoeUDIDCallback callback)
     });
 }
 
+void ZonoePublishAcquiredUDID(NSString *udid)
+{
+    dispatch_async(dispatch_get_main_queue(), ^{
+        ZonoeEnsureUDIDObserver();
+        ZonoeDeliverUDIDIfNeeded(udid);
+    });
+}
+
 void ZonoeRequestUDIDIfNeeded(void)
 {
     dispatch_async(dispatch_get_main_queue(), ^{
