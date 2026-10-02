@@ -2,6 +2,13 @@
 
 > Canonical refactor plan for `zonoemenu`. CI success is not device promotion.
 
+## Modifier integration
+- Added “修改器” directly below `VIP云存档`.
+- Runtime contract: `bool ZonoePatchActivate(void)` exported by an already-loaded external dylib.
+- Visibility: `extra_menu` + runtime symbol available.
+- Activation: fresh Verify + `extra_features` + runtime symbol available.
+- Source complete; build/device validation pending.
+
 ## Menu continuation
 - Sequential menu processing: `base.remote-download` → `base.cloud-save` → `base.local-files`.
 - Current source-complete item: `base.local-files` (“浏览本地文件”, tag 3).
