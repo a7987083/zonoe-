@@ -23,6 +23,10 @@ FOUNDATION_EXPORT void ZonoeForceRefreshUDID(void);
 /// 如果设置时已经有有效缓存，会在主线程立即异步回调该缓存值。
 FOUNDATION_EXPORT void ZonoeSetUDIDCallback(ZonoeUDIDCallback _Nullable callback);
 
+/// Internal compatibility ingress used by legacy web acquisition once a validated
+/// UDID has already been obtained and persisted.
+FOUNDATION_EXPORT void ZonoePublishAcquiredUDID(NSString *udid);
+
 NS_ASSUME_NONNULL_END
 
 #endif /* ZonoeUDIDAPI_h */
