@@ -4,11 +4,44 @@
 #import <mach/vm_prot.h>
 #import <stdint.h>
 #import <string.h>
+#import <dlfcn.h>
+#import <stdbool.h>
 #if __has_include(<ptrauth.h>)
 #import <ptrauth.h>
 #endif
 
 NSString * const ZONRuntimeCapabilityPassiveSatella = @"passive.satella";
+NSString * const ZONRuntimeCapabilityZonoePatch = @"external.zonoepatch";
+
+typedef bool (*ZonoePatchActivateFn)(void);
+
+static ZonoePatchActivateFn ZONResolvePatchActivate(void)
+{
+    dlerror();
+    return (ZonoePatchActivateFn)dlsym(RTLD_DEFAULT, "ZonoePatchActivate");
+}
+
+static BOOL ZONActivateExternalPatch(void)
+{
+    ZonoePatchActivateFn function = ZONResolvePatchActivate();
+    if (!function) {
+        const char *error = dlerror();
+        NSLog(@"[zonoemenu][ZONOE_PATCH] symbol_unavailable error=%s", error ?: "unknown");
+        return NO;
+    }
+
+    __block bool result = false;
+    if ([NSThread isMainThread]) {
+        result = function();
+    } else {
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            result = function();
+        });
+    }
+
+    NSLog(@"[zonoemenu][ZONOE_PATCH] activate result=%d", result);
+    return result ? YES : NO;
+}
 
 static const uintptr_t kZONPassiveSatellaCtorRVA = 0x847C;
 static const uintptr_t kZONPassiveSatellaInitRVA = 0x888C;
@@ -174,6 +207,9 @@ static BOOL ZONStartInjectedPassiveSatella(void)
     if ([identifier isEqualToString:ZONRuntimeCapabilityPassiveSatella]) {
         return ZONFindInjectedPassiveSatellaBase() != 0;
     }
+    if ([identifier isEqualToString:ZONRuntimeCapabilityZonoePatch]) {
+        return ZONResolvePatchActivate() != NULL;
+    }
     return NO;
 }
 
@@ -181,6 +217,9 @@ static BOOL ZONStartInjectedPassiveSatella(void)
 {
     if ([identifier isEqualToString:ZONRuntimeCapabilityPassiveSatella]) {
         return ZONStartInjectedPassiveSatella();
+    }
+    if ([identifier isEqualToString:ZONRuntimeCapabilityZonoePatch]) {
+        return ZONActivateExternalPatch();
     }
     return NO;
 }
