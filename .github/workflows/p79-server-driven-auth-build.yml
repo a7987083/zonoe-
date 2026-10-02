@@ -8,7 +8,9 @@ on:
       - work/p79.8-udid-first-rebuild
     paths:
       - 'VERSION'
+      - 'testmod/Bsphp/main.m'
       - 'testmod/ZONAuthV2/**'
+      - 'testmod/ZONBootstrap/**'
       - 'testmod/ZONCore/**'
       - 'testmod/ZONServices/**'
       - 'testmod.xcodeproj/project.pbxproj'
