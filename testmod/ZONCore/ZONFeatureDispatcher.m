@@ -82,6 +82,9 @@ static NSDictionary<NSString *, ZONFeatureActionHandler> *ZONActionRoutes(void)
             @"base.cloud-save": ^BOOL(UIViewController *host) {
                 return [ZONSixButtonActionService performCloudSaveFromViewController:host];
             },
+            @"base.modifier": ^BOOL(UIViewController *host) {
+                return [ZONSixButtonActionService performModifierFromViewController:host];
+            },
             @"base.local-files": ^BOOL(UIViewController *host) {
                 return [[ZONLocalFilesCoordinator sharedCoordinator] presentLocalFilesFromViewController:host];
             },
