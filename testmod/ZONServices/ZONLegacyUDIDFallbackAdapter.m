@@ -2,6 +2,7 @@
 #import "ZONUDIDBridge.h"
 #import "../category/getKeychain.h"
 #import "ZONLaunchTrace.h"
+#import "ZONAuthorizationCoordinator.h"
 #import <UIKit/UIKit.h>
 
 static BOOL gZonoeLegacyWebFallbackInFlight = NO;
@@ -217,7 +218,7 @@ static void ZONLegacyFetchUDIDForUserID(NSString *userID)
             gZonoeLegacyWebFallbackInFlight = NO;
             NSLog(@"[zonoemenu][INFO][udid] standalone web fallback produced durable DZUDID; resuming authorization");
             ZONLaunchTraceRecord(ZONLaunchTraceLegacyFallbackStore);
-            ZONUDIDBridgeStoreUDID(udid);
+            ZONStartCustomerAuthorization();
         });
     }] resume];
 }
