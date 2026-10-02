@@ -6,6 +6,13 @@
 - Current branch: `work/p79.8-udid-first-rebuild`.
 - Current VERSION: `v1_p79_8k2`.
 
+## Modifier cross-dylib ABI
+- Added `base.modifier` (“修改器”, tag 4) directly below `VIP云存档`.
+- Show condition: server `extra_menu` permission AND already-loaded `ZonoePatchActivate` symbol.
+- Use condition: existing action gate + fresh `/apiface → /challenge → /verify` + `extra_features`; only then call `bool ZonoePatchActivate(void)`.
+- Resolver capability: `external.zonoepatch`; implemented with `dlsym(RTLD_DEFAULT, ...)`, no active dylib loading.
+- Source committed; build/CI unobserved; device validation pending.
+
 ## Latest menu continuation
 - Sequential menu processing has moved past `VIP云存档` to `base.local-files` (“浏览本地文件”, tag 3).
 - Local-files presentation hardening commit: `a81b0579cdc9d1631e37fe68fcf982a615d2588e`.
