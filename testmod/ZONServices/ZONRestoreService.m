@@ -189,40 +189,82 @@ NSErrorDomain const ZONRestoreErrorDomain = @"ZONRestoreErrorDomain";
 {
     BOOL sourceIsDirectory = NO;
     if (![fm fileExistsAtPath:sourcePath isDirectory:&sourceIsDirectory]) {
-        if (error) *error = [NSError errorWithDomain:ZONRestoreErrorDomain
-                                                code:ZONRestoreErrorPreflightFailed
-                                            userInfo:@{NSLocalizedDescriptionKey: @"恢复源文件不存在"}];
+        if (error) {
+            *error = [NSError errorWithDomain:ZONRestoreErrorDomain
+                                         code:ZONRestoreErrorPreflightFailed
+                                     userInfo:@{NSLocalizedDescriptionKey: @"恢复源文件不存在"}];
+        }
         return NO;
     }
 
     BOOL destinationIsDirectory = NO;
     BOOL destinationExists = [fm fileExistsAtPath:destinationPath isDirectory:&destinationIsDirectory];
+
+    // Preserve the original YYYPicker restore semantics: target conflicts and
+    // individual system/runtime files are best-effort, not fatal to the whole restore.
     if (destinationExists && sourceIsDirectory != destinationIsDirectory) {
-        if (![fm removeItemAtPath:destinationPath error:error]) return NO;
-        destinationExists = NO;
+        NSError *removeError = nil;
+        if (![fm removeItemAtPath:destinationPath error:&removeError]) {
+            NSLog(@"[zonoemenu][WARN][restore] unable to replace conflicting target %@: %@",
+                  destinationPath, removeError.localizedDescription);
+        } else {
+            destinationExists = NO;
+        }
     }
 
     if (sourceIsDirectory) {
-        if (!destinationExists && ![fm createDirectoryAtPath:destinationPath withIntermediateDirectories:YES attributes:nil error:error]) {
+        if (!destinationExists) {
+            NSError *createError = nil;
+            if (![fm createDirectoryAtPath:destinationPath
+               withIntermediateDirectories:YES
+                                attributes:nil
+                                     error:&createError]) {
+                NSLog(@"[zonoemenu][WARN][restore] unable to create directory %@: %@",
+                      destinationPath, createError.localizedDescription);
+            }
+        }
+
+        NSError *listError = nil;
+        NSArray<NSString *> *items = [fm contentsOfDirectoryAtPath:sourcePath error:&listError];
+        if (!items) {
+            if (error) *error = listError;
             return NO;
         }
-        NSArray<NSString *> *items = [fm contentsOfDirectoryAtPath:sourcePath error:error];
-        if (!items) return NO;
+
         for (NSString *item in items) {
             if ([skipItems containsObject:item]) continue;
-            if (![self copyContentsFrom:[sourcePath stringByAppendingPathComponent:item]
-                                     to:[destinationPath stringByAppendingPathComponent:item]
-                            fileManager:fm
-                              skipItems:skipItems
-                                  error:error]) {
-                return NO;
+            NSError *childError = nil;
+            BOOL childOK = [self copyContentsFrom:[sourcePath stringByAppendingPathComponent:item]
+                                               to:[destinationPath stringByAppendingPathComponent:item]
+                                      fileManager:fm
+                                        skipItems:skipItems
+                                            error:&childError];
+            if (!childOK) {
+                NSLog(@"[zonoemenu][WARN][restore] skipped item %@ -> %@: %@",
+                      [sourcePath stringByAppendingPathComponent:item],
+                      [destinationPath stringByAppendingPathComponent:item],
+                      childError.localizedDescription ?: @"copy failed");
             }
         }
         return YES;
     }
 
-    if (destinationExists && ![fm removeItemAtPath:destinationPath error:error]) return NO;
-    return [fm copyItemAtPath:sourcePath toPath:destinationPath error:error];
+    if (destinationExists) {
+        NSError *removeError = nil;
+        if (![fm removeItemAtPath:destinationPath error:&removeError]) {
+            NSLog(@"[zonoemenu][WARN][restore] unable to remove existing file %@: %@",
+                  destinationPath, removeError.localizedDescription);
+        }
+    }
+
+    NSError *copyError = nil;
+    if (![fm copyItemAtPath:sourcePath toPath:destinationPath error:&copyError]) {
+        NSLog(@"[zonoemenu][WARN][restore] unable to copy %@ -> %@: %@",
+              sourcePath, destinationPath, copyError.localizedDescription);
+        // Original restore was best-effort here: one runtime/system file must not
+        // abort the complete Documents/Library restore.
+    }
+    return YES;
 }
 
 - (BOOL)applyPreparedRestoreAtRoot:(NSString *)root error:(NSError **)error
