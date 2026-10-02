@@ -16,12 +16,15 @@ static NSDictionary *ZONEmergencyBootstrap(void) {
         @"ok": @YES,
         @"config_version": @3,
         @"api_endpoints": @[ @"https://app3.zonoeios.xyz" ],
-        @"bootstrap_urls": @[ @"https://raw.githubusercontent.com/a7987083/zonoemenu-config/main/bootstrap/zonoe.main.json" ],
+        @"bootstrap_urls": @[
+            @"https://app3.zonoeios.xyz/config/zonoe.main.json",
+            @"https://raw.githubusercontent.com/a7987083/zonoemenu-config/main/bootstrap/zonoe.main.json"
+        ],
         @"verify_path": @"/index/dylib_verify/verify",
-        @"expires_at": @1790931711,
+        @"expires_at": @3187295999,
         @"signature_alg": @"rsa-2048-sha256",
         @"key_id": @"2ccbccb450ac8ee98c240dee77ce075e",
-        @"signature": @"mTbaIRbceBfIE8oKPqceg7GGP4xeq6PVtxemByasN/kZWe+g2JAC5IVK0Dln3d8lHlBrFig14BjLiqr8mYjd2a4i0v4VUlziVWwJpH2vTYIo3ilTfexGIAPcFsOvPuS9TXuP2IZbTZCvHiKbdD6lRTdwwcIhBxbtS+6tzOU3msPCZ1mXxSg8mlKgQHxbx1oLdlsymuuoKpwqC835MVCtMisKFf5UQka+I1fzol5muUdkTa237DdW+6d6RpK/LngV0v/BWRIVUiN9HmH8/9U/6ORsg4nBZlhON3gmTKUrp26rrrdlVU9TEqNCXuszQ9jaKVOjL/ZFSsOoTckHv9etVw=="
+        @"signature": @"S8m46XwEmL38t5IhTStXFLT0mQZYAt2ngX1044RtbzM6cMO49sI8/O2yy5a+n+sLsXZVvndzsmsfSULQKGVTZTLAipqia+AsNs2A+ap1GOxTlS4SkcKCUrizjXBHGuodCgsmNBngxDv8I0rnPOCiYm2aLthIvM2YYf7AJm88KgNddqKeYqZFNgVQ+fut6YbRx+7iK8AZmH5QeVwvLuwJwTtf5PPIWojo5vb67QjLpqYEx5J7pvBHws2jdSEG+sFJQFyccBnacB7bIoKh2KBGLWBPSVVIxODK+m8P15a7UoqLv+jM1FbC/h+OjiRRo11KuHhwB2oojkiFIjYSiHiXwg=="
     };
 }
 
