@@ -47,12 +47,22 @@ for needle in [
 ]:
     require(PROVIDER_M, needle, "centralized access decision")
 
-# Registry gains optional runtime capability metadata without assigning it to any
-# existing feature in P79.8h, preserving current visibility/action behavior.
+# Registry supports runtime capability metadata. The modifier is intentionally
+# gated on an already-loaded cross-dylib ABI; legacy features retain their
+# previous capability behavior.
 require(REGISTRY_H, "ZONFeatureRequiredRuntimeCapabilityKey", "runtime capability metadata declaration")
 require(REGISTRY_M, 'ZONFeatureRequiredRuntimeCapabilityKey = @"requiredRuntimeCapability"', "runtime capability metadata definition")
 feature_table = REGISTRY_M.split("features = @[", 1)[1].split("];", 1)[0]
-forbid(feature_table, "ZONFeatureRequiredRuntimeCapabilityKey", "runtime capability requirement on existing feature")
+require(feature_table, 'ZONFeatureIdentifierKey:@"base.modifier"', "modifier feature")
+require(feature_table, 'ZONFeatureRequiredRuntimeCapabilityKey:@"external.zonoepatch"', "modifier runtime capability")
+for legacy_identifier in [
+    'base.remote-download', 'base.cloud-save', 'base.local-files',
+    'data.backup-save', 'data.restore-save', 'data.clear-game-data',
+    'auth.clear-records', 'runtime.iap-noads', 'runtime.ad-speed',
+]:
+    line = next((item for item in feature_table.splitlines() if f'@"{legacy_identifier}"' in item), "")
+    if "ZONFeatureRequiredRuntimeCapabilityKey" in line:
+        fail(f"unexpected runtime capability requirement on legacy feature: {legacy_identifier}")
 
 # Existing cloud permission semantics remain unchanged.
 require(feature_table, 'ZONFeatureIdentifierKey:@"base.cloud-save"', "cloud-save feature")
