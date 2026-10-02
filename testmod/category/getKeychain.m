@@ -31,7 +31,9 @@
     if (SecItemCopyMatching((__bridge CFDictionaryRef)keychainQuery, (CFTypeRef *)&keyData) == noErr) {
         @try {
             NSError *error = nil;
-            ret = [NSKeyedUnarchiver unarchivedObjectOfClass:[getKeychain class] fromData:(__bridge NSData *)keyData error:&error];
+            NSSet *allowedClasses = [NSSet setWithObjects:NSString.class, NSNumber.class, NSData.class, NSDate.class, NSArray.class, NSDictionary.class, NSSet.class, NSNull.class, nil];
+            ret = [NSKeyedUnarchiver unarchivedObjectOfClasses:allowedClasses fromData:(__bridge NSData *)keyData error:&error];
+            if (!ret && error) NSLog(@"[zonoemenu][WARN][keychain] decode failed key=%@ error=%@", key, error.localizedDescription);
             
         } @catch (NSException *e) {
             NSLog(@"Unarchive of %@ failed: %@",key,e);
