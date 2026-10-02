@@ -1,4 +1,5 @@
 #import "ZONUDIDBridge.h"
+#import "ZONLegacyUDIDFallbackAdapter.h"
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -429,6 +430,7 @@ void ZONUDIDBridgeStart(void)
                             queue:NSOperationQueue.mainQueue
                        usingBlock:^(__unused NSNotification *note) {
             ZONUDIDBridgeFetchPendingResult();
+            ZONResumeLegacyWebUDIDFallbackIfNeeded();
         }];
 
         if (@available(iOS 13.0, *)) {
@@ -437,6 +439,7 @@ void ZONUDIDBridgeStart(void)
                                 queue:NSOperationQueue.mainQueue
                            usingBlock:^(__unused NSNotification *note) {
                 ZONUDIDBridgeFetchPendingResult();
+                ZONResumeLegacyWebUDIDFallbackIfNeeded();
             }];
         }
     });
