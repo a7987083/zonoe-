@@ -25,12 +25,16 @@ def forbid(text: str, needle: str, label: str) -> None:
 
 for needle, label in [
     ("ZONRuntimeCapabilityPassiveSatella", "passive capability identifier"),
+    ("ZONRuntimeCapabilityZonoePatch", "ZonoePatch capability identifier"),
     ("+ (BOOL)isCapabilityAvailable:(NSString *)identifier;", "availability API"),
     ("+ (BOOL)activateCapability:(NSString *)identifier;", "activation API"),
 ]:
     require(HEADER, needle, label)
 
 require(IMPL, '@"passive.satella"', "stable passive capability key")
+require(IMPL, '@"external.zonoepatch"', "stable ZonoePatch capability key")
+require(IMPL, 'dlsym(RTLD_DEFAULT, "ZonoePatchActivate")', "cross-dylib ABI resolver")
+require(IMPL, "ZONActivateExternalPatch()", "cross-dylib activation delegate")
 require(IMPL, "+ (BOOL)isCapabilityAvailable:(NSString *)identifier", "availability implementation")
 require(IMPL, "+ (BOOL)activateCapability:(NSString *)identifier", "activation implementation")
 require(IMPL, "ZONFindInjectedPassiveSatellaBase() != 0", "availability probe")
