@@ -6,6 +6,13 @@
 - Current branch: `work/p79.8-udid-first-rebuild`.
 - Current VERSION: `v1_p79_8k2`.
 
+## Latest menu continuation
+- Sequential menu processing has moved past `VIP云存档` to `base.local-files` (“浏览本地文件”, tag 3).
+- Local-files presentation hardening commit: `a81b0579cdc9d1631e37fe68fcf982a615d2588e`.
+- Sandbox browser hardening commit: `d9dbd49c3a542adbe73018964b59a85d052a2929`.
+- Source status: committed. Build/CI: pending/unobserved. Device status: pending.
+- Key fixes: real file URL sharing, bounded text preview, truthful delete/read error handling, sheet detents configured on the presented navigation controller.
+
 ## Current startup compatibility candidate
 - Startup gate commit: `b0ead52f680945f5b9377a3eb57e78732ae89a5e`.
 - Bootstrap contract comment commit: `9b588ac9d4b2798ebfe2757256d4588d8f315e9a`.
