@@ -2,9 +2,9 @@
   "project": "zonoemenu",
   "repository": "a7987083/zonoe-",
   "current_work_branch": "work/p79.8-udid-first-rebuild",
-  "current_version": "v1_p79_8j",
-  "current_phase": "p79_8j_auth_verification_residue_cleanup",
-  "phase_status": "ci_passed_device_regression_pending",
+  "current_version": "v1_p79_8k2",
+  "current_phase": "p79_8k2_startup_compatibility_candidate",
+  "phase_status": "source_committed_ci_pending_device_pending",
   "runtime_cleanup_commit": "b18d6d7b003ab6c227e3890a4fb60b81acf5125c",
   "ci_build_commit": "7a69b75edf552221cedd7501a80324f69f5b185d",
   "last_ci_run_id": 36865866031,
@@ -14,7 +14,10 @@
   "artifact_digest": "sha256:a97467ceb0fc7f401f7a94efa9fa6c6ecaefceea87921d7c1dbdbc23ccb00df1",
   "ci_dylib_sha256": "3c67df496c1987fb0560e4178852a7fcba376fad0ca804585a139c14f1a7d80d",
   "ci_dylib_size_bytes": 3303232,
-  "architectures": ["arm64", "arm64e"],
+  "architectures": [
+    "arm64",
+    "arm64e"
+  ],
   "arm64e_capability": "PAC00",
   "auth_protocol": "secretless-v3",
   "verify_secret_embedded": false,
@@ -53,7 +56,7 @@
     "p79_8i_secretless_auth_v3_contract_with_p79_8j_cleanup_assertions": "passed",
     "xcode_16_4_arm64_arm64e_build": "passed"
   },
-  "device_status": "p79_8j_cleanup_regression_pending",
+  "device_status": "p79_8k2_startup_compatibility_regression_pending",
   "device_verification_required": [
     "active UDID opens without card prompt",
     "missing/expired UDID activates via card and confirms with apiface",
@@ -66,5 +69,17 @@
     "P79.8c cloud permission matrix",
     "P79.8b full persistence/reset regression"
   ],
-  "next_task": "Run P79.8j real-device regression. Do not delete retained compatibility code until its live consumers are migrated."
+  "next_task": "Confirm the P79 build for the startup compatibility candidate, then real-device test Apps that previously crashed during injected startup.",
+  "startup_compatibility_candidate": {
+    "implementation_commit": "b0ead52f680945f5b9377a3eb57e78732ae89a5e",
+    "documentation_commit": "9b588ac9d4b2798ebfe2757256d4588d8f315e9a",
+    "ci_trigger_fix_commit": "83fd0faff225754dc2dfb7d72d53a2b0fc81c0ad",
+    "model": "deferred host-ready bootstrap",
+    "initial_delay_seconds": 1,
+    "readiness_poll_milliseconds": 250,
+    "readiness": "iOS 13+ UIWindowScene or legacy visible UIWindow with rootViewController",
+    "preflight_after_host_ready": true,
+    "ci_status": "pending/unobserved",
+    "device_status": "pending"
+  }
 }
