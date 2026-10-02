@@ -200,12 +200,22 @@ static void ZONLegacyFetchUDIDForUserID(NSString *userID)
 
         [[NSUserDefaults standardUserDefaults] setObject:udid forKey:@"zonoeudid"];
         [getKeychain addKeychainData:udid forKey:@"DZUDID"];
+
+        NSString *readback = [getKeychain getKeychainDataForKey:@"DZUDID"];
+        BOOL persisted = [readback isKindOfClass:NSString.class] && [readback isEqualToString:udid];
+        NSLog(@"[zonoemenu][INFO][udid] legacy DZUDID readback_ok=%d", persisted);
+        if (!persisted) {
+            ZONLaunchTraceRecord(ZONLaunchTraceLegacyFallbackInvalid);
+            ZONLegacyFinishFallback();
+            return;
+        }
+
         ZONLegacyClearPendingMarker();
         ZONLegacyRemoveServerCache(userID);
 
         dispatch_async(dispatch_get_main_queue(), ^{
             gZonoeLegacyWebFallbackInFlight = NO;
-            NSLog(@"[zonoemenu][INFO][udid] standalone web fallback produced DZUDID; resuming authorization");
+            NSLog(@"[zonoemenu][INFO][udid] standalone web fallback produced durable DZUDID; resuming authorization");
             ZONLaunchTraceRecord(ZONLaunchTraceLegacyFallbackStore);
             ZONUDIDBridgeStoreUDID(udid);
         });
