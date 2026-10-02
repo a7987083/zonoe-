@@ -1,4 +1,14 @@
 
+## 2026-10-02 — P79.8k2 Startup Compatibility Candidate — SOURCE COMMITTED / CI PENDING / DEVICE PENDING
+- Branch: `work/p79.8-udid-first-rebuild`; VERSION remains `v1_p79_8k2`.
+- Reworked `ZONBootstrapStart` so dylib/`+load` timing no longer synchronously performs framework preflight, authorization entry, or module loading.
+- Added a H5GG-style deferred readiness gate: wait 1 second, then poll every 250 ms on the main queue until an iOS 13+ `UIWindowScene` or legacy usable `UIWindow` with a root view controller exists.
+- Existing preflight/auth/module order is preserved after host UI readiness.
+- Startup implementation commit: `b0ead52f680945f5b9377a3eb57e78732ae89a5e`.
+- Header contract/documentation commit: `9b588ac9d4b2798ebfe2757256d4588d8f315e9a`.
+- Fixed P79 build workflow path filters so changes under `testmod/ZONBootstrap/**` and `testmod/Bsphp/main.m` trigger CI: `83fd0faff225754dc2dfb7d72d53a2b0fc81c0ad`.
+- No claim of successful compile/device validation yet. GitHub connector did not expose the push-triggered workflow run at the time of this update; local clone validation was blocked by container DNS resolution for github.com.
+
 ## v1_p79_8j — Auth Verification Residue Cleanup
 - Removed detached `ZONAuthV2BindingProbe` compatibility/swizzle source.
 - Removed duplicate `ZONAuthV2API` Verify transport; `ZONAuthV2Verify` exclusively owns `/challenge` and `/verify`.
