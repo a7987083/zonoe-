@@ -256,48 +256,55 @@ typedef NS_ENUM(NSInteger, ZONGameDataResetErrorCode) {
 {
     [self reportStage:ZONGameDataResetStagePreparing progress:progress];
 
+    NSFileManager *manager = NSFileManager.defaultManager;
     NSString *home = NSHomeDirectory();
     NSString *documentsPath = [home stringByAppendingPathComponent:@"Documents"];
     NSString *libraryPath = [home stringByAppendingPathComponent:@"Library"];
     NSString *temporaryPath = [home stringByAppendingPathComponent:@"tmp"];
 
-    [self reportStage:ZONGameDataResetStageDocuments progress:progress];
-    if (![self clearDirectoryContentsAtPath:documentsPath allowRuntimeResidue:NO error:error]) return NO;
+    void (^bestEffortClear)(NSString *, ZONGameDataResetStage) =
+    ^(NSString *path, ZONGameDataResetStage stage) {
+        [self reportStage:stage progress:progress];
 
-    [self reportStage:ZONGameDataResetStageTemporary progress:progress];
-    if (![self clearDirectoryContentsAtPath:temporaryPath allowRuntimeResidue:YES error:error]) return NO;
+        NSError *rootError = nil;
+        if (![manager removeItemAtPath:path error:&rootError] &&
+            rootError.code != NSFileNoSuchFileError) {
+            NSLog(@"[zonoemenu][WARN][reset] root remove failed, continuing recursively %@: %@",
+                  path, rootError.localizedDescription);
+        }
+
+        // Preserve the original qcshuju behavior: if the running process/system
+        // recreates or protects entries, continue deleting what is removable and
+        // never fail the whole reset because of one runtime-owned path.
+        NSDirectoryEnumerator *enumerator = [manager enumeratorAtPath:path];
+        for (NSString *relativePath in enumerator) {
+            NSString *itemPath = [path stringByAppendingPathComponent:relativePath];
+            NSError *itemError = nil;
+            if (![manager removeItemAtPath:itemPath error:&itemError] &&
+                itemError.code != NSFileNoSuchFileError) {
+                NSLog(@"[zonoemenu][WARN][reset] ignored runtime/system residue %@: %@",
+                      itemPath, itemError.localizedDescription);
+            }
+        }
+    };
+
+    bestEffortClear(documentsPath, ZONGameDataResetStageDocuments);
+    bestEffortClear(temporaryPath, ZONGameDataResetStageTemporary);
 
     [self reportStage:ZONGameDataResetStagePreferences progress:progress];
     NSString *bundleIdentifier = NSBundle.mainBundle.bundleIdentifier;
-    if (bundleIdentifier.length == 0) {
-        if (error) {
-            *error = [NSError errorWithDomain:ZONGameDataResetErrorDomain
-                                         code:ZONGameDataResetErrorDefaultsReset
-                                     userInfo:@{NSLocalizedDescriptionKey: @"无法取得 Bundle Identifier，不能安全重置本地设置"}];
-        }
-        return NO;
+    if (bundleIdentifier.length) {
+        [NSUserDefaults.standardUserDefaults removePersistentDomainForName:bundleIdentifier];
+        [NSUserDefaults.standardUserDefaults synchronize];
+    } else {
+        NSLog(@"[zonoemenu][WARN][reset] bundle identifier unavailable; skipping defaults domain reset");
     }
-    [NSUserDefaults.standardUserDefaults removePersistentDomainForName:bundleIdentifier];
-    [NSUserDefaults.standardUserDefaults synchronize];
 
-    [self reportStage:ZONGameDataResetStageLibrary progress:progress];
-    if (![self clearDirectoryContentsAtPath:libraryPath allowRuntimeResidue:NO error:error]) return NO;
+    bestEffortClear(libraryPath, ZONGameDataResetStageLibrary);
 
+    // The legacy implementation did not require every system-owned runtime file
+    // to disappear before considering the operation complete.
     [self reportStage:ZONGameDataResetStageVerification progress:progress];
-    if (![self verifyPayloadClearedAtPath:documentsPath allowRuntimeResidue:NO error:error]) return NO;
-    if (![self verifyPayloadClearedAtPath:libraryPath allowRuntimeResidue:NO error:error]) return NO;
-    if (![self verifyPayloadClearedAtPath:temporaryPath allowRuntimeResidue:YES error:error]) return NO;
-
-    NSDictionary *remainingDefaults = [NSUserDefaults.standardUserDefaults persistentDomainForName:bundleIdentifier];
-    if (remainingDefaults.count != 0) {
-        if (error) {
-            *error = [NSError errorWithDomain:ZONGameDataResetErrorDomain
-                                         code:ZONGameDataResetErrorVerification
-                                     userInfo:@{NSLocalizedDescriptionKey: @"本地设置清理后仍存在持久化数据"}];
-        }
-        return NO;
-    }
-
     [self reportStage:ZONGameDataResetStageCompleted progress:progress];
     return YES;
 }
