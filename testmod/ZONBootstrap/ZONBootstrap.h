@@ -10,10 +10,11 @@ typedef void (^ZONBootstrapReadyBlock)(void);
 
 /// Production bootstrap shared by customer/debug variants.
 ///
-/// Order is deliberately stable:
-/// 1. Run legacy framework preflight synchronously at +load timing.
-/// 2. Hop to the main queue for the variant-specific entry path.
-/// 3. Load explicitly bundled ZONModules after the entry path has been started.
+/// Startup is intentionally host-driven:
+/// 1. Return quickly from dylib/+load timing without touching host frameworks/UI.
+/// 2. After a short delay, wait on the main queue until a usable host UIWindow exists.
+/// 3. Run the legacy framework preflight only after UIKit/window readiness.
+/// 4. Start the variant-specific entry path, then load explicitly bundled ZONModules.
 FOUNDATION_EXPORT void ZONBootstrapStart(ZONBootstrapPreflightBlock _Nullable preflight,
                                          ZONBootstrapReadyBlock _Nullable ready);
 
