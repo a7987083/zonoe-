@@ -2,6 +2,13 @@
 
 > Canonical refactor plan for `zonoemenu`. CI success is not device promotion.
 
+## Menu continuation
+- Sequential menu processing: `base.remote-download` → `base.cloud-save` → `base.local-files`.
+- Current source-complete item: `base.local-files` (“浏览本地文件”, tag 3).
+- Commits: `a81b0579cdc9d1631e37fe68fcf982a615d2588e`, `d9dbd49c3a542adbe73018964b59a85d052a2929`.
+- Build/device validation pending.
+- Next registry item after validation: `data.backup-save` (“备份存档”, tag 100).
+
 ## Current active stage — P79.8j Auth Verification Residue Cleanup — CI PASSED / DEVICE REGRESSION PENDING
 - VERSION: `v1_p79_8j`.
 - Branch: `work/p79.8-udid-first-rebuild`.
