@@ -1,3 +1,13 @@
+## 2026-10-02 — Modifier button + cross-dylib C ABI — SOURCE COMMITTED / BUILD PENDING / DEVICE PENDING
+- Added `base.modifier` (“修改器”, tag 4) immediately after `VIP云存档` in the 基础功能 card list.
+- Visibility requires both `extra_menu` and runtime capability `external.zonoepatch`.
+- `external.zonoepatch` is available only when the current process already exports `ZonoePatchActivate`; resolver uses `dlsym(RTLD_DEFAULT, "ZonoePatchActivate")` and never `dlopen`.
+- Action requires `extra_features`, refreshes `/apiface`, performs fresh v3 `/challenge → /verify`, then calls the C ABI only after successful verification.
+- Runtime capability commits: `65f8f616fff2b3be72750ad7e565968aa18d2859`, `7225563d3e1d1448d63d2444435c1c39c1025209`.
+- Feature/action commits: `67b0273d4a1a05a0a3bb1606a8687c4d91821871`, `167a0210f1f5b8bfcc702d85d91c1afccb193c02`, `590a0c324b2fcd7b77c0947ce44b5ba8a2456a29`, `98694dafec31af90780d75959e235fe8e9a721bd`.
+- Contract updates: `c23634b859aa99f36ce42d8341822fe45a63fee6`, `f8540fb7a4deda86be7d7719065272b82e5a68a9`, `52b255e364a1ec397ad79473e8f6831b738d34e8`.
+- Current VERSION remains `v1_p79_8k2`; compile/CI status is not yet observed and real-device validation is pending.
+
 ## 2026-10-02 — Menu continuation: base.local-files hardening — SOURCE COMMITTED / BUILD PENDING / DEVICE PENDING
 - Continued sequential menu work after `VIP云存档`; next registry item is `base.local-files` / “浏览本地文件” / legacy tag 3.
 - `ZONLocalFilesCoordinator`: moved iOS 15 sheet detent configuration to the presented `UINavigationController`, which actually owns the sheet presentation controller. Commit: `a81b0579cdc9d1631e37fe68fcf982a615d2588e`.
