@@ -1,5 +1,10 @@
 # KNOWN_ISSUES
 
+## Menu local-files validation pending
+- `base.local-files` source hardening is committed on 2026-10-02.
+- Build/CI result has not yet been observed.
+- Real-device checks still required: Documents/Library navigation, file share exporting the actual file, >1 MiB/binary preview behavior, delete success/failure UI consistency, iOS 15+ sheet detents.
+
 ## Current state
 - Active version: `v1_p79_8j`.
 - Branch: `work/p79.8-udid-first-rebuild`.
