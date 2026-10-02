@@ -9,6 +9,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (BOOL)performRemoteDownloadFromViewController:(UIViewController *)hostViewController;
 + (BOOL)performCloudSaveFromViewController:(UIViewController *)hostViewController;
++ (BOOL)performModifierFromViewController:(UIViewController *)hostViewController;
 + (BOOL)performBackupSaveFromViewController:(UIViewController *)hostViewController;
 + (BOOL)performRestoreSaveFromViewController:(UIViewController *)hostViewController;
 + (BOOL)performClearGameDataFromViewController:(UIViewController *)hostViewController;
