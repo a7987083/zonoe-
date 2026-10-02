@@ -58,6 +58,8 @@ for needle in [
     '[ZONSixButtonActionService performRemoteDownloadFromViewController:host]',
     '@"base.cloud-save"',
     '[ZONSixButtonActionService performCloudSaveFromViewController:host]',
+    '@"base.modifier"',
+    '[ZONSixButtonActionService performModifierFromViewController:host]',
     '@"base.local-files"',
     '[[ZONLocalFilesCoordinator sharedCoordinator] presentLocalFilesFromViewController:host]',
     '@"data.backup-save"',
