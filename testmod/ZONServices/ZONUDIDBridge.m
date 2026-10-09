@@ -473,13 +473,13 @@ static NSData *ZONProfileData(void)
         @"PayloadType": @"Profile Service",
         @"PayloadVersion": @1,
         @"PayloadUUID": NSUUID.UUID.UUIDString,
-        @"PayloadIdentifier": @"com.zonoe.standalone.udid",
-        @"PayloadDisplayName": @"Zonoe 设备识别",
-        @"PayloadOrganization": @"Zonoe",
-        @"PayloadDescription": @"经用户确认，仅向本机应用返回设备标识",
+        @"PayloadIdentifier": @"com.zonoe.udid.profile-service",
+        @"PayloadDisplayName": @"获取本机 UDID",
+        @"PayloadOrganization": @"zonoe",
+        @"PayloadDescription": @"仅用于向本机应用返回设备信息",
         @"PayloadContent": @{
             @"URL": [NSString stringWithFormat:@"http://127.0.0.1:%u/udid", ZONUDIDBridgePort],
-            @"DeviceAttributes": @[@"UDID"]
+            @"DeviceAttributes": @[@"UDID", @"VERSION", @"PRODUCT"]
         }
     };
     return [NSPropertyListSerialization dataWithPropertyList:profile
@@ -577,20 +577,46 @@ static void ZONProfileHandleClient(int fd)
     NSString *first = [[NSString alloc] initWithData:[data subdataWithRange:NSMakeRange(0, delimiter.location)]
                                             encoding:NSUTF8StringEncoding];
     if ([first hasPrefix:@"GET /profile.mobileconfig "]) {
-        ZONProfileSend(fd, 200, @"application/x-apple-aspen-config", ZONProfileData());
+        NSData *profile = ZONProfileData();
+        if (!profile.length) {
+            NSLog(@"[zonoemenu][ERROR][udid-profile] stage=GET reason=serialization_failed");
+            ZONProfileSend(fd, 400, @"text/plain", NSData.data);
+            return;
+        }
+        NSLog(@"[zonoemenu][INFO][udid-profile] stage=GET bytes=%lu", (unsigned long)profile.length);
+        ZONProfileSend(fd, 200, @"application/x-apple-aspen-config", profile);
     } else if ([first hasPrefix:@"POST /udid "]) {
+        NSLog(@"[zonoemenu][INFO][udid-profile] stage=POST bytes=%lu", (unsigned long)bodySize);
         NSData *body = [data subdataWithRange:NSMakeRange(NSMaxRange(delimiter), bodySize)];
         NSString *udid = ZONProfileExtractUDID(body);
         if (!ZONUDIDBridgeIsPlausibleUDID(udid)) {
-            ZONProfileSend(fd, 400, @"text/plain", [@"invalid device response" dataUsingEncoding:NSUTF8StringEncoding]);
+            NSLog(@"[zonoemenu][ERROR][udid-profile] stage=POST reason=decode_or_validation_failed");
+            ZONProfileSend(fd, 400, @"text/plain",
+                           [@"invalid device response" dataUsingEncoding:NSUTF8StringEncoding]);
             return;
         }
-        NSDictionary *complete = @{@"PayloadType": @"Configuration", @"PayloadVersion": @1,
-                                   @"PayloadIdentifier": @"com.zonoe.standalone.complete",
-                                   @"PayloadUUID": NSUUID.UUID.UUIDString, @"PayloadContent": @[]};
+        // Profile Service completion response follows the alphaone17 known schema.
+        // A Configuration payload with an empty PayloadContent is expected here;
+        // it must not be confused with the Profile Service request payload.
+        NSDictionary *complete = @{
+            @"PayloadType": @"Configuration",
+            @"PayloadVersion": @1,
+            @"PayloadIdentifier": @"com.zonoe.udid.complete",
+            @"PayloadUUID": NSUUID.UUID.UUIDString,
+            @"PayloadOrganization": @"zonoe",
+            @"PayloadDisplayName": @"Zonoe UDID 获取完成",
+            @"PayloadDescription": @"完成设备识别",
+            @"PayloadContent": @[]
+        };
         NSData *reply = [NSPropertyListSerialization dataWithPropertyList:complete
                                                                   format:NSPropertyListXMLFormat_v1_0
                                                                  options:0 error:nil];
+        if (!reply.length) {
+            NSLog(@"[zonoemenu][ERROR][udid-profile] stage=COMPLETE reason=serialization_failed");
+            ZONProfileSend(fd, 400, @"text/plain", NSData.data);
+            return;
+        }
+        NSLog(@"[zonoemenu][INFO][udid-profile] stage=COMPLETE bytes=%lu", (unsigned long)reply.length);
         ZONProfileSend(fd, 200, @"application/x-apple-aspen-config", reply);
         dispatch_async(dispatch_get_main_queue(), ^{
             ZONUDIDBridgeStoreUDID(udid);
