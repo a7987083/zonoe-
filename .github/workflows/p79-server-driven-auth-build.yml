@@ -6,6 +6,7 @@ on:
     branches:
       - work/p79-server-driven-auth-isolation-v1
       - work/p79.8-udid-first-rebuild
+      - feature/p79.8-standalone-udid-profile-poc
     paths:
       - 'VERSION'
       - 'testmod/Bsphp/main.m'
