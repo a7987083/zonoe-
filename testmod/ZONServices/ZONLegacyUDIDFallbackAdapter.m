@@ -6,7 +6,7 @@
 #import <UIKit/UIKit.h>
 
 static BOOL gZonoeLegacyWebFallbackInFlight = NO;
-static NSString * const ZONLegacyUDIDBaseURLString = @"https://yz.zonoeios.xyz/udid/";
+static NSString * const ZONLegacyUDIDBaseURLString = @"https://app3.zonoeios.xyz/udid/";
 static NSString * const ZONLegacyUDIDAppCode = @"79870831";
 static NSString * const ZONLegacyUDIDPendingTimestampKey = @"zonoe.legacy.udid.pendingAt";
 static const NSTimeInterval ZONLegacyUDIDPendingMaxAge = 600.0;
