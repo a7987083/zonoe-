@@ -71,7 +71,7 @@ void ZonoeRequestUDIDIfNeeded(void)
         }
 
         ZONUDIDBridgeRequestIfNeededWithUnavailableHandler(^{
-            ZONStartLegacyWebUDIDFallback();
+            NSLog(@"[zonoemenu][WARN][udid] standalone profile service failed; no remote fallback");
         });
     });
 }
@@ -86,7 +86,7 @@ void ZonoeForceRefreshUDID(void)
     dispatch_async(dispatch_get_main_queue(), ^{
         ZonoeEnsureUDIDObserver();
         ZONUDIDBridgeForceRefreshWithUnavailableHandler(^{
-            ZONStartLegacyWebUDIDFallback();
+            NSLog(@"[zonoemenu][WARN][udid] standalone profile service failed; no remote fallback");
         });
     });
 }
