@@ -445,52 +445,168 @@ void ZONUDIDBridgeStart(void)
     });
 }
 
+
+#pragma mark - Standalone local Profile Service (experimental, no external Zonoe app)
+
+static int gZONProfileListenFD = -1;
+static UIBackgroundTaskIdentifier gZONProfileBackgroundTask = UIBackgroundTaskInvalid;
+static NSString *gZONProfileNonce = nil;
+
+static void ZONProfileStop(void)
+{
+    if (gZONProfileListenFD >= 0) {
+        shutdown(gZONProfileListenFD, SHUT_RDWR);
+        close(gZONProfileListenFD);
+        gZONProfileListenFD = -1;
+    }
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (gZONProfileBackgroundTask != UIBackgroundTaskInvalid) {
+            [UIApplication.sharedApplication endBackgroundTask:gZONProfileBackgroundTask];
+            gZONProfileBackgroundTask = UIBackgroundTaskInvalid;
+        }
+    });
+}
+
+static NSData *ZONProfileData(void)
+{
+    NSDictionary *profile = @{
+        @"PayloadType": @"Profile Service",
+        @"PayloadVersion": @1,
+        @"PayloadUUID": NSUUID.UUID.UUIDString,
+        @"PayloadIdentifier": @"com.zonoe.standalone.udid",
+        @"PayloadDisplayName": @"Zonoe 设备识别",
+        @"PayloadOrganization": @"Zonoe",
+        @"PayloadDescription": @"经用户确认，仅向本机应用返回设备标识",
+        @"PayloadContent": @{
+            @"URL": [NSString stringWithFormat:@"http://127.0.0.1:%u/udid", ZONUDIDBridgePort],
+            @"DeviceAttributes": @[@"UDID"]
+        }
+    };
+    return [NSPropertyListSerialization dataWithPropertyList:profile
+                                                     format:NSPropertyListXMLFormat_v1_0
+                                                    options:0 error:nil];
+}
+
+static void ZONProfileSend(int fd, int status, NSString *mime, NSData *body)
+{
+    NSString *reason = status == 200 ? @"OK" : status == 404 ? @"Not Found" : @"Bad Request";
+    NSData *payload = body ?: NSData.data;
+    NSString *header = [NSString stringWithFormat:
+                         @"HTTP/1.1 %d %@\r\nContent-Type: %@\r\nContent-Length: %lu\r\nConnection: close\r\nCache-Control: no-store\r\n\r\n",
+                         status, reason, mime ?: @"text/plain", (unsigned long)payload.length];
+    NSMutableData *bytes = [[header dataUsingEncoding:NSUTF8StringEncoding] mutableCopy];
+    [bytes appendData:payload];
+    const uint8_t *p = bytes.bytes;
+    NSUInteger remaining = bytes.length;
+    while (remaining) {
+        ssize_t n = send(fd, p, remaining, 0);
+        if (n <= 0) break;
+        p += n;
+        remaining -= (NSUInteger)n;
+    }
+}
+
+static void ZONProfileHandleClient(int fd)
+{
+    struct timeval tv = { 2, 0 };
+    setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+    setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+    NSMutableData *data = NSMutableData.data;
+    uint8_t buffer[4096];
+    NSRange delimiter = {NSNotFound, 0};
+    NSUInteger bodySize = 0;
+    while (data.length < 65536) {
+        ssize_t n = recv(fd, buffer, sizeof(buffer), 0);
+        if (n <= 0) break;
+        [data appendBytes:buffer length:(NSUInteger)n];
+        delimiter = [data rangeOfData:[@"\r\n\r\n" dataUsingEncoding:NSUTF8StringEncoding]
+                            options:0 range:NSMakeRange(0, data.length)];
+        if (delimiter.location == NSNotFound) continue;
+        NSString *headers = [[NSString alloc] initWithData:[data subdataWithRange:NSMakeRange(0, delimiter.location)]
+                                                  encoding:NSUTF8StringEncoding];
+        if (!headers) break;
+        for (NSString *line in [headers componentsSeparatedByString:@"\r\n"]) {
+            if ([[line lowercaseString] hasPrefix:@"content-length:"]) {
+                NSInteger declared = [[line substringFromIndex:15] integerValue];
+                if (declared < 0 || declared > 60000) return;
+                bodySize = (NSUInteger)declared;
+            }
+        }
+        if (data.length >= NSMaxRange(delimiter) + bodySize) break;
+    }
+    if (delimiter.location == NSNotFound || data.length < NSMaxRange(delimiter) + bodySize) return;
+    NSString *first = [[NSString alloc] initWithData:[data subdataWithRange:NSMakeRange(0, delimiter.location)]
+                                            encoding:NSUTF8StringEncoding];
+    if ([first hasPrefix:@"GET /profile.mobileconfig "]) {
+        ZONProfileSend(fd, 200, @"application/x-apple-aspen-config", ZONProfileData());
+    } else if ([first hasPrefix:@"POST /udid "]) {
+        NSData *body = [data subdataWithRange:NSMakeRange(NSMaxRange(delimiter), bodySize)];
+        NSDictionary *plist = [NSPropertyListSerialization propertyListWithData:body options:0 format:nil error:nil];
+        NSString *udid = [plist isKindOfClass:NSDictionary.class] ? plist[@"UDID"] : nil;
+        if (!ZONUDIDBridgeIsPlausibleUDID(udid)) {
+            ZONProfileSend(fd, 400, @"text/plain", [@"invalid device response" dataUsingEncoding:NSUTF8StringEncoding]);
+            return;
+        }
+        NSDictionary *complete = @{@"PayloadType": @"Configuration", @"PayloadVersion": @1,
+                                   @"PayloadIdentifier": @"com.zonoe.standalone.complete",
+                                   @"PayloadUUID": NSUUID.UUID.UUIDString, @"PayloadContent": @[]};
+        NSData *reply = [NSPropertyListSerialization dataWithPropertyList:complete
+                                                                  format:NSPropertyListXMLFormat_v1_0
+                                                                 options:0 error:nil];
+        ZONProfileSend(fd, 200, @"application/x-apple-aspen-config", reply);
+        dispatch_async(dispatch_get_main_queue(), ^{
+            ZONUDIDBridgeStoreUDID(udid);
+            ZONProfileStop();
+        });
+    } else {
+        ZONProfileSend(fd, 404, @"text/plain", NSData.data);
+    }
+}
+
+static void ZONProfileStart(dispatch_block_t unavailableHandler)
+{
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+        if (gZONProfileListenFD >= 0) return;
+        int fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (fd < 0) { if (unavailableHandler) dispatch_async(dispatch_get_main_queue(), unavailableHandler); return; }
+        struct sockaddr_in address = {0};
+        address.sin_family = AF_INET;
+        address.sin_port = htons(ZONUDIDBridgePort);
+        address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        if (bind(fd, (struct sockaddr *)&address, sizeof(address)) != 0 || listen(fd, 4) != 0) {
+            close(fd);
+            if (unavailableHandler) dispatch_async(dispatch_get_main_queue(), unavailableHandler);
+            return;
+        }
+        gZONProfileListenFD = fd;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            gZONProfileBackgroundTask = [UIApplication.sharedApplication beginBackgroundTaskWithName:@"ZonoeLocalUDID"
+                                                                                expirationHandler:^{ ZONProfileStop(); }];
+            NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:
+                                                @"http://127.0.0.1:%u/profile.mobileconfig", ZONUDIDBridgePort]];
+            [UIApplication.sharedApplication openURL:url options:@{} completionHandler:^(BOOL opened) {
+                if (!opened) { ZONProfileStop(); if (unavailableHandler) unavailableHandler(); }
+            }];
+        });
+        while (gZONProfileListenFD == fd) {
+            int client = accept(fd, NULL, NULL);
+            if (client < 0) break;
+            ZONProfileHandleClient(client);
+            close(client);
+        }
+        if (gZONProfileListenFD == fd) ZONProfileStop();
+    });
+}
+
 #pragma mark - Request
 
 static void ZONUDIDBridgeBeginAppRequest(dispatch_block_t _Nullable unavailableHandler)
 {
-    if (ZONUDIDBridgeCurrentUDID().length > 0) {
-        ZONUDIDBridgeDismissProgressAlert(nil);
-        return;
-    }
-
-    if (ZONUDIDBridgeCallbackScheme().length == 0) {
-        NSLog(@"[zonoemenu][WARN][udid] zonoe callback scheme unavailable; using fallback");
-        ZONUDIDBridgeDismissProgressAlert(unavailableHandler);
-        return;
-    }
-
-    NSString *nonce = ZONUDIDBridgeNewNonce();
-    NSURL *requestURL = ZONUDIDBridgeRequestURLForNonce(nonce);
-    if (!requestURL) {
-        NSLog(@"[zonoemenu][WARN][udid] unable to construct zonoe://udid request; using fallback");
-        ZONUDIDBridgeDismissProgressAlert(unavailableHandler);
-        return;
-    }
-
-    ZONUDIDBridgeShowProgressAlert(unavailableHandler, ^{
-        if (ZONUDIDBridgeCurrentUDID().length > 0) return;
-
-        NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;
-        [defaults setObject:nonce forKey:ZONUDIDBridgeRequestNonceKey];
-        [defaults setDouble:NSDate.date.timeIntervalSince1970 forKey:ZONUDIDBridgeRequestTimestampKey];
-
-        NSLog(@"[zonoemenu][INFO][udid] requesting UDID through zonoe callback + nonce");
-        [UIApplication.sharedApplication openURL:requestURL
-                                         options:@{}
-                               completionHandler:^(BOOL success) {
-            if (success) return;
-
-            NSString *currentNonce = [NSUserDefaults.standardUserDefaults stringForKey:ZONUDIDBridgeRequestNonceKey];
-            if (![currentNonce isEqualToString:nonce]) {
-                NSLog(@"[zonoemenu][INFO][udid] ignoring stale zonoe open failure");
-                return;
-            }
-
-            ZONUDIDBridgeClearPendingRequest();
-            NSLog(@"[zonoemenu][WARN][udid] unable to open zonoe://udid; using web fallback");
-            ZONUDIDBridgeDismissProgressAlert(unavailableHandler);
-        }];
+    if (ZONUDIDBridgeCurrentUDID().length > 0) return;
+    // Standalone Profile Service; no zonoe://, third-party app or remote UDID host.
+    ZONProfileStart(^{
+        NSLog(@"[zonoemenu][WARN][udid] standalone profile service unavailable");
+        if (unavailableHandler) unavailableHandler();
     });
 }
 
