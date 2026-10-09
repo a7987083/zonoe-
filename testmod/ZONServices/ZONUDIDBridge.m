@@ -1,11 +1,6 @@
 #import "ZONUDIDBridge.h"
 #import "ZONLegacyUDIDFallbackAdapter.h"
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <sys/time.h>
-#include <unistd.h>
 
 NSString * const ZONUDIDBridgeValueKey = @"zonoe.udid.bridge.value";
 NSString * const ZONUDIDBridgeSchemeKey = @"zonoe.udid.bridge.scheme";
@@ -302,124 +297,6 @@ BOOL ZONUDIDBridgeHandleURL(NSURL *url)
     return YES;
 }
 
-#pragma mark - Localhost bridge fetch (no AppDelegate/SceneDelegate hooks)
-
-NSDictionary * _Nullable ZONUDIDBridgeFetchLocalResultOnce(NSString *nonce)
-{
-    if (!ZONUDIDBridgeIsPlausibleNonce(nonce)) return nil;
-
-    int fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd < 0) return nil;
-
-    struct timeval timeout;
-    timeout.tv_sec = 0;
-    timeout.tv_usec = 700000;
-    setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
-    setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
-
-    struct sockaddr_in address;
-    memset(&address, 0, sizeof(address));
-    address.sin_family = AF_INET;
-    address.sin_port = htons(ZONUDIDBridgePort);
-    inet_pton(AF_INET, "127.0.0.1", &address.sin_addr);
-
-    if (connect(fd, (struct sockaddr *)&address, sizeof(address)) != 0) {
-        close(fd);
-        return nil;
-    }
-
-    NSString *request = [NSString stringWithFormat:
-                         @"GET /bridge/result/%@ HTTP/1.1\r\nHost: 127.0.0.1:%u\r\nConnection: close\r\n\r\n",
-                         nonce, ZONUDIDBridgePort];
-    NSData *requestData = [request dataUsingEncoding:NSUTF8StringEncoding];
-    const uint8_t *bytes = requestData.bytes;
-    NSUInteger remaining = requestData.length;
-    while (remaining > 0) {
-        ssize_t written = send(fd, bytes, remaining, 0);
-        if (written <= 0) {
-            close(fd);
-            return nil;
-        }
-        bytes += written;
-        remaining -= (NSUInteger)written;
-    }
-
-    NSMutableData *responseData = [NSMutableData data];
-    uint8_t buffer[2048];
-    while (responseData.length < 65536) {
-        ssize_t count = recv(fd, buffer, sizeof(buffer), 0);
-        if (count <= 0) break;
-        [responseData appendBytes:buffer length:(NSUInteger)count];
-    }
-    close(fd);
-
-    NSString *response = [[NSString alloc] initWithData:responseData encoding:NSUTF8StringEncoding];
-    if (response.length == 0 ||
-        (![response hasPrefix:@"HTTP/1.1 200"] && ![response hasPrefix:@"HTTP/1.0 200"])) {
-        return nil;
-    }
-
-    NSRange separator = [response rangeOfString:@"\r\n\r\n"];
-    if (separator.location == NSNotFound) return nil;
-    NSString *body = [response substringFromIndex:NSMaxRange(separator)];
-    NSData *bodyData = [body dataUsingEncoding:NSUTF8StringEncoding];
-    id object = [NSJSONSerialization JSONObjectWithData:bodyData options:0 error:nil];
-    return [object isKindOfClass:NSDictionary.class] ? object : nil;
-}
-
-void ZONUDIDBridgeFetchPendingResult(void)
-{
-    dispatch_async(dispatch_get_main_queue(), ^{
-        static BOOL inFlight = NO;
-        if (inFlight || ZONUDIDBridgeCurrentUDID().length > 0) return;
-
-        NSUserDefaults *defaults = NSUserDefaults.standardUserDefaults;
-        NSString *nonce = [defaults stringForKey:ZONUDIDBridgeRequestNonceKey];
-        NSTimeInterval requestedAt = [defaults doubleForKey:ZONUDIDBridgeRequestTimestampKey];
-        if (!ZONUDIDBridgeIsPlausibleNonce(nonce)) return;
-
-        NSTimeInterval age = NSDate.date.timeIntervalSince1970 - requestedAt;
-        if (requestedAt <= 0 || age > 90.0) {
-            ZONUDIDBridgeClearPendingRequest();
-            return;
-        }
-
-        inFlight = YES;
-        dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
-            NSDictionary *result = nil;
-            for (NSInteger attempt = 0; attempt < 6 && !result; attempt++) {
-                result = ZONUDIDBridgeFetchLocalResultOnce(nonce);
-                if (!result) usleep(250000);
-            }
-
-            dispatch_async(dispatch_get_main_queue(), ^{
-                inFlight = NO;
-                if (!result) {
-                    NSLog(@"[zonoemenu][WARN][udid] localhost bridge result unavailable");
-                    return;
-                }
-
-                NSString *returnedNonce = [result[@"nonce"] isKindOfClass:NSString.class] ? result[@"nonce"] : nil;
-                NSString *udid = [result[@"udid"] isKindOfClass:NSString.class] ? result[@"udid"] : nil;
-                NSString *currentNonce = [NSUserDefaults.standardUserDefaults stringForKey:ZONUDIDBridgeRequestNonceKey];
-
-                if (!ZONUDIDBridgeIsPlausibleNonce(returnedNonce) ||
-                    ![returnedNonce isEqualToString:nonce] ||
-                    ![returnedNonce isEqualToString:currentNonce]) {
-                    NSLog(@"[zonoemenu][WARN][udid] localhost bridge nonce mismatch");
-                    return;
-                }
-                if (!ZONUDIDBridgeIsPlausibleUDID(udid)) {
-                    NSLog(@"[zonoemenu][WARN][udid] localhost bridge returned invalid UDID");
-                    return;
-                }
-
-                ZONUDIDBridgeStoreUDID(udid);
-            });
-        });
-    });
-}
-
 void ZONUDIDBridgeStart(void)
 {
     static dispatch_once_t onceToken;
@@ -429,7 +306,6 @@ void ZONUDIDBridgeStart(void)
                            object:nil
                             queue:NSOperationQueue.mainQueue
                        usingBlock:^(__unused NSNotification *note) {
-            ZONUDIDBridgeFetchPendingResult();
             ZONResumeLegacyWebUDIDFallbackIfNeeded();
         }];
 
@@ -438,8 +314,7 @@ void ZONUDIDBridgeStart(void)
                                object:nil
                                 queue:NSOperationQueue.mainQueue
                            usingBlock:^(__unused NSNotification *note) {
-                ZONUDIDBridgeFetchPendingResult();
-                ZONResumeLegacyWebUDIDFallbackIfNeeded();
+                    ZONResumeLegacyWebUDIDFallbackIfNeeded();
             }];
         }
     });
