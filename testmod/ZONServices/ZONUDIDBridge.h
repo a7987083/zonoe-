@@ -28,8 +28,6 @@ NSString * _Nullable ZONUDIDBridgeCurrentUDID(void) ZONUDID_BRIDGE_HIDDEN;
 void ZONUDIDBridgeClearPendingRequest(void) ZONUDID_BRIDGE_HIDDEN;
 void ZONUDIDBridgeStoreUDID(NSString *udid) ZONUDID_BRIDGE_HIDDEN;
 BOOL ZONUDIDBridgeHandleURL(NSURL *url) ZONUDID_BRIDGE_HIDDEN;
-NSDictionary * _Nullable ZONUDIDBridgeFetchLocalResultOnce(NSString *nonce) ZONUDID_BRIDGE_HIDDEN;
-void ZONUDIDBridgeFetchPendingResult(void) ZONUDID_BRIDGE_HIDDEN;
 void ZONUDIDBridgeStart(void) ZONUDID_BRIDGE_HIDDEN;
 void ZONUDIDBridgeRequestIfNeededWithUnavailableHandler(dispatch_block_t _Nullable unavailableHandler) ZONUDID_BRIDGE_HIDDEN;
 void ZONUDIDBridgeRequestIfNeeded(void) ZONUDID_BRIDGE_HIDDEN;
