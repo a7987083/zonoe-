@@ -70,9 +70,9 @@ void ZonoeRequestUDIDIfNeeded(void)
             return;
         }
 
-        ZONUDIDBridgeRequestIfNeededWithUnavailableHandler(^{
-            NSLog(@"[zonoemenu][WARN][udid] standalone profile service failed; no remote fallback");
-        });
+        // Restore the original website-based UDID acquisition flow.
+        // No localhost Profile Service / external Zonoe app is required.
+        ZONStartLegacyWebUDIDFallback();
     });
 }
 
@@ -85,8 +85,8 @@ void ZonoeForceRefreshUDID(void)
 {
     dispatch_async(dispatch_get_main_queue(), ^{
         ZonoeEnsureUDIDObserver();
-        ZONUDIDBridgeForceRefreshWithUnavailableHandler(^{
-            NSLog(@"[zonoemenu][WARN][udid] standalone profile service failed; no remote fallback");
-        });
+        ZONUDIDBridgeClearPendingRequest();
+        [NSUserDefaults.standardUserDefaults removeObjectForKey:ZONUDIDBridgeValueKey];
+        ZONStartLegacyWebUDIDFallback();
     });
 }
