@@ -1,4 +1,5 @@
 #import "ZONUDIDBridge.h"
+#import <SafariServices/SafariServices.h>
 #import "ZONLegacyUDIDFallbackAdapter.h"
 
 #include <arpa/inet.h>
@@ -505,6 +506,45 @@ static void ZONProfileSend(int fd, int status, NSString *mime, NSData *body)
     }
 }
 
+static NSString *ZONProfileFindUDID(id value)
+{
+    if ([value isKindOfClass:NSDictionary.class]) {
+        NSDictionary *dictionary = value;
+        for (id key in dictionary) {
+            id child = dictionary[key];
+            if ([key isKindOfClass:NSString.class] &&
+                [key caseInsensitiveCompare:@"UDID"] == NSOrderedSame &&
+                [child isKindOfClass:NSString.class]) return child;
+            NSString *nested = ZONProfileFindUDID(child);
+            if (nested.length) return nested;
+        }
+    } else if ([value isKindOfClass:NSArray.class]) {
+        for (id child in value) {
+            NSString *nested = ZONProfileFindUDID(child);
+            if (nested.length) return nested;
+        }
+    }
+    return nil;
+}
+
+static NSString *ZONProfileExtractUDID(NSData *body)
+{
+    // GameStore compatibility: the XML property-list may be embedded in a larger payload.
+    NSData *xmlStart = [@"<?xml" dataUsingEncoding:NSUTF8StringEncoding];
+    NSData *xmlEnd = [@"</plist>" dataUsingEncoding:NSUTF8StringEncoding];
+    NSRange start = [body rangeOfData:xmlStart options:0 range:NSMakeRange(0, body.length)];
+    NSData *plistData = body;
+    if (start.location != NSNotFound) {
+        NSRange end = [body rangeOfData:xmlEnd options:0
+                                 range:NSMakeRange(start.location, body.length - start.location)];
+        if (end.location != NSNotFound)
+            plistData = [body subdataWithRange:NSMakeRange(start.location, NSMaxRange(end) - start.location)];
+    }
+    id parsed = [NSPropertyListSerialization propertyListWithData:plistData
+                                                           options:0 format:nil error:nil];
+    return ZONProfileFindUDID(parsed);
+}
+
 static void ZONProfileHandleClient(int fd)
 {
     struct timeval tv = { 2, 0 };
@@ -514,7 +554,7 @@ static void ZONProfileHandleClient(int fd)
     uint8_t buffer[4096];
     NSRange delimiter = {NSNotFound, 0};
     NSUInteger bodySize = 0;
-    while (data.length < 65536) {
+    while (data.length < (2 * 1024 * 1024 + 65536)) {
         ssize_t n = recv(fd, buffer, sizeof(buffer), 0);
         if (n <= 0) break;
         [data appendBytes:buffer length:(NSUInteger)n];
@@ -527,7 +567,7 @@ static void ZONProfileHandleClient(int fd)
         for (NSString *line in [headers componentsSeparatedByString:@"\r\n"]) {
             if ([[line lowercaseString] hasPrefix:@"content-length:"]) {
                 NSInteger declared = [[line substringFromIndex:15] integerValue];
-                if (declared < 0 || declared > 60000) return;
+                if (declared < 0 || declared > (2 * 1024 * 1024)) return;
                 bodySize = (NSUInteger)declared;
             }
         }
@@ -540,8 +580,7 @@ static void ZONProfileHandleClient(int fd)
         ZONProfileSend(fd, 200, @"application/x-apple-aspen-config", ZONProfileData());
     } else if ([first hasPrefix:@"POST /udid "]) {
         NSData *body = [data subdataWithRange:NSMakeRange(NSMaxRange(delimiter), bodySize)];
-        NSDictionary *plist = [NSPropertyListSerialization propertyListWithData:body options:0 format:nil error:nil];
-        NSString *udid = [plist isKindOfClass:NSDictionary.class] ? plist[@"UDID"] : nil;
+        NSString *udid = ZONProfileExtractUDID(body);
         if (!ZONUDIDBridgeIsPlausibleUDID(udid)) {
             ZONProfileSend(fd, 400, @"text/plain", [@"invalid device response" dataUsingEncoding:NSUTF8StringEncoding]);
             return;
@@ -561,6 +600,25 @@ static void ZONProfileHandleClient(int fd)
         ZONProfileSend(fd, 404, @"text/plain", NSData.data);
     }
 }
+
+@interface ZONProfileSafariDelegate : NSObject <SFSafariViewControllerDelegate>
+@end
+
+@implementation ZONProfileSafariDelegate
+- (void)safariViewControllerDidFinish:(SFSafariViewController *)controller
+{
+    [controller dismissViewControllerAnimated:YES completion:^{
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"描述文件已下载"
+            message:@"请到「设置 → 通用 → VPN 与设备管理」安装「Zonoe 设备识别」。安装完成后返回应用。"
+            preferredStyle:UIAlertControllerStyleAlert];
+        [alert addAction:[UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault handler:nil]];
+        UIViewController *presenter = ZONUDIDBridgeTopViewController();
+        [presenter presentViewController:alert animated:YES completion:nil];
+    }];
+}
+@end
+
+static ZONProfileSafariDelegate *gZONProfileSafariDelegate = nil;
 
 static void ZONProfileStart(dispatch_block_t unavailableHandler)
 {
@@ -583,9 +641,17 @@ static void ZONProfileStart(dispatch_block_t unavailableHandler)
                                                                                 expirationHandler:^{ ZONProfileStop(); }];
             NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:
                                                 @"http://127.0.0.1:%u/profile.mobileconfig", ZONUDIDBridgePort]];
-            [UIApplication.sharedApplication openURL:url options:@{} completionHandler:^(BOOL opened) {
-                if (!opened) { ZONProfileStop(); if (unavailableHandler) unavailableHandler(); }
-            }];
+            UIViewController *presenter = ZONUDIDBridgeTopViewController();
+            if (!url || !presenter) {
+                ZONProfileStop();
+                if (unavailableHandler) unavailableHandler();
+                return;
+            }
+            if (!gZONProfileSafariDelegate) gZONProfileSafariDelegate = [ZONProfileSafariDelegate new];
+            SFSafariViewController *browser = [[SFSafariViewController alloc] initWithURL:url];
+            browser.delegate = gZONProfileSafariDelegate;
+            browser.modalPresentationStyle = UIModalPresentationPageSheet;
+            [presenter presentViewController:browser animated:YES completion:nil];
         });
         while (gZONProfileListenFD == fd) {
             int client = accept(fd, NULL, NULL);
