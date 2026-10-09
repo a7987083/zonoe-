@@ -1,4 +1,5 @@
 #import "ZONUDIDBridge.h"
+#import <SafariServices/SafariServices.h>
 #import "ZONLegacyUDIDFallbackAdapter.h"
 
 #include <arpa/inet.h>
@@ -583,9 +584,14 @@ static void ZONProfileStart(dispatch_block_t unavailableHandler)
                                                                                 expirationHandler:^{ ZONProfileStop(); }];
             NSURL *url = [NSURL URLWithString:[NSString stringWithFormat:
                                                 @"http://127.0.0.1:%u/profile.mobileconfig", ZONUDIDBridgePort]];
-            [UIApplication.sharedApplication openURL:url options:@{} completionHandler:^(BOOL opened) {
-                if (!opened) { ZONProfileStop(); if (unavailableHandler) unavailableHandler(); }
-            }];
+            UIViewController *presenter = ZONUDIDBridgeTopViewController();
+            if (!presenter || !url) {
+                ZONProfileStop();
+                if (unavailableHandler) unavailableHandler();
+                return;
+            }
+            SFSafariViewController *browser = [[SFSafariViewController alloc] initWithURL:url];
+            [presenter presentViewController:browser animated:YES completion:nil];
         });
         while (gZONProfileListenFD == fd) {
             int client = accept(fd, NULL, NULL);
