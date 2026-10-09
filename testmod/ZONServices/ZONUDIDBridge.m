@@ -449,7 +449,7 @@ void ZONUDIDBridgeStart(void)
 #pragma mark - Standalone local Profile Service (experimental, no external Zonoe app)
 
 static int gZONProfileListenFD = -1;
-static UIBackgroundTaskIdentifier gZONProfileBackgroundTask = (UIBackgroundTaskIdentifier)NSUIntegerMax;
+static UIBackgroundTaskIdentifier gZONProfileBackgroundTask = (UIBackgroundTaskIdentifier)-1;
 
 static void ZONProfileStop(void)
 {
